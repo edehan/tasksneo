@@ -35,3 +35,7 @@ Bucket name is read from `process.env.MINIO_BUCKET`.
 ## Soft-deleted tasks
 
 Always filter active tasks with `where: { deletedAt: null }` unless explicitly fetching deleted state.
+
+## API change policy
+
+The development sequence for this project is backend first, then the frontend. The OpenAPI documentation can be modified as needed during backend development.
