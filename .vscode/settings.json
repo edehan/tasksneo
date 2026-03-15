@@ -1,0 +1,15 @@
+{
+    "sqltools.connections": [
+        {
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "taskflow-dev",
+            "database": "taskflow",
+            "username": "taskflow"
+        }
+    ],
+    "prisma.pinToPrisma6": true
+}

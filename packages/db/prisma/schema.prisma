@@ -1,0 +1,290 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Schools ─────────────────────────────────────────────────────────────────
+
+model School {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  users   User[]
+  classes Class[]
+
+  @@map("schools")
+}
+
+// ─── Users ────────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  nickname  String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  schoolId  String? @map("school_id")
+  studentId String? @map("student_id")
+  school    School? @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+
+  // 同一学校内学号唯一
+  @@unique([schoolId, studentId], name: "uq_school_student")
+  // 有学号必须有学校（应用层强制，DB 层无法直接表达条件约束，见下方说明）
+
+  credentials        UserCredential[]
+  notificationPrefs  UserNotificationPref[]
+  ownedClasses       Class[]               @relation("ClassOwner")
+  memberships        ClassMember[]
+  createdTasks       Task[]                @relation("TaskCreator")
+  taskStates         TaskUserState[]
+  submissions        Submission[]          @relation("SubmissionOwner")
+  reviewedSubmissions Submission[]         @relation("SubmissionReviewer")
+  uploadedAttachments Attachment[]         @relation("AttachmentUploader")
+  avatarAttachment   Attachment[]         @relation("UserAvatar")
+  notificationJobs   NotificationJob[]
+
+  @@map("users")
+}
+
+// ─── User Credentials ────────────────────────────────────────────────────────
+
+model UserCredential {
+  id           String       @id @default(uuid())
+  userId       String       @map("user_id")
+  provider     AuthProvider @default(LOCAL)
+  providerUid  String?      @map("provider_uid")
+  passwordHash String?      @map("password_hash")
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUid])
+  @@unique([userId, provider])
+  @@map("user_credentials")
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+  GITHUB
+
+  @@map("auth_provider")
+}
+
+// ─── User Notification Prefs ─────────────────────────────────────────────────
+
+model UserNotificationPref {
+  id        String        @id @default(uuid())
+  userId    String        @map("user_id")
+  channel   NotifChannel
+  address   String
+  isEnabled Boolean       @default(true) @map("is_enabled")
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, channel])
+  @@map("user_notification_prefs")
+}
+
+enum NotifChannel {
+  EMAIL
+  WEBHOOK
+  TELEGRAM
+
+  @@map("notif_channel")
+}
+
+// ─── Classes ─────────────────────────────────────────────────────────────────
+
+model Class {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  color       String   @default("#6366f1")
+  isPersonal  Boolean  @default(false) @map("is_personal")
+  inviteCode  String?  @unique @map("invite_code")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  ownerId  String  @map("owner_id")
+  schoolId String? @map("school_id")
+  owner    User    @relation("ClassOwner", fields: [ownerId], references: [id])
+  // onDelete 故意不设 Cascade：用户删除前必须先处理班级，应用层强制
+  school   School? @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+
+  members     ClassMember[]
+  tasks       Task[]
+  attachments Attachment[]  @relation("ClassAttachment")
+
+  @@map("classes")
+}
+
+// ─── Class Members ───────────────────────────────────────────────────────────
+
+model ClassMember {
+  classId  String    @map("class_id")
+  userId   String    @map("user_id")
+  role     ClassRole @default(MEMBER)
+  joinedAt DateTime  @default(now()) @map("joined_at") @db.Timestamptz
+
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([classId, userId])
+  @@map("class_members")
+}
+
+enum ClassRole {
+  OWNER
+  ADMIN
+  MEMBER
+
+  @@map("class_role")
+}
+
+// ─── Tasks ───────────────────────────────────────────────────────────────────
+
+model Task {
+  id                   String    @id @default(uuid())
+  title                String
+  description          String?
+  startAt              DateTime? @map("start_at") @db.Timestamptz
+  dueAt                DateTime? @map("due_at") @db.Timestamptz
+  allowLateSubmission  Boolean   @default(true) @map("allow_late_submission")
+  blockedBy            String[]  @map("blocked_by")
+  // 存储其他 Task 的 uuid 字符串数组，前端处理，后端不验证
+  deletedAt            DateTime? @map("deleted_at") @db.Timestamptz
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  classId   String  @map("class_id")
+  createdBy String? @map("created_by")
+  class     Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  creator   User?   @relation("TaskCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+
+  userStates       TaskUserState[]
+  submissions      Submission[]
+  attachments      Attachment[]    @relation("TaskAttachment")
+  notificationJobs NotificationJob[]
+
+  @@map("tasks")
+}
+
+// ─── Task User State ─────────────────────────────────────────────────────────
+
+model TaskUserState {
+  taskId    String   @map("task_id")
+  userId    String   @map("user_id")
+  viewedAt  DateTime? @map("viewed_at") @db.Timestamptz
+  tags      String[]
+  sortOrder Float    @default(0) @map("sort_order")
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, userId])
+  @@map("task_user_state")
+}
+
+// ─── Submissions ─────────────────────────────────────────────────────────────
+
+model Submission {
+  id               String    @id @default(uuid())
+  firstSubmittedAt DateTime  @default(now()) @map("first_submitted_at") @db.Timestamptz
+  lastUpdatedAt    DateTime  @updatedAt @map("last_updated_at") @db.Timestamptz
+
+  // 评分字段，仅班级 admin/owner 可写
+  score        Decimal?  @db.Decimal(5, 2)
+  reviewerId   String?   @map("reviewer_id")
+  reviewedAt   DateTime? @map("reviewed_at") @db.Timestamptz
+  reviewNote   String?   @map("review_note")
+
+  taskId String @map("task_id")
+  userId String @map("user_id")
+  // task 故意不加 onDelete Cascade：任务软删后提交记录需要保留
+  task   Task   @relation(fields: [taskId], references: [id])
+  user   User   @relation("SubmissionOwner", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer User? @relation("SubmissionReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  attachments Attachment[] @relation("SubmissionAttachment")
+
+  @@unique([taskId, userId])
+  @@map("submissions")
+}
+
+// ─── Attachments ─────────────────────────────────────────────────────────────
+
+model Attachment {
+  id           String   @id @default(uuid())
+  fileKey      String   @unique @map("file_key")
+  originalName String   @map("original_name")
+  renamedFile  String?  @map("renamed_file")
+  mimeType     String?  @map("mime_type")
+  sizeBytes    BigInt?  @map("size_bytes")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  uploadedBy String? @map("uploaded_by")
+  uploader   User?   @relation("AttachmentUploader", fields: [uploadedBy], references: [id], onDelete: SetNull)
+
+  // 四选一，应用层强制有且只有一个非 null
+  taskId       String? @map("task_id")
+  submissionId String? @map("submission_id")
+  classId      String? @map("class_id")
+  avatarUserId String? @map("avatar_user_id")
+
+  task       Task?       @relation("TaskAttachment", fields: [taskId], references: [id], onDelete: Cascade)
+  submission Submission? @relation("SubmissionAttachment", fields: [submissionId], references: [id], onDelete: Cascade)
+  class      Class?      @relation("ClassAttachment", fields: [classId], references: [id], onDelete: Cascade)
+  avatarUser User?       @relation("UserAvatar", fields: [avatarUserId], references: [id], onDelete: Cascade)
+
+  @@map("attachments")
+}
+
+// ─── Notification Jobs ───────────────────────────────────────────────────────
+
+model NotificationJob {
+  id          String       @id @default(uuid())
+  channel     NotifChannel
+  payload     Json
+  status      NotifStatus  @default(PENDING)
+  scheduledAt DateTime     @map("scheduled_at") @db.Timestamptz
+  sentAt      DateTime?    @map("sent_at") @db.Timestamptz
+  error       String?
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz
+
+  userId String? @map("user_id")
+  taskId String? @map("task_id")
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task   Task?   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("notification_jobs")
+}
+
+enum NotifStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+
+  @@map("notif_status")
+}
+
+// ─── System Config ───────────────────────────────────────────────────────────
+
+model SystemConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("system_config")
+}
