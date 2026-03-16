@@ -1,6 +1,7 @@
 {
   "name": "@taskflow/db",
   "version": "0.0.1",
+  "type": "module",
   "main": "./src/index.ts",
   "dependencies": {
     "@prisma/client": "6"

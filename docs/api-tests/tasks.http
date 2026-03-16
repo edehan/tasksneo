@@ -1,0 +1,6 @@
+@baseUrl = http://localhost:3001
+@token = REPLACE_WITH_JWT
+
+### Placeholder for future task APIs
+GET {{baseUrl}}/health
+Authorization: Bearer {{token}}

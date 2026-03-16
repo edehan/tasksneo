@@ -1,0 +1,25 @@
+@baseUrl = http://localhost:3001
+@token = REPLACE_WITH_JWT
+
+### Register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "demo@example.com",
+  "password": "Passw0rd!",
+  "nickname": "Demo User"
+}
+
+### Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "demo@example.com",
+  "password": "Passw0rd!"
+}
+
+### Me
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{token}}
