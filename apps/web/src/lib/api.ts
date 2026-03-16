@@ -28,7 +28,7 @@ export interface ClassSummary {
   ownerId: string;
   schoolId: string | null;
   inviteCode: string | null;
-  myRole: 'OWNER' | 'ADMIN' | 'MEMBER';
+  myRole: "OWNER" | "ADMIN" | "MEMBER";
   memberCount: number;
   createdAt: string;
 }
@@ -37,8 +37,18 @@ export interface ClassMember {
   userId: string;
   email: string;
   nickname: string | null;
-  role: 'OWNER' | 'ADMIN' | 'MEMBER';
+  role: "OWNER" | "ADMIN" | "MEMBER";
   joinedAt: string;
+}
+
+export interface AdminSchool {
+  id: string;
+  name: string;
+}
+
+export interface AdminUpdateUserInput {
+  isActive?: boolean;
+  password?: string;
 }
 
 export class ApiError extends Error {
@@ -53,7 +63,7 @@ export class ApiError extends Error {
 }
 
 export function getApiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3001';
+  return process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
 }
 
 export async function apiRequest<T>(
@@ -63,12 +73,12 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const headers = new Headers(init.headers ?? {});
 
-  if (!headers.has('Content-Type') && init.body) {
-    headers.set('Content-Type', 'application/json');
+  if (!headers.has("Content-Type") && init.body) {
+    headers.set("Content-Type", "application/json");
   }
 
   if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
+    headers.set("Authorization", `Bearer ${token}`);
   }
 
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
@@ -78,7 +88,7 @@ export async function apiRequest<T>(
 
   if (!response.ok) {
     let errorMessage = `Request failed with status ${response.status}`;
-    let errorCode = 'HTTP_ERROR';
+    let errorCode = "HTTP_ERROR";
 
     try {
       const json = (await response.json()) as Partial<ApiErrorShape>;
@@ -100,4 +110,88 @@ export async function apiRequest<T>(
   }
 
   return (await response.json()) as T;
+}
+
+export async function getAdminConfig(
+  token: string,
+): Promise<Record<string, string>> {
+  return apiRequest<Record<string, string>>("/admin/config", {}, token);
+}
+
+export async function patchAdminConfig(
+  token: string,
+  entries: Record<string, string>,
+): Promise<Record<string, string>> {
+  return apiRequest<Record<string, string>>(
+    "/admin/config",
+    {
+      method: "PATCH",
+      body: JSON.stringify(entries),
+    },
+    token,
+  );
+}
+
+export async function sendAdminTestEmail(
+  token: string,
+  to: string,
+): Promise<void> {
+  return apiRequest<void>(
+    "/admin/config/test-email",
+    {
+      method: "POST",
+      body: JSON.stringify({ to }),
+    },
+    token,
+  );
+}
+
+export async function listAdminUsers(token: string): Promise<UserProfile[]> {
+  return apiRequest<UserProfile[]>("/admin/users", {}, token);
+}
+
+export async function patchAdminUser(
+  token: string,
+  userId: string,
+  input: AdminUpdateUserInput,
+): Promise<UserProfile> {
+  return apiRequest<UserProfile>(
+    `/admin/users/${userId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    },
+    token,
+  );
+}
+
+export async function listAdminSchools(token: string): Promise<AdminSchool[]> {
+  return apiRequest<AdminSchool[]>("/admin/schools", {}, token);
+}
+
+export async function createAdminSchool(
+  token: string,
+  name: string,
+): Promise<AdminSchool> {
+  return apiRequest<AdminSchool>(
+    "/admin/schools",
+    {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    },
+    token,
+  );
+}
+
+export async function deleteAdminSchool(
+  token: string,
+  schoolId: string,
+): Promise<void> {
+  return apiRequest<void>(
+    `/admin/schools/${schoolId}`,
+    {
+      method: "DELETE",
+    },
+    token,
+  );
 }

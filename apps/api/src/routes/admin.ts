@@ -10,6 +10,7 @@ import {
   listAdminSchools,
   listAdminUsers,
   patchAdminConfig,
+  sendAdminTestEmail,
   updateAdminUser,
 } from '../services/admin.service.js';
 
@@ -24,6 +25,9 @@ const schoolIdParamSchema = z.object({
 });
 
 const patchConfigSchema = z.record(z.string(), z.string());
+const sendTestEmailSchema = z.object({
+  to: z.string().email(),
+});
 
 const patchAdminUserSchema = z.object({
   isActive: z.boolean().optional(),
@@ -47,6 +51,12 @@ adminRouter.patch('/config', async (c) => {
   const body = patchConfigSchema.parse(await c.req.json());
   const config = await patchAdminConfig(body);
   return c.json(config, 200);
+});
+
+adminRouter.post('/config/test-email', async (c) => {
+  const body = sendTestEmailSchema.parse(await c.req.json());
+  await sendAdminTestEmail(body.to);
+  return c.body(null, 204);
 });
 
 adminRouter.get('/users', async (c) => {

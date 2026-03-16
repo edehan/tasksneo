@@ -645,6 +645,14 @@ components:
       additionalProperties:
         type: string
 
+    AdminTestEmailRequest:
+      type: object
+      required: [to]
+      properties:
+        to:
+          type: string
+          format: email
+
     CreateSchoolRequest:
       type: object
       required: [name]
@@ -1858,6 +1866,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SystemConfigMap'
+
+  /admin/config/test-email:
+    post:
+      tags: [Admin]
+      summary: 发送 SMTP 测试邮件
+      description: 使用当前系统配置中的 SMTP 参数向指定地址发送测试邮件。
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminTestEmailRequest'
+      responses:
+        '204':
+          description: 发送成功
+        '400':
+          description: SMTP 配置不完整或参数不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /admin/users:
     get:

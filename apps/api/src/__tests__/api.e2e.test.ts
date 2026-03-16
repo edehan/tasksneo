@@ -58,6 +58,14 @@ describe('TaskFlow API e2e', () => {
     });
     expect(configGet.status).toBe(200);
 
+    const sendTestEmailWithoutSmtp = await requestJson(app, '/admin/config/test-email', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${adminToken}` },
+      body: JSON.stringify({ to: 'smtp-test@example.com' }),
+    });
+    expect(sendTestEmailWithoutSmtp.response.status).toBe(400);
+    expect((sendTestEmailWithoutSmtp.body as { code: string }).code).toBe('SMTP_NOT_CONFIGURED');
+
     const schoolARes = await requestJson(app, '/admin/schools', {
       method: 'POST',
       headers: { Authorization: `Bearer ${adminToken}` },
