@@ -1,6 +1,78 @@
 @baseUrl = http://localhost:3001
-@token = REPLACE_WITH_JWT
+@ownerEmail = owner-demo@example.com
+@memberEmail = member-demo@example.com
+@password = Passw0rd!
+@ownerToken = REPLACE_OWNER_TOKEN
+@memberToken = REPLACE_MEMBER_TOKEN
+@classId = REPLACE_CLASS_ID
+@inviteCode = REPLACE_INVITE_CODE
 
-### Placeholder for future class APIs
-GET {{baseUrl}}/health
-Authorization: Bearer {{token}}
+### 1) Register owner
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{ownerEmail}}",
+  "password": "{{password}}",
+  "nickname": "Owner"
+}
+
+### 2) Login owner
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{ownerEmail}}",
+  "password": "{{password}}"
+}
+
+### 3) Owner create class
+POST {{baseUrl}}/classes
+Authorization: Bearer {{ownerToken}}
+Content-Type: application/json
+
+{
+  "name": "Physics 101",
+  "description": "Week 1 tasks",
+  "color": "#0f766e"
+}
+
+### 4) Owner list classes
+GET {{baseUrl}}/classes
+Authorization: Bearer {{ownerToken}}
+
+### 5) Register member
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{memberEmail}}",
+  "password": "{{password}}",
+  "nickname": "Member"
+}
+
+### 6) Login member
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{memberEmail}}",
+  "password": "{{password}}"
+}
+
+### 7) Member join class by invite code
+POST {{baseUrl}}/classes/join
+Authorization: Bearer {{memberToken}}
+Content-Type: application/json
+
+{
+  "inviteCode": "{{inviteCode}}"
+}
+
+### 8) Member get class detail
+GET {{baseUrl}}/classes/{{classId}}
+Authorization: Bearer {{memberToken}}
+
+### 9) Owner get class members
+GET {{baseUrl}}/classes/{{classId}}/members
+Authorization: Bearer {{ownerToken}}
