@@ -3,7 +3,8 @@ import bcrypt from 'bcryptjs';
 
 import { AppError } from '../lib/errors.js';
 import { toAttachmentMeta, toUserProfile } from '../lib/http.js';
-import { removeSubmissionAttachments, tryHardDeleteOrphanTask } from './task-cleanup.service.js';
+import { removeObject } from '../lib/storage.js';
+import { hardDeleteTask, removeSubmissionAttachments, softDeleteTask, tryHardDeleteOrphanTask } from './task-cleanup.service.js';
 
 const SALT_ROUNDS = 10;
 
@@ -160,6 +161,15 @@ export async function uploadMyAvatar(userId: string, fileMeta: {
   mimeType: string | null;
   sizeBytes: bigint;
 }) {
+  const oldAvatars = await prisma.attachment.findMany({
+    where: { avatarUserId: userId },
+    select: { fileKey: true },
+  });
+
+  for (const oldAvatar of oldAvatars) {
+    await removeObject(oldAvatar.fileKey);
+  }
+
   await prisma.attachment.deleteMany({ where: { avatarUserId: userId } });
 
   const attachment = await prisma.attachment.create({
@@ -174,6 +184,19 @@ export async function uploadMyAvatar(userId: string, fileMeta: {
   });
 
   return toAttachmentMeta(attachment);
+}
+
+async function removeUserAvatarAttachments(userId: string) {
+  const avatars = await prisma.attachment.findMany({
+    where: { avatarUserId: userId },
+    select: { fileKey: true },
+  });
+
+  for (const avatar of avatars) {
+    await removeObject(avatar.fileKey);
+  }
+
+  await prisma.attachment.deleteMany({ where: { avatarUserId: userId } });
 }
 
 async function deleteUserSubmissions(userId: string) {
@@ -207,24 +230,19 @@ async function deletePersonalClass(userId: string) {
 
   const tasks = await prisma.task.findMany({
     where: { classId: personalClass.id },
-    select: { id: true },
+    select: {
+      id: true,
+      _count: {
+        select: { submissions: true },
+      },
+    },
   });
 
   for (const task of tasks) {
-    const submissionCount = await prisma.submission.count({ where: { taskId: task.id } });
-
-    if (submissionCount > 0) {
-      await prisma.task.update({
-        where: { id: task.id },
-        data: {
-          classId: null,
-          deletedAt: new Date(),
-          title: '',
-          description: null,
-        },
-      });
+    if (task._count.submissions > 0) {
+      await softDeleteTask(task.id, true);
     } else {
-      await prisma.task.delete({ where: { id: task.id } });
+      await hardDeleteTask(task.id);
     }
   }
 
@@ -249,12 +267,14 @@ export async function deleteMyAccount(userId: string) {
 
   await deleteUserSubmissions(userId);
   await deletePersonalClass(userId);
+  await removeUserAvatarAttachments(userId);
   await prisma.user.delete({ where: { id: userId } });
 }
 
 export async function adminDeleteUser(userId: string) {
   await deleteUserSubmissions(userId);
   await deletePersonalClass(userId);
+  await removeUserAvatarAttachments(userId);
 
   await prisma.user.delete({ where: { id: userId } });
 }

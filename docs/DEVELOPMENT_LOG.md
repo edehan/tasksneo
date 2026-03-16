@@ -138,6 +138,53 @@
 
 ---
 
+## 2026-03-17 — Data Ownership and Deletion Policy Finalization
+
+- Scope:
+  - Reconciled conflict between docs and FK behavior for class deletion vs submission retention.
+  - Updated `docs/features/data_policy.md` to the confirmed source of truth.
+- Key Decisions:
+  - `submissions` are associated to `tasks` (not directly to `classes`) and are owned by creator users.
+  - Deleting a class never deletes submissions directly.
+  - Deleting a task:
+    - no submissions => hard delete
+    - has submissions => soft delete only, remove task content/attachments, keep metadata
+  - Class deletion cascades through tasks only:
+    - hard delete tasks without submissions
+    - soft delete tasks with submissions and detach them (`classId = NULL`)
+  - Orphan-recovery rule:
+    - when a submission is deleted, if its task has `classId = NULL` and no remaining submissions, hard delete the task.
+  - System must avoid unrecoverable zombie data; temporary detached soft-deleted task metadata is acceptable by design.
+- Pitfalls and Causes:
+  - If policy is implemented only in docs but not in service-layer deletion flows, data drift appears quickly.
+  - FK-only reasoning is insufficient; lifecycle rules require application-layer cleanup hooks.
+- Verification Commands and Results:
+  - Documentation-only update in this step; no code or schema command executed.
+- Next Step:
+  - Re-check deletion flows and tests (`class delete`, `submission delete`, `user delete`) against finalized policy.
+
+---
+
+## 2026-03-17 — Service-Layer Alignment for Deletion Policy
+
+- Scope:
+  - Aligned user deletion and avatar replacement flows with finalized attachment/task cleanup policy.
+- Key Decisions:
+  - Avatar replacement must delete previous avatar objects in MinIO, not only DB rows.
+  - User deletion path must explicitly clear avatar objects before deleting user row.
+  - Personal class deletion during user delete now reuses unified task cleanup:
+    - `hardDeleteTask` for 0-submission tasks
+    - `softDeleteTask(..., true)` for tasks with submissions
+- Pitfalls and Causes:
+  - FK cascade removes DB records but does not remove MinIO objects; service-layer cleanup is required.
+- Verification Commands and Results:
+  - `pnpm --filter @taskflow/api build` passed.
+  - `pnpm --filter @taskflow/api test` passed.
+- Next Step:
+  - Add dedicated regression cases for avatar object lifecycle and user-delete cleanup edge cases.
+
+---
+
 ## Current Understanding Snapshot
 
 - Product shape:
