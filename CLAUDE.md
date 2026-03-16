@@ -38,6 +38,8 @@ features details written in human language messy stored in `docs/features/`, rea
 - Return errors as `{ error: string, code: string }`.
 - Use English as main language. 
 
+This is a solo full-stack project. For the frontend phase, the backend and database are already in place. The existing backend implementation and APIs should be treated as stable and should not be modified without good reason. If a feature requires backend changes, those changes may be developed in parallel after discussion with the user.
+
 ## IMPORTANT: Never modify files in `packages/db/prisma/migrations/` directly.
 
 Always use `prisma migrate dev` to generate migration files.

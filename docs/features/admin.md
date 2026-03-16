@@ -16,7 +16,7 @@ Authorization: Bearer <ADMIN_TOKEN>
 
 ## 系统配置
 
-以下所有配置均存储在 `system_config` 表中，以键值对形式保存。敏感值（密码、API Key 等）在写入数据库前由应用层进行 AES-GCM 加密，加密密钥由 `ADMIN_TOKEN` 派生。
+以下所有配置均存储在 `system_config` 表中，以键值对形式保存。
 
 ### 1. 站点基本信息
 
@@ -36,6 +36,8 @@ Authorization: Bearer <ADMIN_TOKEN>
 | `smtp.user` | SMTP 登录用户名（加密存储） |
 | `smtp.password` | SMTP 密码（加密存储） |
 | `smtp.from` | 发件人邮箱地址 |
+
+**重要：提供测试配置功能**。流程是允许输入接收者邮箱，发送一封测试邮件。
 
 ### 3. AI 平台配置
 

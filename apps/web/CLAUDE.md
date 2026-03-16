@@ -82,7 +82,7 @@ features/             # Feature modules (tasks/, classes/, auth/, etc.)
 lib/
   api.ts              # Typed API client (wraps fetch, handles auth headers)
   utils.ts            # cn() and other utilities
-````
+```
 
 ## Rules
 
