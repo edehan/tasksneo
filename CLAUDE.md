@@ -38,25 +38,6 @@ features details written in human language messy stored in `docs/features/`, rea
 - Return errors as `{ error: string, code: string }`.
 - Use English as main language. 
 
-## Running the project
-
-```bash
-# Start infrastructure (postgres, redis, minio)
-cd infra && docker compose -f docker-compose.dev.yml up -d
-
-# Install dependencies
-pnpm install
-
-# Run database migrations
-cd packages/db && npx prisma migrate dev
-
-# Start backend (port 3001)
-cd apps/api && pnpm dev
-
-# Start frontend (port 3000)
-cd apps/web && pnpm dev
-```
-
 ## IMPORTANT: Never modify files in `packages/db/prisma/migrations/` directly.
 
 Always use `prisma migrate dev` to generate migration files.
