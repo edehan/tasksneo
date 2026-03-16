@@ -1,6 +1,101 @@
 @baseUrl = http://localhost:3001
-@token = REPLACE_WITH_JWT
+@ownerToken = REPLACE_OWNER_TOKEN
+@memberToken = REPLACE_MEMBER_TOKEN
+@taskId = REPLACE_TASK_ID
+@submissionId = REPLACE_SUBMISSION_ID
 
-### Placeholder for future task APIs
-GET {{baseUrl}}/health
-Authorization: Bearer {{token}}
+### Parse task text (AI)
+POST {{baseUrl}}/tasks/parse
+Authorization: Bearer {{ownerToken}}
+Content-Type: application/json
+
+{
+  "text": "Homework due tomorrow"
+}
+
+### Get task detail
+GET {{baseUrl}}/tasks/{{taskId}}
+Authorization: Bearer {{ownerToken}}
+
+### Update task
+PATCH {{baseUrl}}/tasks/{{taskId}}
+Authorization: Bearer {{ownerToken}}
+Content-Type: application/json
+
+{
+  "title": "Task 1 Updated"
+}
+
+### Mark viewed
+POST {{baseUrl}}/tasks/{{taskId}}/view
+Authorization: Bearer {{memberToken}}
+Content-Type: application/json
+
+{}
+
+### Update my task state
+PATCH {{baseUrl}}/tasks/{{taskId}}/state
+Authorization: Bearer {{memberToken}}
+Content-Type: application/json
+
+{
+  "tags": ["urgent"],
+  "sortOrder": 1
+}
+
+### Upload task attachments (multipart)
+POST {{baseUrl}}/tasks/{{taskId}}/attachments
+Authorization: Bearer {{ownerToken}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="files"; filename="task.txt"
+Content-Type: text/plain
+
+hello task
+--boundary--
+
+### Upload my submission attachments (multipart)
+POST {{baseUrl}}/tasks/{{taskId}}/submissions/me/attachments
+Authorization: Bearer {{memberToken}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="files"; filename="submission.txt"
+Content-Type: text/plain
+
+hello submission
+--boundary--
+
+### Get my submission
+GET {{baseUrl}}/tasks/{{taskId}}/submissions/me
+Authorization: Bearer {{memberToken}}
+
+### List all submissions (admin)
+GET {{baseUrl}}/tasks/{{taskId}}/submissions
+Authorization: Bearer {{ownerToken}}
+
+### Grade submission
+PATCH {{baseUrl}}/tasks/{{taskId}}/submissions/{{submissionId}}/grade
+Authorization: Bearer {{ownerToken}}
+Content-Type: application/json
+
+{
+  "score": "95.5",
+  "reviewNote": "Good work"
+}
+
+### Export submissions CSV
+GET {{baseUrl}}/tasks/{{taskId}}/submissions/export
+Authorization: Bearer {{ownerToken}}
+
+### Rename submission attachments
+POST {{baseUrl}}/tasks/{{taskId}}/submissions/rename
+Authorization: Bearer {{ownerToken}}
+Content-Type: application/json
+
+{}
+
+### Delete task
+DELETE {{baseUrl}}/tasks/{{taskId}}
+Authorization: Bearer {{ownerToken}}

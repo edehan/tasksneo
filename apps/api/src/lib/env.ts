@@ -6,6 +6,12 @@ export interface AppEnv {
   databaseUrl: string;
   adminToken: string;
   jwtSecret: string;
+  redisUrl: string;
+  minioEndpoint: string;
+  minioPort: number;
+  minioAccessKey: string;
+  minioSecretKey: string;
+  minioBucket: string;
 }
 
 const DEFAULT_LISTEN_ADDR = '0.0.0.0:3001';
@@ -39,9 +45,19 @@ export function loadEnv(): AppEnv {
     databaseUrl: requireEnv('DATABASE_URL'),
     adminToken: requireEnv('ADMIN_TOKEN'),
     jwtSecret: requireEnv('JWT_SECRET'),
+    redisUrl: requireEnv('REDIS_URL'),
+    minioEndpoint: requireEnv('MINIO_ENDPOINT'),
+    minioPort: Number(requireEnv('MINIO_PORT')),
+    minioAccessKey: requireEnv('MINIO_ACCESS_KEY'),
+    minioSecretKey: requireEnv('MINIO_SECRET_KEY'),
+    minioBucket: requireEnv('MINIO_BUCKET'),
   };
 }
 
 export function getJwtSecret(): string {
   return requireEnv('JWT_SECRET');
+}
+
+export function getAdminToken(): string {
+  return requireEnv('ADMIN_TOKEN');
 }

@@ -145,12 +145,12 @@ Membership and role within a class.
 
 ### tasks
 
-Belongs to exactly one class. Uses soft delete when submissions exist.
+Usually belongs to one class. For class-deletion cleanup, a soft-deleted task can be detached from class (`classId = NULL`) while submissions still reference it.
 
 | Column | Type | Notes |
 |---|---|---|
 | id | UUID PK | |
-| classId | UUID FK → classes | CASCADE on delete |
+| classId | UUID? FK → classes | SET NULL on class delete; nullable for detached soft-deleted tasks |
 | createdBy | UUID? FK → users | SET NULL on user delete |
 | title | String | cleared to empty string on soft delete |
 | description | String? | Markdown source; cleared to NULL on soft delete |

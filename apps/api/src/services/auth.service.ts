@@ -5,6 +5,7 @@ import { getJwtSecret } from '../lib/env.js';
 import { AppError } from '../lib/errors.js';
 import { signUserJwt } from '../lib/jwt.js';
 import { toUserProfile } from '../lib/http.js';
+import { assertRegistrationOpen } from './system-config.service.js';
 
 const SALT_ROUNDS = 10;
 const PERSONAL_CLASS_NAME = '个人空间';
@@ -23,12 +24,22 @@ export interface LoginInput {
 }
 
 export async function register(input: RegisterInput) {
+  await assertRegistrationOpen();
+
   if (input.schoolId && !input.studentId) {
     throw new AppError(400, 'STUDENT_ID_REQUIRED', 'studentId is required when schoolId is provided');
   }
 
   if (!input.schoolId && input.studentId) {
     throw new AppError(400, 'SCHOOL_ID_REQUIRED', 'schoolId is required when studentId is provided');
+  }
+
+  if (input.schoolId) {
+    const school = await prisma.school.findUnique({ where: { id: input.schoolId } });
+
+    if (!school) {
+      throw new AppError(400, 'SCHOOL_NOT_FOUND', 'School does not exist');
+    }
   }
 
   const existingUser = await prisma.user.findUnique({ where: { email: input.email } });

@@ -1,24 +1,9 @@
 import { serve } from '@hono/node-server';
-import { Hono } from 'hono';
 
+import { app } from './app.js';
 import { loadEnv } from './lib/env.js';
-import { errorHandler } from './middleware/error.js';
-import { authRouter } from './routes/auth.js';
-import { classesRouter } from './routes/classes.js';
-import { usersRouter } from './routes/users.js';
-
-import type { AppVariables } from './types/context.js';
 
 const env = loadEnv();
-
-const app = new Hono<{ Variables: AppVariables }>();
-
-app.onError(errorHandler);
-
-app.get('/health', (c) => c.json({ status: 'ok' }, 200));
-app.route('/auth', authRouter);
-app.route('/classes', classesRouter);
-app.route('/users', usersRouter);
 
 serve(
   {

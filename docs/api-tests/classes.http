@@ -1,66 +1,26 @@
 @baseUrl = http://localhost:3001
-@ownerEmail = owner-demo@example.com
-@memberEmail = member-demo@example.com
-@password = Passw0rd!
 @ownerToken = REPLACE_OWNER_TOKEN
 @memberToken = REPLACE_MEMBER_TOKEN
 @classId = REPLACE_CLASS_ID
+@memberUserId = REPLACE_MEMBER_USER_ID
 @inviteCode = REPLACE_INVITE_CODE
 
-### 1) Register owner
-POST {{baseUrl}}/auth/register
-Content-Type: application/json
+### List my classes
+GET {{baseUrl}}/classes
+Authorization: Bearer {{ownerToken}}
 
-{
-  "email": "{{ownerEmail}}",
-  "password": "{{password}}",
-  "nickname": "Owner"
-}
-
-### 2) Login owner
-POST {{baseUrl}}/auth/login
-Content-Type: application/json
-
-{
-  "email": "{{ownerEmail}}",
-  "password": "{{password}}"
-}
-
-### 3) Owner create class
+### Create class
 POST {{baseUrl}}/classes
 Authorization: Bearer {{ownerToken}}
 Content-Type: application/json
 
 {
   "name": "Physics 101",
-  "description": "Week 1 tasks",
+  "description": "Week 1",
   "color": "#0f766e"
 }
 
-### 4) Owner list classes
-GET {{baseUrl}}/classes
-Authorization: Bearer {{ownerToken}}
-
-### 5) Register member
-POST {{baseUrl}}/auth/register
-Content-Type: application/json
-
-{
-  "email": "{{memberEmail}}",
-  "password": "{{password}}",
-  "nickname": "Member"
-}
-
-### 6) Login member
-POST {{baseUrl}}/auth/login
-Content-Type: application/json
-
-{
-  "email": "{{memberEmail}}",
-  "password": "{{password}}"
-}
-
-### 7) Member join class by invite code
+### Join class by invite
 POST {{baseUrl}}/classes/join
 Authorization: Bearer {{memberToken}}
 Content-Type: application/json
@@ -69,10 +29,67 @@ Content-Type: application/json
   "inviteCode": "{{inviteCode}}"
 }
 
-### 8) Member get class detail
+### Get class detail
 GET {{baseUrl}}/classes/{{classId}}
-Authorization: Bearer {{memberToken}}
+Authorization: Bearer {{ownerToken}}
 
-### 9) Owner get class members
+### Update class
+PATCH {{baseUrl}}/classes/{{classId}}
+Authorization: Bearer {{ownerToken}}
+Content-Type: application/json
+
+{
+  "description": "Updated description"
+}
+
+### Refresh invite code
+POST {{baseUrl}}/classes/{{classId}}/invite-code
+Authorization: Bearer {{ownerToken}}
+Content-Type: application/json
+
+{}
+
+### Transfer ownership
+POST {{baseUrl}}/classes/{{classId}}/transfer
+Authorization: Bearer {{ownerToken}}
+Content-Type: application/json
+
+{
+  "newOwnerId": "{{memberUserId}}"
+}
+
+### List class members
 GET {{baseUrl}}/classes/{{classId}}/members
+Authorization: Bearer {{ownerToken}}
+
+### Update member role
+PATCH {{baseUrl}}/classes/{{classId}}/members/{{memberUserId}}
+Authorization: Bearer {{ownerToken}}
+Content-Type: application/json
+
+{
+  "role": "ADMIN"
+}
+
+### Remove member
+DELETE {{baseUrl}}/classes/{{classId}}/members/{{memberUserId}}
+Authorization: Bearer {{ownerToken}}
+
+### List class tasks
+GET {{baseUrl}}/classes/{{classId}}/tasks
+Authorization: Bearer {{ownerToken}}
+
+### Create class task
+POST {{baseUrl}}/classes/{{classId}}/tasks
+Authorization: Bearer {{ownerToken}}
+Content-Type: application/json
+
+{
+  "title": "Task 1",
+  "description": "Solve chapter 1",
+  "dueAt": "2026-12-31T12:00:00.000Z"
+}
+
+### Delete class
+DELETE {{baseUrl}}/classes/{{classId}}
 Authorization: Bearer {{ownerToken}}

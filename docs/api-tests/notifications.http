@@ -1,0 +1,17 @@
+@baseUrl = http://localhost:3001
+@adminToken = change-me-use-a-long-random-string
+
+### Notification behavior note
+# Notifications are triggered by task creation and processed asynchronously by Bull + Redis worker.
+# To enable worker in API process, set:
+#   NOTIFICATION_WORKER_ENABLED=true
+# Then create a task via /classes/{classId}/tasks and inspect notification_jobs in DB.
+
+### Optional: Ensure registration is open before notification testing
+PATCH {{baseUrl}}/admin/config
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "auth.registration_open": "true"
+}

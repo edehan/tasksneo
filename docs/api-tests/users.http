@@ -1,0 +1,59 @@
+@baseUrl = http://localhost:3001
+@token = REPLACE_WITH_TOKEN
+
+### Get my profile
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{token}}
+
+### Update my profile
+PATCH {{baseUrl}}/users/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nickname": "Updated Name"
+}
+
+### Update my password
+PATCH {{baseUrl}}/users/me/password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "currentPassword": "Passw0rd!",
+  "newPassword": "Passw0rd!2"
+}
+
+### Get notification preferences
+GET {{baseUrl}}/users/me/notification-prefs
+Authorization: Bearer {{token}}
+
+### Upsert notification preference
+PUT {{baseUrl}}/users/me/notification-prefs
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "channel": "EMAIL",
+  "address": "demo@example.com",
+  "isEnabled": true
+}
+
+### Upload avatar (multipart)
+POST {{baseUrl}}/users/me/avatar
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="avatar.txt"
+Content-Type: text/plain
+
+hello avatar
+--boundary--
+
+### Delete my account
+POST {{baseUrl}}/users/me/delete
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}

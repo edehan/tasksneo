@@ -4,5 +4,6 @@ export interface AuthUser {
 }
 
 export interface AppVariables {
-  authUser: AuthUser;
+  authUser?: AuthUser;
+  isAdmin?: boolean;
 }

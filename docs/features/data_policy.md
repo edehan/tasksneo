@@ -73,16 +73,17 @@ v1 不对外提供用户自助删除提交的入口，可作为管理员功能�
 
 由班级 OWNER 执行。
 
-删除 `classes` 记录后，FK CASCADE 自动处理：
-- `class_members` 记录
-- 该班级下所有 `tasks` 记录
-  - → `task_user_state` 记录（从 tasks CASCADE）
-  - → `taskId` 指向这些任务的 `attachments` 记录（从 tasks CASCADE）
-  - → `notification_jobs` 记录（从 tasks CASCADE）
+删除班级不是简单 CASCADE，而是应用层分流处理任务：
 
-**提交记录不会被删除。** `submissions.taskId` 不设置 ON DELETE CASCADE。提交记录及其附件在班级删除后继续存在。被删除任务对应的 `tasks` 行不复存在，`submissions.taskId` 指向一个已不存在的记录——这是可接受的，提交是用户自己的数据。
+1. 找出该班级所有任务。
+2. 对每个任务：
+   - 若提交数为 0：硬删除任务（清理 `task_user_state`、任务附件、通知 job）。
+   - 若提交数 > 0：软删除任务（`deletedAt`、清空标题/正文、删除任务附件），并将 `classId` 置空（任务脱离班级但继续保留）。
+3. 删除 `classes` 记录（并清理 `class_members`）。
 
-应用层须在删除班级记录前，手动清除所有任务附件的 MinIO 对象，因为 MinIO 不感知数据库的级联行为。
+**提交记录不会被删除。** `submissions.taskId` 始终指向真实存在的任务行（软删保留的任务元数据），不会形成“指向不存在 task 的 submission”。
+
+补充：当某软删且已脱离班级的任务后续提交被删到 0 条时，系统应触发该任务硬删除，避免长期残留不可访问元数据。
 
 ---
 

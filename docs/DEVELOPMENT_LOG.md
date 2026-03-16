@@ -95,6 +95,49 @@
 
 ---
 
+## 2026-03-17 — Backend Full API Expansion + Integration Tests
+
+- Scope:
+  - Stopped extending frontend demo and shifted fully to backend.
+  - Implemented remaining API domains:
+    - users (profile update/password/notification prefs/avatar/delete)
+    - schools (public list)
+    - classes (update/delete/invite refresh/transfer/member role/member removal)
+    - tasks/submissions/files (parse/detail/update/delete/view/state/upload/grade/export/rename/file access)
+    - admin (config/users/schools)
+  - Added queue/mail/config/storage building blocks:
+    - Bull queue + notification worker entry
+    - SMTP sender via nodemailer
+    - MinIO file upload/remove/presign
+    - system_config encrypted secret storage
+  - Added automated API integration tests with Vitest and full-flow endpoint coverage.
+  - Added DB migration to support class-deletion policy:
+    - `tasks.classId` becomes nullable so soft-deleted task metadata can detach from deleted class.
+- Key Decisions:
+  - OpenAPI is treated as editable contract; implementation-first alignment is allowed.
+  - Class deletion follows split strategy:
+    - tasks with submissions => soft delete + `classId = null`
+    - tasks without submissions => hard delete
+    - submissions remain
+  - Added orphan task cleanup path:
+    - when submission is removed and task has `classId = null` + no submissions, task hard deletes.
+  - Notification worker is opt-in runtime (`NOTIFICATION_WORKER_ENABLED=true`) to keep API process stable in constrained environments.
+- Pitfalls and Causes:
+  - `.env` had corrupted `REDIS_URL` value from previous shell run; caused Bull `select NaN` runtime errors.
+  - MinIO file keys contain `/`; file route must support multi-segment param (`/:fileKey{.+}`) and callers should URL-encode.
+  - Env loading at module import time breaks tests; switched queue/storage to lazy env initialization.
+  - Vitest picked up `dist/` test output unexpectedly; fixed with explicit include/exclude in `vitest.config.ts`.
+- Verification Commands and Results:
+  - `pnpm --filter @taskflow/db exec prisma migrate dev --name make-task-class-nullable` passed.
+  - `pnpm --filter @taskflow/api build` passed.
+  - `pnpm --filter @taskflow/api test` passed with real integration flow (DB + MinIO + Redis reachable).
+  - API manual scenario files were expanded to per-domain coverage in `docs/api-tests/*.http`.
+- Next Step:
+  - Keep endpoint-level tests evolving with every API behavior change.
+  - Align OpenAPI/details docs with any future wire-shape adjustments immediately after code changes.
+
+---
+
 ## Current Understanding Snapshot
 
 - Product shape:

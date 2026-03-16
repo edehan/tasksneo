@@ -1,0 +1,7 @@
+@baseUrl = http://localhost:3001
+@token = REPLACE_WITH_TOKEN
+@fileKey = REPLACE_WITH_FILE_KEY_URL_ENCODED
+
+### Get authorized file URL
+GET {{baseUrl}}/files/{{fileKey}}
+Authorization: Bearer {{token}}

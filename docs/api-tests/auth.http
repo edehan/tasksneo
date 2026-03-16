@@ -1,14 +1,16 @@
 @baseUrl = http://localhost:3001
-@token = REPLACE_WITH_JWT
+@email = demo-auth@example.com
+@password = Passw0rd!
+@token = REPLACE_WITH_TOKEN
 
 ### Register
 POST {{baseUrl}}/auth/register
 Content-Type: application/json
 
 {
-  "email": "demo@example.com",
-  "password": "Passw0rd!",
-  "nickname": "Demo User"
+  "email": "{{email}}",
+  "password": "{{password}}",
+  "nickname": "Demo Auth"
 }
 
 ### Login
@@ -16,8 +18,8 @@ POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
-  "email": "demo@example.com",
-  "password": "Passw0rd!"
+  "email": "{{email}}",
+  "password": "{{password}}"
 }
 
 ### Me

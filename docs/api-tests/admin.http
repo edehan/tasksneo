@@ -1,0 +1,53 @@
+@baseUrl = http://localhost:3001
+@adminToken = change-me-use-a-long-random-string
+@userId = REPLACE_USER_ID
+@schoolId = REPLACE_SCHOOL_ID
+
+### Get system config
+GET {{baseUrl}}/admin/config
+Authorization: Bearer {{adminToken}}
+
+### Patch system config
+PATCH {{baseUrl}}/admin/config
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "app.title": "TaskFlow",
+  "auth.registration_open": "true"
+}
+
+### List users
+GET {{baseUrl}}/admin/users
+Authorization: Bearer {{adminToken}}
+
+### Patch user status/password
+PATCH {{baseUrl}}/admin/users/{{userId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "isActive": false,
+  "password": "Passw0rd!"
+}
+
+### Delete user
+DELETE {{baseUrl}}/admin/users/{{userId}}
+Authorization: Bearer {{adminToken}}
+
+### List schools
+GET {{baseUrl}}/admin/schools
+Authorization: Bearer {{adminToken}}
+
+### Create school
+POST {{baseUrl}}/admin/schools
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Example School"
+}
+
+### Delete school
+DELETE {{baseUrl}}/admin/schools/{{schoolId}}
+Authorization: Bearer {{adminToken}}

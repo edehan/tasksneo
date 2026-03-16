@@ -63,3 +63,100 @@ export function toClassMember(member: ClassMemberSource) {
     joinedAt: member.joinedAt.toISOString(),
   };
 }
+
+interface TaskUserStateSource {
+  viewedAt: Date | null;
+  tags: string[];
+  sortOrder: number;
+}
+
+interface TaskSummarySource {
+  id: string;
+  classId: string | null;
+  title: string;
+  startAt: Date | null;
+  dueAt: Date | null;
+  allowLateSubmission: boolean;
+  blockedBy: string[];
+  createdBy: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  class: { name: string } | null;
+}
+
+export function toTaskUserState(state: TaskUserStateSource | null) {
+  if (!state) {
+    return null;
+  }
+
+  return {
+    viewedAt: state.viewedAt?.toISOString() ?? null,
+    tags: state.tags,
+    sortOrder: state.sortOrder,
+  };
+}
+
+export function toTaskSummary(task: TaskSummarySource, state: TaskUserStateSource | null) {
+  return {
+    id: task.id,
+    classId: task.classId,
+    className: task.class?.name ?? null,
+    title: task.title,
+    startAt: task.startAt?.toISOString() ?? null,
+    dueAt: task.dueAt?.toISOString() ?? null,
+    allowLateSubmission: task.allowLateSubmission,
+    blockedBy: task.blockedBy,
+    createdBy: task.createdBy,
+    createdAt: task.createdAt.toISOString(),
+    updatedAt: task.updatedAt.toISOString(),
+    userState: toTaskUserState(state),
+  };
+}
+
+interface AttachmentSource {
+  id: string;
+  fileKey: string;
+  originalName: string;
+  renamedFile: string | null;
+  mimeType: string | null;
+  sizeBytes: bigint | null;
+  createdAt: Date;
+}
+
+export function toAttachmentMeta(attachment: AttachmentSource) {
+  return {
+    id: attachment.id,
+    fileKey: attachment.fileKey,
+    originalName: attachment.originalName,
+    renamedFile: attachment.renamedFile,
+    mimeType: attachment.mimeType,
+    sizeBytes: attachment.sizeBytes ? Number(attachment.sizeBytes) : null,
+    createdAt: attachment.createdAt.toISOString(),
+  };
+}
+
+interface SubmissionSource {
+  id: string;
+  taskId: string;
+  userId: string;
+  firstSubmittedAt: Date;
+  lastUpdatedAt: Date;
+  score: unknown;
+  reviewerId: string | null;
+  reviewedAt: Date | null;
+  reviewNote: string | null;
+}
+
+export function toSubmission(submission: SubmissionSource) {
+  return {
+    id: submission.id,
+    taskId: submission.taskId,
+    userId: submission.userId,
+    firstSubmittedAt: submission.firstSubmittedAt.toISOString(),
+    lastUpdatedAt: submission.lastUpdatedAt.toISOString(),
+    score: submission.score !== null && submission.score !== undefined ? String(submission.score) : null,
+    reviewerId: submission.reviewerId,
+    reviewedAt: submission.reviewedAt?.toISOString() ?? null,
+    reviewNote: submission.reviewNote,
+  };
+}

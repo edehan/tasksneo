@@ -1,0 +1,4 @@
+@baseUrl = http://localhost:3001
+
+### Public schools list
+GET {{baseUrl}}/schools
