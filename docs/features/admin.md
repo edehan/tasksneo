@@ -64,7 +64,7 @@ Authorization: Bearer <ADMIN_TOKEN>
 
 ## 用户管理
 
-控制平面提供基础的用户管理能力，不涉及班级和任务的管理。
+控制平面提供基础的用户管理能力，不涉及班级和任务的管理。主要是禁止用户登录、修改用户基本信息（昵称电子邮件密码等），暂不支持删除用户，后续完善。
 
 ### 支持的操作
 
@@ -74,7 +74,6 @@ Authorization: Bearer <ADMIN_TOKEN>
 | 停用用户 | 将 `isActive` 设为 false。用户无法登录，现有 Token 在下次请求时被中间件拦截 |
 | 启用用户 | 将 `isActive` 设为 true |
 | 重置密码 | 管理员输入新密码，后端更新 `user_credentials` 中 `provider = LOCAL` 对应记录的 `passwordHash` |
-| 删除用户 | 管理员删除用户时**跳过**"必须先处理班级"的前置检查，直接执行删除序列（见 `data_policy.md`）。该用户拥有的非私有班级**不会被自动删除**，需管理员另行处理 |
 
 ---
 
