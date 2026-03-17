@@ -1,0 +1,7 @@
+.git
+.preview
+*.log
+.env
+.env.local
+.env.preview
+.env.test

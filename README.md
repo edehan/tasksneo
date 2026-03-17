@@ -69,6 +69,29 @@ cd apps/web && pnpm dev
 后端 API：http://localhost:3001  
 MinIO 控制台：http://localhost:9001（用户名/密码见 `.env`）
 
+## 本地预发布
+
+本地预发布用于查看每次提交后的可操作界面，不与日常开发端口冲突。
+
+- 入口文档：`docs/deployment/local-preview.md`
+- 预发布前端：`http://localhost:35540`
+- 预发布 API：`http://localhost:35541`
+
+初始化顺序：
+
+```bash
+cp .env.preview.example .env.preview
+cp .env.test.example .env.test
+pnpm preview:hooks
+pnpm preview:deploy
+```
+
+说明：
+
+- `preview` 使用独立 Docker volumes，数据默认保留
+- `test` 应使用 `.env.test`，避免影响 `preview`
+- 每次 `git commit` 后会自动触发本地预发布刷新
+
 ### 环境变量说明
 
 复制 `.env.example` 后，必填项：
@@ -84,26 +107,20 @@ MinIO 控制台：http://localhost:9001（用户名/密码见 `.env`）
 
 ## 生产部署
 
-使用 Docker Compose 一键部署：
+远程生产部署流程仍在建设中，当前仓库已优先完善本地开发与本地预发布。
+
+在正式生产部署链路完成之前，请先使用：
+
+- 本地开发：`docker-compose.dev.yml`
+- 本地预发布：`docker-compose.preview.yml`
+
+后续会补充正式生产 compose、反向代理与远程 CI/CD。
+
+当前预留的生产部署占位文件：
 
 ```bash
-cp .env.example .env
-# 编辑 .env，设置 ADMIN_TOKEN 和 DATABASE_URL
-
-cd infra
-docker compose -f docker-compose.prod.yml up -d
-```
-
-部署成功后，访问 `/admin` 完成 SMTP、LLM 等配置，系统即可正常使用。
-
-升级步骤：
-
-```bash
-git pull
-docker compose -f docker-compose.prod.yml build
-docker compose -f docker-compose.prod.yml up -d
-# 若有数据库变更：
-docker compose exec api npx prisma migrate deploy
+infra/docker-compose.prod.yml
+infra/nginx/nginx.conf
 ```
 
 ---

@@ -1,9 +1,16 @@
 import dotenv from 'dotenv';
+import fs from 'node:fs';
 import path from 'node:path';
 
 import { prisma } from '@taskflow/db';
 
-dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
+const repoRoot = path.resolve(process.cwd(), '../../');
+const testEnvPath = path.join(repoRoot, '.env.test');
+const fallbackEnvPath = path.join(repoRoot, '.env');
+
+dotenv.config({
+  path: fs.existsSync(testEnvPath) ? testEnvPath : fallbackEnvPath,
+});
 
 if (!process.env.JWT_SECRET) {
   process.env.JWT_SECRET = 'test-jwt-secret';

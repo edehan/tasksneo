@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -u
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+LOG_DIR="$ROOT_DIR/.preview"
+LOG_FILE="$LOG_DIR/post-commit.log"
+
+mkdir -p "$LOG_DIR"
+
+{
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] post-commit preview deployment started"
+  bash "$ROOT_DIR/scripts/preview-deploy.sh"
+  status=$?
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] post-commit preview deployment finished with status $status"
+} >>"$LOG_FILE" 2>&1 &
+
+echo "Preview deployment started in background. Logs: .preview/post-commit.log"
+exit 0
