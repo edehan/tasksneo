@@ -13,6 +13,29 @@
 
 ---
 
+## 2026-03-18 — Dev-First Collaboration Workflow
+
+- Scope:
+  - Reframed local collaboration so `dev` becomes the default visual feedback loop and `preview` becomes a manual acceptance environment.
+  - Added one-command local dev entrypoints and optional hook enable/disable commands.
+  - Documented the distinction between live collaboration and stable preview verification.
+- Key Decisions:
+  - Keep all three environments (`dev / preview / test`) and change the default workflow rather than collapsing them.
+  - Disable hook-driven preview deployment by default; keep it available as an explicit opt-in.
+  - Use existing platform tools (`next dev`, `tsx watch`, Docker infra) instead of introducing a separate frontend preview system.
+- Pitfalls and Causes:
+  - The earlier preview-first workflow forced commit before visual verification, which slowed collaborative frontend iteration.
+  - Local preview is valuable for stable verification, but too heavy and permission-sensitive for every UI tweak.
+- Verification Commands and Results:
+  - `bash -n scripts/*.sh` passed for all dev and preview shell scripts.
+  - `pnpm --filter @taskflow/api test` passed.
+  - `pnpm --filter web build` passed.
+  - `bash scripts/dev-infra.sh` started local dev infrastructure successfully.
+  - `timeout 12 bash scripts/dev-up.sh` successfully started the API and web dev servers before timed shutdown.
+  - `pnpm preview:hooks:disable` cleared the local repository hook override.
+- Next Step:
+  - Use `pnpm dev` as the default collaboration path and keep `pnpm preview:deploy` for manual acceptance checks.
+
 ## 2026-03-17 — Local Preview Pipeline V1
 
 - Scope:

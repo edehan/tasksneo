@@ -48,32 +48,39 @@ git clone <repo-url> && cd taskflow
 # 2. 复制并填写环境变量
 cp .env.example .env
 
-# 3. 启动基础设施（PG + Redis + MinIO）
-cd infra && docker compose -f docker-compose.dev.yml up -d && cd ..
-
-# 4. 安装依赖
+# 3. 安装依赖
 pnpm install
 
-# 5. 执行数据库迁移
+# 4. 执行数据库迁移
 cd packages/db && npx prisma migrate dev && cd ../..
 
-# 6. 启动后端
-cd apps/api && pnpm dev
-# 另开终端
-
-# 7. 启动前端
-cd apps/web && pnpm dev
+# 5. 一键启动本地开发环境
+pnpm dev
 ```
 
-前端访问：http://localhost:3000  
-后端 API：http://localhost:3001  
-MinIO 控制台：http://localhost:9001（用户名/密码见 `.env`）
+默认访问：
+
+- 前端：http://localhost:3000
+- 管理后台：http://localhost:3000/admin
+- 后端 API：http://localhost:3001
+- MinIO 控制台：http://localhost:9001（用户名/密码见 `.env`）
+
+更多命令见：[`docs/deployment/local-dev.md`](docs/deployment/local-dev.md)
+
+可选的分步命令：
+
+```bash
+pnpm dev:infra
+pnpm dev:api
+pnpm dev:web
+pnpm dev:down
+```
 
 ## 本地预发布
 
-本地预发布用于查看每次提交后的可操作界面，不与日常开发端口冲突。
+本地预发布用于阶段性验收和稳定体验，不与日常开发端口冲突。
 
-- 入口文档：`docs/deployment/local-preview.md`
+- 入口文档：[`docs/deployment/local-preview.md`](docs/deployment/local-preview.md)
 - 预发布前端：`http://localhost:35540`
 - 预发布 API：`http://localhost:35541`
 
@@ -82,15 +89,22 @@ MinIO 控制台：http://localhost:9001（用户名/密码见 `.env`）
 ```bash
 cp .env.preview.example .env.preview
 cp .env.test.example .env.test
-pnpm preview:hooks
 pnpm preview:deploy
 ```
 
 说明：
 
+- `dev` 是默认协作入口，支持热更新
 - `preview` 使用独立 Docker volumes，数据默认保留
 - `test` 应使用 `.env.test`，避免影响 `preview`
-- 每次 `git commit` 后会自动触发本地预发布刷新
+- `preview` 默认手工部署；只有显式启用 hook 后才会在 commit 后自动刷新
+
+可选 hook 命令：
+
+```bash
+pnpm preview:hooks:enable
+pnpm preview:hooks:disable
+```
 
 ### 环境变量说明
 
@@ -102,6 +116,7 @@ pnpm preview:deploy
 | `JWT_SECRET` | 普通用户登录态签名密钥 |
 | `SYSTEM_CONFIG_SECRET` | 敏感系统配置的数据库加密密钥，需保持稳定 |
 | `DATABASE_URL` | PostgreSQL 连接串 |
+| `NEXT_PUBLIC_API_BASE_URL` | 前端访问后端 API 的地址，开发环境默认 `http://localhost:3001` |
 
 其余业务配置（SMTP 主机、端口、发件人、LLM 模型等）在启动后通过 `/admin` 控制台填写；其中敏感值会使用 `SYSTEM_CONFIG_SECRET` 加密后存入数据库。
 

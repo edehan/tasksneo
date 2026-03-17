@@ -4,8 +4,8 @@ This document defines the three local environments used by TaskFlow and the work
 
 ## Environment Roles
 
-- `dev`: day-to-day implementation and debugging. Ports stay on the existing defaults.
-- `preview`: a stable pre-release snapshot you can open in the browser after each commit.
+- `dev`: day-to-day implementation and debugging with hot reload. See `docs/deployment/local-dev.md`.
+- `preview`: a stable pre-release snapshot you can deploy manually when you want a cleaner acceptance pass.
 - `test`: automated validation only. Tests may reset data and must never point at `preview`.
 
 ## Preview Ports
@@ -46,14 +46,18 @@ Useful commands:
 - `pnpm preview:status`
 - `pnpm preview:logs`
 - `pnpm preview:reset`
-- `pnpm preview:hooks`
+- `pnpm preview:hooks:enable`
+- `pnpm preview:hooks:disable`
 
-## Post-Commit Automation
+## Hook Automation Is Optional
 
-- `pnpm preview:hooks` configures `core.hooksPath` to use the repository `.githooks/` directory.
-- The `post-commit` hook starts `scripts/preview-deploy.sh` in the background.
+- `pnpm preview:hooks:enable` configures `core.hooksPath` to use the repository `.githooks/` directory.
+- `pnpm preview:hooks:disable` returns the repository to the default `.git/hooks` behavior.
+- If enabled, the `post-commit` hook starts `scripts/preview-deploy.sh` in the background.
 - Commit success is never blocked by preview deployment failure.
 - Background logs are written to `.preview/post-commit.log`.
+
+This repository no longer treats hook-driven preview deployment as the default workflow. Manual preview deployment is the default.
 
 ## Setup Checklist
 
@@ -61,9 +65,9 @@ Useful commands:
 2. Copy `.env.test.example` to `.env.test`
 3. Review secret values in both files
 4. Keep `SYSTEM_CONFIG_SECRET` stable once preview starts storing encrypted config values
-5. Run `pnpm preview:hooks`
-6. Run `pnpm preview:deploy`
-7. Open `http://localhost:35540`
+5. Run `pnpm preview:deploy`
+6. Open `http://localhost:35540`
+7. Only if you want auto-deploy after commit, run `pnpm preview:hooks:enable`
 
 Secret roles:
 
