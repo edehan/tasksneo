@@ -33,6 +33,7 @@ model User {
 
   schoolId  String? @map("school_id")
   studentId String? @map("student_id")
+  timezone  String  @default("UTC") @db.VarChar(64)
   school    School? @relation(fields: [schoolId], references: [id], onDelete: SetNull)
 
   // 同一学校内学号唯一

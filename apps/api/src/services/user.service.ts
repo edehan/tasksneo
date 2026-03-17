@@ -29,7 +29,7 @@ export async function getMyProfile(userId: string) {
 
 export async function updateMyProfile(
   userId: string,
-  input: { nickname?: string | null; schoolId?: string | null; studentId?: string | null },
+  input: { nickname?: string | null; schoolId?: string | null; studentId?: string | null; timezone?: string },
 ) {
   if (input.schoolId && !input.studentId) {
     throw new AppError(400, 'STUDENT_ID_REQUIRED', 'studentId is required when schoolId is provided');
@@ -53,6 +53,7 @@ export async function updateMyProfile(
       nickname: input.nickname,
       schoolId: input.schoolId,
       studentId: input.studentId,
+      ...(input.timezone !== undefined ? { timezone: input.timezone } : {}),
     },
     include: {
       school: {

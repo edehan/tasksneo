@@ -10,6 +10,7 @@ export interface UserProfile {
   schoolId: string | null;
   schoolName: string | null;
   studentId: string | null;
+  timezone: string;
   isActive: boolean;
   createdAt: string;
 }

@@ -22,6 +22,7 @@ const updateProfileSchema = z.object({
   nickname: z.string().optional().nullable(),
   schoolId: z.string().uuid().optional().nullable(),
   studentId: z.string().optional().nullable(),
+  timezone: z.string().max(64).optional(),
 });
 
 const updatePasswordSchema = z.object({

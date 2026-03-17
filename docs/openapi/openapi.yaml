@@ -83,6 +83,10 @@ components:
           type: string
           nullable: true
           description: 若 schoolId 不为空则必填
+        timezone:
+          type: string
+          description: IANA 时区标识符（如 Asia/Shanghai），由浏览器上报，未提供时默认 UTC
+          example: Asia/Shanghai
 
     LoginRequest:
       type: object
@@ -108,7 +112,7 @@ components:
 
     UserProfile:
       type: object
-      required: [id, email, isActive, createdAt]
+      required: [id, email, timezone, isActive, createdAt]
       properties:
         id:
           type: string
@@ -130,6 +134,10 @@ components:
         studentId:
           type: string
           nullable: true
+        timezone:
+          type: string
+          description: IANA 时区标识符
+          example: Asia/Shanghai
         isActive:
           type: boolean
         createdAt:
@@ -149,6 +157,10 @@ components:
         studentId:
           type: string
           nullable: true
+        timezone:
+          type: string
+          description: IANA 时区标识符（如 Asia/Shanghai）
+          example: America/New_York
 
     UpdatePasswordRequest:
       type: object
@@ -591,7 +603,7 @@ components:
 
     AdminUserSummary:
       type: object
-      required: [id, email, isActive, createdAt]
+      required: [id, email, timezone, isActive, createdAt]
       properties:
         id:
           type: string
@@ -607,6 +619,10 @@ components:
         studentId:
           type: string
           nullable: true
+        timezone:
+          type: string
+          description: IANA 时区标识符
+          example: Asia/Shanghai
         isActive:
           type: boolean
         createdAt:
