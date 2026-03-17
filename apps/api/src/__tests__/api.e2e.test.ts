@@ -3,6 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { prisma } from '@taskflow/db';
 
 import { createApp } from '../app.js';
+import { decryptConfigValue, encryptConfigValue } from '../lib/system-config.js';
 import { json, requestJson, resetDatabase, uniqueEmail } from './test-helpers.js';
 
 const app = createApp({ startWorker: false });
@@ -71,6 +72,12 @@ describe('TaskFlow API e2e', () => {
     expect(response.status).toBe(200);
     const body = (await json(response)) as Record<string, string>;
     expect(body['smtp.password']).toBe('[re-enter value]');
+  });
+
+  it('round-trips encrypted system config values', () => {
+    const encrypted = encryptConfigValue('preview-pass-123');
+
+    expect(decryptConfigValue(encrypted)).toBe('preview-pass-123');
   });
 
   it('covers all implemented endpoints success and key failures', async () => {

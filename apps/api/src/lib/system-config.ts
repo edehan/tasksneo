@@ -24,7 +24,14 @@ export function decryptConfigValue(value: string): string {
     return value;
   }
 
-  const [, ivRaw, tagRaw, dataRaw] = value.split(':');
+  const payload = value.slice(`${ENCRYPTED_PREFIX}:`.length);
+  const parts = payload.split(':');
+
+  if (parts.length !== 3) {
+    throw new AppError(500, 'CONFIG_DECRYPT_FAILED', 'Encrypted system config payload is malformed');
+  }
+
+  const [ivRaw, tagRaw, dataRaw] = parts;
   const iv = Buffer.from(ivRaw, 'base64');
   const tag = Buffer.from(tagRaw, 'base64');
   const data = Buffer.from(dataRaw, 'base64');

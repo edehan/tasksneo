@@ -146,6 +146,13 @@ const CONFIG_GROUPS: Array<{ title: string; fields: ConfigField[] }> = [
 ];
 
 const CONFIG_KEYS = Object.keys(CONFIG_DEFAULTS) as ConfigKey[];
+const SECRET_CONFIG_KEYS = new Set<ConfigKey>([
+  "smtp.user",
+  "smtp.password",
+  "llm.api_key",
+]);
+const SECRET_MASK = "***";
+const SECRET_REENTER = "[re-enter value]";
 
 function normalizeConfig(config: Record<string, string>): ConfigState {
   const normalized = { ...CONFIG_DEFAULTS } as ConfigState;
@@ -176,6 +183,10 @@ function formatDateTime(value: string): string {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date);
+}
+
+function isSecretDisplayValue(key: ConfigKey, value: string): boolean {
+  return SECRET_CONFIG_KEYS.has(key) && (value === SECRET_MASK || value === SECRET_REENTER);
 }
 
 export function AdminControlPlane() {
@@ -621,18 +632,43 @@ export function AdminControlPlane() {
                               </span>
                             </div>
                           ) : (
-                            <Input
-                              id={field.key}
-                              type={field.type ?? "text"}
-                              placeholder={field.placeholder}
-                              value={configForm[field.key]}
-                              onChange={(event) =>
-                                setConfigForm((prev) => ({
-                                  ...prev,
-                                  [field.key]: event.target.value,
-                                }))
-                              }
-                            />
+                            <div className="space-y-2">
+                              <Input
+                                id={field.key}
+                                type={field.type ?? "text"}
+                                placeholder={
+                                  isSecretDisplayValue(
+                                    field.key,
+                                    configForm[field.key],
+                                  )
+                                    ? configForm[field.key] === SECRET_REENTER
+                                      ? "Re-enter and save a new value"
+                                      : "Value saved and hidden"
+                                    : field.placeholder
+                                }
+                                value={
+                                  isSecretDisplayValue(
+                                    field.key,
+                                    configForm[field.key],
+                                  )
+                                    ? ""
+                                    : configForm[field.key]
+                                }
+                                onChange={(event) =>
+                                  setConfigForm((prev) => ({
+                                    ...prev,
+                                    [field.key]: event.target.value,
+                                  }))
+                                }
+                              />
+                              {SECRET_CONFIG_KEYS.has(field.key) &&
+                                configInitial[field.key] === SECRET_REENTER && (
+                                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                                    Existing secret cannot be decrypted. Enter a
+                                    new value to replace it.
+                                  </p>
+                                )}
+                            </div>
                           )}
                         </div>
                       ))}
