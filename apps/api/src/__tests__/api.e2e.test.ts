@@ -3,6 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { prisma } from '@taskflow/db';
 
 import { createApp } from '../app.js';
+import { decryptConfigValue, encryptConfigValue } from '../lib/system-config.js';
 import { json, requestJson, resetDatabase, uniqueEmail } from './test-helpers.js';
 
 const app = createApp({ startWorker: false });
@@ -39,6 +40,46 @@ describe('TaskFlow API e2e', () => {
     }
   });
 
+  it('returns CORS headers for allowed frontend origins', async () => {
+    const response = await app.request('/health', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'http://localhost:35540',
+        'Access-Control-Request-Method': 'GET',
+        'Access-Control-Request-Headers': 'Authorization, Content-Type',
+      },
+    });
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get('access-control-allow-origin')).toBe('http://localhost:35540');
+    expect(response.headers.get('access-control-allow-headers')).toContain('Authorization');
+  });
+
+  it('returns placeholder text for undecryptable secret config values', async () => {
+    const adminToken = process.env.ADMIN_TOKEN ?? 'test-admin-token';
+
+    await prisma.systemConfig.create({
+      data: {
+        key: 'smtp.password',
+        value: 'enc:v1:AAAAAAAAAAAAAAAA:AAAAAAAAAAAAAAAAAAAAAA==:AAAAAAAA',
+      },
+    });
+
+    const response = await app.request('/admin/config', {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+
+    expect(response.status).toBe(200);
+    const body = (await json(response)) as Record<string, string>;
+    expect(body['smtp.password']).toBe('[re-enter value]');
+  });
+
+  it('round-trips encrypted system config values', () => {
+    const encrypted = encryptConfigValue('preview-pass-123');
+
+    expect(decryptConfigValue(encrypted)).toBe('preview-pass-123');
+  });
+
   it('covers all implemented endpoints success and key failures', async () => {
     const adminToken = process.env.ADMIN_TOKEN ?? 'test-admin-token';
 
@@ -57,6 +98,14 @@ describe('TaskFlow API e2e', () => {
       headers: { Authorization: `Bearer ${adminToken}` },
     });
     expect(configGet.status).toBe(200);
+
+    const sendTestEmailWithoutSmtp = await requestJson(app, '/admin/config/test-email', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${adminToken}` },
+      body: JSON.stringify({ to: 'smtp-test@example.com' }),
+    });
+    expect(sendTestEmailWithoutSmtp.response.status).toBe(400);
+    expect((sendTestEmailWithoutSmtp.body as { code: string }).code).toBe('SMTP_NOT_CONFIGURED');
 
     const schoolARes = await requestJson(app, '/admin/schools', {
       method: 'POST',

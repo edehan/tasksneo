@@ -13,6 +13,26 @@
 
 ---
 
+## 2026-03-17 — Local Preview Pipeline V1
+
+- Scope:
+  - Added a local preview environment design and implementation path for `dev / preview / test` separation.
+  - Introduced preview docs, env templates, Docker compose wiring, and post-commit deployment automation.
+  - Reserved preview ports in the `35540-35545` range and documented optional test reservation in `35560-35564`.
+- Key Decisions:
+  - Keep preview local-first and Docker-based; no GitHub CI/CD integration in this phase.
+  - Make preview data persistent and isolated from both dev and test.
+  - Use `post-commit` automation without blocking commit success.
+- Pitfalls and Causes:
+  - Existing `docker-compose.prod.yml` and nginx config were placeholders, so preview needed a clean dedicated path.
+  - API tests previously loaded `.env` directly, which risked destructive resets against non-test data.
+- Verification Commands and Results:
+  - Pending implementation verification in this step.
+- Next Step:
+  - Finish preview compose, scripts, Dockerfiles, and end-to-end deployment validation.
+
+---
+
 ## 2026-03-17 — Auth Baseline and Prisma v6 Cleanup
 
 - Scope:

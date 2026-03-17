@@ -4,6 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "preview:deploy": "bash scripts/preview-deploy.sh",
+    "preview:status": "bash scripts/preview-status.sh",
+    "preview:logs": "bash scripts/preview-logs.sh",
+    "preview:reset": "bash scripts/preview-reset-data.sh",
+    "preview:hooks": "bash scripts/setup-git-hooks.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

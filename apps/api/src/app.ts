@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 
 import { errorHandler } from './middleware/error.js';
 import { adminRouter } from './routes/admin.js';
@@ -12,10 +13,31 @@ import { startNotificationWorker } from './services/notification.service.js';
 
 import type { AppVariables } from './types/context.js';
 
+const ALLOWED_WEB_ORIGINS = new Set([
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:35540',
+  'http://127.0.0.1:35540',
+]);
+
 export function createApp(options?: { startWorker?: boolean }) {
   const app = new Hono<{ Variables: AppVariables }>();
 
   app.onError(errorHandler);
+  app.use(
+    '*',
+    cors({
+      origin: (origin) => {
+        if (!origin || ALLOWED_WEB_ORIGINS.has(origin)) {
+          return origin;
+        }
+
+        return '';
+      },
+      allowHeaders: ['Content-Type', 'Authorization'],
+      allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    }),
+  );
 
   app.get('/health', (c) => c.json({ status: 'ok' }, 200));
   app.route('/auth', authRouter);

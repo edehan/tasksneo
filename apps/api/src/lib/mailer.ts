@@ -44,10 +44,24 @@ export async function sendEmail(to: string, subject: string, text: string) {
     },
   });
 
-  await transporter.sendMail({
-    from: config.from,
-    to,
-    subject,
-    text,
-  });
+  try {
+    await transporter.sendMail({
+      from: config.from,
+      to,
+      subject,
+      text,
+    });
+  } catch (error) {
+    const code = typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined;
+
+    if (code === 'EAUTH') {
+      throw new AppError(400, 'SMTP_AUTH_FAILED', 'SMTP authentication failed');
+    }
+
+    if (code === 'ESOCKET' || code === 'ECONNECTION' || code === 'ETIMEDOUT') {
+      throw new AppError(503, 'SMTP_UNAVAILABLE', 'SMTP server is unavailable');
+    }
+
+    throw error;
+  }
 }

@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 
 import { AppError } from '../lib/errors.js';
 import { toUserProfile } from '../lib/http.js';
+import { sendEmail } from '../lib/mailer.js';
 import { adminDeleteUser } from './user.service.js';
 import { getConfigMap, updateConfig } from './system-config.service.js';
 import { createSchool, deleteSchool, listSchools } from './school.service.js';
@@ -105,6 +106,17 @@ export async function createAdminSchool(name: string) {
 
 export async function deleteAdminSchool(schoolId: string) {
   return deleteSchool(schoolId);
+}
+
+export async function sendAdminTestEmail(to: string) {
+  const sentAt = new Date().toISOString();
+  const instanceId = process.env.HOSTNAME ?? 'unknown';
+
+  await sendEmail(
+    to,
+    '[TaskFlow] SMTP Test Email',
+    `This is a test email from TaskFlow admin control plane.\n\nSent at (UTC): ${sentAt}\nInstance: ${instanceId}`,
+  );
 }
 
 export async function ensureEmailPrefForUser(userId: string, email: string) {

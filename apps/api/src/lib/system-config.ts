@@ -1,12 +1,13 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 
-import { getAdminToken } from './env.js';
+import { AppError } from './errors.js';
+import { getSystemConfigSecret } from './env.js';
 
 const ENCRYPTED_PREFIX = 'enc:v1';
 const CIPHER_ALGORITHM = 'aes-256-gcm';
 
 function getKey() {
-  return createHash('sha256').update(getAdminToken()).digest();
+  return createHash('sha256').update(getSystemConfigSecret()).digest();
 }
 
 export function encryptConfigValue(value: string): string {
@@ -23,15 +24,30 @@ export function decryptConfigValue(value: string): string {
     return value;
   }
 
-  const [, ivRaw, tagRaw, dataRaw] = value.split(':');
+  const payload = value.slice(`${ENCRYPTED_PREFIX}:`.length);
+  const parts = payload.split(':');
+
+  if (parts.length !== 3) {
+    throw new AppError(500, 'CONFIG_DECRYPT_FAILED', 'Encrypted system config payload is malformed');
+  }
+
+  const [ivRaw, tagRaw, dataRaw] = parts;
   const iv = Buffer.from(ivRaw, 'base64');
   const tag = Buffer.from(tagRaw, 'base64');
   const data = Buffer.from(dataRaw, 'base64');
 
-  const decipher = createDecipheriv(CIPHER_ALGORITHM, getKey(), iv);
-  decipher.setAuthTag(tag);
+  try {
+    const decipher = createDecipheriv(CIPHER_ALGORITHM, getKey(), iv);
+    decipher.setAuthTag(tag);
 
-  return Buffer.concat([decipher.update(data), decipher.final()]).toString('utf8');
+    return Buffer.concat([decipher.update(data), decipher.final()]).toString('utf8');
+  } catch {
+    throw new AppError(
+      500,
+      'CONFIG_DECRYPT_FAILED',
+      'Encrypted system config could not be decrypted with the current system config secret',
+    );
+  }
 }
 
 export const SECRET_CONFIG_KEYS = new Set(['smtp.user', 'smtp.password', 'llm.api_key']);

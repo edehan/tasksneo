@@ -17,6 +17,15 @@ Content-Type: application/json
   "auth.registration_open": "true"
 }
 
+### Send SMTP test email
+POST {{baseUrl}}/admin/config/test-email
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "to": "admin@example.com"
+}
+
 ### List users
 GET {{baseUrl}}/admin/users
 Authorization: Bearer {{adminToken}}
