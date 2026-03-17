@@ -105,7 +105,8 @@ lib/
   * Never use raw `fetch` directly inside page or feature components.
 * All times are stored in UTC.
 
-  * Display times using `Intl.DateTimeFormat` with the user's local timezone.
+  * Display times using `Intl.DateTimeFormat` with the user's stored `timezone` preference (from `UserProfile`).
+  * When the browser timezone differs from the stored preference, prompt the user to update (bubble notification).
   * Never hardcode a timezone.
 
 ## Views

@@ -13,6 +13,22 @@
 
 ---
 
+## 2026-03-18 — User Timezone Field
+
+- Scope:
+  - Added `timezone` column to `users` table (IANA identifier, `VARCHAR(64)`, NOT NULL, DEFAULT `'UTC'`).
+  - Updated registration to accept optional `timezone` from client (browser-reported).
+  - Updated profile update to allow changing `timezone`.
+  - All `UserProfile` responses now include `timezone`.
+  - Updated OpenAPI spec, DATABASE.md, AGENT.md, and frontend type definitions.
+- Key Decisions:
+  - Database-level NOT NULL + DEFAULT rather than nullable — every user always has a timezone.
+  - V1 trusts client-reported timezone string; IANA validation deferred.
+  - Frontend will prefer stored `timezone` over browser timezone; mismatch triggers a bubble prompt (not implemented in this change).
+- Verification Commands and Results:
+  - `npx prisma migrate dev --name add-user-timezone` generated and applied migration.
+  - `npx tsc --noEmit` passed for both `apps/api` and `apps/web`.
+
 ## 2026-03-18 — Dev-First Collaboration Workflow
 
 - Scope:
@@ -228,15 +244,10 @@
 
 ---
 
-## Current Understanding Snapshot
+## Current Status Snapshot
 
-- Product shape:
-  - A class-based assignment platform.
-  - Auth, classes, tasks, submissions, notifications, admin control plane.
-- Current implementation status:
-  - Data model and API docs are detailed.
-  - API auth baseline and classes core are available.
-  - Frontend now transitions from default scaffold to demo-driven page.
-- Development rhythm:
-  - Implement in vertical slices with immediate e2e validation.
-  - Keep this log updated before each commit.
+- Backend: All 34 API endpoints implemented and tested (auth, users, classes, tasks, submissions, files, admin).
+- Database: 11 tables, fully migrated. User model includes `timezone` field.
+- Admin UI: `/admin` control plane shipped (system config, SMTP test, user/school management).
+- Frontend: Minimal — landing page + admin control plane only. Core user-facing app (login, dashboard, classes, tasks, submissions) not yet built.
+- Next phase: Frontend implementation using shadcn/ui.

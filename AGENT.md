@@ -21,7 +21,7 @@ taskflow/
 │   │   │   ├── routes/             # One file per resource group
 │   │   │   ├── middleware/         # auth.ts, admin.ts, error.ts
 │   │   │   ├── services/           # Business logic (routes call services, not prisma directly)
-│   │   │   └── lib/                # db.ts, minio.ts, mailer.ts, llm.ts, queue.ts
+│   │   │   └── lib/                # env.ts, errors.ts, http.ts, jwt.ts, mailer.ts, queue.ts, storage.ts, system-config.ts
 │   │   └── CLAUDE.md
 │   │
 │   └── web/                        # Next.js 14 frontend (App Router + TypeScript)
@@ -41,24 +41,29 @@ taskflow/
 │   │
 │   └── shared/                     # Types and Zod schemas shared between api and web
 │       └── src/
-│           └── types/
+│           └── index.ts
 │
 ├── docs/
-│   ├── DATABASE-ERD.md             # Data model, table descriptions, deletion rules
+│   ├── DATABASE.md                 # Data model, table descriptions, deletion rules
+│   ├── DEVELOPMENT_LOG.md          # Running dev log: decisions, pitfalls, verification
 │   ├── openapi/
-│   │   └── openapi.yaml            # Complete API contract (OpenAPI 3.1)
-│   └── features/                   # Natural language feature specs (Chinese)
-│       ├── auth.md
-│       ├── admin.md
-│       ├── classes.md
-│       ├── tasks.md
-│       ├── attachments.md
-│       ├── notifications.md
-│       └── data_policy.md
+│   │   └── openapi.yaml            # Complete API contract (OpenAPI 3.0)
+│   ├── features/                   # Natural language feature specs (Chinese, non-authoritative)
+│   │   ├── auth.md
+│   │   ├── admin.md
+│   │   ├── classes.md
+│   │   ├── tasks.md
+│   │   ├── attachments.md
+│   │   ├── notifications.md
+│   │   └── data_policy.md
+│   └── deployment/
+│       ├── local-dev.md
+│       └── local-preview.md
 │
 ├── infra/
-│   ├── docker-compose.dev.yml      # Local: postgres, redis, minio
-│   └── docker-compose.prod.yml     # Production: full stack
+│   ├── docker-compose.dev.yml      # Local dev: postgres, redis, minio
+│   ├── docker-compose.preview.yml  # Local preview: full stack in Docker
+│   └── docker-compose.prod.yml     # Production (placeholder)
 │
 ├── AGENT.md                        # This file
 ├── CLAUDE.md                       # Claude Code specific context
@@ -84,13 +89,14 @@ taskflow/
 
 ## Key Architectural Decisions
 
-**Read `docs/DATABASE-ERD.md` before touching any database-related code.**  
-**Read `docs/openapi/openapi.yaml` before implementing or calling any API endpoint.**  
+**Read `docs/DATABASE.md` before touching any database-related code.**
+**Read `docs/openapi/openapi.yaml` before implementing or calling any API endpoint.**
 **Read the relevant file in `docs/features/` before implementing a feature.**
 
 ### Data model rules
 - All primary keys are UUID v4 (`@default(uuid())` in Prisma). Never use sequential IDs.
 - All timestamps are `timestamptz` (UTC). Frontend converts to local timezone using `Intl.DateTimeFormat`.
+- Each user has a `timezone` field (IANA identifier, default `'UTC'`). Frontend should prefer the user's stored timezone for display.
 - Soft delete exists **only on `tasks`** via `deletedAt`. Every active-task query must include `where: { deletedAt: null }`.
 - Tasks belong to exactly one class. There is no multi-class publishing.
 
@@ -106,10 +112,15 @@ taskflow/
 - Permission checks happen in middleware or at the top of service functions, never mixed into query logic.
 
 ### Deletion behaviour
-- Deleting a class hard-deletes tasks. Submission rows survive (no cascade).
-- Deleting a task with submissions: soft delete (clear content, preserve row).
-- Deleting a task with zero submissions: hard delete.
+- Deleting a class cascades through its tasks:
+  - Tasks with zero submissions: hard delete.
+  - Tasks with submissions: soft delete + detach (`classId = NULL`).
+  - Submissions survive — they reference the (now soft-deleted) task.
+- Deleting a task directly:
+  - Zero submissions: hard delete.
+  - Has submissions: soft delete (clear title/description, delete attachments, preserve row).
 - Deleting a user: application-layer sequence — delete submissions → delete personal class → delete user row. User must not own any non-personal class first.
+- Orphan cleanup: when a submission is deleted, if its task has `classId = NULL` and no remaining submissions, the task is hard deleted.
 
 ### Error format
 All error responses:
@@ -125,20 +136,20 @@ Files go to MinIO. The database stores only the `fileKey` (MinIO object key). Ne
 ## Running Locally
 
 ```bash
-# 1. Start infrastructure
-cd infra && docker compose -f docker-compose.dev.yml up -d
-
-# 2. Install dependencies
+# One-command start (recommended)
+cp .env.example .env    # first time only
 pnpm install
+pnpm dev                # starts infra + api + web
 
-# 3. Run migrations
+# Or step by step
+pnpm dev:infra          # docker: postgres, redis, minio
+pnpm dev:api            # api on port 3001
+pnpm dev:web            # web on port 3000
+```
+
+Database migration (first time or after schema changes):
+```bash
 cd packages/db && npx prisma migrate dev
-
-# 4. Start backend (port 3001)
-cd apps/api && pnpm dev
-
-# 5. Start frontend (port 3000)
-cd apps/web && pnpm dev
 ```
 
 Environment variables: copy `.env.example` to `.env` and fill in values.
