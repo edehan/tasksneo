@@ -12,11 +12,19 @@ Authorization: Bearer <ADMIN_TOKEN>
 
 `ADMIN_TOKEN` 只能通过服务器环境变量或容器配置文件设置，不能在 Web 页面中查看或修改。这样做的目的是将控制平面的鉴权逻辑与普通用户体系完全隔离，降低系统复杂度和攻击面。
 
+`ADMIN_TOKEN` 只负责管理员身份验证，不承担系统配置加密职责。敏感配置项的数据库加密与解密应使用独立的 `SYSTEM_CONFIG_SECRET`。
+
 ---
 
 ## 系统配置
 
 以下所有配置均存储在 `system_config` 表中，以键值对形式保存。
+
+约定：
+
+- 普通配置可明文存储。
+- 敏感配置（如 `smtp.user`、`smtp.password`、`llm.api_key`）必须加密存储。
+- 加密密钥来自运行时环境变量 `SYSTEM_CONFIG_SECRET`，而不是 `ADMIN_TOKEN`。
 
 ### 1. 站点基本信息
 

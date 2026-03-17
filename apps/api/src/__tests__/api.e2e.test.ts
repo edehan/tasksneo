@@ -39,6 +39,40 @@ describe('TaskFlow API e2e', () => {
     }
   });
 
+  it('returns CORS headers for allowed frontend origins', async () => {
+    const response = await app.request('/health', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'http://localhost:35540',
+        'Access-Control-Request-Method': 'GET',
+        'Access-Control-Request-Headers': 'Authorization, Content-Type',
+      },
+    });
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get('access-control-allow-origin')).toBe('http://localhost:35540');
+    expect(response.headers.get('access-control-allow-headers')).toContain('Authorization');
+  });
+
+  it('returns placeholder text for undecryptable secret config values', async () => {
+    const adminToken = process.env.ADMIN_TOKEN ?? 'test-admin-token';
+
+    await prisma.systemConfig.create({
+      data: {
+        key: 'smtp.password',
+        value: 'enc:v1:AAAAAAAAAAAAAAAA:AAAAAAAAAAAAAAAAAAAAAA==:AAAAAAAA',
+      },
+    });
+
+    const response = await app.request('/admin/config', {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+
+    expect(response.status).toBe(200);
+    const body = (await json(response)) as Record<string, string>;
+    expect(body['smtp.password']).toBe('[re-enter value]');
+  });
+
   it('covers all implemented endpoints success and key failures', async () => {
     const adminToken = process.env.ADMIN_TOKEN ?? 'test-admin-token';
 

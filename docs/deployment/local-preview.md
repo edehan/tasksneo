@@ -60,9 +60,18 @@ Useful commands:
 1. Copy `.env.preview.example` to `.env.preview`
 2. Copy `.env.test.example` to `.env.test`
 3. Review secret values in both files
-4. Run `pnpm preview:hooks`
-5. Run `pnpm preview:deploy`
-6. Open `http://localhost:35540`
+4. Keep `SYSTEM_CONFIG_SECRET` stable once preview starts storing encrypted config values
+5. Run `pnpm preview:hooks`
+6. Run `pnpm preview:deploy`
+7. Open `http://localhost:35540`
+
+Secret roles:
+
+- `ADMIN_TOKEN`: admin login for `/admin`
+- `JWT_SECRET`: user JWT signing
+- `SYSTEM_CONFIG_SECRET`: encryption key for sensitive system config values
+
+If `SYSTEM_CONFIG_SECRET` changes later, previously saved SMTP and LLM secrets will show as `[re-enter value]` in `/admin` until you save them again with the new key.
 
 ## Troubleshooting
 

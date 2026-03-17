@@ -38,6 +38,27 @@ set -a
 source "$ENV_FILE"
 set +a
 
+required_env_vars=(
+  ADMIN_TOKEN
+  SYSTEM_CONFIG_SECRET
+  JWT_SECRET
+  DATABASE_URL
+  REDIS_URL
+  MINIO_ENDPOINT
+  MINIO_PORT
+  MINIO_ACCESS_KEY
+  MINIO_SECRET_KEY
+  MINIO_BUCKET
+  NEXT_PUBLIC_API_BASE_URL
+)
+
+for env_var in "${required_env_vars[@]}"; do
+  if [[ -z "${!env_var:-}" ]]; then
+    echo "Missing required preview env var: $env_var"
+    exit 1
+  fi
+done
+
 echo "Building host artifacts for preview..."
 pnpm --filter @taskflow/db exec prisma generate
 pnpm --filter @taskflow/api build

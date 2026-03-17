@@ -5,6 +5,7 @@ export interface AppEnv {
   listenPort: number;
   databaseUrl: string;
   adminToken: string;
+  systemConfigSecret: string;
   jwtSecret: string;
   redisUrl: string;
   minioEndpoint: string;
@@ -44,6 +45,7 @@ export function loadEnv(): AppEnv {
     listenPort: port,
     databaseUrl: requireEnv('DATABASE_URL'),
     adminToken: requireEnv('ADMIN_TOKEN'),
+    systemConfigSecret: requireEnv('SYSTEM_CONFIG_SECRET'),
     jwtSecret: requireEnv('JWT_SECRET'),
     redisUrl: requireEnv('REDIS_URL'),
     minioEndpoint: requireEnv('MINIO_ENDPOINT'),
@@ -60,4 +62,8 @@ export function getJwtSecret(): string {
 
 export function getAdminToken(): string {
   return requireEnv('ADMIN_TOKEN');
+}
+
+export function getSystemConfigSecret(): string {
+  return requireEnv('SYSTEM_CONFIG_SECRET');
 }

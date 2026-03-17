@@ -98,10 +98,12 @@ pnpm preview:deploy
 
 | 变量 | 说明 |
 |---|---|
-| `ADMIN_TOKEN` | 管理员控制台访问令牌，只能在此处修改 |
+| `ADMIN_TOKEN` | 管理员控制台访问令牌，只负责 `/admin` 鉴权 |
+| `JWT_SECRET` | 普通用户登录态签名密钥 |
+| `SYSTEM_CONFIG_SECRET` | 敏感系统配置的数据库加密密钥，需保持稳定 |
 | `DATABASE_URL` | PostgreSQL 连接串 |
 
-其余配置（SMTP、LLM API Key 等）在启动后通过 `/admin` 控制台填写，无需写入 `.env`。
+其余业务配置（SMTP 主机、端口、发件人、LLM 模型等）在启动后通过 `/admin` 控制台填写；其中敏感值会使用 `SYSTEM_CONFIG_SECRET` 加密后存入数据库。
 
 ---
 

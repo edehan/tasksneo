@@ -15,7 +15,19 @@
 - **No dynamic field schemas.** Grading fields are fixed columns on `submissions`.
 - **Credentials are separated from identity** to support future OAuth providers without schema migration.
 - **Admin is not a database entity.** `/admin` routes are authenticated by `ADMIN_TOKEN` env var only.
+- **Sensitive system config is encrypted at rest.** Secret values in `system_config` use `SYSTEM_CONFIG_SECRET`, which is intentionally separate from both `ADMIN_TOKEN` and `JWT_SECRET`.
 - **Application layer enforces business rules** that cannot be expressed as database constraints in Prisma (conditional uniqueness, cross-field validation). These are noted per table below.
+
+### Runtime Secrets
+
+The backend currently relies on three runtime secrets with different responsibilities:
+
+- `ADMIN_TOKEN`: authenticates `/admin` requests only.
+- `JWT_SECRET`: signs and verifies normal user JWTs.
+- `SYSTEM_CONFIG_SECRET`: encrypts and decrypts sensitive `system_config` entries such as SMTP and LLM credentials.
+
+These secrets should not be reused for each other. In particular, rotating `ADMIN_TOKEN` must not invalidate encrypted config rows.
+Rotating `SYSTEM_CONFIG_SECRET` does invalidate previously encrypted `system_config` secrets until those values are re-entered and saved again.
 
 ---
 

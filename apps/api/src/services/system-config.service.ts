@@ -26,6 +26,15 @@ const ALLOWED_CONFIG_KEYS = new Set([
   'llm.model',
 ]);
 
+function decodeSecretForAdminView(value: string) {
+  try {
+    decryptConfigValue(value);
+    return '***';
+  } catch {
+    return '[re-enter value]';
+  }
+}
+
 export async function getConfigMap() {
   const rows = await prisma.systemConfig.findMany();
   const map = new Map<string, string>();
@@ -35,7 +44,7 @@ export async function getConfigMap() {
   }
 
   for (const row of rows) {
-    map.set(row.key, isSecretConfigKey(row.key) ? decryptConfigValue(row.value) : row.value);
+    map.set(row.key, isSecretConfigKey(row.key) ? decodeSecretForAdminView(row.value) : row.value);
   }
 
   return map;

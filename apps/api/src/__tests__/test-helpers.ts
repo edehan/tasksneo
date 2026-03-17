@@ -20,6 +20,10 @@ if (!process.env.ADMIN_TOKEN) {
   process.env.ADMIN_TOKEN = 'test-admin-token';
 }
 
+if (!process.env.SYSTEM_CONFIG_SECRET) {
+  process.env.SYSTEM_CONFIG_SECRET = 'test-system-config-secret';
+}
+
 if (!process.env.NOTIFICATION_WORKER_ENABLED) {
   process.env.NOTIFICATION_WORKER_ENABLED = 'false';
 }
