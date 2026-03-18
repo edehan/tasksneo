@@ -27,6 +27,19 @@ import {
 import { ApiError, listSchools } from "@/lib/api";
 import type { School } from "@/lib/api";
 
+function detectBrowserTimezone(): string {
+  try {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (timezone && timezone.length <= 64) {
+      return timezone;
+    }
+  } catch {
+    // Fall back to UTC when browser timezone is unavailable.
+  }
+
+  return "UTC";
+}
+
 export function RegisterForm() {
   const { register } = useAuth();
   const router = useRouter();
@@ -38,6 +51,7 @@ export function RegisterForm() {
   const [studentId, setStudentId] = useState("");
   const [schools, setSchools] = useState<School[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const detectedTimezone = detectBrowserTimezone();
 
   const loadSchools = useCallback(async () => {
     try {
@@ -63,14 +77,13 @@ export function RegisterForm() {
 
     setSubmitting(true);
     try {
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       await register({
         email,
         password,
         nickname: nickname || undefined,
         schoolId: schoolId || undefined,
         studentId: schoolId ? studentId : undefined,
-        timezone,
+        timezone: detectedTimezone,
       });
       router.replace("/dashboard");
     } catch (err) {

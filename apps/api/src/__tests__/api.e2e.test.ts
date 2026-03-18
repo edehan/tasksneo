@@ -140,12 +140,18 @@ describe('TaskFlow API e2e', () => {
         nickname: 'Owner',
         schoolId: schoolAId,
         studentId: 'A001',
+        timezone: 'Asia/Shanghai',
       }),
     });
     expect(registerOwner.response.status).toBe(201);
+    const ownerRegisterBody = registerOwner.body as {
+      token: string;
+      user: { id: string; timezone: string };
+    };
+    expect(ownerRegisterBody.user.timezone).toBe('Asia/Shanghai');
 
-    const ownerToken = (registerOwner.body as { token: string }).token;
-    const ownerUserId = (registerOwner.body as { user: { id: string } }).user.id;
+    const ownerToken = ownerRegisterBody.token;
+    const ownerUserId = ownerRegisterBody.user.id;
 
     const registerMember = await requestJson(app, '/auth/register', {
       method: 'POST',
@@ -185,6 +191,7 @@ describe('TaskFlow API e2e', () => {
       }),
     });
     expect(registerTemp.response.status).toBe(201);
+    expect((registerTemp.body as { user: { timezone: string } }).user.timezone).toBe('UTC');
 
     const tempToken = (registerTemp.body as { token: string }).token;
 
@@ -200,9 +207,15 @@ describe('TaskFlow API e2e', () => {
     const patchMe = await requestJson(app, '/users/me', {
       method: 'PATCH',
       headers: authHeader(ownerToken),
-      body: JSON.stringify({ nickname: 'Owner Updated', schoolId: schoolAId, studentId: 'A099' }),
+      body: JSON.stringify({
+        nickname: 'Owner Updated',
+        schoolId: schoolAId,
+        studentId: 'A099',
+        timezone: 'America/New_York',
+      }),
     });
     expect(patchMe.response.status).toBe(200);
+    expect((patchMe.body as { timezone: string }).timezone).toBe('America/New_York');
 
     const patchPassword = await requestJson(app, '/users/me/password', {
       method: 'PATCH',
