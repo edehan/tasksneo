@@ -8,6 +8,7 @@ export function toUserProfile(user: User & { school: { name: string } | null }) 
     schoolId: user.schoolId,
     schoolName: user.school?.name ?? null,
     studentId: user.studentId,
+    timezone: user.timezone,
     isActive: user.isActive,
     createdAt: user.createdAt.toISOString(),
   };

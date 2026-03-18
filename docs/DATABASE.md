@@ -58,6 +58,7 @@ Core identity record. Does not contain credentials or notification preferences.
 | nickname | String? | NULL is rendered as email in UI |
 | schoolId | UUID? FK → schools | SET NULL on school delete |
 | studentId | String? | unique within school (see below) |
+| timezone | String | IANA timezone identifier, default `'UTC'`, max 64 chars |
 | isActive | Boolean | default true; false = suspended by admin |
 | createdAt | DateTime | |
 | updatedAt | DateTime | |
@@ -339,6 +340,7 @@ erDiagram
         text nickname
         uuid school_id FK
         text student_id
+        text timezone
         bool is_active
     }
     user_credentials {

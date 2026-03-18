@@ -9,6 +9,7 @@ const registerBodySchema = z.object({
   nickname: z.string().optional().nullable(),
   schoolId: z.string().uuid().optional().nullable(),
   studentId: z.string().optional().nullable(),
+  timezone: z.string().max(64).optional(),
 });
 
 const loginBodySchema = z.object({

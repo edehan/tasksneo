@@ -16,6 +16,7 @@ export interface RegisterInput {
   nickname?: string | null;
   schoolId?: string | null;
   studentId?: string | null;
+  timezone?: string;
 }
 
 export interface LoginInput {
@@ -56,6 +57,7 @@ export async function register(input: RegisterInput) {
         nickname: input.nickname ?? null,
         schoolId: input.schoolId ?? null,
         studentId: input.studentId ?? null,
+        ...(input.timezone ? { timezone: input.timezone } : {}),
       },
     });
 
