@@ -134,7 +134,7 @@ Role badges: OWNER / ADMIN / MEMBER — muted style.
 
 ```
 ┌──────────┬─────────────────────────────────────┐
-│ Sidebar  │ Header (breadcrumb + actions + user) │
+│ Sidebar  │ Header (breadcrumb)                           │
 │ 240px    ├─────────────────────────────────────┤
 │          │ Content area                        │
 │          │ centered, max-width varies           │
