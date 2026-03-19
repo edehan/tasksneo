@@ -110,6 +110,46 @@ async function ensureMember(classId: string, userId: string, role: ClassRole) {
   });
 }
 
+async function ensurePersonalClass(user: { id: string; email: string; nickname: string | null }) {
+  const className = `${user.nickname ?? user.email} Personal`;
+
+  const existing = await prisma.class.findFirst({
+    where: {
+      ownerId: user.id,
+      isPersonal: true,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  const personalClass = existing
+    ? await prisma.class.update({
+        where: { id: existing.id },
+        data: {
+          name: className,
+          isPersonal: true,
+          inviteCode: null,
+          schoolId: null,
+          description: 'Personal workspace (local dev seed)',
+          color: '#6366f1',
+        },
+      })
+    : await prisma.class.create({
+        data: {
+          name: className,
+          ownerId: user.id,
+          isPersonal: true,
+          inviteCode: null,
+          schoolId: null,
+          description: 'Personal workspace (local dev seed)',
+          color: '#6366f1',
+        },
+      });
+
+  await ensureMember(personalClass.id, user.id, ClassRole.OWNER);
+}
+
 async function upsertTask(input: {
   classId: string;
   createdBy: string;
@@ -215,6 +255,10 @@ async function main() {
   const userA = await upsertUser('a@example.com', 'User A', passwordHash);
   const userB = await upsertUser('b@example.com', 'User B', passwordHash);
   const userC = await upsertUser('c@example.com', 'User C', passwordHash);
+
+  await ensurePersonalClass(userA);
+  await ensurePersonalClass(userB);
+  await ensurePersonalClass(userC);
 
   const class1 = await upsertClass(userA.id, {
     name: 'Class 1',
