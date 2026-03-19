@@ -16,8 +16,14 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import type { SubmissionListRow } from "@/lib/api";
-import { ApiError, gradeSubmission, listSubmissions } from "@/lib/api";
+import type { SubmissionDetail, SubmissionListRow } from "@/lib/api";
+import {
+  ApiError,
+  getFileUrl,
+  getSubmission,
+  gradeSubmission,
+  listSubmissions,
+} from "@/lib/api";
 
 function formatTime(iso: string | null | undefined): string {
   if (!iso) return "—";
@@ -41,6 +47,8 @@ export default function SubmissionDetailPage() {
   const { classId, taskId, submissionId } = params;
 
   const [rows, setRows] = useState<SubmissionListRow[]>([]);
+  const [submissionDetail, setSubmissionDetail] =
+    useState<SubmissionDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Grading form
@@ -52,17 +60,19 @@ export default function SubmissionDetailPage() {
     if (!token) return;
     setLoading(true);
     try {
-      const data = await listSubmissions(token, taskId);
-      setRows(data);
+      const [data, detail] = await Promise.all([
+        listSubmissions(token, taskId),
+        getSubmission(token, taskId, submissionId),
+      ]);
 
-      // Pre-fill grading fields from existing data
-      const current = data.find((r) => r.submission?.id === submissionId);
-      if (current?.submission) {
-        setScore(current.submission.score ?? "");
-        setReviewNote(current.submission.reviewNote ?? "");
-      }
+      setRows(data);
+      setSubmissionDetail(detail);
+
+      setScore(detail.score ?? "");
+      setReviewNote(detail.reviewNote ?? "");
     } catch {
       toast.error("Failed to load submission");
+      setSubmissionDetail(null);
     } finally {
       setLoading(false);
     }
@@ -83,6 +93,8 @@ export default function SubmissionDetailPage() {
     currentIdx < submittedRows.length - 1
       ? submittedRows[currentIdx + 1]
       : null;
+  const content = submissionDetail?.content ?? current?.submission?.content;
+  const attachments = submissionDetail?.attachments ?? [];
 
   async function handleGrade() {
     if (!token) return;
@@ -186,10 +198,10 @@ export default function SubmissionDetailPage() {
             </div>
 
             {/* Submission content */}
-            {current.submission.content ? (
+            {content ? (
               <div className="prose prose-sm dark:prose-invert max-w-none rounded-lg border p-4">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {current.submission.content}
+                  {content}
                 </ReactMarkdown>
               </div>
             ) : (
@@ -197,6 +209,30 @@ export default function SubmissionDetailPage() {
                 No text content submitted. Check attachments below.
               </p>
             )}
+
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Attachments</h3>
+              {attachments.length > 0 ? (
+                <ul className="list-disc pl-5 space-y-1 text-sm">
+                  {attachments.map((att) => (
+                    <li key={att.id}>
+                      <a
+                        href={getFileUrl(att.fileKey)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        {att.renamedFile ?? att.originalName}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm italic text-muted-foreground">
+                  No attachments submitted.
+                </p>
+              )}
+            </div>
 
             <Separator />
 
