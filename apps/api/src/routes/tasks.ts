@@ -11,6 +11,7 @@ import {
   deleteTask,
   exportTaskSubmissionsCsv,
   getMySubmission,
+  getTaskSubmissionDetail,
   getTaskDetail,
   gradeSubmission,
   listTaskSubmissions,
@@ -193,6 +194,13 @@ tasksRouter.get('/:taskId/submissions/export', async (c) => {
   c.header('Content-Disposition', `attachment; filename=task-${params.taskId}-submissions.csv`);
 
   return c.body(csv, 200);
+});
+
+tasksRouter.get('/:taskId/submissions/:submissionId', async (c) => {
+  const authUser = requireAuthUser(c);
+  const params = gradeParamSchema.parse(c.req.param());
+  const submission = await getTaskSubmissionDetail(params.taskId, params.submissionId, authUser.userId);
+  return c.json(submission, 200);
 });
 
 tasksRouter.post('/:taskId/attachments', async (c) => {
