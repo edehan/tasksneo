@@ -297,11 +297,7 @@ export async function upsertNotificationPref(
 }
 
 export async function deleteAccount(token: string): Promise<void> {
-  return apiRequest<void>(
-    "/users/me/delete",
-    { method: "POST" },
-    token,
-  );
+  return apiRequest<void>("/users/me/delete", { method: "POST" }, token);
 }
 
 export async function uploadAvatar(
@@ -379,11 +375,7 @@ export async function deleteClass(
   token: string,
   classId: string,
 ): Promise<void> {
-  return apiRequest<void>(
-    `/classes/${classId}`,
-    { method: "DELETE" },
-    token,
-  );
+  return apiRequest<void>(`/classes/${classId}`, { method: "DELETE" }, token);
 }
 
 export async function refreshInviteCode(
@@ -413,11 +405,7 @@ export async function listMembers(
   token: string,
   classId: string,
 ): Promise<ClassMember[]> {
-  return apiRequest<ClassMember[]>(
-    `/classes/${classId}/members`,
-    {},
-    token,
-  );
+  return apiRequest<ClassMember[]>(`/classes/${classId}/members`, {}, token);
 }
 
 export async function updateMemberRole(
@@ -451,11 +439,7 @@ export async function listClassTasks(
   token: string,
   classId: string,
 ): Promise<TaskSummary[]> {
-  return apiRequest<TaskSummary[]>(
-    `/classes/${classId}/tasks`,
-    {},
-    token,
-  );
+  return apiRequest<TaskSummary[]>(`/classes/${classId}/tasks`, {}, token);
 }
 
 export async function createTask(
@@ -514,26 +498,15 @@ export async function updateTask(
   );
 }
 
-export async function deleteTask(
-  token: string,
-  taskId: string,
-): Promise<void> {
-  return apiRequest<void>(
-    `/tasks/${taskId}`,
-    { method: "DELETE" },
-    token,
-  );
+export async function deleteTask(token: string, taskId: string): Promise<void> {
+  return apiRequest<void>(`/tasks/${taskId}`, { method: "DELETE" }, token);
 }
 
 export async function markTaskViewed(
   token: string,
   taskId: string,
 ): Promise<void> {
-  return apiRequest<void>(
-    `/tasks/${taskId}/view`,
-    { method: "POST" },
-    token,
-  );
+  return apiRequest<void>(`/tasks/${taskId}/view`, { method: "POST" }, token);
 }
 
 export async function updateTaskState(

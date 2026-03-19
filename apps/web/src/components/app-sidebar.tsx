@@ -1,8 +1,5 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import {
   BookOpen,
   ChevronsUpDown,
@@ -14,7 +11,10 @@ import {
   Sun,
   UserPlus,
 } from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
+import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
 import { ClassColorBadge } from "@/components/class-color-badge";
@@ -46,6 +46,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { JoinClassDialog } from "@/features/classes/components/join-class-dialog";
 import type { ClassSummary } from "@/lib/api";
 import { listClasses } from "@/lib/api";
 
@@ -92,7 +93,9 @@ export function AppSidebar() {
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
                   <Avatar className="h-8 w-8 shrink-0">
-                    <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+                    <AvatarFallback className="text-xs">
+                      {initials}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-1 flex-col gap-0.5 leading-none text-left">
                     <span className="text-sm font-medium truncate">
@@ -112,7 +115,9 @@ export function AppSidebar() {
                 align="start"
                 className="w-[--radix-dropdown-menu-trigger-width] min-w-56"
               >
-                <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+                <DropdownMenuItem
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                >
                   {theme === "dark" ? (
                     <Sun className="mr-2 h-4 w-4" />
                   ) : (
@@ -120,7 +125,9 @@ export function AppSidebar() {
                   )}
                   {theme === "dark" ? "Light mode" : "Dark mode"}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/settings/profile")}>
+                <DropdownMenuItem
+                  onClick={() => router.push("/settings/profile")}
+                >
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
@@ -145,7 +152,10 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === "/dashboard" || pathname.startsWith("/dashboard/")}
+                  isActive={
+                    pathname === "/dashboard" ||
+                    pathname.startsWith("/dashboard/")
+                  }
                 >
                   <Link href="/dashboard">
                     <LayoutDashboard className="h-4 w-4" />
@@ -236,15 +246,15 @@ export function AppSidebar() {
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
-            >
-              <Link href="/classes/join">
-                <UserPlus className="h-4 w-4" />
-                <span>Join Class</span>
-              </Link>
-            </SidebarMenuButton>
+            <JoinClassDialog
+              trigger={
+                <SidebarMenuButton className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground">
+                  <UserPlus className="h-4 w-4" />
+                  <span>Join Class</span>
+                </SidebarMenuButton>
+              }
+              onJoined={() => void loadClasses()}
+            />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

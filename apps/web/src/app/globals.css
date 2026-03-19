@@ -21,11 +21,11 @@
 
   --primary: oklch(0.216 0.006 56.04);
   --primary-foreground: oklch(0.985 0.002 75);
-  --secondary: oklch(0.970 0.001 106.42);
+  --secondary: oklch(0.97 0.001 106.42);
   --secondary-foreground: oklch(0.216 0.006 56.04);
-  --muted: oklch(0.970 0.001 106.42);
+  --muted: oklch(0.97 0.001 106.42);
   --muted-foreground: oklch(0.553 0.013 58.07);
-  --accent: oklch(0.970 0.001 106.42);
+  --accent: oklch(0.97 0.001 106.42);
   --accent-foreground: oklch(0.216 0.006 56.04);
 
   --destructive: oklch(0.577 0.245 27.325);
@@ -43,17 +43,17 @@
 
   --radius: 0.5rem;
 
-  --sidebar: oklch(0.970 0.001 106.42);
+  --sidebar: oklch(0.97 0.001 106.42);
   --sidebar-foreground: oklch(0.147 0.004 49.75);
   --sidebar-primary: oklch(0.216 0.006 56.04);
   --sidebar-primary-foreground: oklch(0.985 0.002 75);
-  --sidebar-accent: oklch(0.970 0.001 106.42);
+  --sidebar-accent: oklch(0.97 0.001 106.42);
   --sidebar-accent-foreground: oklch(0.216 0.006 56.04);
   --sidebar-border: oklch(0.923 0.003 48.72);
   --sidebar-ring: oklch(0.553 0.013 58.07);
 
   /* Design system semantic tokens */
-  --status-success: oklch(0.586 0.163 142.50);
+  --status-success: oklch(0.586 0.163 142.5);
   --status-warning: oklch(0.769 0.188 70.08);
   --status-error: oklch(0.577 0.245 27.325);
   --status-info: oklch(0.546 0.245 262.88);
@@ -77,7 +77,7 @@
   --secondary: oklch(0.268 0.007 34);
   --secondary-foreground: oklch(0.985 0.002 75);
   --muted: oklch(0.268 0.007 34);
-  --muted-foreground: oklch(0.709 0.010 56);
+  --muted-foreground: oklch(0.709 0.01 56);
   --accent: oklch(0.268 0.007 34);
   --accent-foreground: oklch(0.985 0.002 75);
 
@@ -103,7 +103,7 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.553 0.013 58.07);
 
-  --status-success: oklch(0.723 0.191 142.50);
+  --status-success: oklch(0.723 0.191 142.5);
   --status-warning: oklch(0.769 0.188 70.08);
   --status-error: oklch(0.704 0.191 22.216);
   --status-info: oklch(0.623 0.214 259.53);
@@ -152,7 +152,8 @@
   --color-class-accent-foreground: var(--class-accent-foreground);
 
   /* Font families */
-  --font-sans: "Inter", "PingFang SC", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
+  --font-sans:
+    "Inter", "PingFang SC", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 

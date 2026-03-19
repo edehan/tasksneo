@@ -186,7 +186,10 @@ function formatDateTime(value: string): string {
 }
 
 function isSecretDisplayValue(key: ConfigKey, value: string): boolean {
-  return SECRET_CONFIG_KEYS.has(key) && (value === SECRET_MASK || value === SECRET_REENTER);
+  return (
+    SECRET_CONFIG_KEYS.has(key) &&
+    (value === SECRET_MASK || value === SECRET_REENTER)
+  );
 }
 
 export function AdminControlPlane() {

@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-provider";
@@ -24,8 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ApiError, listSchools } from "@/lib/api";
 import type { School } from "@/lib/api";
+import { ApiError, listSchools } from "@/lib/api";
 
 function detectBrowserTimezone(): string {
   try {
@@ -144,7 +144,8 @@ export function RegisterForm() {
             <>
               <div className="space-y-2">
                 <Label>
-                  School <span className="text-muted-foreground">(optional)</span>
+                  School{" "}
+                  <span className="text-muted-foreground">(optional)</span>
                 </Label>
                 <Select
                   value={schoolId ?? "none"}
@@ -187,7 +188,10 @@ export function RegisterForm() {
           </Button>
           <p className="text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Link href="/login" className="text-primary underline-offset-4 hover:underline">
+            <Link
+              href="/login"
+              className="text-primary underline-offset-4 hover:underline"
+            >
               Sign in
             </Link>
           </p>

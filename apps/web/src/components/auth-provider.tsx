@@ -9,11 +9,7 @@ import {
   useState,
 } from "react";
 import type { UserProfile } from "@/lib/api";
-import {
-  getMe,
-  login as apiLogin,
-  register as apiRegister,
-} from "@/lib/api";
+import { login as apiLogin, register as apiRegister, getMe } from "@/lib/api";
 
 const TOKEN_KEY = "taskflow_token";
 

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-provider";
@@ -35,8 +35,7 @@ export function LoginForm() {
       await login(email, password);
       router.replace("/dashboard");
     } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : "Login failed";
+      const message = err instanceof ApiError ? err.message : "Login failed";
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -82,7 +81,10 @@ export function LoginForm() {
           </Button>
           <p className="text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
-            <Link href="/register" className="text-primary underline-offset-4 hover:underline">
+            <Link
+              href="/register"
+              className="text-primary underline-offset-4 hover:underline"
+            >
               Sign up
             </Link>
           </p>

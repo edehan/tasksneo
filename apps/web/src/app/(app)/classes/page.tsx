@@ -1,33 +1,36 @@
 "use client";
 
-import Link from "next/link";
 import { BookOpen, Plus, UserPlus } from "lucide-react";
-
+import Link from "next/link";
+import { AppHeader } from "@/components/app-header";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
-import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ClassCard } from "@/features/classes/components/class-card";
+import { JoinClassDialog } from "@/features/classes/components/join-class-dialog";
 import { useClasses } from "@/features/classes/hooks/use-classes";
 
 export default function ClassesPage() {
-  const { sharedClasses, loading } = useClasses();
+  const { sharedClasses, loading, reload } = useClasses();
 
   return (
     <>
       <AppHeader title="Classes" />
-      <div className="p-6 space-y-6">
+      <div className="mx-auto max-w-240 p-6 space-y-6">
         <PageHeader
           title="Classes"
           description="Manage your classes and collaborate with others"
         >
-          <Button asChild variant="outline" size="sm">
-            <Link href="/classes/join">
-              <UserPlus className="mr-2 h-4 w-4" />
-              Join
-            </Link>
-          </Button>
+          <JoinClassDialog
+            trigger={
+              <Button variant="outline" size="sm">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Join
+              </Button>
+            }
+            onJoined={reload}
+          />
           <Button asChild size="sm">
             <Link href="/classes/new">
               <Plus className="mr-2 h-4 w-4" />
@@ -39,7 +42,7 @@ export default function ClassesPage() {
         {loading ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-36 rounded-xl" />
+              <Skeleton key={`skeleton-${i}`} className="h-36 rounded-xl" />
             ))}
           </div>
         ) : sharedClasses.length === 0 ? (
@@ -49,9 +52,14 @@ export default function ClassesPage() {
             description="Create a new class or join one with an invite code."
           >
             <div className="flex gap-2">
-              <Button asChild variant="outline" size="sm">
-                <Link href="/classes/join">Join class</Link>
-              </Button>
+              <JoinClassDialog
+                trigger={
+                  <Button variant="outline" size="sm">
+                    Join class
+                  </Button>
+                }
+                onJoined={reload}
+              />
               <Button asChild size="sm">
                 <Link href="/classes/new">Create class</Link>
               </Button>

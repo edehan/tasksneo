@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { Users } from "lucide-react";
+import Link from "next/link";
 
 import { ClassColorBadge } from "@/components/class-color-badge";
 import { Badge } from "@/components/ui/badge";

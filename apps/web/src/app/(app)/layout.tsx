@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-
-import { useAuth } from "@/components/auth-provider";
+import { useEffect } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
+import { useAuth } from "@/components/auth-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -28,11 +27,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-export default function AppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
       <SidebarProvider>
