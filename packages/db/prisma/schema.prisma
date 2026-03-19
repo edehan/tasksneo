@@ -204,6 +204,7 @@ model Submission {
   id               String    @id @default(uuid())
   firstSubmittedAt DateTime  @default(now()) @map("first_submitted_at") @db.Timestamptz
   lastUpdatedAt    DateTime  @updatedAt @map("last_updated_at") @db.Timestamptz
+  content          String?
 
   // 评分字段，仅班级 admin/owner 可写
   score        Decimal?  @db.Decimal(5, 2)

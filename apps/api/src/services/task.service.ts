@@ -428,7 +428,88 @@ export async function getMySubmission(taskId: string, userId: string) {
   };
 }
 
-export async function upsertMySubmission(taskId: string, userId: string, attachmentRecords: Array<{
+async function ensureSubmission(taskId: string, userId: string) {
+  const existingSubmission = await prisma.submission.findUnique({
+    where: {
+      taskId_userId: {
+        taskId,
+        userId,
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (existingSubmission) {
+    return existingSubmission.id;
+  }
+
+  const submission = await prisma.submission.create({
+    data: {
+      taskId,
+      userId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  return submission.id;
+}
+
+async function markTaskSubmissionTouched(taskId: string, userId: string) {
+  await prisma.taskUserState.upsert({
+    where: {
+      taskId_userId: {
+        taskId,
+        userId,
+      },
+    },
+    update: {},
+    create: {
+      taskId,
+      userId,
+      tags: [],
+      viewedAt: new Date(),
+    },
+  });
+}
+
+async function getSubmissionDetailOrThrow(submissionId: string) {
+  const submission = await prisma.submission.findUnique({
+    where: { id: submissionId },
+    include: { attachments: true },
+  });
+
+  if (!submission) {
+    throw new AppError(404, 'SUBMISSION_NOT_FOUND', 'Submission not found');
+  }
+
+  return {
+    ...toSubmission(submission),
+    attachments: submission.attachments.map(toAttachmentMeta),
+  };
+}
+
+export async function upsertMySubmissionContent(taskId: string, userId: string, content: string | null) {
+  await assertTaskAccess(taskId, userId);
+
+  const submissionId = await ensureSubmission(taskId, userId);
+
+  await prisma.submission.update({
+    where: { id: submissionId },
+    data: {
+      content,
+    },
+  });
+
+  await markTaskSubmissionTouched(taskId, userId);
+
+  return getSubmissionDetailOrThrow(submissionId);
+}
+
+export async function upsertMySubmissionAttachments(taskId: string, userId: string, attachmentRecords: Array<{
   fileKey: string;
   originalName: string;
   mimeType: string | null;
@@ -443,27 +524,14 @@ export async function upsertMySubmission(taskId: string, userId: string, attachm
         userId,
       },
     },
-    include: {
-      attachments: {
-        select: {
-          fileKey: true,
-        },
-      },
+    select: {
+      id: true,
     },
   });
 
-  let submissionId = existingSubmission?.id;
+  const submissionId = existingSubmission?.id ?? await ensureSubmission(taskId, userId);
 
-  if (!submissionId) {
-    const submission = await prisma.submission.create({
-      data: {
-        taskId,
-        userId,
-      },
-    });
-
-    submissionId = submission.id;
-  } else {
+  if (existingSubmission) {
     await removeSubmissionAttachments(submissionId);
   }
 
@@ -480,35 +548,16 @@ export async function upsertMySubmission(taskId: string, userId: string, attachm
     });
   }
 
-  await prisma.taskUserState.upsert({
-    where: {
-      taskId_userId: {
-        taskId,
-        userId,
-      },
-    },
-    update: {},
-    create: {
-      taskId,
-      userId,
-      tags: [],
-      viewedAt: new Date(),
-    },
-  });
-
-  const submission = await prisma.submission.findUnique({
+  await prisma.submission.update({
     where: { id: submissionId },
-    include: { attachments: true },
+    data: {
+      lastUpdatedAt: new Date(),
+    },
   });
 
-  if (!submission) {
-    throw new AppError(404, 'SUBMISSION_NOT_FOUND', 'Submission not found');
-  }
+  await markTaskSubmissionTouched(taskId, userId);
 
-  return {
-    ...toSubmission(submission),
-    attachments: submission.attachments.map(toAttachmentMeta),
-  };
+  return getSubmissionDetailOrThrow(submissionId);
 }
 
 export async function addTaskAttachments(taskId: string, userId: string, attachmentRecords: Array<{

@@ -401,6 +401,14 @@ describe('TaskFlow API e2e', () => {
     expect(taskAttachmentRes.status).toBe(201);
     const taskAttachmentBody = (await json(taskAttachmentRes)) as Array<{ fileKey: string }>;
 
+    const submitTextRes = await requestJson(app, `/tasks/${taskId}/submissions/me`, {
+      method: 'PUT',
+      headers: authHeader(memberToken),
+      body: JSON.stringify({ content: 'My first answer' }),
+    });
+    expect(submitTextRes.response.status).toBe(200);
+    expect((submitTextRes.body as { content: string | null }).content).toBe('My first answer');
+
     const submissionForm = new FormData();
     submissionForm.append('files', new File([Buffer.from('submission-file')], 'submission.txt', { type: 'text/plain' }));
     const submitRes = await app.request(`/tasks/${taskId}/submissions/me/attachments`, {
@@ -409,11 +417,14 @@ describe('TaskFlow API e2e', () => {
       body: submissionForm,
     });
     expect(submitRes.status).toBe(200);
-    const submitBody = (await json(submitRes)) as { id: string; attachments: Array<{ fileKey: string }> };
+    const submitBody = (await json(submitRes)) as { id: string; content: string | null; attachments: Array<{ fileKey: string }> };
     const submissionId = submitBody.id;
+    expect(submitBody.content).toBe('My first answer');
 
     const mySubmissionRes = await app.request(`/tasks/${taskId}/submissions/me`, { headers: authHeader(memberToken) });
     expect(mySubmissionRes.status).toBe(200);
+    const mySubmissionBody = (await json(mySubmissionRes)) as { content: string | null };
+    expect(mySubmissionBody.content).toBe('My first answer');
 
     const allSubmissions = await app.request(`/tasks/${taskId}/submissions`, { headers: authHeader(ownerToken) });
     expect(allSubmissions.status).toBe(200);

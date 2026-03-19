@@ -142,6 +142,7 @@ interface SubmissionSource {
   userId: string;
   firstSubmittedAt: Date;
   lastUpdatedAt: Date;
+  content: string | null;
   score: unknown;
   reviewerId: string | null;
   reviewedAt: Date | null;
@@ -155,6 +156,7 @@ export function toSubmission(submission: SubmissionSource) {
     userId: submission.userId,
     firstSubmittedAt: submission.firstSubmittedAt.toISOString(),
     lastUpdatedAt: submission.lastUpdatedAt.toISOString(),
+    content: submission.content,
     score: submission.score !== null && submission.score !== undefined ? String(submission.score) : null,
     reviewerId: submission.reviewerId,
     reviewedAt: submission.reviewedAt?.toISOString() ?? null,

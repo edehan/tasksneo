@@ -18,7 +18,8 @@ import {
   renameTaskSubmissionAttachments,
   updateTask,
   updateTaskUserState,
-  upsertMySubmission,
+  upsertMySubmissionAttachments,
+  upsertMySubmissionContent,
 } from '../services/task.service.js';
 
 import type { AppVariables } from '../types/context.js';
@@ -55,8 +56,17 @@ const gradeBodySchema = z.object({
   reviewNote: z.string().optional().nullable(),
 });
 
+const upsertSubmissionBodySchema = z.object({
+  content: z.string().nullable(),
+});
+
 async function parseFilesFromFormData(formData: FormData, parentType: string, parentId: string) {
   const rawFiles = formData.getAll('files');
+  const singleFile = formData.get('file');
+
+  if (singleFile instanceof File) {
+    rawFiles.push(singleFile);
+  }
 
   if (rawFiles.length === 0) {
     throw new AppError(400, 'VALIDATION_ERROR', 'files is required');
@@ -158,6 +168,14 @@ tasksRouter.get('/:taskId/submissions/me', async (c) => {
   return c.json(submission, 200);
 });
 
+tasksRouter.put('/:taskId/submissions/me', async (c) => {
+  const authUser = requireAuthUser(c);
+  const params = taskIdParamSchema.parse(c.req.param());
+  const body = upsertSubmissionBodySchema.parse(await c.req.json());
+  const submission = await upsertMySubmissionContent(params.taskId, authUser.userId, body.content);
+  return c.json(submission, 200);
+});
+
 tasksRouter.patch('/:taskId/submissions/:submissionId/grade', async (c) => {
   const authUser = requireAuthUser(c);
   const params = gradeParamSchema.parse(c.req.param());
@@ -193,7 +211,7 @@ tasksRouter.post('/:taskId/submissions/me/attachments', async (c) => {
   const params = taskIdParamSchema.parse(c.req.param());
   const formData = await c.req.formData();
   const records = await parseFilesFromFormData(formData, 'submissions', authUser.userId);
-  const submission = await upsertMySubmission(params.taskId, authUser.userId, records);
+  const submission = await upsertMySubmissionAttachments(params.taskId, authUser.userId, records);
 
   return c.json(submission, 200);
 });
