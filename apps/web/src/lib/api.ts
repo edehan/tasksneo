@@ -118,19 +118,29 @@ export interface SubmissionSummary {
   id: string;
   taskId: string;
   userId: string;
-  userNickname: string | null;
-  userEmail: string;
   firstSubmittedAt: string;
   lastUpdatedAt: string;
-  score: number | null;
+  content: string | null;
+  score: string | null;
   reviewerId: string | null;
   reviewedAt: string | null;
   reviewNote: string | null;
 }
 
 export interface SubmissionDetail extends SubmissionSummary {
-  content: string | null;
   attachments: AttachmentMeta[];
+}
+
+/** Row returned by GET /tasks/:taskId/submissions (admin list) */
+export interface SubmissionListRow {
+  userId: string;
+  nickname: string | null;
+  email: string;
+  schoolName: string | null;
+  studentId: string | null;
+  role: "OWNER" | "ADMIN" | "MEMBER";
+  submitted: boolean;
+  submission: SubmissionSummary | null;
 }
 
 export interface NotificationPref {
@@ -526,8 +536,8 @@ export async function updateTaskState(
 export async function listSubmissions(
   token: string,
   taskId: string,
-): Promise<SubmissionSummary[]> {
-  return apiRequest<SubmissionSummary[]>(
+): Promise<SubmissionListRow[]> {
+  return apiRequest<SubmissionListRow[]>(
     `/tasks/${taskId}/submissions`,
     {},
     token,
@@ -537,12 +547,13 @@ export async function listSubmissions(
 export async function getMySubmission(
   token: string,
   taskId: string,
-): Promise<SubmissionDetail> {
-  return apiRequest<SubmissionDetail>(
+): Promise<SubmissionDetail | null> {
+  const result = await apiRequest<SubmissionDetail | undefined>(
     `/tasks/${taskId}/submissions/me`,
     {},
     token,
   );
+  return result ?? null;
 }
 
 export async function upsertMySubmission(
@@ -561,7 +572,7 @@ export async function gradeSubmission(
   token: string,
   taskId: string,
   submissionId: string,
-  input: { score?: number | null; reviewNote?: string | null },
+  input: { score?: string | null; reviewNote?: string | null },
 ): Promise<SubmissionDetail> {
   return apiRequest<SubmissionDetail>(
     `/tasks/${taskId}/submissions/${submissionId}/grade`,
