@@ -403,34 +403,6 @@ export async function listTaskSubmissions(taskId: string, userId: string) {
   });
 }
 
-export async function getTaskSubmissionDetail(taskId: string, submissionId: string, userId: string) {
-  const { task, classMembership } = await assertTaskAccess(taskId, userId);
-
-  if (!classMembership || !task.classId) {
-    throw new AppError(403, 'FORBIDDEN', 'Only class admin can view submission detail');
-  }
-
-  requireOwnerOrAdmin(classMembership);
-
-  const submission = await prisma.submission.findUnique({
-    where: {
-      id: submissionId,
-    },
-    include: {
-      attachments: true,
-    },
-  });
-
-  if (!submission || submission.taskId !== taskId) {
-    throw new AppError(404, 'SUBMISSION_NOT_FOUND', 'Submission not found');
-  }
-
-  return {
-    ...toSubmission(submission),
-    attachments: submission.attachments.map(toAttachmentMeta),
-  };
-}
-
 export async function getMySubmission(taskId: string, userId: string) {
   await assertTaskAccess(taskId, userId);
 

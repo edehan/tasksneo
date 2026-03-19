@@ -71,21 +71,8 @@ hello submission
 GET {{baseUrl}}/tasks/{{taskId}}/submissions/me
 Authorization: Bearer {{memberToken}}
 
-### Upsert my submission content (JSON)
-PUT {{baseUrl}}/tasks/{{taskId}}/submissions/me
-Authorization: Bearer {{memberToken}}
-Content-Type: application/json
-
-{
-  "content": "## My answer\n\nThis is my markdown submission."
-}
-
 ### List all submissions (admin)
 GET {{baseUrl}}/tasks/{{taskId}}/submissions
-Authorization: Bearer {{ownerToken}}
-
-### Get one submission detail (admin)
-GET {{baseUrl}}/tasks/{{taskId}}/submissions/{{submissionId}}
 Authorization: Bearer {{ownerToken}}
 
 ### Grade submission

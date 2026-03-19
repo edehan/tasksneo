@@ -56,9 +56,6 @@ cd packages/db && npx prisma migrate dev && cd ../..
 
 # 5. 一键启动本地开发环境
 pnpm dev
-
-# 6. （可选）注入本地演示数据
-pnpm dev:seed
 ```
 
 默认访问：
@@ -76,14 +73,7 @@ pnpm dev:seed
 pnpm dev:infra
 pnpm dev:api
 pnpm dev:web
-pnpm dev:seed
 pnpm dev:down
-```
-
-如需在 `pnpm dev` 启动时自动注入演示数据，可使用：
-
-```bash
-TASKFLOW_DEV_SEED=true pnpm dev
 ```
 
 ## 本地预发布

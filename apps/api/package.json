@@ -6,7 +6,6 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "seed:dev": "tsx scripts/dev-seed.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

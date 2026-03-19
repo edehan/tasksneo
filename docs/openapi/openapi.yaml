@@ -1600,47 +1600,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /tasks/{taskId}/submissions/{submissionId}:
-    parameters:
-      - name: taskId
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-      - name: submissionId
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-    get:
-      tags: [Submissions]
-      summary: 获取单条提交详情（含附件）
-      description: |
-        仅 OWNER 和 ADMIN 可访问，用于评分页查看单个提交的正文与附件。
-      security:
-        - userAuth: []
-      responses:
-        '200':
-          description: 成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SubmissionDetail'
-        '403':
-          description: 权限不足
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: 提交不存在
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
   /tasks/{taskId}/submissions/{submissionId}/grade:
     parameters:
       - name: taskId

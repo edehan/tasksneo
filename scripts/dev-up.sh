@@ -5,14 +5,6 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 bash "$ROOT_DIR/scripts/dev-infra.sh"
 
-if [[ "${TASKFLOW_DEV_SEED:-false}" == "true" ]]; then
-  echo "Applying database migrations for local dev..."
-  pnpm --filter @taskflow/db exec prisma migrate deploy
-
-  echo "Seeding local demo data..."
-  pnpm dev:seed
-fi
-
 cat <<'EOF'
 
 Starting local dev servers:

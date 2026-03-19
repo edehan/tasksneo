@@ -150,9 +150,6 @@ class_members（当前班级）
 
 管理员可点击进入某个成员的提交详情，查看其 Markdown 正文和附件文件。
 
-- 列表接口：`GET /tasks/:taskId/submissions`
-- 单条详情接口（含附件）：`GET /tasks/:taskId/submissions/:submissionId`
-
 ---
 
 ## 管理员评分

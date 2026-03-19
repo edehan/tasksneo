@@ -17,8 +17,7 @@ This is the practical equivalent of older static-site tools such as Live Server,
 1. Copy `.env.example` to `.env`
 2. Run `pnpm install`
 3. Run `pnpm dev`
-4. (Optional) Run `pnpm dev:seed` to preload local demo accounts/classes/tasks/submissions
-5. Open:
+4. Open:
    - `http://localhost:3000`
    - `http://localhost:3000/admin`
 
@@ -29,15 +28,10 @@ If your local `.env` predates the `SYSTEM_CONFIG_SECRET` split, `pnpm dev` will 
 ## Commands
 
 - `pnpm dev`: start dev infra and both watch servers
-- `pnpm dev:seed`: preload local-only demo data (idempotent)
 - `pnpm dev:infra`: start `postgres`, `redis`, `minio`
 - `pnpm dev:api`: start backend watch mode only
 - `pnpm dev:web`: start Next.js dev server only
 - `pnpm dev:down`: stop local dev infrastructure
-
-If you want `pnpm dev` to seed automatically, run:
-
-- `TASKFLOW_DEV_SEED=true pnpm dev`
 
 ## Ports
 

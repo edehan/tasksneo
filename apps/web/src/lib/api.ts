@@ -556,18 +556,6 @@ export async function getMySubmission(
   return result ?? null;
 }
 
-export async function getSubmission(
-  token: string,
-  taskId: string,
-  submissionId: string,
-): Promise<SubmissionDetail> {
-  return apiRequest<SubmissionDetail>(
-    `/tasks/${taskId}/submissions/${submissionId}`,
-    {},
-    token,
-  );
-}
-
 export async function upsertMySubmission(
   token: string,
   taskId: string,

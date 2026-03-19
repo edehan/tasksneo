@@ -426,22 +426,6 @@ describe('TaskFlow API e2e', () => {
     const mySubmissionBody = (await json(mySubmissionRes)) as { content: string | null };
     expect(mySubmissionBody.content).toBe('My first answer');
 
-    const submissionDetailRes = await app.request(`/tasks/${taskId}/submissions/${submissionId}`, {
-      headers: authHeader(ownerToken),
-    });
-    expect(submissionDetailRes.status).toBe(200);
-    const submissionDetailBody = (await json(submissionDetailRes)) as {
-      content: string | null;
-      attachments: Array<{ fileKey: string }>;
-    };
-    expect(submissionDetailBody.content).toBe('My first answer');
-    expect(submissionDetailBody.attachments.length).toBe(1);
-
-    const submissionDetailForbiddenRes = await app.request(`/tasks/${taskId}/submissions/${submissionId}`, {
-      headers: authHeader(memberToken),
-    });
-    expect(submissionDetailForbiddenRes.status).toBe(403);
-
     const allSubmissions = await app.request(`/tasks/${taskId}/submissions`, { headers: authHeader(ownerToken) });
     expect(allSubmissions.status).toBe(200);
 
