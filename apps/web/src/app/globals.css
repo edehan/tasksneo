@@ -1,76 +1,112 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * TaskFlow Design Tokens
+ * Base: stone (warm neutral) · Accent: dynamic class color
+ * Philosophy: Calm productivity · Warm functionalism
+ */
+
 :root {
+  /* shadcn/ui core — stone warm palette */
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --foreground: oklch(0.147 0.004 49.75);
+
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.147 0.004 49.75);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.147 0.004 49.75);
+
+  --primary: oklch(0.216 0.006 56.04);
+  --primary-foreground: oklch(0.985 0.002 75);
+  --secondary: oklch(0.970 0.001 106.42);
+  --secondary-foreground: oklch(0.216 0.006 56.04);
+  --muted: oklch(0.970 0.001 106.42);
+  --muted-foreground: oklch(0.553 0.013 58.07);
+  --accent: oklch(0.970 0.001 106.42);
+  --accent-foreground: oklch(0.216 0.006 56.04);
+
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+
+  --border: oklch(0.923 0.003 48.72);
+  --input: oklch(0.923 0.003 48.72);
+  --ring: oklch(0.553 0.013 58.07);
+
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+
+  --radius: 0.5rem;
+
+  --sidebar: oklch(0.970 0.001 106.42);
+  --sidebar-foreground: oklch(0.147 0.004 49.75);
+  --sidebar-primary: oklch(0.216 0.006 56.04);
+  --sidebar-primary-foreground: oklch(0.985 0.002 75);
+  --sidebar-accent: oklch(0.970 0.001 106.42);
+  --sidebar-accent-foreground: oklch(0.216 0.006 56.04);
+  --sidebar-border: oklch(0.923 0.003 48.72);
+  --sidebar-ring: oklch(0.553 0.013 58.07);
+
+  /* Design system semantic tokens */
+  --status-success: oklch(0.586 0.163 142.50);
+  --status-warning: oklch(0.769 0.188 70.08);
+  --status-error: oklch(0.577 0.245 27.325);
+  --status-info: oklch(0.546 0.245 262.88);
+
+  /* Class accent color — dynamically set via JS per active class */
+  --class-accent: oklch(0.585 0.233 277.12);
+  --class-accent-foreground: oklch(1 0 0);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: oklch(0.147 0.004 49.75);
+  --foreground: oklch(0.985 0.002 75);
+
+  --card: oklch(0.216 0.006 56.04);
+  --card-foreground: oklch(0.985 0.002 75);
+  --popover: oklch(0.216 0.006 56.04);
+  --popover-foreground: oklch(0.985 0.002 75);
+
+  --primary: oklch(0.923 0.003 48.72);
+  --primary-foreground: oklch(0.216 0.006 56.04);
+  --secondary: oklch(0.268 0.007 34);
+  --secondary-foreground: oklch(0.985 0.002 75);
+  --muted: oklch(0.268 0.007 34);
+  --muted-foreground: oklch(0.709 0.010 56);
+  --accent: oklch(0.268 0.007 34);
+  --accent-foreground: oklch(0.985 0.002 75);
+
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.637 0.237 25.331);
+
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: oklch(0.553 0.013 58.07);
+
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
+
+  --sidebar: oklch(0.216 0.006 56.04);
+  --sidebar-foreground: oklch(0.985 0.002 75);
   --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0.002 75);
+  --sidebar-accent: oklch(0.268 0.007 34);
+  --sidebar-accent-foreground: oklch(0.985 0.002 75);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: oklch(0.553 0.013 58.07);
+
+  --status-success: oklch(0.723 0.191 142.50);
+  --status-warning: oklch(0.769 0.188 70.08);
+  --status-error: oklch(0.704 0.191 22.216);
+  --status-info: oklch(0.623 0.214 259.53);
 }
 
 @theme inline {
@@ -104,6 +140,20 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+
+  /* Semantic status colors */
+  --color-status-success: var(--status-success);
+  --color-status-warning: var(--status-warning);
+  --color-status-error: var(--status-error);
+  --color-status-info: var(--status-info);
+
+  /* Class accent */
+  --color-class-accent: var(--class-accent);
+  --color-class-accent-foreground: var(--class-accent-foreground);
+
+  /* Font families */
+  --font-sans: "Inter", "PingFang SC", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
 @layer base {
