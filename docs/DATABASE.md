@@ -224,6 +224,7 @@ One row per (task, user). Updated in place on re-submission. No version history.
 | userId | UUID FK → users | CASCADE on delete |
 | firstSubmittedAt | DateTime | set on creation; never updated |
 | lastUpdatedAt | DateTime | Prisma `@updatedAt` |
+| content | String? | submission text body; nullable for file-only submissions |
 | score | Decimal(5,2)? | NULL = not graded; writable by class admin/owner only |
 | reviewerId | UUID? FK → users | SET NULL on reviewer delete |
 | reviewedAt | DateTime? | |
@@ -231,7 +232,7 @@ One row per (task, user). Updated in place on re-submission. No version history.
 
 **Constraints**: `@@unique([taskId, userId])`.
 
-**Re-submission**: the row is updated in place. The new file attachment replaces the old one — the old MinIO object is deleted by the application layer. No file version history is kept.
+**Re-submission**: the row is updated in place. Text content and file attachments are updated independently. For files, new attachments replace old ones and old MinIO objects are deleted by the application layer. No version history is kept.
 
 **Grade export** joins: `submissions → tasks (title) → classes (name) → users (nickname, studentId, schoolId) → schools (name)`.  
 Output columns: nickname, school name, student ID, class name, task title, score.
@@ -394,6 +395,7 @@ erDiagram
         uuid task_id FK
         uuid user_id FK
         timestamptz first_submitted_at
+        text content
         decimal score
         uuid reviewer_id FK
         text review_note
