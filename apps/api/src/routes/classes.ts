@@ -16,7 +16,7 @@ import {
   updateClass,
   updateMemberRole,
 } from '../services/class.service.js';
-import { createClassTask, listClassTasks } from '../services/task.service.js';
+import { createClassTask, createClassTaskDraft, listClassTasks } from '../services/task.service.js';
 
 import type { AppVariables } from '../types/context.js';
 
@@ -57,6 +57,17 @@ const updateMemberRoleSchema = z.object({
 const createTaskBodySchema = z.object({
   title: z.string().trim().min(1),
   description: z.string().optional().nullable(),
+  sourceText: z.string().optional().nullable(),
+  startAt: z.string().datetime().optional().nullable(),
+  dueAt: z.string().datetime().optional().nullable(),
+  allowLateSubmission: z.boolean().optional(),
+  blockedBy: z.array(z.string().uuid()).optional(),
+});
+
+const createTaskDraftBodySchema = z.object({
+  title: z.string().trim().min(1).optional(),
+  description: z.string().optional().nullable(),
+  sourceText: z.string().optional().nullable(),
   startAt: z.string().datetime().optional().nullable(),
   dueAt: z.string().datetime().optional().nullable(),
   allowLateSubmission: z.boolean().optional(),
@@ -143,6 +154,14 @@ classesRouter.post('/:classId/tasks', async (c) => {
   const params = classIdParamSchema.parse(c.req.param());
   const body = createTaskBodySchema.parse(await c.req.json());
   const task = await createClassTask(params.classId, authUser.userId, body);
+  return c.json(task, 201);
+});
+
+classesRouter.post('/:classId/tasks/drafts', async (c) => {
+  const authUser = requireAuthUser(c);
+  const params = classIdParamSchema.parse(c.req.param());
+  const body = createTaskDraftBodySchema.parse(await c.req.json());
+  const task = await createClassTaskDraft(params.classId, authUser.userId, body);
   return c.json(task, 201);
 });
 

@@ -54,6 +54,23 @@ export async function removeObject(fileKey: string) {
   });
 }
 
+export async function getObjectBuffer(fileKey: string): Promise<Buffer | null> {
+  const { minio, bucket } = getClient();
+
+  try {
+    const stream = await minio.getObject(bucket, fileKey);
+    const chunks: Buffer[] = [];
+
+    for await (const chunk of stream) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+
+    return Buffer.concat(chunks);
+  } catch {
+    return null;
+  }
+}
+
 export async function getPresignedUrl(fileKey: string, expirySeconds = 300): Promise<string> {
   const { minio, bucket } = getClient();
   await ensureBucketExists();

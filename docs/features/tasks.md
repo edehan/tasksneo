@@ -6,6 +6,19 @@
 
 ## 任务创建（管理员侧）
 
+当前流程改为“草稿 -> 解析 -> 编辑正文 -> 发布”四步：
+
+1. `POST /classes/:classId/tasks/drafts` 创建任务草稿（`isPublished=false`）。
+2. 上传附件到 `POST /tasks/:taskId/attachments`（仍走 MinIO，但任务尚未发布）。
+3. `POST /tasks/:taskId/parse` 触发 AI 双通道解析：
+   - Structured Outputs：回填 `title/startAt/dueAt/description`。
+   - Markdown 草稿：写入 Redis 临时缓存，编辑页通过 `GET /tasks/:taskId/draft-markdown` 回填。
+4. 编辑页确认后调用 `POST /tasks/:taskId/publish` 正式发布（`isPublished=true`，并触发通知）。
+
+说明：
+- 草稿任务不会出现在成员任务列表中（`GET /classes/:classId/tasks` 仅返回已发布任务）。
+- 草稿附件在发布前后都复用同一 MinIO 对象与 `taskId` 关联，不做重复拷贝。
+
 ### 页面结构
 
 任务创建页面分为上下两个区域：
@@ -26,9 +39,9 @@
 
 1. 用户在上方输入区输入或粘贴自然语言文本。
 2. 用户点击"AI 解析"按钮。
-3. 前端调用 `POST /tasks/parse`，传入文本内容（该接口只做解析，不创建任务）。
+3. 前端可调用 `POST /tasks/parse` 做纯文本预解析，也可调用 `POST /tasks/:taskId/parse` 对草稿进行正式解析。
 4. 后端读取 `system_config` 中的 LLM 配置（`llm.base_url`、`llm.api_key`、`llm.model`），构造提示词，调用 LLM。
-5. 提示词要求 LLM **仅返回** 如下结构的 JSON：
+5. 提示词要求 LLM 使用 Structured Outputs，返回如下结构 JSON：
    ```json
    {
      "title": "字符串或 null",

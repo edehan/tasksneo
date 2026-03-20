@@ -74,10 +74,13 @@ export interface TaskSummary {
   classId: string;
   className: string;
   title: string;
+  sourceText: string | null;
   startAt: string | null;
   dueAt: string | null;
   allowLateSubmission: boolean;
   blockedBy: string[];
+  isPublished: boolean;
+  publishedAt: string | null;
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
@@ -112,6 +115,10 @@ export interface ParseTaskResponse {
   startAt: string | null;
   dueAt: string | null;
   description: string | null;
+}
+
+export interface ParseDraftTaskResponse extends ParseTaskResponse {
+  markdownCached: boolean;
 }
 
 export interface SubmissionSummary {
@@ -471,6 +478,26 @@ export async function createTask(
   );
 }
 
+export async function createTaskDraft(
+  token: string,
+  classId: string,
+  input: {
+    title?: string;
+    description?: string | null;
+    sourceText?: string | null;
+    startAt?: string | null;
+    dueAt?: string | null;
+    allowLateSubmission?: boolean;
+    blockedBy?: string[];
+  } = {},
+): Promise<TaskSummary> {
+  return apiRequest<TaskSummary>(
+    `/classes/${classId}/tasks/drafts`,
+    { method: "POST", body: JSON.stringify(input) },
+    token,
+  );
+}
+
 export async function parseTask(
   token: string,
   text: string,
@@ -478,6 +505,32 @@ export async function parseTask(
   return apiRequest<ParseTaskResponse>(
     "/tasks/parse",
     { method: "POST", body: JSON.stringify({ text }) },
+    token,
+  );
+}
+
+export async function parseTaskDraft(
+  token: string,
+  taskId: string,
+  text?: string,
+): Promise<ParseDraftTaskResponse> {
+  return apiRequest<ParseDraftTaskResponse>(
+    `/tasks/${taskId}/parse`,
+    {
+      method: "POST",
+      body: JSON.stringify(text ? { text } : {}),
+    },
+    token,
+  );
+}
+
+export async function getTaskDraftMarkdown(
+  token: string,
+  taskId: string,
+): Promise<{ markdown: string | null }> {
+  return apiRequest<{ markdown: string | null }>(
+    `/tasks/${taskId}/draft-markdown`,
+    {},
     token,
   );
 }
@@ -495,6 +548,7 @@ export async function updateTask(
   input: {
     title?: string;
     description?: string | null;
+    sourceText?: string | null;
     startAt?: string | null;
     dueAt?: string | null;
     allowLateSubmission?: boolean;
@@ -504,6 +558,26 @@ export async function updateTask(
   return apiRequest<TaskDetail>(
     `/tasks/${taskId}`,
     { method: "PATCH", body: JSON.stringify(input) },
+    token,
+  );
+}
+
+export async function publishTaskDraft(
+  token: string,
+  taskId: string,
+  input: {
+    title?: string;
+    description?: string | null;
+    sourceText?: string | null;
+    startAt?: string | null;
+    dueAt?: string | null;
+    allowLateSubmission?: boolean;
+    blockedBy?: string[];
+  },
+): Promise<TaskSummary> {
+  return apiRequest<TaskSummary>(
+    `/tasks/${taskId}/publish`,
+    { method: "POST", body: JSON.stringify(input) },
     token,
   );
 }

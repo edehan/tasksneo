@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { AuthProvider, ClassRole, prisma } from '@taskflow/db';
+import { updateConfig } from '../src/services/system-config.service.js';
 
 const repoRoot = path.resolve(process.cwd(), '../..');
 const localEnvPath = path.join(repoRoot, '.env');
@@ -247,6 +248,53 @@ async function upsertSubmission(input: {
   });
 }
 
+function readSeedEnv(...keys: string[]) {
+  for (const key of keys) {
+    const value = process.env[key];
+
+    if (value && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return null;
+}
+
+async function seedLlmConfig() {
+  const entries: Record<string, string> = {};
+
+  const provider = readSeedEnv('DEV_SEED_LLM_PROVIDER', 'LLM_PROVIDER');
+  const baseUrl = readSeedEnv('DEV_SEED_LLM_BASE_URL', 'LLM_BASE_URL');
+  const model = readSeedEnv('DEV_SEED_LLM_MODEL', 'LLM_MODEL');
+  const apiKey = readSeedEnv('DEV_SEED_LLM_API_KEY', 'LLM_API_KEY');
+
+  if (provider) {
+    entries['llm.provider'] = provider;
+  }
+
+  if (baseUrl) {
+    entries['llm.base_url'] = baseUrl;
+  }
+
+  if (model) {
+    entries['llm.model'] = model;
+  }
+
+  if (apiKey) {
+    entries['llm.api_key'] = apiKey;
+  }
+
+  entries['llm.prompt_task_parse_structured'] =
+    readSeedEnv('DEV_SEED_LLM_PROMPT_STRUCTURED')
+    ?? 'Extract task fields into JSON schema {title,startAt,dueAt,description}.';
+  entries['llm.prompt_task_parse_markdown'] =
+    readSeedEnv('DEV_SEED_LLM_PROMPT_MARKDOWN')
+    ?? 'Generate a markdown task brief from the provided text and files.';
+
+  await updateConfig(entries);
+  console.log('Seeded admin LLM config keys:', Object.keys(entries).join(', '));
+}
+
 async function main() {
   assertLocalDatabase();
 
@@ -313,6 +361,8 @@ async function main() {
     submittedAtIso: '2026-03-18T11:00:00.000Z',
     content: '## Submission for Class 2\n\nHere is my markdown response with the requested summary.',
   });
+
+  await seedLlmConfig();
 
   console.log('Local dev seed ready.');
   console.log('Users: a@example.com / b@example.com / c@example.com (password: 12345678)');

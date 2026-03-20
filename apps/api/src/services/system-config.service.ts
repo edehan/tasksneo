@@ -8,6 +8,8 @@ const DEFAULT_CONFIG: Record<string, string> = {
   'app.base_url': 'http://localhost:3000',
   'auth.registration_open': 'true',
   'notif.before_due_hours': '24,2',
+  'llm.prompt_task_parse_structured': 'Extract task fields into JSON schema {title,startAt,dueAt,description}.',
+  'llm.prompt_task_parse_markdown': 'Generate a markdown task brief from the provided text and files.',
 };
 
 const ALLOWED_CONFIG_KEYS = new Set([
@@ -24,6 +26,8 @@ const ALLOWED_CONFIG_KEYS = new Set([
   'llm.base_url',
   'llm.api_key',
   'llm.model',
+  'llm.prompt_task_parse_structured',
+  'llm.prompt_task_parse_markdown',
 ]);
 
 function decodeSecretForAdminView(value: string) {
