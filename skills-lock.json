@@ -15,6 +15,11 @@
       "source": "shadcn/ui",
       "sourceType": "github",
       "computedHash": "507f011a70e8b3ae242bdc0bb5b39fd91a1d4049a0f3c281991ccf84973d591c"
+    },
+    "turborepo": {
+      "source": "vercel/turborepo",
+      "sourceType": "github",
+      "computedHash": "ba8750c8b17b431b42fd9178cc753fa56049fbed9e0d1871cb2410f1da07a54d"
     }
   }
 }

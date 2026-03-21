@@ -357,8 +357,45 @@ describe('TaskFlow API e2e', () => {
 
     const taskId = (createTaskRes.body as { id: string }).id;
 
+    const createDraftRes = await requestJson(app, `/classes/${classId}/tasks/drafts`, {
+      method: 'POST',
+      headers: authHeader(ownerToken),
+      body: JSON.stringify({
+        sourceText: 'Finish the worksheet by this Sunday evening',
+      }),
+    });
+    expect(createDraftRes.response.status).toBe(201);
+    const draftTaskId = (createDraftRes.body as { id: string }).id;
+
     const listTasks = await app.request(`/classes/${classId}/tasks`, { headers: authHeader(memberToken) });
     expect(listTasks.status).toBe(200);
+    const listTaskBody = (await json(listTasks)) as Array<{ id: string }>;
+    expect(listTaskBody.some((task) => task.id === draftTaskId)).toBe(false);
+
+    const memberGetDraftTask = await app.request(`/tasks/${draftTaskId}`, { headers: authHeader(memberToken) });
+    expect(memberGetDraftTask.status).toBe(404);
+
+    const parseDraftTask = await requestJson(app, `/tasks/${draftTaskId}/parse`, {
+      method: 'POST',
+      headers: authHeader(ownerToken),
+      body: JSON.stringify({ text: 'Finish the worksheet by this Sunday evening' }),
+    });
+    expect(parseDraftTask.response.status).toBe(200);
+
+    const draftMarkdown = await app.request(`/tasks/${draftTaskId}/draft-markdown`, {
+      headers: authHeader(ownerToken),
+    });
+    expect(draftMarkdown.status).toBe(200);
+
+    const publishDraftTask = await requestJson(app, `/tasks/${draftTaskId}/publish`, {
+      method: 'POST',
+      headers: authHeader(ownerToken),
+      body: JSON.stringify({ title: 'Worksheet Draft Published' }),
+    });
+    expect(publishDraftTask.response.status).toBe(200);
+
+    const memberGetPublishedDraftTask = await app.request(`/tasks/${draftTaskId}`, { headers: authHeader(memberToken) });
+    expect(memberGetPublishedDraftTask.status).toBe(200);
 
     const parseTask = await requestJson(app, '/tasks/parse', {
       method: 'POST',

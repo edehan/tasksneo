@@ -33,6 +33,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -73,6 +74,8 @@ const CONFIG_DEFAULTS = {
   "llm.base_url": "",
   "llm.api_key": "",
   "llm.model": "",
+  "llm.prompt_task_parse_structured": "",
+  "llm.prompt_task_parse_markdown": "",
 };
 
 type ConfigKey = keyof typeof CONFIG_DEFAULTS;
@@ -86,7 +89,7 @@ interface Notice {
 interface ConfigField {
   key: ConfigKey;
   label: string;
-  type?: "text" | "password";
+  type?: "text" | "password" | "textarea";
   placeholder?: string;
 }
 
@@ -141,6 +144,18 @@ const CONFIG_GROUPS: Array<{ title: string; fields: ConfigField[] }> = [
       },
       { key: "llm.api_key", label: "API Key", type: "password" },
       { key: "llm.model", label: "Model", placeholder: "gpt-4o-mini" },
+      {
+        key: "llm.prompt_task_parse_structured",
+        label: "Structured Parse Prompt",
+        type: "textarea",
+        placeholder: "Prompt for strict JSON extraction",
+      },
+      {
+        key: "llm.prompt_task_parse_markdown",
+        label: "Markdown Draft Prompt",
+        type: "textarea",
+        placeholder: "Prompt for markdown brief generation",
+      },
     ],
   },
 ];
@@ -636,34 +651,49 @@ export function AdminControlPlane() {
                             </div>
                           ) : (
                             <div className="space-y-2">
-                              <Input
-                                id={field.key}
-                                type={field.type ?? "text"}
-                                placeholder={
-                                  isSecretDisplayValue(
-                                    field.key,
-                                    configForm[field.key],
-                                  )
-                                    ? configForm[field.key] === SECRET_REENTER
-                                      ? "Re-enter and save a new value"
-                                      : "Value saved and hidden"
-                                    : field.placeholder
-                                }
-                                value={
-                                  isSecretDisplayValue(
-                                    field.key,
-                                    configForm[field.key],
-                                  )
-                                    ? ""
-                                    : configForm[field.key]
-                                }
-                                onChange={(event) =>
-                                  setConfigForm((prev) => ({
-                                    ...prev,
-                                    [field.key]: event.target.value,
-                                  }))
-                                }
-                              />
+                              {field.type === "textarea" ? (
+                                <Textarea
+                                  id={field.key}
+                                  rows={6}
+                                  placeholder={field.placeholder}
+                                  value={configForm[field.key]}
+                                  onChange={(event) =>
+                                    setConfigForm((prev) => ({
+                                      ...prev,
+                                      [field.key]: event.target.value,
+                                    }))
+                                  }
+                                />
+                              ) : (
+                                <Input
+                                  id={field.key}
+                                  type={field.type ?? "text"}
+                                  placeholder={
+                                    isSecretDisplayValue(
+                                      field.key,
+                                      configForm[field.key],
+                                    )
+                                      ? configForm[field.key] === SECRET_REENTER
+                                        ? "Re-enter and save a new value"
+                                        : "Value saved and hidden"
+                                      : field.placeholder
+                                  }
+                                  value={
+                                    isSecretDisplayValue(
+                                      field.key,
+                                      configForm[field.key],
+                                    )
+                                      ? ""
+                                      : configForm[field.key]
+                                  }
+                                  onChange={(event) =>
+                                    setConfigForm((prev) => ({
+                                      ...prev,
+                                      [field.key]: event.target.value,
+                                    }))
+                                  }
+                                />
+                              )}
                               {SECRET_CONFIG_KEYS.has(field.key) &&
                                 configInitial[field.key] === SECRET_REENTER && (
                                   <p className="text-xs text-amber-600 dark:text-amber-400">

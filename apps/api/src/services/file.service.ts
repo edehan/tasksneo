@@ -22,6 +22,7 @@ async function assertTaskAttachmentAccess(taskId: string, userId: string) {
     select: {
       classId: true,
       createdBy: true,
+      isPublished: true,
     },
   });
 
@@ -33,6 +34,10 @@ async function assertTaskAttachmentAccess(taskId: string, userId: string) {
     const membership = await isClassMember(task.classId, userId);
 
     if (!membership) {
+      throw new AppError(403, 'FORBIDDEN', 'No permission to access task file');
+    }
+
+    if (!task.isPublished && membership.role === ClassRole.MEMBER) {
       throw new AppError(403, 'FORBIDDEN', 'No permission to access task file');
     }
 

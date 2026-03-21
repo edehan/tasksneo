@@ -3,6 +3,16 @@
 @memberToken = REPLACE_MEMBER_TOKEN
 @taskId = REPLACE_TASK_ID
 @submissionId = REPLACE_SUBMISSION_ID
+@classId = REPLACE_CLASS_ID
+
+### Create task draft
+POST {{baseUrl}}/classes/{{classId}}/tasks/drafts
+Authorization: Bearer {{ownerToken}}
+Content-Type: application/json
+
+{
+  "sourceText": "这周日晚上 8 点前提交报告，附上课程截图。"
+}
 
 ### Parse task text (AI)
 POST {{baseUrl}}/tasks/parse
@@ -12,6 +22,19 @@ Content-Type: application/json
 {
   "text": "Homework due tomorrow"
 }
+
+### Parse a draft task (uses task source text + uploaded attachments)
+POST {{baseUrl}}/tasks/{{taskId}}/parse
+Authorization: Bearer {{ownerToken}}
+Content-Type: application/json
+
+{
+  "text": "后天上午 9 点前提交，附件里有要求。"
+}
+
+### Get draft markdown cache
+GET {{baseUrl}}/tasks/{{taskId}}/draft-markdown
+Authorization: Bearer {{ownerToken}}
 
 ### Get task detail
 GET {{baseUrl}}/tasks/{{taskId}}
@@ -24,6 +47,15 @@ Content-Type: application/json
 
 {
   "title": "Task 1 Updated"
+}
+
+### Publish draft task
+POST {{baseUrl}}/tasks/{{taskId}}/publish
+Authorization: Bearer {{ownerToken}}
+Content-Type: application/json
+
+{
+  "title": "Published Task Title"
 }
 
 ### Mark viewed
