@@ -85,7 +85,7 @@ export function RegisterForm() {
         studentId: schoolId ? studentId : undefined,
         timezone: detectedTimezone,
       });
-      router.replace("/dashboard");
+      router.replace("/admin");
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : "Registration failed";
