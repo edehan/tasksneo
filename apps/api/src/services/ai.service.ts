@@ -6,6 +6,7 @@ import { getConfigValue } from './system-config.service.js';
 const ISO_8601_WITH_TZ_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/;
 const MAX_AI_ATTACHMENTS = 6;
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+const MAX_INLINE_TEXT_ATTACHMENT_CHARS = 8_000;
 
 const parseResultSchema = z.object({
   title: z.string().nullable(),
@@ -20,6 +21,23 @@ interface ParseTaskResult {
   dueAt: string | null;
   description: string | null;
 }
+
+type GatewayAttachmentPart =
+  | {
+      type: 'image_url';
+      image_url: {
+        url: string;
+        detail: 'auto';
+      };
+    }
+  | {
+      type: 'file';
+      file: {
+        data: string;
+        media_type: 'application/pdf';
+        filename: string;
+      };
+    };
 
 export interface ParseAttachmentInput {
   originalName: string;
@@ -116,20 +134,45 @@ function normalizeParsedDatetime(value: string | null): string | null {
   return trimmed;
 }
 
-function toAllowedAttachment(attachment: ParseAttachmentInput) {
-  const mimeType = attachment.mimeType ?? '';
-  const isImage = mimeType.startsWith('image/');
-  const isDocument = mimeType === 'application/pdf'
-    || mimeType === 'application/msword'
-    || mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    || mimeType === 'application/vnd.ms-excel'
-    || mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    || mimeType === 'application/vnd.ms-powerpoint'
-    || mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-    || mimeType.startsWith('text/')
-    || mimeType === 'application/json';
+function normalizeAttachmentMime(mimeType: string | null): string {
+  return (mimeType ?? '').trim().toLowerCase();
+}
 
-  if (!isImage && !isDocument) {
+function isTextLikeMime(mimeType: string): boolean {
+  return mimeType.startsWith('text/')
+    || mimeType === 'application/json'
+    || mimeType === 'application/xml'
+    || mimeType === 'text/markdown';
+}
+
+function extractInlineAttachmentText(attachment: ParseAttachmentInput): string | null {
+  const mimeType = normalizeAttachmentMime(attachment.mimeType);
+
+  if (!isTextLikeMime(mimeType)) {
+    return null;
+  }
+
+  try {
+    const text = attachment.bytes.toString('utf8').trim();
+
+    if (!text) {
+      return null;
+    }
+
+    if (text.length <= MAX_INLINE_TEXT_ATTACHMENT_CHARS) {
+      return text;
+    }
+
+    return `${text.slice(0, MAX_INLINE_TEXT_ATTACHMENT_CHARS)}\n...(truncated)...`;
+  } catch {
+    return null;
+  }
+}
+
+function toGatewayAttachmentPart(attachment: ParseAttachmentInput): GatewayAttachmentPart | null {
+  const mimeType = normalizeAttachmentMime(attachment.mimeType);
+
+  if (!mimeType) {
     return null;
   }
 
@@ -137,16 +180,74 @@ function toAllowedAttachment(attachment: ParseAttachmentInput) {
     return null;
   }
 
-  const normalizedMime = mimeType || 'application/octet-stream';
-  const base64 = attachment.bytes.toString('base64');
+  if (mimeType.startsWith('image/')) {
+    return {
+      type: 'image_url',
+      image_url: {
+        url: `data:${mimeType};base64,${attachment.bytes.toString('base64')}`,
+        detail: 'auto',
+      },
+    };
+  }
 
-  return {
-    type: 'file',
-    file: {
-      filename: attachment.originalName,
-      file_data: `data:${normalizedMime};base64,${base64}`,
-    },
-  };
+  if (mimeType === 'application/pdf') {
+    return {
+      type: 'file',
+      file: {
+        data: attachment.bytes.toString('base64'),
+        media_type: 'application/pdf',
+        filename: attachment.originalName,
+      },
+    };
+  }
+
+  return null;
+}
+
+function buildAttachmentContextBlock(attachments: ParseAttachmentInput[]): string {
+  if (attachments.length === 0) {
+    return '';
+  }
+
+  const lines = ['', 'Attachment context:'];
+
+  for (const attachment of attachments.slice(0, MAX_AI_ATTACHMENTS)) {
+    const mimeType = normalizeAttachmentMime(attachment.mimeType) || 'unknown';
+    const inlineText = extractInlineAttachmentText(attachment);
+
+    lines.push(`- ${attachment.originalName} (${mimeType}, ${attachment.bytes.byteLength} bytes)`);
+
+    if (inlineText) {
+      lines.push(`  content:\n${inlineText}`);
+    }
+  }
+
+  lines.push(
+    '',
+    'If binary office files cannot be parsed from content, use filenames and user text context conservatively.',
+  );
+
+  return lines.join('\n');
+}
+
+function buildAttachmentFallbackNote(parts: GatewayAttachmentPart[]): string {
+  if (parts.length === 0) {
+    return '';
+  }
+
+  const lines = parts.map((part) => {
+    if (part.type === 'image_url') {
+      return '- image attachment';
+    }
+
+    return `- pdf attachment: ${part.file.filename}`;
+  });
+
+  return [
+    '',
+    'Attachment metadata (content may be unavailable with current provider route):',
+    ...lines,
+  ].join('\n');
 }
 
 function extractMessageText(content: unknown): string | null {
@@ -241,27 +342,6 @@ export async function parseTaskContent(input: {
   }
 
   try {
-    const allowedAttachments = (input.attachments ?? [])
-      .slice(0, MAX_AI_ATTACHMENTS)
-      .map(toAllowedAttachment)
-      .filter((item): item is NonNullable<typeof item> => Boolean(item));
-
-    const userPromptText = [
-      `User timezone setting: ${input.context.userTimezone}`,
-      `Current local datetime (with weekday): ${input.context.localNowWithWeekday}`,
-      '',
-      'Task natural language input:',
-      input.text,
-    ].join('\n');
-
-    const userMessageContent = [
-      ...allowedAttachments,
-      {
-        type: 'text',
-        text: userPromptText,
-      },
-    ];
-
     const structuredPrompt = getStructuredPrompt(
       configuredStructuredPrompt?.trim()
         ? configuredStructuredPrompt
@@ -273,8 +353,39 @@ export async function parseTaskContent(input: {
         : 'Generate a markdown task brief from the provided text and files.',
     );
 
-    const [structuredRaw, markdownRaw] = await Promise.all([
-      callChatCompletions({
+    const limitedAttachments = (input.attachments ?? []).slice(0, MAX_AI_ATTACHMENTS);
+    const attachmentParts = limitedAttachments
+      .map(toGatewayAttachmentPart)
+      .filter((item): item is NonNullable<typeof item> => Boolean(item));
+    const attachmentContextText = buildAttachmentContextBlock(limitedAttachments);
+
+    const userPromptText = [
+      `User timezone setting: ${input.context.userTimezone}`,
+      `Current local datetime (with weekday): ${input.context.localNowWithWeekday}`,
+      '',
+      'Task natural language input:',
+      input.text,
+      attachmentContextText,
+    ].filter(Boolean).join('\n');
+
+    const textOnlyPrompt = `${userPromptText}${buildAttachmentFallbackNote(attachmentParts)}`;
+
+    const multimodalContent = [
+      ...attachmentParts,
+      {
+        type: 'text',
+        text: userPromptText,
+      },
+    ];
+    const textOnlyContent = [
+      {
+        type: 'text',
+        text: textOnlyPrompt,
+      },
+    ];
+    const firstPassContent = attachmentParts.length > 0 ? multimodalContent : textOnlyContent;
+
+    const runStructured = (content: unknown) => callChatCompletions({
         baseUrl,
         apiKey,
         body: {
@@ -287,7 +398,7 @@ export async function parseTaskContent(input: {
             },
             {
               role: 'user',
-              content: userMessageContent,
+              content,
             },
           ],
           response_format: {
@@ -309,8 +420,9 @@ export async function parseTaskContent(input: {
             },
           },
         },
-      }),
-      callChatCompletions({
+      });
+
+    const runMarkdown = (content: unknown) => callChatCompletions({
         baseUrl,
         apiKey,
         body: {
@@ -323,12 +435,24 @@ export async function parseTaskContent(input: {
             },
             {
               role: 'user',
-              content: userMessageContent,
+              content,
             },
           ],
         },
-      }),
+      });
+
+    let [structuredRaw, markdownRaw] = await Promise.all([
+      runStructured(firstPassContent),
+      runMarkdown(firstPassContent),
     ]);
+
+    if (attachmentParts.length > 0 && !structuredRaw) {
+      structuredRaw = await runStructured(textOnlyContent);
+    }
+
+    if (attachmentParts.length > 0 && !markdownRaw) {
+      markdownRaw = await runMarkdown(textOnlyContent);
+    }
 
     const fallback = fallbackParse(input.text);
 
