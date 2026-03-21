@@ -1,112 +1,83 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
-@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=DM+Sans:wght@400;500;600;700&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @custom-variant dark (&:is(.dark *));
 
-/*
- * TaskFlow Design Tokens
- * Base: stone (warm neutral) · Accent: dynamic class color
- * Philosophy: Calm productivity · Warm functionalism
- */
-
 :root {
-  /* shadcn/ui core — stone warm palette */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.147 0.004 49.75);
+  --radius: 10px;
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.147 0.004 49.75);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.147 0.004 49.75);
+  --bg: #faf7f2;
+  --sidebar-bg: #f5f1ea;
+  --card-bg: #fffdf8;
 
-  --primary: oklch(0.216 0.006 56.04);
-  --primary-foreground: oklch(0.985 0.002 75);
-  --secondary: oklch(0.97 0.001 106.42);
-  --secondary-foreground: oklch(0.216 0.006 56.04);
-  --muted: oklch(0.97 0.001 106.42);
-  --muted-foreground: oklch(0.553 0.013 58.07);
-  --accent: oklch(0.97 0.001 106.42);
-  --accent-foreground: oklch(0.216 0.006 56.04);
+  --text-primary: #2c2825;
+  --text-secondary: #8a8078;
+  --text-muted: #b7ada2;
+  --border-color: #e8e2d8;
 
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
+  --status-success: #5b8c6a;
+  --status-warning: #c4785b;
+  --status-danger: #c45c5c;
+  --status-info: #5886a5;
 
-  --border: oklch(0.923 0.003 48.72);
-  --input: oklch(0.923 0.003 48.72);
-  --ring: oklch(0.553 0.013 58.07);
+  --class-accent: #7b6cb0;
 
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  --background: var(--bg);
+  --foreground: var(--text-primary);
+  --card: var(--card-bg);
+  --card-foreground: var(--text-primary);
+  --popover: var(--card-bg);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--class-accent);
+  --primary-foreground: #fff;
+  --secondary: #f0ece4;
+  --secondary-foreground: var(--text-primary);
+  --muted: #f0ece4;
+  --muted-foreground: var(--text-secondary);
+  --accent: #f0ece4;
+  --accent-foreground: var(--text-primary);
+  --destructive: #c45c5c;
+  --destructive-foreground: #fff;
+  --border: var(--border-color);
+  --input: var(--border-color);
+  --ring: var(--class-accent);
 
-  --radius: 0.5rem;
-
-  --sidebar: oklch(0.97 0.001 106.42);
-  --sidebar-foreground: oklch(0.147 0.004 49.75);
-  --sidebar-primary: oklch(0.216 0.006 56.04);
-  --sidebar-primary-foreground: oklch(0.985 0.002 75);
-  --sidebar-accent: oklch(0.97 0.001 106.42);
-  --sidebar-accent-foreground: oklch(0.216 0.006 56.04);
-  --sidebar-border: oklch(0.923 0.003 48.72);
-  --sidebar-ring: oklch(0.553 0.013 58.07);
-
-  /* Design system semantic tokens */
-  --status-success: oklch(0.586 0.163 142.5);
-  --status-warning: oklch(0.769 0.188 70.08);
-  --status-error: oklch(0.577 0.245 27.325);
-  --status-info: oklch(0.546 0.245 262.88);
-
-  /* Class accent color — dynamically set via JS per active class */
-  --class-accent: oklch(0.585 0.233 277.12);
-  --class-accent-foreground: oklch(1 0 0);
+  --font-sans: "DM Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Source Serif 4", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 .dark {
-  --background: oklch(0.147 0.004 49.75);
-  --foreground: oklch(0.985 0.002 75);
+  --bg: #1a1816;
+  --sidebar-bg: #141210;
+  --card-bg: #1e1c1a;
 
-  --card: oklch(0.216 0.006 56.04);
-  --card-foreground: oklch(0.985 0.002 75);
-  --popover: oklch(0.216 0.006 56.04);
-  --popover-foreground: oklch(0.985 0.002 75);
+  --text-primary: #e8e2d8;
+  --text-secondary: #888078;
+  --text-muted: #5a5550;
+  --border-color: #2a2622;
 
-  --primary: oklch(0.923 0.003 48.72);
-  --primary-foreground: oklch(0.216 0.006 56.04);
-  --secondary: oklch(0.268 0.007 34);
-  --secondary-foreground: oklch(0.985 0.002 75);
-  --muted: oklch(0.268 0.007 34);
-  --muted-foreground: oklch(0.709 0.01 56);
-  --accent: oklch(0.268 0.007 34);
-  --accent-foreground: oklch(0.985 0.002 75);
-
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.553 0.013 58.07);
-
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-
-  --sidebar: oklch(0.216 0.006 56.04);
-  --sidebar-foreground: oklch(0.985 0.002 75);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0.002 75);
-  --sidebar-accent: oklch(0.268 0.007 34);
-  --sidebar-accent-foreground: oklch(0.985 0.002 75);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.553 0.013 58.07);
-
-  --status-success: oklch(0.723 0.191 142.5);
-  --status-warning: oklch(0.769 0.188 70.08);
-  --status-error: oklch(0.704 0.191 22.216);
-  --status-info: oklch(0.623 0.214 259.53);
+  --background: var(--bg);
+  --foreground: var(--text-primary);
+  --card: var(--card-bg);
+  --card-foreground: var(--text-primary);
+  --popover: #222;
+  --popover-foreground: var(--text-primary);
+  --primary: var(--class-accent);
+  --primary-foreground: #fff;
+  --secondary: #252320;
+  --secondary-foreground: var(--text-primary);
+  --muted: #252320;
+  --muted-foreground: var(--text-secondary);
+  --accent: #252320;
+  --accent-foreground: var(--text-primary);
+  --destructive: #c45c5c;
+  --destructive-foreground: #fff;
+  --border: var(--border-color);
+  --input: var(--border-color);
+  --ring: var(--class-accent);
 }
 
 @theme inline {
@@ -125,6 +96,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -132,37 +104,195 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
 
-  /* Semantic status colors */
-  --color-status-success: var(--status-success);
-  --color-status-warning: var(--status-warning);
-  --color-status-error: var(--status-error);
-  --color-status-info: var(--status-info);
-
-  /* Class accent */
-  --color-class-accent: var(--class-accent);
-  --color-class-accent-foreground: var(--class-accent-foreground);
-
-  /* Font families */
-  --font-sans:
-    "Inter", "PingFang SC", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+  --font-mono: var(--font-mono);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.55;
   }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-serif);
+    letter-spacing: -0.02em;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--class-accent) 25%, transparent);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-secondary) 45%, transparent);
+  border-radius: 999px;
+}
+
+.taskflow-surface {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+.taskflow-btn {
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  transition: all 0.18s ease;
+  cursor: pointer;
+}
+
+.taskflow-btn:hover {
+  background: color-mix(in srgb, var(--class-accent) 10%, transparent);
+  border-color: var(--class-accent);
+  color: var(--class-accent);
+}
+
+.taskflow-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.taskflow-btn-primary {
+  border: none;
+  background: var(--class-accent);
+  color: #fff;
+}
+
+.taskflow-btn-primary:hover {
+  border: none;
+  background: color-mix(in srgb, var(--class-accent) 85%, black 15%);
+  color: #fff;
+}
+
+.taskflow-btn-danger {
+  border-color: color-mix(in srgb, #c45c5c 45%, var(--border-color));
+  color: #c45c5c;
+}
+
+.taskflow-input,
+.taskflow-textarea,
+.taskflow-select {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--card-bg) 75%, var(--bg));
+  color: var(--text-primary);
+  padding: 9px 12px;
+  font-size: 13px;
+  outline: none;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.taskflow-input:focus,
+.taskflow-textarea:focus,
+.taskflow-select:focus {
+  border-color: var(--class-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--class-accent) 20%, transparent);
+}
+
+.taskflow-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.taskflow-error {
+  color: #c45c5c;
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.taskflow-prose {
+  color: var(--text-primary);
+}
+
+.taskflow-prose h1,
+.taskflow-prose h2,
+.taskflow-prose h3,
+.taskflow-prose h4 {
+  margin: 1.2em 0 0.45em;
+  line-height: 1.3;
+}
+
+.taskflow-prose p,
+.taskflow-prose ul,
+.taskflow-prose ol,
+.taskflow-prose table,
+.taskflow-prose blockquote,
+.taskflow-prose pre {
+  margin: 0.7em 0;
+}
+
+.taskflow-prose a {
+  color: var(--class-accent);
+  text-decoration: underline;
+}
+
+.taskflow-prose code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: color-mix(in srgb, var(--class-accent) 10%, transparent);
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+
+.taskflow-prose pre {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--card-bg) 65%, var(--bg));
+  overflow-x: auto;
+}
+
+.taskflow-prose table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.taskflow-prose th,
+.taskflow-prose td {
+  border: 1px solid var(--border-color);
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.taskflow-prose img {
+  max-width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
 }

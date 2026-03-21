@@ -710,6 +710,22 @@ export async function uploadTaskAttachment(
   );
 }
 
+export async function uploadTaskAttachments(
+  token: string,
+  taskId: string,
+  files: File[],
+): Promise<AttachmentMeta[]> {
+  const formData = new FormData();
+  for (const file of files) {
+    formData.append("files", file);
+  }
+  return apiRequest<AttachmentMeta[]>(
+    `/tasks/${taskId}/attachments`,
+    { method: "POST", body: formData },
+    token,
+  );
+}
+
 export async function uploadSubmissionAttachment(
   token: string,
   taskId: string,
@@ -718,6 +734,22 @@ export async function uploadSubmissionAttachment(
   const formData = new FormData();
   formData.append("file", file);
   return apiRequest<AttachmentMeta>(
+    `/tasks/${taskId}/submissions/me/attachments`,
+    { method: "POST", body: formData },
+    token,
+  );
+}
+
+export async function uploadSubmissionAttachments(
+  token: string,
+  taskId: string,
+  files: File[],
+): Promise<AttachmentMeta[]> {
+  const formData = new FormData();
+  for (const file of files) {
+    formData.append("files", file);
+  }
+  return apiRequest<AttachmentMeta[]>(
     `/tasks/${taskId}/submissions/me/attachments`,
     { method: "POST", body: formData },
     token,

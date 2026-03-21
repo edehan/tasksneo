@@ -2,42 +2,17 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { School } from "@/lib/api";
-import { ApiError, listSchools } from "@/lib/api";
+import { ApiError, listSchools, type School } from "@/lib/api";
 
-function detectBrowserTimezone(): string {
+function getTimezone() {
   try {
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (timezone && timezone.length <= 64) {
-      return timezone;
-    }
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   } catch {
-    // Fall back to UTC when browser timezone is unavailable.
+    return "UTC";
   }
-
-  return "UTC";
 }
 
 export function RegisterForm() {
@@ -47,156 +22,233 @@ export function RegisterForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [nickname, setNickname] = useState("");
-  const [schoolId, setSchoolId] = useState<string | null>(null);
+  const [schoolId, setSchoolId] = useState<string>("");
   const [studentId, setStudentId] = useState("");
   const [schools, setSchools] = useState<School[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const detectedTimezone = detectBrowserTimezone();
+  const [errors, setErrors] = useState<{
+    email?: string;
+    studentId?: string;
+    form?: string;
+  }>({});
+  const [registrationClosed, setRegistrationClosed] = useState(false);
 
-  const loadSchools = useCallback(async () => {
-    try {
-      const data = await listSchools();
-      setSchools(data);
-    } catch {
-      // Non-critical, school selection is optional
-    }
-  }, []);
+  const timezone = useMemo(() => getTimezone(), []);
+  const studentRequired = Boolean(schoolId);
 
   useEffect(() => {
-    void loadSchools();
-  }, [loadSchools]);
+    let active = true;
+    void listSchools()
+      .then((res) => {
+        if (active) {
+          setSchools(res);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setSchools([]);
+        }
+      });
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!email || !password) return;
+    return () => {
+      active = false;
+    };
+  }, []);
 
-    if (schoolId && !studentId.trim()) {
-      toast.error("Student ID is required when a school is selected");
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const nextErrors: { email?: string; studentId?: string } = {};
+    if (studentRequired && !studentId.trim()) {
+      nextErrors.studentId = "选择学校后，学号必填";
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
       return;
     }
 
     setSubmitting(true);
+    setErrors({});
+
     try {
       await register({
         email,
         password,
         nickname: nickname || undefined,
-        schoolId: schoolId || undefined,
-        studentId: schoolId ? studentId : undefined,
-        timezone: detectedTimezone,
+        schoolId: schoolId || null,
+        studentId: schoolId ? studentId : null,
+        timezone,
       });
-      router.replace("/admin");
+      router.replace("/dashboard");
     } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : "Registration failed";
-      toast.error(message);
+      if (err instanceof ApiError) {
+        if (err.code === "REGISTRATION_CLOSED") {
+          setRegistrationClosed(true);
+        } else if (err.code === "EMAIL_EXISTS") {
+          setErrors({ email: "此邮箱已被注册" });
+        } else if (
+          err.code === "STUDENT_ID_EXISTS" ||
+          err.code === "CONFLICT"
+        ) {
+          setErrors({ studentId: "此学校下该学号已存在" });
+        } else {
+          setErrors({ form: err.message });
+        }
+      } else {
+        setErrors({ form: "注册失败，请稍后重试" });
+      }
     } finally {
       setSubmitting(false);
     }
   }
 
+  if (registrationClosed) {
+    return (
+      <div className="taskflow-surface p-8 text-center">
+        <h1 className="text-[30px] font-bold">创建账号</h1>
+        <p className="mt-4 text-sm text-[var(--text-secondary)]">
+          注册功能当前未开放
+        </p>
+        <p className="mt-6 text-sm text-[var(--text-secondary)]">
+          已有账号？
+          <Link
+            className="ml-1 font-semibold text-[var(--class-accent)]"
+            href="/login"
+          >
+            去登录
+          </Link>
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <Card>
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Create an account</CardTitle>
-        <CardDescription>Get started with TaskFlow</CardDescription>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="reg-email">Email</Label>
-            <Input
-              id="reg-email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
-              autoFocus
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="reg-password">Password</Label>
-            <Input
-              id="reg-password"
-              type="password"
-              placeholder="At least 8 characters"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              autoComplete="new-password"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="reg-nickname">
-              Nickname <span className="text-muted-foreground">(optional)</span>
-            </Label>
-            <Input
-              id="reg-nickname"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              placeholder="How others will see you"
-            />
-          </div>
-          {schools.length > 0 && (
-            <>
-              <div className="space-y-2">
-                <Label>
-                  School{" "}
-                  <span className="text-muted-foreground">(optional)</span>
-                </Label>
-                <Select
-                  value={schoolId ?? "none"}
-                  onValueChange={(v) => {
-                    setSchoolId(v === "none" ? null : v);
-                    if (v === "none") setStudentId("");
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a school" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No school</SelectItem>
-                    {schools.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {schoolId && (
-                <div className="space-y-2">
-                  <Label htmlFor="reg-studentId">Student ID</Label>
-                  <Input
-                    id="reg-studentId"
-                    value={studentId}
-                    onChange={(e) => setStudentId(e.target.value)}
-                    required
-                    placeholder="Your student number"
-                  />
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-        <CardFooter className="flex flex-col gap-3">
-          <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting ? "Creating account..." : "Create account"}
-          </Button>
-          <p className="text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              className="text-primary underline-offset-4 hover:underline"
-            >
-              Sign in
-            </Link>
-          </p>
-        </CardFooter>
+    <div className="taskflow-surface p-8">
+      <h1 className="text-[30px] font-bold">创建账号</h1>
+      <p className="mt-1 text-sm text-[var(--text-secondary)]">
+        注册后将自动创建你的个人空间
+      </p>
+
+      <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+        <div>
+          <label className="taskflow-label" htmlFor="register-email">
+            邮箱
+          </label>
+          <input
+            id="register-email"
+            className="taskflow-input"
+            type="email"
+            required
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="you@example.com"
+            autoComplete="email"
+          />
+          {errors.email ? (
+            <p className="taskflow-error">{errors.email}</p>
+          ) : null}
+        </div>
+
+        <div>
+          <label className="taskflow-label" htmlFor="register-password">
+            密码
+          </label>
+          <input
+            id="register-password"
+            className="taskflow-input"
+            type="password"
+            required
+            minLength={8}
+            autoComplete="new-password"
+            placeholder="至少 8 位"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="taskflow-label" htmlFor="register-nickname">
+            昵称（选填）
+          </label>
+          <input
+            id="register-nickname"
+            className="taskflow-input"
+            value={nickname}
+            onChange={(event) => setNickname(event.target.value)}
+            placeholder="留空则使用邮箱展示"
+          />
+        </div>
+
+        <div>
+          <label className="taskflow-label" htmlFor="register-school">
+            学校（选填）
+          </label>
+          <select
+            id="register-school"
+            className="taskflow-select"
+            value={schoolId || "none"}
+            onChange={(event) => {
+              const value = event.target.value;
+              if (value === "none") {
+                setSchoolId("");
+                setStudentId("");
+              } else {
+                setSchoolId(value);
+              }
+            }}
+          >
+            <option value="none">不填写</option>
+            {schools.map((school) => (
+              <option key={school.id} value={school.id}>
+                {school.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="taskflow-label" htmlFor="register-student-id">
+            学号
+            {studentRequired ? (
+              <span className="ml-1 text-[#c45c5c]">*</span>
+            ) : null}
+          </label>
+          <input
+            id="register-student-id"
+            className="taskflow-input"
+            disabled={!studentRequired}
+            required={studentRequired}
+            value={studentId}
+            onChange={(event) => setStudentId(event.target.value)}
+            placeholder={studentRequired ? "请输入学号" : "选择学校后可填写"}
+            style={!studentRequired ? { opacity: 0.6 } : undefined}
+          />
+          {errors.studentId ? (
+            <p className="taskflow-error">{errors.studentId}</p>
+          ) : null}
+        </div>
+
+        {errors.form ? <p className="taskflow-error">{errors.form}</p> : null}
+
+        <button
+          type="submit"
+          className="taskflow-btn taskflow-btn-primary h-10 w-full"
+          disabled={submitting}
+        >
+          {submitting ? "注册中..." : "注册"}
+        </button>
       </form>
-    </Card>
+
+      <p className="mt-5 text-sm text-[var(--text-secondary)]">
+        已有账号？
+        <Link
+          className="ml-1 font-semibold text-[var(--class-accent)]"
+          href="/login"
+        >
+          登录
+        </Link>
+      </p>
+    </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+
 import { useAuth } from "@/components/auth-provider";
 
 export default function AuthLayout({
@@ -14,7 +15,7 @@ export default function AuthLayout({
 
   useEffect(() => {
     if (!loading && token) {
-      router.replace("/admin");
+      router.replace("/dashboard");
     }
   }, [loading, token, router]);
 
@@ -27,7 +28,13 @@ export default function AuthLayout({
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-12">
+    <div
+      className="flex min-h-screen items-center justify-center px-4 py-12"
+      style={{
+        background:
+          "radial-gradient(circle at top right, color-mix(in srgb, var(--class-accent) 14%, transparent) 0%, transparent 50%), var(--bg)",
+      }}
+    >
       <div className="w-full max-w-md">{children}</div>
     </div>
   );
