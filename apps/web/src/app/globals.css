@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
@@ -7,32 +7,33 @@
  * TaskFlow Design Tokens
  * Base: stone (warm neutral) · Accent: dynamic class color
  * Philosophy: Calm productivity · Warm functionalism
+ * Typography: Source Serif 4 (headings/display) + DM Sans (UI)
  */
 
 :root {
   /* shadcn/ui core — stone warm palette */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.147 0.004 49.75);
+  --background: oklch(0.971 0.005 75);     /* #faf7f2 warm paper */
+  --foreground: oklch(0.22 0.008 55);      /* #2c2825 primary text */
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.147 0.004 49.75);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.147 0.004 49.75);
+  --card: oklch(0.993 0.004 85);           /* #fffdf8 card bg */
+  --card-foreground: oklch(0.22 0.008 55);
+  --popover: oklch(0.993 0.004 85);
+  --popover-foreground: oklch(0.22 0.008 55);
 
   --primary: oklch(0.216 0.006 56.04);
   --primary-foreground: oklch(0.985 0.002 75);
   --secondary: oklch(0.97 0.001 106.42);
   --secondary-foreground: oklch(0.216 0.006 56.04);
-  --muted: oklch(0.97 0.001 106.42);
-  --muted-foreground: oklch(0.553 0.013 58.07);
+  --muted: oklch(0.945 0.006 75);         /* #f0ece4 muted fills */
+  --muted-foreground: oklch(0.585 0.015 55); /* #8a8078 secondary text */
   --accent: oklch(0.97 0.001 106.42);
   --accent-foreground: oklch(0.216 0.006 56.04);
 
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
 
-  --border: oklch(0.923 0.003 48.72);
-  --input: oklch(0.923 0.003 48.72);
+  --border: oklch(0.925 0.006 70);         /* #e8e2d8 borders */
+  --input: oklch(0.925 0.006 70);
   --ring: oklch(0.553 0.013 58.07);
 
   --chart-1: oklch(0.646 0.222 41.116);
@@ -43,13 +44,13 @@
 
   --radius: 0.5rem;
 
-  --sidebar: oklch(0.97 0.001 106.42);
-  --sidebar-foreground: oklch(0.147 0.004 49.75);
+  --sidebar: oklch(0.958 0.006 75);        /* #f5f1ea sidebar bg */
+  --sidebar-foreground: oklch(0.22 0.008 55);
   --sidebar-primary: oklch(0.216 0.006 56.04);
   --sidebar-primary-foreground: oklch(0.985 0.002 75);
   --sidebar-accent: oklch(0.97 0.001 106.42);
   --sidebar-accent-foreground: oklch(0.216 0.006 56.04);
-  --sidebar-border: oklch(0.923 0.003 48.72);
+  --sidebar-border: oklch(0.925 0.006 70);
   --sidebar-ring: oklch(0.553 0.013 58.07);
 
   /* Design system semantic tokens */
@@ -61,30 +62,33 @@
   /* Class accent color — dynamically set via JS per active class */
   --class-accent: oklch(0.585 0.233 277.12);
   --class-accent-foreground: oklch(1 0 0);
+
+  /* Weakest text tier */
+  --text-muted: oklch(0.795 0.01 65);     /* #c0b8ad */
 }
 
 .dark {
-  --background: oklch(0.147 0.004 49.75);
-  --foreground: oklch(0.985 0.002 75);
+  --background: oklch(0.17 0.006 50);      /* #1a1816 */
+  --foreground: oklch(0.925 0.006 70);     /* #e8e2d8 */
 
-  --card: oklch(0.216 0.006 56.04);
-  --card-foreground: oklch(0.985 0.002 75);
-  --popover: oklch(0.216 0.006 56.04);
-  --popover-foreground: oklch(0.985 0.002 75);
+  --card: oklch(0.185 0.006 48);           /* #1e1c1a */
+  --card-foreground: oklch(0.925 0.006 70);
+  --popover: oklch(0.185 0.006 48);
+  --popover-foreground: oklch(0.925 0.006 70);
 
   --primary: oklch(0.923 0.003 48.72);
   --primary-foreground: oklch(0.216 0.006 56.04);
   --secondary: oklch(0.268 0.007 34);
   --secondary-foreground: oklch(0.985 0.002 75);
   --muted: oklch(0.268 0.007 34);
-  --muted-foreground: oklch(0.709 0.01 56);
+  --muted-foreground: oklch(0.585 0.012 50); /* #888078 */
   --accent: oklch(0.268 0.007 34);
   --accent-foreground: oklch(0.985 0.002 75);
 
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.637 0.237 25.331);
 
-  --border: oklch(1 0 0 / 10%);
+  --border: oklch(0.225 0.008 48);         /* #2a2622 */
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.553 0.013 58.07);
 
@@ -94,19 +98,22 @@
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
 
-  --sidebar: oklch(0.216 0.006 56.04);
-  --sidebar-foreground: oklch(0.985 0.002 75);
+  --sidebar: oklch(0.13 0.006 48);         /* #141210 */
+  --sidebar-foreground: oklch(0.925 0.006 70);
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.985 0.002 75);
   --sidebar-accent: oklch(0.268 0.007 34);
   --sidebar-accent-foreground: oklch(0.985 0.002 75);
-  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-border: oklch(0.225 0.008 48);
   --sidebar-ring: oklch(0.553 0.013 58.07);
 
   --status-success: oklch(0.723 0.191 142.5);
   --status-warning: oklch(0.769 0.188 70.08);
   --status-error: oklch(0.704 0.191 22.216);
   --status-info: oklch(0.623 0.214 259.53);
+
+  /* Weakest text tier (dark) */
+  --text-muted: oklch(0.42 0.008 50);     /* #5a5550 */
 }
 
 @theme inline {
@@ -151,9 +158,13 @@
   --color-class-accent: var(--class-accent);
   --color-class-accent-foreground: var(--class-accent-foreground);
 
+  /* Text muted */
+  --color-text-muted: var(--text-muted);
+
   /* Font families */
   --font-sans:
-    "Inter", "PingFang SC", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
+    "DM Sans", "PingFang SC", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Source Serif 4", Georgia, serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
@@ -165,4 +176,39 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+}
+
+::selection {
+  background: oklch(from var(--class-accent) l c h / 0.2);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOverlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
 }

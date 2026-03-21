@@ -2,12 +2,10 @@
 
 import {
   BookOpen,
-  ChevronsUpDown,
-  LayoutDashboard,
+  Home,
   LogOut,
   Moon,
   Plus,
-  Settings,
   Sun,
   UserPlus,
 } from "lucide-react";
@@ -19,19 +17,12 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { ClassColorBadge } from "@/components/class-color-badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
@@ -41,11 +32,6 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { JoinClassDialog } from "@/features/classes/components/join-class-dialog";
 import type { ClassSummary } from "@/lib/api";
 import { listClasses } from "@/lib/api";
@@ -81,71 +67,48 @@ export function AppSidebar() {
   const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
-    <Sidebar>
-      {/* User menu at top */}
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                >
-                  <Avatar className="h-8 w-8 shrink-0">
-                    <AvatarFallback className="text-xs">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-1 flex-col gap-0.5 leading-none text-left">
-                    <span className="text-sm font-medium truncate">
-                      {user?.nickname || user?.email}
-                    </span>
-                    {user?.nickname && (
-                      <span className="text-xs text-muted-foreground truncate">
-                        {user.email}
-                      </span>
-                    )}
-                  </div>
-                  <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side="bottom"
-                align="start"
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56"
-              >
-                <DropdownMenuItem
-                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                >
-                  {theme === "dark" ? (
-                    <Sun className="mr-2 h-4 w-4" />
-                  ) : (
-                    <Moon className="mr-2 h-4 w-4" />
-                  )}
-                  {theme === "dark" ? "Light mode" : "Dark mode"}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => router.push("/settings/profile")}
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
+    <Sidebar className="w-[260px]">
+      {/* User row */}
+      <SidebarHeader className="px-4 py-4">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-9 w-9 shrink-0">
+            <AvatarFallback
+              className="text-xs font-semibold text-white"
+              style={{
+                background: `linear-gradient(135deg, var(--class-accent), color-mix(in oklch, var(--class-accent), #000 20%))`,
+              }}
+            >
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex flex-1 flex-col leading-none min-w-0">
+            <span className="text-sm font-semibold truncate">
+              {user?.nickname || user?.email}
+            </span>
+            {user?.nickname && (
+              <span className="text-xs text-muted-foreground truncate mt-0.5">
+                {user.email}
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+          </button>
+        </div>
       </SidebarHeader>
 
       <SidebarSeparator />
 
       <SidebarContent>
-        {/* Dashboard */}
+        {/* Home */}
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -156,10 +119,11 @@ export function AppSidebar() {
                     pathname === "/dashboard" ||
                     pathname.startsWith("/dashboard/")
                   }
+                  className="data-[active=true]:bg-[color-mix(in_oklch,var(--class-accent),transparent_88%)] data-[active=true]:text-[var(--class-accent)] data-[active=true]:font-semibold"
                 >
                   <Link href="/dashboard">
-                    <LayoutDashboard className="h-4 w-4" />
-                    <span>Dashboard</span>
+                    <Home className="h-[18px] w-[18px]" />
+                    <span>Home</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -167,22 +131,20 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarSeparator />
-
         {/* Personal Space */}
         {personalClass && (
           <SidebarGroup>
-            <SidebarGroupLabel>Personal Space</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
                     isActive={pathname === `/classes/${personalClass.id}`}
+                    className="data-[active=true]:bg-[color-mix(in_oklch,var(--class-accent),transparent_88%)] data-[active=true]:text-[var(--class-accent)] data-[active=true]:font-semibold"
                   >
                     <Link href={`/classes/${personalClass.id}`}>
-                      <BookOpen className="h-4 w-4" />
-                      <span>{personalClass.name}</span>
+                      <BookOpen className="h-[18px] w-[18px]" />
+                      <span>Personal Space</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -191,20 +153,13 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {/* Classes — "+" on same line as label */}
+        <SidebarSeparator />
+
+        {/* Classes */}
         <SidebarGroup>
-          <SidebarGroupLabel>Classes</SidebarGroupLabel>
-          <SidebarGroupAction asChild>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link href="/classes/new">
-                  <Plus className="h-4 w-4" />
-                  <span className="sr-only">Create class</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Create class</TooltipContent>
-            </Tooltip>
-          </SidebarGroupAction>
+          <SidebarGroupLabel className="text-[10px] font-bold uppercase tracking-[0.06em] text-text-muted">
+            Joined Classes
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {loading ? (
@@ -228,6 +183,7 @@ export function AppSidebar() {
                     <SidebarMenuButton
                       asChild
                       isActive={pathname.startsWith(`/classes/${cls.id}`)}
+                      className="data-[active=true]:bg-[color-mix(in_oklch,var(--class-accent),transparent_88%)] data-[active=true]:text-[var(--class-accent)] data-[active=true]:font-semibold"
                     >
                       <Link href={`/classes/${cls.id}`}>
                         <ClassColorBadge color={cls.color} />
@@ -242,21 +198,33 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Join class at bottom */}
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <JoinClassDialog
-              trigger={
-                <SidebarMenuButton className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground">
-                  <UserPlus className="h-4 w-4" />
-                  <span>Join Class</span>
-                </SidebarMenuButton>
-              }
-              onJoined={() => void loadClasses()}
-            />
-          </SidebarMenuItem>
-        </SidebarMenu>
+      {/* Footer: Join + Create */}
+      <SidebarFooter className="p-4">
+        <div className="flex gap-2">
+          <JoinClassDialog
+            trigger={
+              <Button
+                className="flex-1 font-semibold text-white"
+                style={{
+                  backgroundColor: "var(--class-accent)",
+                  boxShadow: "0 3px 12px color-mix(in oklch, var(--class-accent), transparent 60%)",
+                }}
+              >
+                <UserPlus className="h-4 w-4 mr-1.5" />
+                Join Class
+              </Button>
+            }
+            onJoined={() => void loadClasses()}
+          />
+          <Button
+            variant="outline"
+            className="flex-1 text-muted-foreground"
+            onClick={() => router.push("/classes/new")}
+          >
+            <Plus className="h-4 w-4 mr-1.5" />
+            Create
+          </Button>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );

@@ -38,18 +38,19 @@ Preset class palette:
 
 Fonts loaded via Google Fonts import in `globals.css`:
 
-| Role | Family | Fallback |
-|---|---|---|
-| UI text | Inter | PingFang SC, Noto Sans SC, system-ui |
-| Code / mono | JetBrains Mono | ui-monospace, monospace |
+| Role | Family | Tailwind class | Fallback |
+|---|---|---|---|
+| Page titles, section headings, stat numbers | Source Serif 4 | `font-serif` | Georgia, serif |
+| UI text, body, buttons, inputs | DM Sans | `font-sans` (default) | PingFang SC, Noto Sans SC, system-ui |
+| Code / mono | JetBrains Mono | `font-mono` | ui-monospace, monospace |
 
 Type scale (all `rem`, base 16px):
 
 | Token | Size | Weight | Use |
 |---|---|---|---|
-| display | 1.875rem | 600 | Page titles |
-| heading-lg | 1.5rem | 600 | Section headings |
-| heading-md | 1.125rem | 500 | Card titles, sidebar groups |
+| display | 1.875rem | 700 | Page titles (serif) |
+| heading-lg | 1.5rem | 700 | Section headings (serif) |
+| heading-md | 1.125rem | 600 | Card titles, sidebar groups |
 | heading-sm | 0.875rem | 500 | Table headers, label groups |
 | body | 0.875rem | 400 | Default text, list items |
 | body-sm | 0.8125rem | 400 | Timestamps, helper text |
@@ -113,7 +114,7 @@ Role badges: OWNER / ADMIN / MEMBER — muted style.
 
 ### Sidebar
 
-- Width: 240px fixed; mobile: sheet/drawer.
+- Width: 260px fixed; mobile: sheet/drawer.
 - Class items: 4px left border in class color, hover `bg-subtle`.
 - Active state: `--action-selected-bg` / `--action-selected-text`.
 

@@ -1,16 +1,12 @@
 "use client";
 
-import { Calendar, GanttChart, Kanban, List } from "lucide-react";
+import { GanttChart, List } from "lucide-react";
 
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-export type ViewMode = "list" | "board" | "gantt" | "calendar";
+export type ViewMode = "gantt" | "list";
 
 const views: { value: ViewMode; label: string; icon: typeof List }[] = [
-  { value: "list", label: "List", icon: List },
-  { value: "board", label: "Board", icon: Kanban },
   { value: "gantt", label: "Gantt", icon: GanttChart },
-  { value: "calendar", label: "Calendar", icon: Calendar },
+  { value: "list", label: "List", icon: List },
 ];
 
 interface ViewSwitcherProps {
@@ -20,15 +16,26 @@ interface ViewSwitcherProps {
 
 export function ViewSwitcher({ value, onChange }: ViewSwitcherProps) {
   return (
-    <Tabs value={value} onValueChange={(v) => onChange(v as ViewMode)}>
-      <TabsList>
-        {views.map((view) => (
-          <TabsTrigger key={view.value} value={view.value} className="gap-1.5">
-            <view.icon className="h-4 w-4" />
-            <span className="hidden sm:inline">{view.label}</span>
-          </TabsTrigger>
-        ))}
-      </TabsList>
-    </Tabs>
+    <div className="inline-flex items-center rounded-[9px] bg-muted p-0.5">
+      {views.map((view) => {
+        const isActive = value === view.value;
+        return (
+          <button
+            key={view.value}
+            type="button"
+            onClick={() => onChange(view.value)}
+            className={`inline-flex items-center gap-1.5 rounded-[7px] px-3 py-1.5 text-xs transition-all ${
+              isActive
+                ? "bg-card font-semibold shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            style={isActive ? { color: "var(--class-accent)" } : undefined}
+          >
+            <view.icon className="h-3.5 w-3.5" />
+            <span>{view.label}</span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
