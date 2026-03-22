@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -59,16 +59,17 @@ function formatFileSize(bytes: number | null): string {
 export function SubmissionDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { token } = useAuth();
 
-  const classId = params?.classId as string;
-  const taskId = params?.taskId as string;
   const submissionId = params?.submissionId as string;
 
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
   const [cls, setCls] = useState<ClassSummary | null>(null);
   const [allRows, setAllRows] = useState<SubmissionListRow[]>([]);
   const [taskTitle, setTaskTitle] = useState<string>("");
+  const [taskId, setTaskId] = useState<string | null>(null);
+  const [classId, setClassId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Grading form state
@@ -79,17 +80,39 @@ export function SubmissionDetailPage() {
   // ─── Load data ──────────────────────────────────────────────────────────────
 
   const loadData = useCallback(async () => {
-    if (!token || !classId || !taskId || !submissionId) return;
+    if (!token || !submissionId) return;
     try {
-      const [submissionData, classData, taskData, submissionRows] =
-        await Promise.all([
-          getSubmission(token, taskId, submissionId),
-          getClass(token, classId),
-          getTask(token, taskId),
-          listSubmissions(token, taskId),
-        ]);
+      // First fetch task list to find which task this submission belongs to.
+      // We can get taskId from submission data — but getSubmission requires taskId.
+      // Instead use a two-step: fetch the task that owns this submission via its
+      // id embedded in the submission list. We look up the submission by listing
+      // all submissions for the task. Since we don't know taskId yet, use the
+      // API to find it: the submissionId itself encodes no task info, so we use
+      // a direct approach — call getSubmission with a wildcard... which isn't
+      // supported. Instead the cleanest approach: fetch tasks for the class...
+      // Actually the API has no "get submission by id globally" endpoint.
+      // The correct approach is to pass taskId via page context.
+      // For now, read taskId from the submission rows we already have in state,
+      // OR require taskId to be passed as a prop/query param.
+      // We'll accept taskId as a URL search param from the navigation call.
+      const resolvedTaskId = searchParams.get("taskId") ?? "";
+      if (!resolvedTaskId) {
+        toast.error("Missing task context");
+        setLoading(false);
+        return;
+      }
+      setTaskId(resolvedTaskId);
+
+      const [submissionData, taskData, submissionRows] = await Promise.all([
+        getSubmission(token, resolvedTaskId, submissionId),
+        getTask(token, resolvedTaskId),
+        listSubmissions(token, resolvedTaskId),
+      ]);
+      const classData = await getClass(token, taskData.classId);
+
       setSubmission(submissionData);
       setCls(classData);
+      setClassId(taskData.classId);
       setTaskTitle(taskData.title);
       setAllRows(submissionRows);
 
@@ -101,7 +124,7 @@ export function SubmissionDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, classId, taskId, submissionId]);
+  }, [token, submissionId, searchParams]);
 
   useEffect(() => {
     void loadData();
@@ -136,7 +159,7 @@ export function SubmissionDetailPage() {
   function navigateTo(row: SubmissionListRow) {
     if (!row.submission) return;
     router.push(
-      `/classes/${classId}/tasks/${taskId}/submissions/${row.submission.id}`,
+      `/submissions/${row.submission.id}?taskId=${taskId}`,
     );
   }
 
@@ -221,9 +244,7 @@ export function SubmissionDetailPage() {
         <button
           type="button"
           onClick={() =>
-            router.push(
-              `/classes/${classId}/tasks/${taskId}/submissions`,
-            )
+            router.push(`/tasks/${taskId}/submissions`)
           }
           className="flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors duration-100 hover:text-foreground"
         >

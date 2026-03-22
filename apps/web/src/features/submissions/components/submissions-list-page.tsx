@@ -49,7 +49,6 @@ export function SubmissionsListPage() {
   const router = useRouter();
   const { token } = useAuth();
 
-  const classId = params?.classId as string;
   const taskId = params?.taskId as string;
 
   const [task, setTask] = useState<TaskDetail | null>(null);
@@ -61,13 +60,13 @@ export function SubmissionsListPage() {
   // ─── Load data ──────────────────────────────────────────────────────────────
 
   const loadData = useCallback(async () => {
-    if (!token || !classId || !taskId) return;
+    if (!token || !taskId) return;
     try {
-      const [taskData, classData, submissionRows] = await Promise.all([
+      const [taskData, submissionRows] = await Promise.all([
         getTask(token, taskId),
-        getClass(token, classId),
         listSubmissions(token, taskId),
       ]);
+      const classData = await getClass(token, taskData.classId);
       setTask(taskData);
       setCls(classData);
       setRows(submissionRows);
@@ -76,7 +75,7 @@ export function SubmissionsListPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, classId, taskId]);
+  }, [token, taskId]);
 
   useEffect(() => {
     void loadData();
@@ -176,7 +175,7 @@ export function SubmissionsListPage() {
       {/* ── Back button ─────────────────────────────────────────────────── */}
       <button
         type="button"
-        onClick={() => router.push(`/classes/${classId}`)}
+        onClick={() => router.push(`/classes/${task?.classId ?? ""}`)}
         className="mb-6 flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors duration-100 hover:text-foreground"
       >
         <ArrowLeft size={14} strokeWidth={2} />
@@ -352,7 +351,7 @@ export function SubmissionsListPage() {
                         type="button"
                         onClick={() =>
                           router.push(
-                            `/classes/${classId}/tasks/${taskId}/submissions/${row.submission!.id}`,
+                            `/submissions/${row.submission!.id}?taskId=${taskId}`,
                           )
                         }
                         className="inline-flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[12px] font-medium text-white transition-colors duration-100"

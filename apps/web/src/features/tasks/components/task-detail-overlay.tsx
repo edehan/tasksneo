@@ -298,7 +298,7 @@ export function TaskDetailOverlay({
                   type="button"
                   onClick={() => {
                     onClose();
-                    router.push(`/classes/${task.classId}/tasks/${task.id}/edit`);
+                    router.push(`/tasks/${task.id}/edit`);
                   }}
                   className="rounded-[10px] border border-border bg-transparent px-4 py-2 text-[13px] font-medium text-muted-foreground transition-colors duration-100 hover:bg-secondary hover:text-foreground"
                 >
@@ -326,7 +326,7 @@ export function TaskDetailOverlay({
                   type="button"
                   onClick={() => {
                     onClose();
-                    router.push(`/classes/${task.classId}/tasks/${task.id}/submissions`);
+                    router.push(`/tasks/${task.id}/submissions`);
                   }}
                   className="flex items-center gap-2 rounded-[10px] px-4 py-2 text-[13px] font-medium text-white shadow-sm transition-colors duration-100"
                   style={{ backgroundColor: task.classColor }}
@@ -351,7 +351,7 @@ export function TaskDetailOverlay({
                     onSubmit(task);
                   } else {
                     onClose();
-                    router.push(`/classes/${task.classId}/tasks/${task.id}/submit`);
+                    router.push(`/tasks/${task.id}/submit`);
                   }
                 }}
                 className="flex items-center gap-2 rounded-[10px] px-5 py-2.5 text-[13px] font-medium text-white shadow-sm transition-colors duration-100"

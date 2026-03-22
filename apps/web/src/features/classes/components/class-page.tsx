@@ -244,7 +244,7 @@ export function ClassPage() {
           onOpenChange={setPostTaskOpen}
           onEditBody={({ taskId }) => {
             void loadData();
-            router.push(`/classes/${classId}/tasks/${taskId}/edit`);
+            router.push(`/tasks/${taskId}/edit`);
           }}
         />
       )}
