@@ -88,19 +88,20 @@ interface TaskSummarySource {
   class: { name: string } | null;
 }
 
-export function toTaskUserState(state: TaskUserStateSource | null) {
-  if (!state) {
+export function toTaskUserState(state: TaskUserStateSource | null, submittedAt?: Date | null) {
+  if (!state && !submittedAt) {
     return null;
   }
 
   return {
-    viewedAt: state.viewedAt?.toISOString() ?? null,
-    tags: state.tags,
-    sortOrder: state.sortOrder,
+    viewedAt: state?.viewedAt?.toISOString() ?? null,
+    tags: state?.tags ?? [],
+    sortOrder: state?.sortOrder ?? 0,
+    submittedAt: submittedAt?.toISOString() ?? null,
   };
 }
 
-export function toTaskSummary(task: TaskSummarySource, state: TaskUserStateSource | null) {
+export function toTaskSummary(task: TaskSummarySource, state: TaskUserStateSource | null, submittedAt?: Date | null) {
   return {
     id: task.id,
     classId: task.classId,
@@ -116,7 +117,7 @@ export function toTaskSummary(task: TaskSummarySource, state: TaskUserStateSourc
     createdBy: task.createdBy,
     createdAt: task.createdAt.toISOString(),
     updatedAt: task.updatedAt.toISOString(),
-    userState: toTaskUserState(state),
+    userState: toTaskUserState(state, submittedAt),
   };
 }
 

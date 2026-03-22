@@ -13,9 +13,11 @@ import {
   deleteTask,
   exportTaskSubmissionsCsv,
   getMySubmission,
+  getSubmissionById,
   getTaskSubmissionDetail,
   getTaskDetail,
   gradeSubmission,
+  listMyTasks,
   listTaskSubmissions,
   markTaskViewed,
   publishTask,
@@ -114,6 +116,12 @@ async function parseFilesFromFormData(formData: FormData, parentType: string, pa
 export const tasksRouter = new Hono<{ Variables: AppVariables }>();
 
 tasksRouter.use('*', authMiddleware);
+
+tasksRouter.get('/mine', async (c) => {
+  const authUser = requireAuthUser(c);
+  const tasks = await listMyTasks(authUser.userId);
+  return c.json(tasks, 200);
+});
 
 tasksRouter.post('/parse', async (c) => {
   const authUser = requireAuthUser(c);

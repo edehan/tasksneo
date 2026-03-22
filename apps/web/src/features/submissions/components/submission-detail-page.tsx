@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -22,7 +22,7 @@ import type {
 } from "@/lib/api";
 import {
   getClass,
-  getSubmission,
+  getSubmissionById,
   getTask,
   gradeSubmission,
   listSubmissions,
@@ -59,7 +59,6 @@ function formatFileSize(bytes: number | null): string {
 export function SubmissionDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { token } = useAuth();
 
   const submissionId = params?.submissionId as string;
@@ -82,29 +81,11 @@ export function SubmissionDetailPage() {
   const loadData = useCallback(async () => {
     if (!token || !submissionId) return;
     try {
-      // First fetch task list to find which task this submission belongs to.
-      // We can get taskId from submission data — but getSubmission requires taskId.
-      // Instead use a two-step: fetch the task that owns this submission via its
-      // id embedded in the submission list. We look up the submission by listing
-      // all submissions for the task. Since we don't know taskId yet, use the
-      // API to find it: the submissionId itself encodes no task info, so we use
-      // a direct approach — call getSubmission with a wildcard... which isn't
-      // supported. Instead the cleanest approach: fetch tasks for the class...
-      // Actually the API has no "get submission by id globally" endpoint.
-      // The correct approach is to pass taskId via page context.
-      // For now, read taskId from the submission rows we already have in state,
-      // OR require taskId to be passed as a prop/query param.
-      // We'll accept taskId as a URL search param from the navigation call.
-      const resolvedTaskId = searchParams.get("taskId") ?? "";
-      if (!resolvedTaskId) {
-        toast.error("Missing task context");
-        setLoading(false);
-        return;
-      }
+      const submissionData = await getSubmissionById(token, submissionId);
+      const resolvedTaskId = submissionData.taskId;
       setTaskId(resolvedTaskId);
 
-      const [submissionData, taskData, submissionRows] = await Promise.all([
-        getSubmission(token, resolvedTaskId, submissionId),
+      const [taskData, submissionRows] = await Promise.all([
         getTask(token, resolvedTaskId),
         listSubmissions(token, resolvedTaskId),
       ]);
@@ -124,7 +105,7 @@ export function SubmissionDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, submissionId, searchParams]);
+  }, [token, submissionId]);
 
   useEffect(() => {
     void loadData();
@@ -159,7 +140,7 @@ export function SubmissionDetailPage() {
   function navigateTo(row: SubmissionListRow) {
     if (!row.submission) return;
     router.push(
-      `/submissions/${row.submission.id}?taskId=${taskId}`,
+      `/submissions/${row.submission.id}`,
     );
   }
 

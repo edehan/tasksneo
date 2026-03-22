@@ -109,7 +109,7 @@ async function assertTaskAccess(taskId: string, userId: string) {
 }
 
 async function getTaskWithUserState(taskId: string, userId: string) {
-  const [task, state] = await Promise.all([
+  const [task, state, submission] = await Promise.all([
     prisma.task.findUnique({
       where: { id: taskId },
       include: {
@@ -128,19 +128,28 @@ async function getTaskWithUserState(taskId: string, userId: string) {
         },
       },
     }),
+    prisma.submission.findUnique({
+      where: {
+        taskId_userId: {
+          taskId,
+          userId,
+        },
+      },
+      select: { firstSubmittedAt: true },
+    }),
   ]);
 
   if (!task) {
     throw new AppError(404, 'TASK_NOT_FOUND', 'Task not found');
   }
 
-  return toTaskSummary(task, state);
+  return toTaskSummary(task, state, submission?.firstSubmittedAt ?? null);
 }
 
 export async function listClassTasks(classId: string, userId: string) {
   await getMembershipOrThrow(classId, userId);
 
-  const [tasks, states] = await Promise.all([
+  const [tasks, states, submissions] = await Promise.all([
     prisma.task.findMany({
       where: {
         classId,
@@ -168,11 +177,98 @@ export async function listClassTasks(classId: string, userId: string) {
         },
       },
     }),
+    prisma.submission.findMany({
+      where: {
+        userId,
+        task: {
+          classId,
+          deletedAt: null,
+          isPublished: true,
+        },
+      },
+      select: {
+        taskId: true,
+        firstSubmittedAt: true,
+      },
+    }),
   ]);
 
   const stateMap = new Map(states.map((state) => [state.taskId, state]));
+  const submissionMap = new Map(submissions.map((s) => [s.taskId, s.firstSubmittedAt]));
 
-  return tasks.map((task) => toTaskSummary(task, stateMap.get(task.id) ?? null));
+  return tasks.map((task) =>
+    toTaskSummary(task, stateMap.get(task.id) ?? null, submissionMap.get(task.id) ?? null),
+  );
+}
+
+export async function listMyTasks(userId: string) {
+  const [tasks, states, submissions] = await Promise.all([
+    prisma.task.findMany({
+      where: {
+        deletedAt: null,
+        isPublished: true,
+        class: {
+          isPersonal: false,
+          members: {
+            some: { userId },
+          },
+        },
+      },
+      include: {
+        class: {
+          select: {
+            name: true,
+            color: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    }),
+    prisma.taskUserState.findMany({
+      where: {
+        userId,
+        task: {
+          deletedAt: null,
+          isPublished: true,
+          class: {
+            isPersonal: false,
+            members: {
+              some: { userId },
+            },
+          },
+        },
+      },
+    }),
+    prisma.submission.findMany({
+      where: {
+        userId,
+        task: {
+          deletedAt: null,
+          isPublished: true,
+          class: {
+            isPersonal: false,
+            members: {
+              some: { userId },
+            },
+          },
+        },
+      },
+      select: {
+        taskId: true,
+        firstSubmittedAt: true,
+      },
+    }),
+  ]);
+
+  const stateMap = new Map(states.map((state) => [state.taskId, state]));
+  const submissionMap = new Map(submissions.map((s) => [s.taskId, s.firstSubmittedAt]));
+
+  return tasks.map((task) => ({
+    ...toTaskSummary(task, stateMap.get(task.id) ?? null, submissionMap.get(task.id) ?? null),
+    classColor: task.class?.color ?? null,
+  }));
 }
 
 export async function createClassTask(classId: string, userId: string, input: CreateTaskInput) {
@@ -517,6 +613,30 @@ export async function listTaskSubmissions(taskId: string, userId: string) {
   });
 }
 
+export async function getSubmissionById(submissionId: string, userId: string) {
+  const submission = await prisma.submission.findUnique({
+    where: { id: submissionId },
+    include: { attachments: true },
+  });
+
+  if (!submission) {
+    throw new AppError(404, 'SUBMISSION_NOT_FOUND', 'Submission not found');
+  }
+
+  const { classMembership } = await assertTaskAccess(submission.taskId, userId);
+
+  if (!classMembership) {
+    throw new AppError(403, 'FORBIDDEN', 'Only class admin can view submission detail');
+  }
+
+  requireOwnerOrAdmin(classMembership);
+
+  return {
+    ...toSubmission(submission),
+    attachments: submission.attachments.map(toAttachmentMeta),
+  };
+}
+
 export async function getTaskSubmissionDetail(taskId: string, submissionId: string, userId: string) {
   const { task, classMembership } = await assertTaskAccess(taskId, userId);
 
@@ -770,9 +890,15 @@ export async function gradeSubmission(taskId: string, submissionId: string, user
       reviewerId: userId,
       reviewedAt: new Date(),
     },
+    include: {
+      attachments: true,
+    },
   });
 
-  return toSubmission(updated);
+  return {
+    ...toSubmission(updated),
+    attachments: updated.attachments.map(toAttachmentMeta),
+  };
 }
 
 export async function exportTaskSubmissionsCsv(taskId: string, userId: string) {

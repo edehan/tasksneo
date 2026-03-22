@@ -67,6 +67,7 @@ export interface TaskUserState {
   viewedAt: string | null;
   tags: string[];
   sortOrder: number;
+  submittedAt: string | null;
 }
 
 export interface TaskSummary {
@@ -459,6 +460,16 @@ export async function listClassTasks(
   return apiRequest<TaskSummary[]>(`/classes/${classId}/tasks`, {}, token);
 }
 
+export interface MyTaskSummary extends TaskSummary {
+  classColor: string | null;
+}
+
+export async function listMyTasks(
+  token: string,
+): Promise<MyTaskSummary[]> {
+  return apiRequest<MyTaskSummary[]>("/tasks/mine", {}, token);
+}
+
 export async function createTask(
   token: string,
   classId: string,
@@ -637,6 +648,17 @@ export async function getSubmission(
 ): Promise<SubmissionDetail> {
   return apiRequest<SubmissionDetail>(
     `/tasks/${taskId}/submissions/${submissionId}`,
+    {},
+    token,
+  );
+}
+
+export async function getSubmissionById(
+  token: string,
+  submissionId: string,
+): Promise<SubmissionDetail> {
+  return apiRequest<SubmissionDetail>(
+    `/submissions/${submissionId}`,
     {},
     token,
   );

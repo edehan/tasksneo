@@ -351,7 +351,7 @@ export function SubmissionsListPage() {
                         type="button"
                         onClick={() =>
                           router.push(
-                            `/submissions/${row.submission!.id}?taskId=${taskId}`,
+                            `/submissions/${row.submission!.id}`,
                           )
                         }
                         className="inline-flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[12px] font-medium text-white transition-colors duration-100"
