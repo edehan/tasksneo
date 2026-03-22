@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { AppHeader } from "@/components/app-header";
 import { AppSidebar } from "@/components/app-sidebar";
+import { TimezonePrompt } from "@/components/timezone-prompt";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useClassAccent } from "@/hooks/use-class-accent";
 
@@ -35,6 +36,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <AppSidebar />
       <SidebarInset>
         <AppHeader />
+        <TimezonePrompt />
         <main className="flex-1 overflow-auto">
           {children}
         </main>
