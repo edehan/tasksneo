@@ -56,7 +56,21 @@ cd packages/db && npx prisma migrate dev && cd ../..
 
 # 5. 一键启动本地开发环境
 pnpm dev
+
+# 6. （可选）注入本地演示数据
+pnpm dev:seed
 ```
+
+如需在 `pnpm dev:seed` 时同时自动填充 Admin 的 LLM 基础配置，可在本地 `.env` 设置：
+
+```bash
+DEV_SEED_LLM_PROVIDER=openai
+DEV_SEED_LLM_BASE_URL=https://api.openai.com/v1
+DEV_SEED_LLM_MODEL=gpt-4o-mini
+DEV_SEED_LLM_API_KEY=<your_key>
+```
+
+该 API Key 会按 `SYSTEM_CONFIG_SECRET` 加密后写入 `system_config`。
 
 默认访问：
 
@@ -73,7 +87,14 @@ pnpm dev
 pnpm dev:infra
 pnpm dev:api
 pnpm dev:web
+pnpm dev:seed
 pnpm dev:down
+```
+
+如需在 `pnpm dev` 启动时自动注入演示数据，可使用：
+
+```bash
+TASKFLOW_DEV_SEED=true pnpm dev
 ```
 
 ## 本地预发布

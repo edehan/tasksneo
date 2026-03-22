@@ -75,10 +75,13 @@ interface TaskSummarySource {
   id: string;
   classId: string | null;
   title: string;
+  sourceText: string | null;
   startAt: Date | null;
   dueAt: Date | null;
   allowLateSubmission: boolean;
   blockedBy: string[];
+  isPublished: boolean;
+  publishedAt: Date | null;
   createdBy: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -103,10 +106,13 @@ export function toTaskSummary(task: TaskSummarySource, state: TaskUserStateSourc
     classId: task.classId,
     className: task.class?.name ?? null,
     title: task.title,
+    sourceText: task.sourceText,
     startAt: task.startAt?.toISOString() ?? null,
     dueAt: task.dueAt?.toISOString() ?? null,
     allowLateSubmission: task.allowLateSubmission,
     blockedBy: task.blockedBy,
+    isPublished: task.isPublished,
+    publishedAt: task.publishedAt?.toISOString() ?? null,
     createdBy: task.createdBy,
     createdAt: task.createdAt.toISOString(),
     updatedAt: task.updatedAt.toISOString(),
@@ -142,6 +148,7 @@ interface SubmissionSource {
   userId: string;
   firstSubmittedAt: Date;
   lastUpdatedAt: Date;
+  content: string | null;
   score: unknown;
   reviewerId: string | null;
   reviewedAt: Date | null;
@@ -155,6 +162,7 @@ export function toSubmission(submission: SubmissionSource) {
     userId: submission.userId,
     firstSubmittedAt: submission.firstSubmittedAt.toISOString(),
     lastUpdatedAt: submission.lastUpdatedAt.toISOString(),
+    content: submission.content,
     score: submission.score !== null && submission.score !== undefined ? String(submission.score) : null,
     reviewerId: submission.reviewerId,
     reviewedAt: submission.reviewedAt?.toISOString() ?? null,

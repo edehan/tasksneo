@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
+import { AuthProvider } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 import "./globals.css";
 
@@ -16,8 +18,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-background font-sans text-foreground antialiased">
-        <ThemeProvider>{children}</ThemeProvider>
+      <body className="min-h-screen bg-background font-sans text-foreground antialiased text-sm leading-relaxed">
+        <ThemeProvider>
+          <AuthProvider>
+            {children}
+            <Toaster richColors position="top-right" />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

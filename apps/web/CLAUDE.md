@@ -1,134 +1,104 @@
 # Frontend (apps/web)
 
-Next.js 14 App Router + TypeScript + Tailwind CSS + shadcn/ui. See root `CLAUDE.md` for the overall project overview.
+Next.js 14 App Router + TypeScript + Tailwind CSS 4 + shadcn/ui. See root `CLAUDE.md` for the overall project overview.
 
-## Core direction for this phase
+## Design philosophy
 
-This phase of development will use **shadcn/ui exclusively as the primary UI foundation**.
+**Warm paper aesthetic · Calm productivity**
 
-For **V1**, we will adopt the **default shadcn/ui visual style** as much as possible. Do not introduce extra visual systems, alternative component libraries, or unnecessary frontend abstractions. The goal of the first version is **consistency, speed, and low design risk**, not experimentation.
+Reference: `docs/prototype/` contains the designer's prototype (app.tsx + screenshots). All implementation must match the prototype's visual system as closely as possible.
 
-All user-facing frontend work should follow these principles:
+1. **Paper-like warmth** — warm neutral backgrounds (#faf7f2 light, #1a1816 dark), no pure whites or blacks.
+2. **Serif + Sans pairing** — Source Serif 4 for headings and display numbers, DM Sans for all functional text.
+3. **Class accent theming** — a single `--class-accent` CSS variable shifts the entire accent color per class context.
+4. **Restraint in motion** — only overlay fades, sidebar slide-in, hover transitions, Gantt bar scale-on-hover. No entrance animations, no bouncing, no parallax.
+5. **Flat information architecture** — one top-level view state (which class context), modals/overlays for details.
 
-- Use **shadcn/ui default style** for the first release.
-- Use **shadcn/ui components and official patterns wherever possible**.
-- Any frontend component should, as much as possible, be built from:
-  - existing `shadcn/ui` components,
-  - official shadcn/ui patterns,
-  - or plugins/tools already commonly used with shadcn/ui.
-- **Do not introduce additional UI libraries** unless there is a very strong reason and explicit approval.
-- **Do not over-engineer styling or architecture** in V1.
-- Prefer consistency over novelty. Do not “improve” the visual system by adding unrelated design ideas.
+## Visual system
 
-## Documentation and research expectations
+### Color
 
-During development, the frontend team should rely heavily on **shadcn/ui online documentation**.
+All colors defined as hex CSS custom properties in `globals.css`.
 
-When implementation details are unclear:
+- **Backgrounds**: `--background` (#faf7f2) for page, `--card` (#fffdf8) for elevated surfaces, `--surface-subtle` (#f9f6f0) for hover states
+- **Text**: `--foreground` (#2c2825) primary, `--muted-foreground` (#8a8078) secondary, `--text-muted-soft` (#c0b8ad) tertiary
+- **Borders**: `--border` (#e8e2d8), consistent warm tone
+- **Destructive**: `--destructive` (#c45c5c) for errors and delete actions
+- **Dark mode**: each color has an intentional dark counterpart, not inverted. `.dark` class via `next-themes`.
 
-1. Check the **official shadcn/ui documentation first**.
-2. Search the web for relevant examples and implementation discussions.
-3. Reference:
-   - community forums,
-   - GitHub issues,
-   - blog posts,
-   - and other real-world codebases using shadcn/ui.
+Class accent preset palette:
+```
+#5B8C6A green    #7B6CB0 violet (default)  #C4785B terracotta
+#5886A5 steel    #8B7355 bronze            #B07090 rose
+```
 
-Official docs should be the first source of truth for component usage and styling patterns. Community sources may be used for implementation reference, but the resulting code should still remain aligned with our chosen shadcn/ui-first approach.
+### Typography
 
-If shadcn/ui does not cover a necessary V1 interaction, the team may introduce the smallest possible supporting library only after documenting the reason, impact, and fallback plan.
+| Role | Family | Weights | Use |
+|---|---|---|---|
+| Headings / display | Source Serif 4 | 400, 600, 700 | Page titles, section headings, stat numbers |
+| UI / body | DM Sans | 400, 500, 600, 700 | All functional text, buttons, labels, lists |
+| Code / mono | JetBrains Mono | 400, 500 | Code blocks, invite codes, filenames |
 
-## Product surfaces
+Utility classes in `globals.css`:
+- `.text-display` — 1.875rem serif 700 (page titles)
+- `.text-heading-lg` — 1.5rem serif 700 (section headings)
+- `.text-heading-md` — 1.125rem serif 600 (card titles)
+- `.text-label-upper` — 0.625rem uppercase tracking-wide (tiny labels)
 
-The user-facing frontend is divided into three main surfaces:
+### Spacing, radius, shadow
 
-### 1. `www.example.com`
-This is the public-facing marketing and promotional site for the product.
+Same as shadcn/ui defaults. Base `--radius: 0.5rem` (8px). Minimal shadows — only for elevation.
 
-- Intended for visitors who are not logged in
-- Should be indexable and readable by search engines
-- Used for product introduction, landing pages, and basic public information
-- **Not the development priority for now**
-- Keep implementation simple and lightweight in this phase
+### Icons
 
-### 2. `app.example.com`
-This is the main product application.
-
-- Users log in here
-- Users access the core product functionality here
-- This is the **main focus of frontend development**
-- Most UI/UX effort, component work, state handling, and API integration belong here
-
-### 3. `app.example.com/admin`
-This is the admin panel.
-
-- Uses a separate route space
-- Uses `admin_token` for authentication
-- Pages can remain simple and utilitarian
-- Reuse with the main application is expected to be limited
-- Do not spend unnecessary effort trying to force heavy component sharing with the main user app
-- The design goal of /admin is "high efficiency and low maintenance," not "high fidelity to the main site experience."
+`lucide-react` exclusively.
 
 ## Structure
 
 ```text
-app/                  # Next.js App Router pages and layouts
-components/ui/        # shadcn/ui base components (do not manually redesign for V1)
-components/           # Shared application components
-features/             # Feature modules (tasks/, classes/, auth/, etc.)
-  tasks/
-    components/       # Task-specific components
-    hooks/            # useTask, useTaskList, etc.
+app/
+  (auth)/             # Unauthenticated routes (login, register)
+  (app)/              # Authenticated routes (sidebar + header shell)
+    dashboard/        # Homepage with all-class task views
+    classes/[classId]/ # Class-scoped pages
+    settings/         # User settings
+  admin/              # Admin panel (standalone, not redesigned)
+components/ui/        # shadcn/ui base components (do not redesign)
+components/           # Shared application components (sidebar, header, dialogs)
+features/             # Feature modules
+  dashboard/          # Homepage components (stat-cards, filter-bar)
+  tasks/              # Task views (gantt, list), task detail overlay, post-task
+  classes/            # Class page, settings, members
+  editor/             # Markdown editor, toolbar, preview
+  submissions/        # Submission list, detail, grading
+  settings/           # User profile, notifications, account
 lib/
-  api.ts              # Typed API client (wraps fetch, handles auth headers)
-  utils.ts            # cn() and other utilities
+  api.ts              # Typed API client (stable, do not modify without reason)
+  utils.ts            # cn() utility
+hooks/                # Custom hooks (use-mobile, use-class-accent)
 ```
 
 ## Rules
 
-* Use **shadcn/ui as the default and preferred base for all UI work**.
-* Add components via:
+### shadcn/ui + Tailwind only
+- shadcn/ui as behavioral primitives (Dialog, DropdownMenu, ScrollArea, etc.)
+- Tailwind CSS classes for all styling. No CSS modules, no inline styles.
+- Do not introduce other UI libraries.
 
-  * `npx shadcn@latest add <component>`
-* Prefer composition of existing shadcn/ui components over building custom UI from scratch.
-* Avoid introducing unrelated third-party UI kits, styling systems, or component frameworks.
-* Tailwind CSS only for styling.
+### Fonts
+- Use `font-serif` class (or `.text-display` / `.text-heading-lg` / `.text-heading-md`) for headings.
+- Default `font-sans` (DM Sans) for everything else.
+- Never mix fonts within the same text element.
 
-  * No CSS modules
-  * No inline styles
-  * No ad hoc visual systems
-* Server Components by default.
+### Components
+- Server Components by default. Add `'use client'` only when needed.
+- API calls go through `lib/api.ts`.
 
-  * Add `'use client'` only when interactivity or browser APIs are required.
-* API calls must go through `lib/api.ts`.
+### Dark mode
+- Support via `dark:` variants + `next-themes`.
+- Every color must have an intentional dark counterpart (not just inverted).
 
-  * Never use raw `fetch` directly inside page or feature components.
-* All times are stored in UTC.
-
-  * Display times using `Intl.DateTimeFormat` with the user's stored `timezone` preference (from `UserProfile`).
-  * When the browser timezone differs from the stored preference, prompt the user to update (bubble notification).
-  * Never hardcode a timezone.
-
-## Views
-
-The dashboard supports multiple user-switchable views:
-
-* **List** (default): tasks sorted by `dueAt`
-* **Board** (kanban): columns based on task status derived from `TaskUserState`
-* **Gantt**: horizontal timeline with `blockedBy` dependency lines
-* **Calendar**: tasks plotted by due date
-
-These views should still follow the same shadcn/ui-first approach. Build each view from existing primitives and keep styling consistent with the default system.
-
-## Color system
-
-Each class has a `color` hex field.
-
-Use this value for class label badges and other appropriate class-related UI markers throughout the application.
-
-For theming:
-
-* Support dark mode using Tailwind `dark:` variants
-* Use `next-themes` for theme toggling
-* Support i18n design, no need to create a separate custom visual language for V1
-* Stay as close as possible to the default shadcn/ui design language
+### Admin panel
+- Separate route space (`/admin`), `admin_token` auth.
+- Not subject to this design system — keep utilitarian.

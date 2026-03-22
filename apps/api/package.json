@@ -6,6 +6,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
+    "seed:dev": "tsx scripts/dev-seed.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -15,6 +16,7 @@
     "bcryptjs": "^3.0.3",
     "bull": "^4.16.5",
     "hono": "^4.12.8",
+    "ioredis": "^5.10.1",
     "jsonwebtoken": "^9.0.3",
     "minio": "^8.0.7",
     "nanoid": "^5.1.7",

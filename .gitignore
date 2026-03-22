@@ -8,3 +8,4 @@ dist/
 *.log
 .preview/
 .DS_Store
+.VSCodeCounter

@@ -30,6 +30,41 @@ if (!process.env.NOTIFICATION_WORKER_ENABLED) {
 
 export async function resetDatabase() {
   await prisma.$executeRawUnsafe(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'tasks' AND column_name = 'source_text'
+      ) THEN
+        ALTER TABLE tasks ADD COLUMN source_text TEXT;
+      END IF;
+
+      IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'tasks' AND column_name = 'is_published'
+      ) THEN
+        ALTER TABLE tasks ADD COLUMN is_published BOOLEAN NOT NULL DEFAULT true;
+      END IF;
+
+      IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'tasks' AND column_name = 'published_at'
+      ) THEN
+        ALTER TABLE tasks ADD COLUMN published_at TIMESTAMPTZ;
+      END IF;
+    END $$;
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    UPDATE tasks
+    SET published_at = created_at
+    WHERE is_published = true AND published_at IS NULL;
+  `);
+
+  await prisma.$executeRawUnsafe(`
     TRUNCATE TABLE
       notification_jobs,
       attachments,

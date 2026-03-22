@@ -9,6 +9,7 @@ import { hardDeleteTask, removeSubmissionAttachments, softDeleteTask, tryHardDel
 interface CreateTaskInput {
   title: string;
   description?: string | null;
+  sourceText?: string | null;
   startAt?: string | null;
   dueAt?: string | null;
   allowLateSubmission?: boolean;
@@ -18,6 +19,17 @@ interface CreateTaskInput {
 interface UpdateTaskInput {
   title?: string;
   description?: string | null;
+  sourceText?: string | null;
+  startAt?: string | null;
+  dueAt?: string | null;
+  allowLateSubmission?: boolean;
+  blockedBy?: string[];
+}
+
+interface CreateTaskDraftInput {
+  title?: string;
+  description?: string | null;
+  sourceText?: string | null;
   startAt?: string | null;
   dueAt?: string | null;
   allowLateSubmission?: boolean;
@@ -66,6 +78,10 @@ async function assertTaskAccess(taskId: string, userId: string) {
 
   if (task.classId) {
     const membership = await getMembershipOrThrow(task.classId, userId);
+
+    if (!task.isPublished && membership.role === ClassRole.MEMBER) {
+      throw new AppError(404, 'TASK_NOT_FOUND', 'Task not found');
+    }
 
     return {
       task,
@@ -129,6 +145,7 @@ export async function listClassTasks(classId: string, userId: string) {
       where: {
         classId,
         deletedAt: null,
+        isPublished: true,
       },
       include: {
         class: {
@@ -147,6 +164,7 @@ export async function listClassTasks(classId: string, userId: string) {
         task: {
           classId,
           deletedAt: null,
+          isPublished: true,
         },
       },
     }),
@@ -167,10 +185,13 @@ export async function createClassTask(classId: string, userId: string, input: Cr
       createdBy: userId,
       title: input.title,
       description: input.description ?? null,
+      sourceText: input.sourceText ?? null,
       startAt: parseDate(input.startAt),
       dueAt: parseDate(input.dueAt),
       allowLateSubmission: input.allowLateSubmission ?? true,
       blockedBy: input.blockedBy ?? [],
+      isPublished: true,
+      publishedAt: new Date(),
     },
     include: {
       class: {
@@ -197,6 +218,38 @@ export async function createClassTask(classId: string, userId: string, input: Cr
   return toTaskSummary(task, null);
 }
 
+export async function createClassTaskDraft(classId: string, userId: string, input: CreateTaskDraftInput) {
+  const membership = await getMembershipOrThrow(classId, userId);
+  requireOwnerOrAdmin(membership);
+
+  const title = input.title?.trim() || 'Untitled Draft';
+
+  const task = await prisma.task.create({
+    data: {
+      classId,
+      createdBy: userId,
+      title,
+      description: input.description ?? null,
+      sourceText: input.sourceText ?? null,
+      startAt: parseDate(input.startAt),
+      dueAt: parseDate(input.dueAt),
+      allowLateSubmission: input.allowLateSubmission ?? true,
+      blockedBy: input.blockedBy ?? [],
+      isPublished: false,
+      publishedAt: null,
+    },
+    include: {
+      class: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  return toTaskSummary(task, null);
+}
+
 export async function getTaskDetail(taskId: string, userId: string) {
   const { task, classMembership } = await assertTaskAccess(taskId, userId);
 
@@ -210,7 +263,7 @@ export async function getTaskDetail(taskId: string, userId: string) {
       },
     }),
     prisma.attachment.findMany({ where: { taskId } }),
-    classMembership && (classMembership.role === ClassRole.OWNER || classMembership.role === ClassRole.ADMIN)
+    task.isPublished && classMembership && (classMembership.role === ClassRole.OWNER || classMembership.role === ClassRole.ADMIN)
       ? Promise.all([
           prisma.classMember.count({ where: { classId: task.classId ?? undefined } }),
           prisma.taskUserState.count({ where: { taskId, viewedAt: { not: null } } }),
@@ -248,6 +301,7 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
     data: {
       title: input.title,
       description: input.description,
+      sourceText: input.sourceText,
       startAt: parseDate(input.startAt),
       dueAt: parseDate(input.dueAt),
       allowLateSubmission: input.allowLateSubmission,
@@ -257,6 +311,66 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
   });
 
   return getTaskWithUserState(task.id, userId);
+}
+
+export async function publishTask(taskId: string, userId: string, input: UpdateTaskInput) {
+  const { task, classMembership } = await assertTaskAccess(taskId, userId);
+
+  if (!classMembership || !task.classId) {
+    throw new AppError(403, 'FORBIDDEN', 'Only class admin can publish task');
+  }
+
+  requireOwnerOrAdmin(classMembership);
+
+  if (task.isPublished) {
+    return getTaskWithUserState(task.id, userId);
+  }
+
+  const finalTitle = input.title?.trim() || task.title.trim();
+
+  if (!finalTitle) {
+    throw new AppError(400, 'VALIDATION_ERROR', 'title is required for publish');
+  }
+
+  const publishedAt = new Date();
+
+  const updatedTask = await prisma.task.update({
+    where: { id: taskId },
+    data: {
+      title: finalTitle,
+      description: input.description === undefined ? task.description : input.description,
+      sourceText: input.sourceText === undefined ? task.sourceText : input.sourceText,
+      startAt: parseDate(input.startAt),
+      dueAt: parseDate(input.dueAt),
+      allowLateSubmission: input.allowLateSubmission,
+      blockedBy: input.blockedBy,
+      isPublished: true,
+      publishedAt,
+      updatedAt: publishedAt,
+    },
+    include: {
+      class: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  const memberIds = await prisma.classMember.findMany({
+    where: { classId: task.classId },
+    select: { userId: true },
+  });
+
+  await enqueueTaskPublishedNotifications({
+    taskId: updatedTask.id,
+    className: updatedTask.class?.name ?? '',
+    taskTitle: updatedTask.title,
+    dueAt: updatedTask.dueAt,
+    memberUserIds: memberIds.map((item) => item.userId),
+  });
+
+  return getTaskWithUserState(updatedTask.id, userId);
 }
 
 export async function deleteTask(taskId: string, userId: string) {
@@ -403,6 +517,34 @@ export async function listTaskSubmissions(taskId: string, userId: string) {
   });
 }
 
+export async function getTaskSubmissionDetail(taskId: string, submissionId: string, userId: string) {
+  const { task, classMembership } = await assertTaskAccess(taskId, userId);
+
+  if (!classMembership || !task.classId) {
+    throw new AppError(403, 'FORBIDDEN', 'Only class admin can view submission detail');
+  }
+
+  requireOwnerOrAdmin(classMembership);
+
+  const submission = await prisma.submission.findUnique({
+    where: {
+      id: submissionId,
+    },
+    include: {
+      attachments: true,
+    },
+  });
+
+  if (!submission || submission.taskId !== taskId) {
+    throw new AppError(404, 'SUBMISSION_NOT_FOUND', 'Submission not found');
+  }
+
+  return {
+    ...toSubmission(submission),
+    attachments: submission.attachments.map(toAttachmentMeta),
+  };
+}
+
 export async function getMySubmission(taskId: string, userId: string) {
   await assertTaskAccess(taskId, userId);
 
@@ -428,7 +570,88 @@ export async function getMySubmission(taskId: string, userId: string) {
   };
 }
 
-export async function upsertMySubmission(taskId: string, userId: string, attachmentRecords: Array<{
+async function ensureSubmission(taskId: string, userId: string) {
+  const existingSubmission = await prisma.submission.findUnique({
+    where: {
+      taskId_userId: {
+        taskId,
+        userId,
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (existingSubmission) {
+    return existingSubmission.id;
+  }
+
+  const submission = await prisma.submission.create({
+    data: {
+      taskId,
+      userId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  return submission.id;
+}
+
+async function markTaskSubmissionTouched(taskId: string, userId: string) {
+  await prisma.taskUserState.upsert({
+    where: {
+      taskId_userId: {
+        taskId,
+        userId,
+      },
+    },
+    update: {},
+    create: {
+      taskId,
+      userId,
+      tags: [],
+      viewedAt: new Date(),
+    },
+  });
+}
+
+async function getSubmissionDetailOrThrow(submissionId: string) {
+  const submission = await prisma.submission.findUnique({
+    where: { id: submissionId },
+    include: { attachments: true },
+  });
+
+  if (!submission) {
+    throw new AppError(404, 'SUBMISSION_NOT_FOUND', 'Submission not found');
+  }
+
+  return {
+    ...toSubmission(submission),
+    attachments: submission.attachments.map(toAttachmentMeta),
+  };
+}
+
+export async function upsertMySubmissionContent(taskId: string, userId: string, content: string | null) {
+  await assertTaskAccess(taskId, userId);
+
+  const submissionId = await ensureSubmission(taskId, userId);
+
+  await prisma.submission.update({
+    where: { id: submissionId },
+    data: {
+      content,
+    },
+  });
+
+  await markTaskSubmissionTouched(taskId, userId);
+
+  return getSubmissionDetailOrThrow(submissionId);
+}
+
+export async function upsertMySubmissionAttachments(taskId: string, userId: string, attachmentRecords: Array<{
   fileKey: string;
   originalName: string;
   mimeType: string | null;
@@ -443,27 +666,14 @@ export async function upsertMySubmission(taskId: string, userId: string, attachm
         userId,
       },
     },
-    include: {
-      attachments: {
-        select: {
-          fileKey: true,
-        },
-      },
+    select: {
+      id: true,
     },
   });
 
-  let submissionId = existingSubmission?.id;
+  const submissionId = existingSubmission?.id ?? await ensureSubmission(taskId, userId);
 
-  if (!submissionId) {
-    const submission = await prisma.submission.create({
-      data: {
-        taskId,
-        userId,
-      },
-    });
-
-    submissionId = submission.id;
-  } else {
+  if (existingSubmission) {
     await removeSubmissionAttachments(submissionId);
   }
 
@@ -480,35 +690,16 @@ export async function upsertMySubmission(taskId: string, userId: string, attachm
     });
   }
 
-  await prisma.taskUserState.upsert({
-    where: {
-      taskId_userId: {
-        taskId,
-        userId,
-      },
-    },
-    update: {},
-    create: {
-      taskId,
-      userId,
-      tags: [],
-      viewedAt: new Date(),
-    },
-  });
-
-  const submission = await prisma.submission.findUnique({
+  await prisma.submission.update({
     where: { id: submissionId },
-    include: { attachments: true },
+    data: {
+      lastUpdatedAt: new Date(),
+    },
   });
 
-  if (!submission) {
-    throw new AppError(404, 'SUBMISSION_NOT_FOUND', 'Submission not found');
-  }
+  await markTaskSubmissionTouched(taskId, userId);
 
-  return {
-    ...toSubmission(submission),
-    attachments: submission.attachments.map(toAttachmentMeta),
-  };
+  return getSubmissionDetailOrThrow(submissionId);
 }
 
 export async function addTaskAttachments(taskId: string, userId: string, attachmentRecords: Array<{

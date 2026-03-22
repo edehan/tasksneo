@@ -140,12 +140,18 @@ describe('TaskFlow API e2e', () => {
         nickname: 'Owner',
         schoolId: schoolAId,
         studentId: 'A001',
+        timezone: 'Asia/Shanghai',
       }),
     });
     expect(registerOwner.response.status).toBe(201);
+    const ownerRegisterBody = registerOwner.body as {
+      token: string;
+      user: { id: string; timezone: string };
+    };
+    expect(ownerRegisterBody.user.timezone).toBe('Asia/Shanghai');
 
-    const ownerToken = (registerOwner.body as { token: string }).token;
-    const ownerUserId = (registerOwner.body as { user: { id: string } }).user.id;
+    const ownerToken = ownerRegisterBody.token;
+    const ownerUserId = ownerRegisterBody.user.id;
 
     const registerMember = await requestJson(app, '/auth/register', {
       method: 'POST',
@@ -185,6 +191,7 @@ describe('TaskFlow API e2e', () => {
       }),
     });
     expect(registerTemp.response.status).toBe(201);
+    expect((registerTemp.body as { user: { timezone: string } }).user.timezone).toBe('UTC');
 
     const tempToken = (registerTemp.body as { token: string }).token;
 
@@ -200,9 +207,15 @@ describe('TaskFlow API e2e', () => {
     const patchMe = await requestJson(app, '/users/me', {
       method: 'PATCH',
       headers: authHeader(ownerToken),
-      body: JSON.stringify({ nickname: 'Owner Updated', schoolId: schoolAId, studentId: 'A099' }),
+      body: JSON.stringify({
+        nickname: 'Owner Updated',
+        schoolId: schoolAId,
+        studentId: 'A099',
+        timezone: 'America/New_York',
+      }),
     });
     expect(patchMe.response.status).toBe(200);
+    expect((patchMe.body as { timezone: string }).timezone).toBe('America/New_York');
 
     const patchPassword = await requestJson(app, '/users/me/password', {
       method: 'PATCH',
@@ -344,8 +357,45 @@ describe('TaskFlow API e2e', () => {
 
     const taskId = (createTaskRes.body as { id: string }).id;
 
+    const createDraftRes = await requestJson(app, `/classes/${classId}/tasks/drafts`, {
+      method: 'POST',
+      headers: authHeader(ownerToken),
+      body: JSON.stringify({
+        sourceText: 'Finish the worksheet by this Sunday evening',
+      }),
+    });
+    expect(createDraftRes.response.status).toBe(201);
+    const draftTaskId = (createDraftRes.body as { id: string }).id;
+
     const listTasks = await app.request(`/classes/${classId}/tasks`, { headers: authHeader(memberToken) });
     expect(listTasks.status).toBe(200);
+    const listTaskBody = (await json(listTasks)) as Array<{ id: string }>;
+    expect(listTaskBody.some((task) => task.id === draftTaskId)).toBe(false);
+
+    const memberGetDraftTask = await app.request(`/tasks/${draftTaskId}`, { headers: authHeader(memberToken) });
+    expect(memberGetDraftTask.status).toBe(404);
+
+    const parseDraftTask = await requestJson(app, `/tasks/${draftTaskId}/parse`, {
+      method: 'POST',
+      headers: authHeader(ownerToken),
+      body: JSON.stringify({ text: 'Finish the worksheet by this Sunday evening' }),
+    });
+    expect(parseDraftTask.response.status).toBe(200);
+
+    const draftMarkdown = await app.request(`/tasks/${draftTaskId}/draft-markdown`, {
+      headers: authHeader(ownerToken),
+    });
+    expect(draftMarkdown.status).toBe(200);
+
+    const publishDraftTask = await requestJson(app, `/tasks/${draftTaskId}/publish`, {
+      method: 'POST',
+      headers: authHeader(ownerToken),
+      body: JSON.stringify({ title: 'Worksheet Draft Published' }),
+    });
+    expect(publishDraftTask.response.status).toBe(200);
+
+    const memberGetPublishedDraftTask = await app.request(`/tasks/${draftTaskId}`, { headers: authHeader(memberToken) });
+    expect(memberGetPublishedDraftTask.status).toBe(200);
 
     const parseTask = await requestJson(app, '/tasks/parse', {
       method: 'POST',
@@ -388,6 +438,14 @@ describe('TaskFlow API e2e', () => {
     expect(taskAttachmentRes.status).toBe(201);
     const taskAttachmentBody = (await json(taskAttachmentRes)) as Array<{ fileKey: string }>;
 
+    const submitTextRes = await requestJson(app, `/tasks/${taskId}/submissions/me`, {
+      method: 'PUT',
+      headers: authHeader(memberToken),
+      body: JSON.stringify({ content: 'My first answer' }),
+    });
+    expect(submitTextRes.response.status).toBe(200);
+    expect((submitTextRes.body as { content: string | null }).content).toBe('My first answer');
+
     const submissionForm = new FormData();
     submissionForm.append('files', new File([Buffer.from('submission-file')], 'submission.txt', { type: 'text/plain' }));
     const submitRes = await app.request(`/tasks/${taskId}/submissions/me/attachments`, {
@@ -396,11 +454,30 @@ describe('TaskFlow API e2e', () => {
       body: submissionForm,
     });
     expect(submitRes.status).toBe(200);
-    const submitBody = (await json(submitRes)) as { id: string; attachments: Array<{ fileKey: string }> };
+    const submitBody = (await json(submitRes)) as { id: string; content: string | null; attachments: Array<{ fileKey: string }> };
     const submissionId = submitBody.id;
+    expect(submitBody.content).toBe('My first answer');
 
     const mySubmissionRes = await app.request(`/tasks/${taskId}/submissions/me`, { headers: authHeader(memberToken) });
     expect(mySubmissionRes.status).toBe(200);
+    const mySubmissionBody = (await json(mySubmissionRes)) as { content: string | null };
+    expect(mySubmissionBody.content).toBe('My first answer');
+
+    const submissionDetailRes = await app.request(`/tasks/${taskId}/submissions/${submissionId}`, {
+      headers: authHeader(ownerToken),
+    });
+    expect(submissionDetailRes.status).toBe(200);
+    const submissionDetailBody = (await json(submissionDetailRes)) as {
+      content: string | null;
+      attachments: Array<{ fileKey: string }>;
+    };
+    expect(submissionDetailBody.content).toBe('My first answer');
+    expect(submissionDetailBody.attachments.length).toBe(1);
+
+    const submissionDetailForbiddenRes = await app.request(`/tasks/${taskId}/submissions/${submissionId}`, {
+      headers: authHeader(memberToken),
+    });
+    expect(submissionDetailForbiddenRes.status).toBe(403);
 
     const allSubmissions = await app.request(`/tasks/${taskId}/submissions`, { headers: authHeader(ownerToken) });
     expect(allSubmissions.status).toBe(200);

@@ -160,10 +160,13 @@ model Task {
   id                   String    @id @default(uuid())
   title                String
   description          String?
+  sourceText           String?   @map("source_text")
   startAt              DateTime? @map("start_at") @db.Timestamptz
   dueAt                DateTime? @map("due_at") @db.Timestamptz
   allowLateSubmission  Boolean   @default(true) @map("allow_late_submission")
   blockedBy            String[]  @map("blocked_by")
+  isPublished          Boolean   @default(true) @map("is_published")
+  publishedAt          DateTime? @map("published_at") @db.Timestamptz
   // 存储其他 Task 的 uuid 字符串数组，前端处理，后端不验证
   deletedAt            DateTime? @map("deleted_at") @db.Timestamptz
   createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
@@ -204,6 +207,7 @@ model Submission {
   id               String    @id @default(uuid())
   firstSubmittedAt DateTime  @default(now()) @map("first_submitted_at") @db.Timestamptz
   lastUpdatedAt    DateTime  @updatedAt @map("last_updated_at") @db.Timestamptz
+  content          String?
 
   // 评分字段，仅班级 admin/owner 可写
   score        Decimal?  @db.Decimal(5, 2)
