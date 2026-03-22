@@ -1,18 +1,34 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
+import { isOverdue } from "@/features/tasks/lib/task-utils";
 
-const DAY_WIDTH = 28;
-const ROW_HEIGHT = 36;
-const HEADER_HEIGHT = 48;
-const LABEL_WIDTH = 180;
+// ─── Constants ───────────────────────────────────────────────────────────────
 
-function getDaysBetween(start: Date, end: Date): number {
-  return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+const ROW_HEIGHT = 44;
+const HEADER_HEIGHT = 34;
+const LABEL_WIDTH = 210;
+
+const DAY_WIDTHS: Record<GanttRange, number> = {
+  week: 80,
+  month: 22,
+  "2month": 14,
+};
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+type GanttRange = "week" | "month" | "2month";
+
+interface TaskGanttViewProps {
+  tasks: TaskWithClass[];
+  ganttRange: GanttRange;
+  onTaskClick?: (task: TaskWithClass) => void;
 }
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function startOfDay(d: Date): Date {
   const r = new Date(d);
@@ -20,77 +36,121 @@ function startOfDay(d: Date): Date {
   return r;
 }
 
-interface TaskGanttViewProps {
-  tasks: TaskWithClass[];
+function diffDays(a: Date, b: Date): number {
+  return (b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24);
 }
 
-export function TaskGanttView({ tasks }: TaskGanttViewProps) {
-  const { timelineStart, timelineDays, weeks, groups } = useMemo(() => {
-    const now = new Date();
-    // Range: current month ±2 weeks
-    const rangeStart = startOfDay(
-      new Date(now.getFullYear(), now.getMonth(), now.getDate() - 14),
-    );
-    const rangeEnd = startOfDay(
-      new Date(now.getFullYear(), now.getMonth(), now.getDate() + 42),
-    );
-    const totalDays = getDaysBetween(rangeStart, rangeEnd);
+function formatBarDate(iso: string): string {
+  const d = new Date(iso);
+  const month = d.toLocaleString("en-US", { month: "short" });
+  const day = d.getDate();
+  const hours = d.getHours();
+  const minutes = d.getMinutes();
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const h = hours % 12 || 12;
+  const m = minutes.toString().padStart(2, "0");
+  return `${month} ${day}, ${h}:${m} ${ampm}`;
+}
 
-    // Group tasks by class
-    const classGroups = new Map<
-      string,
-      { name: string; color: string; tasks: TaskWithClass[] }
-    >();
-    for (const task of tasks) {
-      const key = task.classId;
-      if (!classGroups.has(key)) {
-        classGroups.set(key, {
-          name: task.className,
-          color: task.classColor,
-          tasks: [],
-        });
-      }
-      classGroups.get(key)?.tasks.push(task);
-    }
+function formatMarkerDate(d: Date): string {
+  const month = d.toLocaleString("en-US", { month: "short" }).toUpperCase();
+  const day = d.getDate();
+  return `${month} ${day}`;
+}
 
-    // Generate week markers
-    const weekMarkers: { label: string; dayOffset: number }[] = [];
-    const cursor = new Date(rangeStart);
-    // Move to next Monday
-    cursor.setDate(cursor.getDate() + ((8 - cursor.getDay()) % 7));
-    while (cursor < rangeEnd) {
-      const offset = getDaysBetween(rangeStart, cursor);
-      weekMarkers.push({
-        label: cursor.toLocaleDateString(undefined, {
-          month: "short",
-          day: "numeric",
-        }),
-        dayOffset: offset,
-      });
-      cursor.setDate(cursor.getDate() + 7);
-    }
+function isSubmitted(task: TaskWithClass): boolean {
+  return !!task.userState?.submittedAt;
+}
 
-    return {
-      timelineStart: rangeStart,
-      timelineDays: totalDays,
-      weeks: weekMarkers,
-      groups: Array.from(classGroups.values()),
-    };
-  }, [tasks]);
+// ─── Timeline Range ──────────────────────────────────────────────────────────
 
-  const todayOffset = getDaysBetween(timelineStart, startOfDay(new Date()));
-  const totalWidth = timelineDays * DAY_WIDTH;
+function computeTimelineRange(
+  tasks: TaskWithClass[],
+  range: GanttRange,
+): { start: Date; end: Date } {
+  const today = startOfDay(new Date());
 
-  // Flatten rows for Y positioning
-  const rows: {
-    task: TaskWithClass;
-    color: string;
-  }[] = [];
-  for (const group of groups) {
-    for (const task of group.tasks) {
-      rows.push({ task, color: group.color });
-    }
+  if (range === "week") {
+    const start = new Date(today);
+    start.setDate(start.getDate() - 1);
+    const end = new Date(today);
+    end.setDate(end.getDate() + 7);
+    return { start, end };
   }
+
+  // For month and 2month, fit all tasks with padding
+  const minSpan = range === "month" ? 30 : 60;
+  const padding = range === "month" ? 2 : 5;
+
+  let earliest = today;
+  let latest = new Date(today);
+  latest.setDate(latest.getDate() + minSpan);
+
+  for (const task of tasks) {
+    const taskStart = task.startAt
+      ? startOfDay(new Date(task.startAt))
+      : startOfDay(new Date(task.createdAt));
+    const taskEnd = task.dueAt
+      ? startOfDay(new Date(task.dueAt))
+      : taskStart;
+
+    if (taskStart < earliest) earliest = new Date(taskStart);
+    if (taskEnd > latest) latest = new Date(taskEnd);
+  }
+
+  const start = new Date(earliest);
+  start.setDate(start.getDate() - padding);
+  const end = new Date(latest);
+  end.setDate(end.getDate() + padding);
+
+  // Enforce minimum span
+  const span = diffDays(start, end);
+  if (span < minSpan) {
+    end.setDate(start.getDate() + minSpan);
+  }
+
+  return { start, end };
+}
+
+// ─── Date Markers ────────────────────────────────────────────────────────────
+
+function computeMarkers(
+  start: Date,
+  end: Date,
+  range: GanttRange,
+): { label: string; dayOffset: number }[] {
+  const interval = range === "week" ? 1 : range === "month" ? 7 : 14;
+  const markers: { label: string; dayOffset: number }[] = [];
+  const cursor = new Date(start);
+
+  while (cursor <= end) {
+    const offset = diffDays(start, cursor);
+    markers.push({ label: formatMarkerDate(cursor), dayOffset: offset });
+    cursor.setDate(cursor.getDate() + interval);
+  }
+
+  return markers;
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
+
+export function TaskGanttView({
+  tasks,
+  ganttRange,
+  onTaskClick,
+}: TaskGanttViewProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const dayWidth = DAY_WIDTHS[ganttRange];
+
+  const { timelineStart, totalDays, markers } = useMemo(() => {
+    const { start, end } = computeTimelineRange(tasks, ganttRange);
+    const total = Math.ceil(diffDays(start, end));
+    const m = computeMarkers(start, end, ganttRange);
+    return { timelineStart: start, totalDays: total, markers: m };
+  }, [tasks, ganttRange]);
+
+  const todayOffset = diffDays(timelineStart, startOfDay(new Date()));
+  const totalWidth = totalDays * dayWidth;
 
   if (tasks.length === 0) {
     return (
@@ -101,180 +161,188 @@ export function TaskGanttView({ tasks }: TaskGanttViewProps) {
   }
 
   return (
-    <ScrollArea className="w-full rounded-lg border">
-      <div className="flex">
-        {/* Left labels */}
+    <div className="flex overflow-hidden rounded-lg border">
+      {/* Left: pinned task column */}
+      <div
+        className="shrink-0 border-r bg-card"
+        style={{ width: LABEL_WIDTH }}
+      >
+        {/* Header spacer */}
         <div
-          className="shrink-0 border-r bg-muted/30"
-          style={{ width: LABEL_WIDTH }}
-        >
-          <div
-            className="flex items-end border-b px-3 text-xs font-medium text-muted-foreground"
-            style={{ height: HEADER_HEIGHT }}
-          >
-            Task
-          </div>
-          {rows.map(({ task, color }) => (
+          className="border-b"
+          style={{ height: HEADER_HEIGHT }}
+        />
+        {/* Task rows */}
+        {tasks.map((task) => {
+          const submitted = isSubmitted(task);
+          return (
             <div
               key={task.id}
-              className="flex items-center gap-2 border-b px-3"
+              className="group flex cursor-pointer items-center gap-2 border-b px-3 transition-colors duration-150 hover:bg-surface-subtle"
               style={{ height: ROW_HEIGHT }}
+              onClick={() => onTaskClick?.(task)}
             >
               <span
-                className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                style={{ backgroundColor: color }}
+                className="inline-block h-2 w-2 shrink-0 rounded-sm"
+                style={{ backgroundColor: task.classColor }}
               />
-              <span className="truncate text-xs">{task.title}</span>
+              <span
+                className={`truncate font-sans leading-none ${
+                  submitted
+                    ? "text-text-muted-soft line-through"
+                    : "text-foreground"
+                }`}
+                style={{ fontSize: 13 }}
+              >
+                {task.title}
+              </span>
             </div>
-          ))}
-        </div>
+          );
+        })}
+      </div>
 
-        {/* Timeline area */}
-        <div className="relative min-w-0 flex-1 overflow-x-auto">
-          <div style={{ width: totalWidth, minWidth: "100%" }}>
-            {/* Header with week markers */}
-            <div
-              className="relative border-b"
-              style={{ height: HEADER_HEIGHT }}
-            >
-              {weeks.map((w) => (
-                <div
-                  key={w.dayOffset}
-                  className="absolute bottom-0 border-l px-1 pb-1 text-xs text-muted-foreground"
-                  style={{ left: w.dayOffset * DAY_WIDTH }}
-                >
-                  {w.label}
-                </div>
-              ))}
-            </div>
-
-            {/* Rows */}
-            <div className="relative">
-              {/* Grid lines for weeks */}
-              {weeks.map((w) => (
-                <div
-                  key={`line-${w.dayOffset}`}
-                  className="absolute top-0 bottom-0 border-l border-dashed border-border/50"
-                  style={{ left: w.dayOffset * DAY_WIDTH }}
-                />
-              ))}
-
-              {/* Today line */}
-              {todayOffset >= 0 && todayOffset <= timelineDays && (
-                <div
-                  className="absolute top-0 bottom-0 z-10 w-0.5 bg-status-error"
-                  style={{ left: todayOffset * DAY_WIDTH }}
-                />
-              )}
-
-              {/* Task bars */}
-              {rows.map(({ task, color }) => {
-                const barStart = task.startAt
-                  ? getDaysBetween(timelineStart, new Date(task.startAt))
-                  : getDaysBetween(timelineStart, new Date(task.createdAt));
-                const barEnd = task.dueAt
-                  ? getDaysBetween(timelineStart, new Date(task.dueAt))
-                  : barStart + 7; // Default 7-day width
-
-                const left = Math.max(0, barStart) * DAY_WIDTH;
-                const right = Math.min(timelineDays, barEnd) * DAY_WIDTH;
-                const width = Math.max(right - left, DAY_WIDTH);
-
-                return (
-                  <div
-                    key={task.id}
-                    className="relative border-b"
-                    style={{ height: ROW_HEIGHT }}
-                  >
-                    <div
-                      className="absolute top-1.5 rounded"
-                      style={{
-                        left,
-                        width,
-                        height: ROW_HEIGHT - 12,
-                        backgroundColor: color,
-                        opacity: 0.85,
-                      }}
-                    />
-                  </div>
-                );
-              })}
-
-              {/* Dependency arrows */}
-              <svg
-                role="img"
-                aria-label="Task dependency arrows"
-                className="pointer-events-none absolute inset-0"
+      {/* Right: scrollable timeline */}
+      <ScrollArea className="min-w-0 flex-1" ref={scrollRef}>
+        <div style={{ width: totalWidth, minWidth: "100%" }}>
+          {/* Header with date markers */}
+          <div
+            className="relative border-b"
+            style={{ height: HEADER_HEIGHT }}
+          >
+            {markers.map((m) => (
+              <div
+                key={m.dayOffset}
+                className="absolute bottom-0 pb-1.5 font-sans text-text-muted-soft"
                 style={{
-                  width: totalWidth,
-                  height: rows.length * ROW_HEIGHT,
+                  left: m.dayOffset * dayWidth,
+                  fontSize: 10,
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
                 }}
               >
-                <title>Task dependency arrows</title>
-                {rows.map(({ task }, targetIdx) =>
-                  task.blockedBy.map((depId) => {
-                    const sourceIdx = rows.findIndex(
-                      (r) => r.task.id === depId,
-                    );
-                    if (sourceIdx === -1) return null;
+                {m.label}
+              </div>
+            ))}
 
-                    const sourceTask = rows[sourceIdx].task;
-                    const sourceEnd = sourceTask.dueAt
-                      ? getDaysBetween(
-                          timelineStart,
-                          new Date(sourceTask.dueAt),
-                        )
-                      : getDaysBetween(
-                          timelineStart,
-                          new Date(sourceTask.createdAt),
-                        ) + 7;
+            {/* Today label in header */}
+            {todayOffset >= 0 && todayOffset <= totalDays && (
+              <div
+                className="absolute bottom-1 z-20 rounded px-1 py-0.5 font-sans font-semibold text-white"
+                style={{
+                  left: todayOffset * dayWidth,
+                  transform: "translateX(-50%)",
+                  backgroundColor: "#d6394c",
+                  fontSize: 8,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  lineHeight: 1,
+                }}
+              >
+                TODAY
+              </div>
+            )}
+          </div>
 
-                    const targetStart = task.startAt
-                      ? getDaysBetween(timelineStart, new Date(task.startAt))
-                      : getDaysBetween(timelineStart, new Date(task.createdAt));
+          {/* Row area */}
+          <div className="relative">
+            {/* Vertical grid lines for markers */}
+            {markers.map((m) => (
+              <div
+                key={`grid-${m.dayOffset}`}
+                className="absolute top-0 bottom-0 border-l border-border/40"
+                style={{ left: m.dayOffset * dayWidth }}
+              />
+            ))}
 
-                    const x1 = Math.min(timelineDays, sourceEnd) * DAY_WIDTH;
-                    const y1 = sourceIdx * ROW_HEIGHT + ROW_HEIGHT / 2;
-                    const x2 = Math.max(0, targetStart) * DAY_WIDTH;
-                    const y2 = targetIdx * ROW_HEIGHT + ROW_HEIGHT / 2;
+            {/* Today line */}
+            {todayOffset >= 0 && todayOffset <= totalDays && (
+              <div
+                className="absolute top-0 bottom-0 z-10"
+                style={{
+                  left: todayOffset * dayWidth,
+                  width: 2,
+                  backgroundColor: "#d6394c",
+                }}
+              />
+            )}
 
-                    return (
-                      <g key={`${depId}-${task.id}`}>
-                        <line
-                          x1={x1}
-                          y1={y1}
-                          x2={x2}
-                          y2={y2}
-                          stroke="currentColor"
-                          strokeWidth={1}
-                          className="text-muted-foreground/40"
-                          markerEnd="url(#arrowhead)"
-                        />
-                      </g>
-                    );
-                  }),
-                )}
-                <defs>
-                  <marker
-                    id="arrowhead"
-                    markerWidth="6"
-                    markerHeight="4"
-                    refX="6"
-                    refY="2"
-                    orient="auto"
+            {/* Task rows with bars */}
+            {tasks.map((task) => {
+              const submitted = isSubmitted(task);
+              const overdue = !submitted && isOverdue(task);
+
+              const barStartDate = task.startAt
+                ? new Date(task.startAt)
+                : new Date(task.createdAt);
+              const barEndDate = task.dueAt
+                ? new Date(task.dueAt)
+                : new Date(barStartDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+              const startOffset = diffDays(timelineStart, barStartDate);
+              const endOffset = diffDays(timelineStart, barEndDate);
+
+              const left = Math.max(0, startOffset) * dayWidth;
+              const right = Math.min(totalDays, endOffset) * dayWidth;
+              const width = Math.max(right - left, dayWidth * 0.5);
+
+              // Bar color: submitted = muted gray, otherwise classColor with low opacity
+              const barBg = submitted ? "#c0b8ad28" : `${task.classColor}28`;
+              const barBorder = overdue
+                ? `1px dashed ${task.classColor}`
+                : "none";
+
+              // Bar label color
+              const labelColor = submitted ? "#c0b8ad" : task.classColor;
+
+              // Build the bar label text
+              const barLabel =
+                task.startAt && task.dueAt
+                  ? `${formatBarDate(task.startAt)} — ${formatBarDate(task.dueAt)}`
+                  : task.dueAt
+                    ? `Due ${formatBarDate(task.dueAt)}`
+                    : "";
+
+              return (
+                <div
+                  key={task.id}
+                  className="group relative cursor-pointer border-b transition-colors duration-150 hover:bg-surface-subtle"
+                  style={{ height: ROW_HEIGHT }}
+                  onClick={() => onTaskClick?.(task)}
+                >
+                  <div
+                    className="absolute top-1/2 rounded-sm transition-transform duration-150 group-hover:scale-y-[1.15]"
+                    style={{
+                      left,
+                      width,
+                      height: ROW_HEIGHT - 16,
+                      transform: "translateY(-50%)",
+                      backgroundColor: barBg,
+                      border: barBorder,
+                      borderRadius: 4,
+                      overflow: "hidden",
+                    }}
                   >
-                    <polygon
-                      points="0 0, 6 2, 0 4"
-                      className="fill-muted-foreground/40"
-                    />
-                  </marker>
-                </defs>
-              </svg>
-            </div>
+                    {barLabel && (
+                      <span
+                        className="pointer-events-none absolute inset-0 flex items-center truncate px-1.5 font-sans"
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 600,
+                          color: labelColor,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {barLabel}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
-      </div>
-      <ScrollBar orientation="horizontal" />
-    </ScrollArea>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+    </div>
   );
 }

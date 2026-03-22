@@ -2,8 +2,7 @@
 
 import {
   BookOpen,
-  ChevronsUpDown,
-  LayoutDashboard,
+  Home,
   LogOut,
   Moon,
   Plus,
@@ -17,7 +16,6 @@ import { useTheme } from "next-themes";
 import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
-import { ClassColorBadge } from "@/components/class-color-badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -31,7 +29,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
@@ -41,11 +38,7 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { CreateClassDialog } from "@/components/create-class-dialog";
 import { JoinClassDialog } from "@/features/classes/components/join-class-dialog";
 import type { ClassSummary } from "@/lib/api";
 import { listClasses } from "@/lib/api";
@@ -82,62 +75,62 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      {/* User menu at top */}
+      {/* User row with theme toggle */}
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                >
-                  <Avatar className="h-8 w-8 shrink-0">
-                    <AvatarFallback className="text-xs">
-                      {initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-1 flex-col gap-0.5 leading-none text-left">
-                    <span className="text-sm font-medium truncate">
-                      {user?.nickname || user?.email}
-                    </span>
-                    {user?.nickname && (
-                      <span className="text-xs text-muted-foreground truncate">
-                        {user.email}
+            <div className="flex items-center gap-3 px-2 py-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-3 flex-1 min-w-0 rounded-lg hover:bg-sidebar-accent p-1 -m-1 transition-colors">
+                    <Avatar className="h-8 w-8 shrink-0">
+                      <AvatarFallback className="text-xs font-medium">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col min-w-0 text-left">
+                      <span className="text-sm font-medium truncate">
+                        {displayName}
                       </span>
-                    )}
-                  </div>
-                  <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side="bottom"
-                align="start"
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56"
+                      {user?.nickname && user.email && (
+                        <span className="text-xs text-muted-foreground truncate">
+                          {user.email}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  side="bottom"
+                  align="start"
+                  className="w-56"
+                >
+                  <DropdownMenuItem
+                    onClick={() => router.push("/settings/profile")}
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={logout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {/* Inline dark mode toggle */}
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
+                title={theme === "dark" ? "Light mode" : "Dark mode"}
               >
-                <DropdownMenuItem
-                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                >
-                  {theme === "dark" ? (
-                    <Sun className="mr-2 h-4 w-4" />
-                  ) : (
-                    <Moon className="mr-2 h-4 w-4" />
-                  )}
-                  {theme === "dark" ? "Light mode" : "Dark mode"}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => router.push("/settings/profile")}
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                {theme === "dark" ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
@@ -145,7 +138,7 @@ export function AppSidebar() {
       <SidebarSeparator />
 
       <SidebarContent>
-        {/* Dashboard */}
+        {/* Homepage */}
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -158,8 +151,8 @@ export function AppSidebar() {
                   }
                 >
                   <Link href="/dashboard">
-                    <LayoutDashboard className="h-4 w-4" />
-                    <span>Dashboard</span>
+                    <Home className="h-4 w-4" />
+                    <span>Homepage</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -167,44 +160,36 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarSeparator />
-
         {/* Personal Space */}
         {personalClass && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Personal Space</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === `/classes/${personalClass.id}`}
-                  >
-                    <Link href={`/classes/${personalClass.id}`}>
-                      <BookOpen className="h-4 w-4" />
-                      <span>{personalClass.name}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+          <>
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === `/classes/${personalClass.id}`}
+                    >
+                      <Link href={`/classes/${personalClass.id}`}>
+                        <BookOpen className="h-4 w-4" />
+                        <span>Personal Space</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
         )}
 
-        {/* Classes — "+" on same line as label */}
+        <SidebarSeparator />
+
+        {/* Joined classes */}
         <SidebarGroup>
-          <SidebarGroupLabel>Classes</SidebarGroupLabel>
-          <SidebarGroupAction asChild>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link href="/classes/new">
-                  <Plus className="h-4 w-4" />
-                  <span className="sr-only">Create class</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Create class</TooltipContent>
-            </Tooltip>
-          </SidebarGroupAction>
+          <SidebarGroupLabel className="text-label-upper">
+            Joined Classes
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {loading ? (
@@ -230,7 +215,10 @@ export function AppSidebar() {
                       isActive={pathname.startsWith(`/classes/${cls.id}`)}
                     >
                       <Link href={`/classes/${cls.id}`}>
-                        <ClassColorBadge color={cls.color} />
+                        <span
+                          className="h-2 w-2 shrink-0 rounded-sm"
+                          style={{ backgroundColor: cls.color || "#8B7355" }}
+                        />
                         <span className="truncate">{cls.name}</span>
                       </Link>
                     </SidebarMenuButton>
@@ -242,19 +230,30 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Join class at bottom */}
+      {/* Bottom buttons: Join Class + Create */}
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
-            <JoinClassDialog
-              trigger={
-                <SidebarMenuButton className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground">
-                  <UserPlus className="h-4 w-4" />
-                  <span>Join Class</span>
-                </SidebarMenuButton>
-              }
-              onJoined={() => void loadClasses()}
-            />
+            <div className="flex gap-2">
+              <JoinClassDialog
+                trigger={
+                  <SidebarMenuButton className="flex-1 bg-class-accent text-class-accent-foreground hover:opacity-90">
+                    <UserPlus className="h-4 w-4" />
+                    <span>Join Class</span>
+                  </SidebarMenuButton>
+                }
+                onJoined={() => void loadClasses()}
+              />
+              <CreateClassDialog
+                trigger={
+                  <SidebarMenuButton className="shrink-0 w-auto px-3">
+                    <Plus className="h-4 w-4" />
+                    <span>Create</span>
+                  </SidebarMenuButton>
+                }
+                onCreated={() => void loadClasses()}
+              />
+            </div>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

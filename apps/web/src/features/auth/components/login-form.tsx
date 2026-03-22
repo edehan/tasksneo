@@ -33,7 +33,7 @@ export function LoginForm() {
     setSubmitting(true);
     try {
       await login(email, password);
-      router.replace("/admin");
+      router.replace("/dashboard");
     } catch (err) {
       const message = err instanceof ApiError ? err.message : "Login failed";
       toast.error(message);
@@ -45,7 +45,7 @@ export function LoginForm() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Welcome back</CardTitle>
+        <CardTitle className="text-2xl font-serif">Welcome back</CardTitle>
         <CardDescription>Sign in to your TaskFlow account</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>

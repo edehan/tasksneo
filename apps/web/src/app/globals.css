@@ -1,112 +1,121 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
 
 /*
  * TaskFlow Design Tokens
- * Base: stone (warm neutral) · Accent: dynamic class color
- * Philosophy: Calm productivity · Warm functionalism
+ * Palette: warm paper (#faf7f2 / #1a1816)
+ * Fonts: Source Serif 4 (headings) · DM Sans (body) · JetBrains Mono (code)
+ * Accent: dynamic per-class color via --class-accent
  */
 
 :root {
-  /* shadcn/ui core — stone warm palette */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.147 0.004 49.75);
+  /* Prototype palette: warm paper */
+  --background: #faf7f2;
+  --foreground: #2c2825;
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.147 0.004 49.75);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.147 0.004 49.75);
+  --card: #fffdf8;
+  --card-foreground: #2c2825;
+  --popover: #fffdf8;
+  --popover-foreground: #2c2825;
 
-  --primary: oklch(0.216 0.006 56.04);
-  --primary-foreground: oklch(0.985 0.002 75);
-  --secondary: oklch(0.97 0.001 106.42);
-  --secondary-foreground: oklch(0.216 0.006 56.04);
-  --muted: oklch(0.97 0.001 106.42);
-  --muted-foreground: oklch(0.553 0.013 58.07);
-  --accent: oklch(0.97 0.001 106.42);
-  --accent-foreground: oklch(0.216 0.006 56.04);
+  --primary: #2c2825;
+  --primary-foreground: #fffdf8;
+  --secondary: #f0ece4;
+  --secondary-foreground: #2c2825;
+  --muted: #f0ece4;
+  --muted-foreground: #8a8078;
+  --accent: #f0ece4;
+  --accent-foreground: #2c2825;
 
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
+  --destructive: #c45c5c;
+  --destructive-foreground: #fffdf8;
 
-  --border: oklch(0.923 0.003 48.72);
-  --input: oklch(0.923 0.003 48.72);
-  --ring: oklch(0.553 0.013 58.07);
-
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  --border: #e8e2d8;
+  --input: #e8e2d8;
+  --ring: #8a8078;
 
   --radius: 0.5rem;
 
-  --sidebar: oklch(0.97 0.001 106.42);
-  --sidebar-foreground: oklch(0.147 0.004 49.75);
-  --sidebar-primary: oklch(0.216 0.006 56.04);
-  --sidebar-primary-foreground: oklch(0.985 0.002 75);
-  --sidebar-accent: oklch(0.97 0.001 106.42);
-  --sidebar-accent-foreground: oklch(0.216 0.006 56.04);
-  --sidebar-border: oklch(0.923 0.003 48.72);
-  --sidebar-ring: oklch(0.553 0.013 58.07);
+  /* Sidebar */
+  --sidebar: #f5f1ea;
+  --sidebar-foreground: #2c2825;
+  --sidebar-primary: #2c2825;
+  --sidebar-primary-foreground: #fffdf8;
+  --sidebar-accent: #ede8df;
+  --sidebar-accent-foreground: #2c2825;
+  --sidebar-border: #e8e2d8;
+  --sidebar-ring: #8a8078;
 
-  /* Design system semantic tokens */
-  --status-success: oklch(0.586 0.163 142.5);
-  --status-warning: oklch(0.769 0.188 70.08);
-  --status-error: oklch(0.577 0.245 27.325);
-  --status-info: oklch(0.546 0.245 262.88);
+  /* Semantic status */
+  --status-success: #5B8C6A;
+  --status-warning: #d4a030;
+  --status-error: #c45c5c;
+  --status-info: #5886A5;
 
-  /* Class accent color — dynamically set via JS per active class */
-  --class-accent: oklch(0.585 0.233 277.12);
-  --class-accent-foreground: oklch(1 0 0);
+  /* Extended tokens */
+  --text-muted-soft: #c0b8ad;
+  --surface-subtle: #f9f6f0;
+
+  /* Class accent — dynamically set via JS per active class */
+  --class-accent: #7B6CB0;
+  --class-accent-foreground: #ffffff;
+
+  --chart-1: #5B8C6A;
+  --chart-2: #7B6CB0;
+  --chart-3: #C4785B;
+  --chart-4: #5886A5;
+  --chart-5: #8B7355;
 }
 
 .dark {
-  --background: oklch(0.147 0.004 49.75);
-  --foreground: oklch(0.985 0.002 75);
+  --background: #1a1816;
+  --foreground: #e8e2d8;
 
-  --card: oklch(0.216 0.006 56.04);
-  --card-foreground: oklch(0.985 0.002 75);
-  --popover: oklch(0.216 0.006 56.04);
-  --popover-foreground: oklch(0.985 0.002 75);
+  --card: #1e1c1a;
+  --card-foreground: #e8e2d8;
+  --popover: #1e1c1a;
+  --popover-foreground: #e8e2d8;
 
-  --primary: oklch(0.923 0.003 48.72);
-  --primary-foreground: oklch(0.216 0.006 56.04);
-  --secondary: oklch(0.268 0.007 34);
-  --secondary-foreground: oklch(0.985 0.002 75);
-  --muted: oklch(0.268 0.007 34);
-  --muted-foreground: oklch(0.709 0.01 56);
-  --accent: oklch(0.268 0.007 34);
-  --accent-foreground: oklch(0.985 0.002 75);
+  --primary: #e8e2d8;
+  --primary-foreground: #1e1c1a;
+  --secondary: #252320;
+  --secondary-foreground: #e8e2d8;
+  --muted: #252320;
+  --muted-foreground: #888078;
+  --accent: #252320;
+  --accent-foreground: #e8e2d8;
 
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --destructive: #c45c5c;
+  --destructive-foreground: #e8e2d8;
 
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.553 0.013 58.07);
+  --border: #2a2622;
+  --input: #2a2622;
+  --ring: #888078;
 
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: #141210;
+  --sidebar-foreground: #e8e2d8;
+  --sidebar-primary: #e8e2d8;
+  --sidebar-primary-foreground: #1a1816;
+  --sidebar-accent: #2a2622;
+  --sidebar-accent-foreground: #e8e2d8;
+  --sidebar-border: #2a2622;
+  --sidebar-ring: #888078;
 
-  --sidebar: oklch(0.216 0.006 56.04);
-  --sidebar-foreground: oklch(0.985 0.002 75);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0.002 75);
-  --sidebar-accent: oklch(0.268 0.007 34);
-  --sidebar-accent-foreground: oklch(0.985 0.002 75);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.553 0.013 58.07);
+  --status-success: #6aa07a;
+  --status-warning: #d4a030;
+  --status-error: #d07070;
+  --status-info: #6a9ab8;
 
-  --status-success: oklch(0.723 0.191 142.5);
-  --status-warning: oklch(0.769 0.188 70.08);
-  --status-error: oklch(0.704 0.191 22.216);
-  --status-info: oklch(0.623 0.214 259.53);
+  --text-muted-soft: #5a5550;
+  --surface-subtle: #2a2826;
+
+  --chart-1: #6aa07a;
+  --chart-2: #8b7cc0;
+  --chart-3: #d4886b;
+  --chart-4: #6898b5;
+  --chart-5: #9b8365;
 }
 
 @theme inline {
@@ -125,6 +134,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -147,13 +157,20 @@
   --color-status-error: var(--status-error);
   --color-status-info: var(--status-info);
 
+  /* Extended tokens */
+  --color-text-muted-soft: var(--text-muted-soft);
+  --color-surface-subtle: var(--surface-subtle);
+
   /* Class accent */
   --color-class-accent: var(--class-accent);
   --color-class-accent-foreground: var(--class-accent-foreground);
 
   /* Font families */
   --font-sans:
-    "Inter", "PingFang SC", "Noto Sans SC", ui-sans-serif, system-ui, sans-serif;
+    "DM Sans", "PingFang SC", "Noto Sans SC", ui-sans-serif, system-ui,
+    sans-serif;
+  --font-serif:
+    "Source Serif 4", Georgia, "Noto Serif SC", serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
@@ -164,5 +181,37 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .text-display {
+    font-family: var(--font-serif);
+    font-size: 1.875rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  .text-heading-lg {
+    font-family: var(--font-serif);
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+
+  .text-heading-md {
+    font-family: var(--font-serif);
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+
+  .text-label-upper {
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted-soft);
   }
 }

@@ -85,7 +85,7 @@ export function RegisterForm() {
         studentId: schoolId ? studentId : undefined,
         timezone: detectedTimezone,
       });
-      router.replace("/admin");
+      router.replace("/dashboard");
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : "Registration failed";
@@ -98,7 +98,7 @@ export function RegisterForm() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Create an account</CardTitle>
+        <CardTitle className="text-2xl font-serif">Create an account</CardTitle>
         <CardDescription>Get started with TaskFlow</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>

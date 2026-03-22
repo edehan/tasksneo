@@ -1,0 +1,119 @@
+"use client";
+
+import { Loader2 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+
+import { useAuth } from "@/components/auth-provider";
+import { EditorPage } from "@/features/editor/components/editor-page";
+import {
+  ApiError,
+  getClass,
+  getMySubmission,
+  getTask,
+  type AttachmentMeta,
+  type ClassSummary,
+  type TaskDetail,
+} from "@/lib/api";
+
+export default function SubmitTaskPage() {
+  const params = useParams();
+  const router = useRouter();
+  const { token, loading: authLoading } = useAuth();
+
+  const classId = params?.classId as string;
+  const taskId = params?.taskId as string;
+
+  const [task, setTask] = useState<TaskDetail | null>(null);
+  const [cls, setCls] = useState<ClassSummary | null>(null);
+  const [existingContent, setExistingContent] = useState<string | undefined>(
+    undefined,
+  );
+  const [existingAttachments, setExistingAttachments] = useState<
+    AttachmentMeta[]
+  >([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadData = useCallback(async () => {
+    if (!token || !classId || !taskId) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const [taskData, classData, submission] = await Promise.all([
+        getTask(token, taskId),
+        getClass(token, classId),
+        getMySubmission(token, taskId).catch(() => null),
+      ]);
+
+      setTask(taskData);
+      setCls(classData);
+
+      if (submission) {
+        setExistingContent(submission.content ?? "");
+        setExistingAttachments(submission.attachments);
+      } else {
+        setExistingContent("");
+        setExistingAttachments([]);
+      }
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : "Failed to load task";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [token, classId, taskId]);
+
+  useEffect(() => {
+    if (!authLoading && token) {
+      void loadData();
+    } else if (!authLoading && !token) {
+      router.replace("/login");
+    }
+  }, [authLoading, token, loadData, router]);
+
+  // ─── Loading state ─────────────────────────────────────────────────────────
+
+  if (authLoading || loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-3 bg-background">
+        <p className="text-sm text-destructive">{error}</p>
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+        >
+          Go back
+        </button>
+      </div>
+    );
+  }
+
+  if (!task || !cls) return null;
+
+  // ─── Render ────────────────────────────────────────────────────────────────
+
+  return (
+    <EditorPage
+      mode="submit"
+      classId={classId}
+      taskId={taskId}
+      className={cls.name}
+      taskTitle={task.title}
+      accentColor={cls.color}
+      initialContent={existingContent}
+      initialAttachments={existingAttachments}
+    />
+  );
+}
