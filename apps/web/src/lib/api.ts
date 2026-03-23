@@ -754,6 +754,33 @@ export function getFileUrl(fileKey: string): string {
   return `${getApiBaseUrl()}/files/${fileKey}`;
 }
 
+export async function downloadFile(
+  token: string,
+  fileKey: string,
+): Promise<string> {
+  // GET /files/:fileKey returns a 302 redirect to presigned URL.
+  // We fetch with auth, follow the redirect, and return the final blob URL.
+  const res = await fetch(`${getApiBaseUrl()}/files/${fileKey}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    throw new ApiError("Failed to download file", "DOWNLOAD_FAILED", res.status);
+  }
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
+
+export async function deleteAttachment(
+  token: string,
+  attachmentId: string,
+): Promise<void> {
+  return apiRequest<void>(
+    `/files/attachments/${attachmentId}`,
+    { method: "DELETE" },
+    token,
+  );
+}
+
 // ─── Admin (kept for admin panel) ────────────────────────────────────────────
 
 export async function getAdminConfig(

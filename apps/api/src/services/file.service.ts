@@ -1,7 +1,7 @@
 import { ClassRole, prisma } from '@taskflow/db';
 
 import { AppError } from '../lib/errors.js';
-import { getPresignedUrl } from '../lib/storage.js';
+import { getPresignedUrl, removeObject } from '../lib/storage.js';
 
 async function isClassMember(classId: string, userId: string) {
   const membership = await prisma.classMember.findUnique({
@@ -121,4 +121,52 @@ export async function getAuthorizedFileUrl(fileKey: string, userId: string) {
   }
 
   return getPresignedUrl(fileKey, 300);
+}
+
+export async function deleteAttachment(attachmentId: string, userId: string) {
+  const attachment = await prisma.attachment.findUnique({
+    where: { id: attachmentId },
+    select: {
+      id: true,
+      fileKey: true,
+      taskId: true,
+      submissionId: true,
+      classId: true,
+      avatarUserId: true,
+    },
+  });
+
+  if (!attachment) {
+    throw new AppError(404, 'FILE_NOT_FOUND', 'Attachment not found');
+  }
+
+  // Check permission: must be uploader/admin
+  if (attachment.taskId) {
+    const task = await prisma.task.findUnique({
+      where: { id: attachment.taskId },
+      select: { classId: true },
+    });
+
+    if (task?.classId) {
+      const membership = await isClassMember(task.classId, userId);
+
+      if (!membership || (membership.role !== ClassRole.OWNER && membership.role !== ClassRole.ADMIN)) {
+        throw new AppError(403, 'FORBIDDEN', 'No permission to delete this attachment');
+      }
+    }
+  } else if (attachment.submissionId) {
+    const submission = await prisma.submission.findUnique({
+      where: { id: attachment.submissionId },
+      select: { userId: true },
+    });
+
+    if (!submission || submission.userId !== userId) {
+      throw new AppError(403, 'FORBIDDEN', 'No permission to delete this attachment');
+    }
+  } else {
+    throw new AppError(403, 'FORBIDDEN', 'Cannot delete this type of attachment');
+  }
+
+  await removeObject(attachment.fileKey);
+  await prisma.attachment.delete({ where: { id: attachment.id } });
 }

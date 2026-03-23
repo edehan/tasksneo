@@ -258,6 +258,7 @@ export function TaskDetailOverlay({
               <MarkdownPreview
                 content={bodyContent}
                 accentColor={task.classColor}
+                authToken={token ?? undefined}
               />
             ) : (
               <p className="text-sm italic text-text-muted-soft">

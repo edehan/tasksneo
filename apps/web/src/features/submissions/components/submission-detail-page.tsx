@@ -26,7 +26,8 @@ import {
   getTask,
   gradeSubmission,
   listSubmissions,
-  getFileUrl,
+  downloadFile,
+  ApiError,
 } from "@/lib/api";
 
 // ─── Date formatting ─────────────────────────────────────────────────────────
@@ -165,20 +166,26 @@ export function SubmissionDetailPage() {
 
   // ─── Attachment download ──────────────────────────────────────────────────
 
-  function handleDownload(att: {
+  async function handleDownload(att: {
     fileKey: string;
     originalName: string;
     url?: string;
   }) {
-    const url = att.url ?? getFileUrl(att.fileKey);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = att.originalName;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (!token) return;
+    try {
+      const blobUrl = await downloadFile(token, att.fileKey);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = att.originalName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : "Failed to download file";
+      toast.error(message);
+    }
   }
 
   // ─── Loading state ─────────────────────────────────────────────────────────
@@ -312,6 +319,7 @@ export function SubmissionDetailPage() {
             <MarkdownPreview
               content={submission.content}
               accentColor={accentColor}
+              authToken={token ?? undefined}
             />
           ) : (
             <p className="text-sm italic text-text-muted-soft">

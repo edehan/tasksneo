@@ -1,13 +1,17 @@
 "use client";
 
-import { Download, FileText } from "lucide-react";
+import { Download, FileText, Loader2, X } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+
+import { useAuth } from "@/components/auth-provider";
 import type { AttachmentMeta } from "@/lib/api";
-import { getFileUrl } from "@/lib/api";
+import { ApiError, downloadFile } from "@/lib/api";
 
 interface AttachmentSidebarProps {
   attachments: AttachmentMeta[];
   accentColor?: string;
-  onDownload?: (att: AttachmentMeta) => void;
+  onRemove?: (att: AttachmentMeta) => void;
 }
 
 // ─── File extension icon colors ──────────────────────────────────────────────
@@ -70,29 +74,31 @@ function formatFileSize(bytes: number | null): string {
 export function AttachmentSidebar({
   attachments,
   accentColor,
-  onDownload,
+  onRemove,
 }: AttachmentSidebarProps) {
+  const { token } = useAuth();
   const accent = accentColor ?? "var(--class-accent)";
+  const [downloading, setDownloading] = useState<string | null>(null);
 
-  function handleDownload(att: AttachmentMeta) {
-    if (onDownload) {
-      onDownload(att);
-      return;
-    }
-    const url = att.url ?? getFileUrl(att.fileKey);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = att.originalName ?? att.fileKey;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
+  async function handleDownload(att: AttachmentMeta) {
+    if (!token) return;
 
-  function handleDownloadAll() {
-    for (const att of attachments) {
-      handleDownload(att);
+    setDownloading(att.id);
+    try {
+      const blobUrl = await downloadFile(token, att.fileKey);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = att.originalName ?? att.fileKey;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : "Failed to download file";
+      toast.error(message);
+    } finally {
+      setDownloading(null);
     }
   }
 
@@ -107,6 +113,7 @@ export function AttachmentSidebar({
       <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto">
         {attachments.map((att) => {
           const iconColor = getExtColor(att.originalName);
+          const isDownloading = downloading === att.id;
           return (
             <div
               key={att.id}
@@ -134,40 +141,72 @@ export function AttachmentSidebar({
                 </p>
               </div>
 
-              {/* Download button */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDownload(att);
-                }}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-secondary text-muted-foreground transition-colors duration-100 hover:text-white"
-                style={{
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  ["--hover-bg" as string]: accent,
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                    accent;
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                    "";
-                }}
-                aria-label={`Download ${att.originalName}`}
-              >
-                <Download size={14} strokeWidth={2} />
-              </button>
+              {/* Action buttons */}
+              <div className="flex shrink-0 items-center gap-1">
+                {/* Download button */}
+                <button
+                  type="button"
+                  disabled={isDownloading}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void handleDownload(att);
+                  }}
+                  className="flex h-7 w-7 items-center justify-center rounded-md bg-secondary text-muted-foreground transition-colors duration-100 hover:text-white disabled:opacity-50"
+                  onMouseEnter={(e) => {
+                    if (!isDownloading)
+                      (
+                        e.currentTarget as HTMLButtonElement
+                      ).style.backgroundColor = accent;
+                  }}
+                  onMouseLeave={(e) => {
+                    (
+                      e.currentTarget as HTMLButtonElement
+                    ).style.backgroundColor = "";
+                  }}
+                  aria-label={`Download ${att.originalName}`}
+                >
+                  {isDownloading ? (
+                    <Loader2 size={14} strokeWidth={2} className="animate-spin" />
+                  ) : (
+                    <Download size={14} strokeWidth={2} />
+                  )}
+                </button>
+
+                {/* Remove button (only when onRemove is provided) */}
+                {onRemove && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemove(att);
+                    }}
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors duration-100 hover:bg-destructive/10 hover:text-destructive"
+                    aria-label={`Remove ${att.originalName}`}
+                  >
+                    <X size={14} strokeWidth={2} />
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}
+
+        {attachments.length === 0 && (
+          <p className="py-4 text-center text-xs italic text-muted-foreground">
+            No files attached yet
+          </p>
+        )}
       </div>
 
       {/* Download all */}
       {attachments.length > 1 && (
         <button
           type="button"
-          onClick={handleDownloadAll}
+          onClick={() => {
+            for (const att of attachments) {
+              void handleDownload(att);
+            }
+          }}
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-transparent px-3 py-2 text-[12.5px] font-medium text-muted-foreground transition-colors duration-100 hover:bg-secondary hover:text-foreground"
         >
           <Download size={14} strokeWidth={2} />

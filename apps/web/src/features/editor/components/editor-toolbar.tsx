@@ -16,6 +16,7 @@ import {
 
 interface EditorToolbarProps {
   onInsert: (before: string, after?: string) => void;
+  onImageUpload?: () => void;
 }
 
 // ─── Toolbar config ──────────────────────────────────────────────────────────
@@ -100,7 +101,7 @@ const TOOLBAR_ITEMS: ToolbarEntry[] = [
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function EditorToolbar({ onInsert }: EditorToolbarProps) {
+export function EditorToolbar({ onInsert, onImageUpload }: EditorToolbarProps) {
   return (
     <div className="flex items-center gap-0.5 border-b border-border px-4 py-2">
       {TOOLBAR_ITEMS.map((item, i) => {
@@ -113,11 +114,16 @@ export function EditorToolbar({ onInsert }: EditorToolbarProps) {
           );
         }
 
+        const handleClick =
+          item.label === "Image" && onImageUpload
+            ? onImageUpload
+            : () => onInsert(item.before, item.after);
+
         return (
           <button
             key={item.label}
             type="button"
-            onClick={() => onInsert(item.before, item.after)}
+            onClick={handleClick}
             title={item.label}
             className="flex h-8 w-8 items-center justify-center rounded-[7px] bg-transparent text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-[var(--class-accent)]"
           >

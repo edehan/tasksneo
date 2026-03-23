@@ -1,18 +1,75 @@
+import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { downloadFile, getFileUrl } from "@/lib/api";
 
 interface MarkdownPreviewProps {
   content: string;
   className?: string;
   accentColor?: string;
+  authToken?: string;
 }
+
+// ─── Authenticated image loader ───────────────────────────────────────────
+
+function AuthImage({ src, alt, token }: { src: string; alt: string; token: string }) {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let revoke: string | null = null;
+
+    // Extract fileKey from the API URL pattern: .../files/{fileKey}
+    const apiBase = getFileUrl("");
+    if (!src.startsWith(apiBase)) {
+      // Not an API file URL — shouldn't reach here, but handle gracefully
+      setBlobUrl(src);
+      return;
+    }
+    const fileKey = src.slice(apiBase.length);
+
+    downloadFile(token, fileKey)
+      .then((url) => {
+        revoke = url;
+        setBlobUrl(url);
+      })
+      .catch(() => setError(true));
+
+    return () => {
+      if (revoke) URL.revokeObjectURL(revoke);
+    };
+  }, [src, token]);
+
+  if (error) {
+    return (
+      <span className="my-3 inline-block rounded-lg border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
+        Failed to load image
+      </span>
+    );
+  }
+
+  if (!blobUrl) {
+    return (
+      <span className="my-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Loader2 size={14} className="animate-spin" />
+        Loading image…
+      </span>
+    );
+  }
+
+  return <img src={blobUrl} alt={alt} className="my-3 max-w-full rounded-lg" />;
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export function MarkdownPreview({
   content,
   className,
   accentColor,
+  authToken,
 }: MarkdownPreviewProps) {
   const accent = accentColor ?? "var(--class-accent)";
 
@@ -126,13 +183,20 @@ export function MarkdownPreview({
     hr: () => (
       <hr className="my-5 border-border" />
     ),
-    img: ({ src, alt }) => (
-      <img
-        src={src}
-        alt={alt ?? ""}
-        className="my-3 max-w-full rounded-lg"
-      />
-    ),
+    img: ({ src, alt }) => {
+      const srcStr = typeof src === "string" ? src : undefined;
+      const apiBase = getFileUrl("");
+      if (authToken && srcStr?.startsWith(apiBase)) {
+        return <AuthImage src={srcStr} alt={alt ?? ""} token={authToken} />;
+      }
+      return (
+        <img
+          src={srcStr}
+          alt={alt ?? ""}
+          className="my-3 max-w-full rounded-lg"
+        />
+      );
+    },
     strong: ({ children }) => (
       <strong className="font-semibold text-foreground">{children}</strong>
     ),

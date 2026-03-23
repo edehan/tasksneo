@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ApiError,
+  deleteAttachment,
+  getFileUrl,
   publishTaskDraft,
   updateTask,
   upsertMySubmission,
@@ -78,6 +80,7 @@ export function EditorPage({
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Sync initial content if it changes (e.g. async load)
   useEffect(() => {
@@ -174,6 +177,63 @@ export function EditorPage({
     const files = e.target.files ? Array.from(e.target.files) : [];
     void uploadFiles(files);
     e.target.value = "";
+  }
+
+  async function handleRemoveAttachment(att: AttachmentMeta) {
+    if (!token) return;
+    try {
+      await deleteAttachment(token, att.id);
+      setAttachments((prev) => prev.filter((a) => a.id !== att.id));
+      toast.success("Attachment removed");
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : "Failed to remove attachment";
+      toast.error(message);
+    }
+  }
+
+  // ─── Inline image upload ─────────────────────────────────────────────────
+
+  function handleImageUploadClick() {
+    imageInputRef.current?.click();
+  }
+
+  async function handleImageFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !token) return;
+
+    setUploading(true);
+    try {
+      const uploadFn =
+        mode === "publish" ? uploadTaskAttachment : uploadSubmissionAttachment;
+      const att = await uploadFn(token, taskId, file);
+      setAttachments((prev) => [...prev, att]);
+
+      // Insert markdown image at cursor position
+      const textarea = textareaRef.current;
+      const markdown = `![${att.originalName ?? file.name}](${getFileUrl(att.fileKey)})`;
+      if (textarea) {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        setContent(
+          (prev) => prev.substring(0, start) + markdown + prev.substring(end),
+        );
+        requestAnimationFrame(() => {
+          textarea.focus();
+          const cursorPos = start + markdown.length;
+          textarea.setSelectionRange(cursorPos, cursorPos);
+        });
+      } else {
+        setContent((prev) => prev + markdown);
+      }
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : "Failed to upload image";
+      toast.error(message);
+    } finally {
+      setUploading(false);
+    }
   }
 
   // ─── Submit / Publish ─────────────────────────────────────────────────────
@@ -306,7 +366,12 @@ export function EditorPage({
         {/* Editor / Preview area */}
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Toolbar (only in edit mode) */}
-          {!preview && <EditorToolbar onInsert={handleInsert} />}
+          {!preview && (
+            <EditorToolbar
+              onInsert={handleInsert}
+              onImageUpload={handleImageUploadClick}
+            />
+          )}
 
           {/* Content */}
           {preview ? (
@@ -314,6 +379,7 @@ export function EditorPage({
               <MarkdownPreview
                 content={content}
                 accentColor={accentColor}
+                authToken={token ?? undefined}
               />
             </div>
           ) : (
@@ -363,6 +429,7 @@ export function EditorPage({
               <AttachmentSidebar
                 attachments={attachments}
                 accentColor={accentColor}
+                onRemove={handleRemoveAttachment}
               />
             </div>
           </div>
@@ -380,6 +447,15 @@ export function EditorPage({
         </div>
         <span className="text-xs text-text-muted-soft">Draft saved</span>
       </footer>
+
+      {/* Hidden image file input */}
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleImageFileChange}
+      />
 
       {/* Publish confirmation dialog */}
       <AlertDialog open={showPublishConfirm} onOpenChange={setShowPublishConfirm}>
