@@ -9,6 +9,7 @@ import { authMiddleware } from '../middleware/auth.js';
 import { assertParseInput, buildParseTaskContext, parseTaskContent, parseTaskDescription } from '../services/ai.service.js';
 import { deleteTaskDraftMarkdown, getTaskDraftMarkdown, setTaskDraftMarkdown } from '../services/task-draft-cache.service.js';
 import {
+  addSubmissionAttachments,
   addTaskAttachments,
   deleteTask,
   exportTaskSubmissionsCsv,
@@ -24,7 +25,6 @@ import {
   renameTaskSubmissionAttachments,
   updateTask,
   updateTaskUserState,
-  upsertMySubmissionAttachments,
   upsertMySubmissionContent,
 } from '../services/task.service.js';
 
@@ -383,9 +383,9 @@ tasksRouter.post('/:taskId/submissions/me/attachments', async (c) => {
   const params = taskIdParamSchema.parse(c.req.param());
   const formData = await c.req.formData();
   const records = await parseFilesFromFormData(formData, 'submissions', authUser.userId);
-  const submission = await upsertMySubmissionAttachments(params.taskId, authUser.userId, records);
+  const attachments = await addSubmissionAttachments(params.taskId, authUser.userId, records);
 
-  return c.json(submission, 200);
+  return c.json(attachments, 201);
 });
 
 tasksRouter.post('/:taskId/submissions/rename', async (c) => {

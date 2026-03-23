@@ -95,7 +95,7 @@ export interface AttachmentMeta {
   renamedFile: string | null;
   mimeType: string | null;
   sizeBytes: number | null;
-  url: string;
+  url?: string;
   createdAt: string;
 }
 
@@ -725,11 +725,13 @@ export async function uploadTaskAttachment(
 ): Promise<AttachmentMeta> {
   const formData = new FormData();
   formData.append("file", file);
-  return apiRequest<AttachmentMeta>(
+  // Backend returns AttachmentMeta[] — extract the first element
+  const result = await apiRequest<AttachmentMeta[]>(
     `/tasks/${taskId}/attachments`,
     { method: "POST", body: formData },
     token,
   );
+  return result[0];
 }
 
 export async function uploadSubmissionAttachment(
@@ -739,11 +741,13 @@ export async function uploadSubmissionAttachment(
 ): Promise<AttachmentMeta> {
   const formData = new FormData();
   formData.append("file", file);
-  return apiRequest<AttachmentMeta>(
+  // Backend returns AttachmentMeta[] — extract the first element
+  const result = await apiRequest<AttachmentMeta[]>(
     `/tasks/${taskId}/submissions/me/attachments`,
     { method: "POST", body: formData },
     token,
   );
+  return result[0];
 }
 
 export function getFileUrl(fileKey: string): string {

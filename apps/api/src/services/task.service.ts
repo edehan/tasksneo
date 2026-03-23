@@ -822,6 +822,51 @@ export async function upsertMySubmissionAttachments(taskId: string, userId: stri
   return getSubmissionDetailOrThrow(submissionId);
 }
 
+export async function addSubmissionAttachments(taskId: string, userId: string, attachmentRecords: Array<{
+  fileKey: string;
+  originalName: string;
+  mimeType: string | null;
+  sizeBytes: bigint;
+}>) {
+  await assertTaskAccess(taskId, userId);
+
+  const submissionId = await ensureSubmission(taskId, userId);
+
+  const created = [] as Array<{
+    id: string;
+    fileKey: string;
+    originalName: string;
+    renamedFile: string | null;
+    mimeType: string | null;
+    sizeBytes: bigint | null;
+    createdAt: Date;
+  }>;
+
+  for (const attachment of attachmentRecords) {
+    const row = await prisma.attachment.create({
+      data: {
+        fileKey: attachment.fileKey,
+        originalName: attachment.originalName,
+        mimeType: attachment.mimeType,
+        sizeBytes: attachment.sizeBytes,
+        uploadedBy: userId,
+        submissionId,
+      },
+    });
+
+    created.push(row);
+  }
+
+  await prisma.submission.update({
+    where: { id: submissionId },
+    data: { lastUpdatedAt: new Date() },
+  });
+
+  await markTaskSubmissionTouched(taskId, userId);
+
+  return created.map(toAttachmentMeta);
+}
+
 export async function addTaskAttachments(taskId: string, userId: string, attachmentRecords: Array<{
   fileKey: string;
   originalName: string;

@@ -168,9 +168,9 @@ export function SubmissionDetailPage() {
   function handleDownload(att: {
     fileKey: string;
     originalName: string;
-    url: string;
+    url?: string;
   }) {
-    const url = att.url || getFileUrl(att.fileKey);
+    const url = att.url ?? getFileUrl(att.fileKey);
     const link = document.createElement("a");
     link.href = url;
     link.download = att.originalName;

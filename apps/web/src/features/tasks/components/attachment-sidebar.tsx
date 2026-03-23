@@ -50,7 +50,8 @@ const EXT_COLORS: Record<string, string> = {
 
 const DEFAULT_ICON_COLOR = "#8a8078";
 
-function getExtColor(filename: string): string {
+function getExtColor(filename: string | undefined): string {
+  if (!filename) return DEFAULT_ICON_COLOR;
   const ext = filename.split(".").pop()?.toLowerCase() ?? "";
   return EXT_COLORS[ext] ?? DEFAULT_ICON_COLOR;
 }
@@ -78,10 +79,10 @@ export function AttachmentSidebar({
       onDownload(att);
       return;
     }
-    const url = att.url || getFileUrl(att.fileKey);
+    const url = att.url ?? getFileUrl(att.fileKey);
     const link = document.createElement("a");
     link.href = url;
-    link.download = att.originalName;
+    link.download = att.originalName ?? att.fileKey;
     link.target = "_blank";
     link.rel = "noopener noreferrer";
     document.body.appendChild(link);
@@ -124,9 +125,9 @@ export function AttachmentSidebar({
               <div className="min-w-0 flex-1">
                 <p
                   className="truncate text-[12.5px] font-medium text-foreground"
-                  title={att.originalName}
+                  title={att.originalName ?? "Unknown file"}
                 >
-                  {att.originalName}
+                  {att.originalName ?? "Unknown file"}
                 </p>
                 <p className="text-[11px] text-muted-foreground">
                   {formatFileSize(att.sizeBytes)}
