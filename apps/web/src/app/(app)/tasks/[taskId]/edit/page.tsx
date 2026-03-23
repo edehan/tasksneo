@@ -98,6 +98,7 @@ export default function EditTaskPage() {
       accentColor={cls.color}
       initialContent={markdown}
       initialAttachments={task.attachments}
+      isAlreadyPublished={task.isPublished}
     />
   );
 }

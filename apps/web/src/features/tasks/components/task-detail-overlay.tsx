@@ -304,24 +304,26 @@ export function TaskDetailOverlay({
                 >
                   Edit Task
                 </button>
-                <button
-                  type="button"
-                  disabled={deleting}
-                  onClick={async () => {
-                    if (!token) return;
-                    if (!confirm("Are you sure you want to delete this task?")) return;
-                    setDeleting(true);
-                    try {
-                      await deleteTask(token, task.id);
-                      onClose();
-                    } catch {
-                      setDeleting(false);
-                    }
-                  }}
-                  className="rounded-[10px] border border-border bg-transparent px-4 py-2 text-[13px] font-medium text-destructive transition-colors duration-100 hover:bg-destructive/10 disabled:opacity-50"
-                >
-                  {deleting ? "Deleting..." : "Delete Task"}
-                </button>
+                {taskDetail?.stats?.submittedCount === 0 && (
+                  <button
+                    type="button"
+                    disabled={deleting}
+                    onClick={async () => {
+                      if (!token) return;
+                      if (!confirm("Are you sure you want to delete this task? This action cannot be undone.")) return;
+                      setDeleting(true);
+                      try {
+                        await deleteTask(token, task.id);
+                        onClose();
+                      } catch {
+                        setDeleting(false);
+                      }
+                    }}
+                    className="rounded-[10px] border border-border bg-transparent px-4 py-2 text-[13px] font-medium text-destructive transition-colors duration-100 hover:bg-destructive/10 disabled:opacity-50"
+                  >
+                    {deleting ? "Deleting..." : "Delete Task"}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => {
