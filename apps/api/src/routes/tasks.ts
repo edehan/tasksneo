@@ -131,7 +131,12 @@ tasksRouter.post('/parse', async (c) => {
     select: { timezone: true },
   });
   const result = await parseTaskDescription(body.text, buildParseTaskContext(user?.timezone));
-  return c.json(result, 200);
+  return c.json({
+    title: result.title,
+    timeOptions: result.timeOptions,
+    allowLateSubmission: result.allowLateSubmission,
+    description: result.description,
+  }, 200);
 });
 
 tasksRouter.get('/:taskId', async (c) => {
@@ -228,11 +233,14 @@ tasksRouter.post('/:taskId/parse', async (c) => {
     attachments: attachmentPayload,
   });
 
+  // Update task with first time option as default
+  const firstOption = parsed.structured.timeOptions[0];
   await updateTask(task.id, authUser.userId, {
     sourceText: text,
     title: parsed.structured.title ?? undefined,
-    startAt: parsed.structured.startAt ?? undefined,
-    dueAt: parsed.structured.dueAt ?? undefined,
+    startAt: firstOption?.startAt ?? undefined,
+    dueAt: firstOption?.dueAt ?? undefined,
+    allowLateSubmission: parsed.structured.allowLateSubmission ?? undefined,
     description: parsed.structured.description ?? undefined,
   });
 
@@ -241,7 +249,10 @@ tasksRouter.post('/:taskId/parse', async (c) => {
   }
 
   return c.json({
-    ...parsed.structured,
+    title: parsed.structured.title,
+    timeOptions: parsed.structured.timeOptions,
+    allowLateSubmission: parsed.structured.allowLateSubmission,
+    description: parsed.structured.description,
     markdownCached: Boolean(parsed.markdown),
   }, 200);
 });

@@ -113,10 +113,15 @@ export interface TaskDetail extends TaskSummary {
   stats: TaskStats | null;
 }
 
-export interface ParseTaskResponse {
-  title: string | null;
+export interface ParseTimeOption {
   startAt: string | null;
   dueAt: string | null;
+}
+
+export interface ParseTaskResponse {
+  title: string | null;
+  timeOptions: ParseTimeOption[];
+  allowLateSubmission: boolean | null;
   description: string | null;
 }
 
@@ -460,6 +465,22 @@ export async function listClassTasks(
   classId: string,
 ): Promise<TaskSummary[]> {
   return apiRequest<TaskSummary[]>(`/classes/${classId}/tasks`, {}, token);
+}
+
+interface DraftWithAttachments extends TaskSummary {
+  attachments: AttachmentMeta[];
+}
+
+export async function getMyClassDraft(
+  token: string,
+  classId: string,
+): Promise<DraftWithAttachments | null> {
+  const res = await apiRequest<{ draft: DraftWithAttachments | null }>(
+    `/classes/${classId}/tasks/drafts/mine`,
+    {},
+    token,
+  );
+  return res.draft;
 }
 
 export interface MyTaskSummary extends TaskSummary {

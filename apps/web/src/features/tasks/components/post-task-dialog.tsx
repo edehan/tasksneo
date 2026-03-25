@@ -8,6 +8,7 @@ import {
   Loader2,
   Paperclip,
   Sparkles,
+  Trash2,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -32,11 +33,14 @@ import {
 import {
   ApiError,
   createTaskDraft,
+  deleteTask,
+  getMyClassDraft,
   listClassTasks,
   parseTaskDraft,
   updateTask,
   uploadTaskAttachment,
   type AttachmentMeta,
+  type ParseTimeOption,
   type TaskSummary,
 } from "@/lib/api";
 
@@ -57,6 +61,20 @@ function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatOptionDate(iso: string | null): string {
+  if (!iso) return "—";
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -93,6 +111,12 @@ export function PostTaskDialog({
   const [parsed, setParsed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [titleTouched, setTitleTouched] = useState(false);
+  const [attempted, setAttempted] = useState(false);
+
+  // Time option selection (when AI returns multiple)
+  const [pendingTimeOptions, setPendingTimeOptions] = useState<
+    ParseTimeOption[] | null
+  >(null);
 
   // Prerequisites
   const [classTasks, setClassTasks] = useState<TaskSummary[]>([]);
@@ -104,6 +128,29 @@ export function PostTaskDialog({
   useEffect(() => {
     draftIdRef.current = draftId;
   }, [draftId]);
+
+  // ─── Load existing draft on dialog open ─────────────────────────────────
+
+  useEffect(() => {
+    if (!open || !token || draftId) return;
+
+    getMyClassDraft(token, classId)
+      .then((draft) => {
+        if (!draft) return;
+        setDraftId(draft.id);
+        draftIdRef.current = draft.id;
+        setTitle(draft.title || "");
+        setRawText(draft.sourceText || "");
+        if (draft.startAt) setStartAt(new Date(draft.startAt));
+        if (draft.dueAt) setDueAt(new Date(draft.dueAt));
+        setAllowLate(draft.allowLateSubmission);
+        setBlockedBy(draft.blockedBy ?? []);
+        setAttachments(draft.attachments ?? []);
+        if (draft.title || draft.dueAt) setExpanded(true);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, token, classId]);
 
   // ─── Load class tasks for prerequisites ─────────────────────────────────
 
@@ -117,8 +164,9 @@ export function PostTaskDialog({
   // ─── Validation ──────────────────────────────────────────────────────────
 
   const titleValid = title.trim().length > 0;
+  const dueAtValid = !!dueAt;
   const datesValid = !startAt || !dueAt || dueAt > startAt;
-  const formValid = titleValid && datesValid;
+  const formValid = titleValid && dueAtValid && datesValid;
 
   // ─── Lazy draft creation ─────────────────────────────────────────────────
 
@@ -157,10 +205,29 @@ export function PostTaskDialog({
     setParsed(false);
     setSubmitting(false);
     setTitleTouched(false);
+    setAttempted(false);
+    setPendingTimeOptions(null);
     setClassTasks([]);
   }, []);
 
   // ─── AI Parse ──────────────────────────────────────────────────────────
+
+  function applyTimeOption(opt: ParseTimeOption) {
+    if (opt.startAt) {
+      try {
+        setStartAt(new Date(opt.startAt));
+      } catch {
+        /* invalid date */
+      }
+    }
+    if (opt.dueAt) {
+      try {
+        setDueAt(new Date(opt.dueAt));
+      } catch {
+        /* invalid date */
+      }
+    }
+  }
 
   async function handleAiParse() {
     if (!token || !rawText.trim() || parsing || parsed) return;
@@ -171,15 +238,16 @@ export function PostTaskDialog({
       const result = await parseTaskDraft(token, taskId, rawText.trim());
 
       if (result.title) setTitle(result.title);
-      if (result.startAt) {
-        try {
-          setStartAt(new Date(result.startAt));
-        } catch {}
+      if (result.allowLateSubmission !== null) {
+        setAllowLate(result.allowLateSubmission);
       }
-      if (result.dueAt) {
-        try {
-          setDueAt(new Date(result.dueAt));
-        } catch {}
+
+      const options = result.timeOptions ?? [];
+      if (options.length > 1) {
+        // Multiple ambiguous options — let user pick
+        setPendingTimeOptions(options);
+      } else if (options.length === 1) {
+        applyTimeOption(options[0]);
       }
 
       setParsed(true);
@@ -230,7 +298,12 @@ export function PostTaskDialog({
   // ─── Submit (Create/Update Draft → Edit Body) ──────────────────────────
 
   async function handleEditBody() {
-    if (!token || !formValid) return;
+    if (!token) return;
+    if (!formValid) {
+      setAttempted(true);
+      setExpanded(true);
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -255,7 +328,6 @@ export function PostTaskDialog({
         taskId = draft.id;
       }
 
-      resetForm();
       onOpenChange(false);
       onEditBody({ taskId, title: title.trim() });
     } catch (err) {
@@ -265,6 +337,19 @@ export function PostTaskDialog({
     } finally {
       setSubmitting(false);
     }
+  }
+
+  // ─── Clear draft ────────────────────────────────────────────────────────
+
+  async function handleClear() {
+    if (draftIdRef.current && token) {
+      try {
+        await deleteTask(token, draftIdRef.current);
+      } catch {
+        /* draft may already be deleted */
+      }
+    }
+    resetForm();
   }
 
   // ─── Prerequisite helpers ──────────────────────────────────────────────
@@ -280,13 +365,7 @@ export function PostTaskDialog({
   // ─── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(v) => {
-        onOpenChange(v);
-        if (!v) resetForm();
-      }}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl gap-0 overflow-hidden p-0">
         {/* Header */}
         <DialogHeader className="border-b border-border px-6 py-4">
@@ -423,6 +502,45 @@ export function PostTaskDialog({
             </div>
           )}
 
+          {/* Time option picker — shown when AI returns multiple options */}
+          {pendingTimeOptions && pendingTimeOptions.length > 1 && (
+            <div className="mt-3 rounded-lg border border-border bg-background p-4">
+              <p className="mb-2.5 text-sm font-medium text-foreground">
+                AI detected multiple possible time interpretations. Which one
+                did you mean?
+              </p>
+              <div className="flex flex-col gap-2">
+                {pendingTimeOptions.map((opt, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => {
+                      applyTimeOption(opt);
+                      setPendingTimeOptions(null);
+                    }}
+                    className="flex items-center gap-3 rounded-lg border border-border px-3 py-2 text-left text-sm transition-colors hover:bg-surface-subtle"
+                  >
+                    <span
+                      className="inline-block h-2 w-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: themeColor }}
+                    />
+                    <span className="text-foreground">
+                      {formatOptionDate(opt.startAt)} →{" "}
+                      {formatOptionDate(opt.dueAt)}
+                    </span>
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setPendingTimeOptions(null)}
+                  className="px-3 py-1.5 text-left text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  None of these — I&apos;ll enter manually
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Expandable form */}
           <div
             className="overflow-hidden transition-all duration-300 ease-in-out"
@@ -446,12 +564,12 @@ export function PostTaskDialog({
                   onBlur={() => setTitleTouched(true)}
                   placeholder="e.g. Chapter 5 Homework"
                   className={
-                    titleTouched && !titleValid
+                    (titleTouched || attempted) && !titleValid
                       ? "border-destructive focus-visible:ring-destructive"
                       : ""
                   }
                 />
-                {titleTouched && !titleValid && (
+                {(titleTouched || attempted) && !titleValid && (
                   <p className="text-xs text-destructive">Title is required</p>
                 )}
               </div>
@@ -483,13 +601,28 @@ export function PostTaskDialog({
                   </p>
                 </div>
                 <div className="flex-1 space-y-1.5">
-                  <Label className="text-sm">Due Date</Label>
+                  <Label className="text-sm">
+                    Due Date <span className="text-destructive">*</span>
+                  </Label>
                   <DateTimePicker
                     value={dueAt}
-                    onChange={setDueAt}
+                    onChange={(v) => {
+                      setDueAt(v);
+                      if (v) setAttempted(false);
+                    }}
                     placeholder="Select due date"
                     disabled={submitting}
+                    className={
+                      attempted && !dueAtValid
+                        ? "border-destructive focus-visible:ring-destructive"
+                        : ""
+                    }
                   />
+                  {attempted && !dueAtValid && (
+                    <p className="text-xs text-destructive">
+                      Due date is required
+                    </p>
+                  )}
                   {startAt && dueAt && !datesValid && (
                     <p className="text-xs text-destructive">
                       Due date must be after start date
@@ -604,16 +737,31 @@ export function PostTaskDialog({
 
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-border px-6 py-4">
-          <span className="text-xs text-muted-foreground">
-            {!expanded && rawText.trim()
-              ? "Use AI Parse or expand form to fill details"
-              : formValid
-                ? "Ready to continue"
-                : "Fill required fields to continue"}
-          </span>
+          <div className="flex items-center gap-2">
+            {/* Clear button — visible when there's any content to clear */}
+            {(draftId || rawText.trim() || title.trim()) && (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+              >
+                <Trash2 size={12} strokeWidth={2} />
+                Clear
+              </button>
+            )}
+            <span className="text-xs text-muted-foreground">
+              {!expanded && rawText.trim()
+                ? "Use AI Parse or expand form to fill details"
+                : !dueAtValid && expanded
+                  ? "Due date is required"
+                  : formValid
+                    ? "Ready to continue"
+                    : "Fill required fields to continue"}
+            </span>
+          </div>
           <Button
             onClick={handleEditBody}
-            disabled={!formValid || submitting || uploading}
+            disabled={submitting || uploading}
             className="text-white hover:opacity-90"
             style={{ backgroundColor: formValid ? themeColor : undefined }}
           >

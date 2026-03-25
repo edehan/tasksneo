@@ -8,17 +8,27 @@ const MAX_AI_ATTACHMENTS = 6;
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const MAX_INLINE_TEXT_ATTACHMENT_CHARS = 8_000;
 
-const parseResultSchema = z.object({
-  title: z.string().nullable(),
+const timeOptionSchema = z.object({
   startAt: z.string().nullable(),
   dueAt: z.string().nullable(),
+});
+
+const parseResultSchema = z.object({
+  title: z.string().nullable(),
+  timeOptions: z.array(timeOptionSchema).min(1).max(3),
+  allowLateSubmission: z.boolean().nullable(),
   description: z.string().nullable(),
 });
 
-interface ParseTaskResult {
-  title: string | null;
+export interface ParseTimeOption {
   startAt: string | null;
   dueAt: string | null;
+}
+
+interface ParseTaskResult {
+  title: string | null;
+  timeOptions: ParseTimeOption[];
+  allowLateSubmission: boolean | null;
   description: string | null;
 }
 
@@ -60,8 +70,8 @@ function fallbackParse(text: string): ParseTaskResult {
 
   return {
     title: lines[0] ?? null,
-    startAt: null,
-    dueAt: null,
+    timeOptions: [{ startAt: null, dueAt: null }],
+    allowLateSubmission: null,
     description: text || null,
   };
 }
@@ -307,9 +317,14 @@ function getStructuredPrompt(basePrompt: string): string {
 
 Requirements:
 - Output strict JSON only.
+- Generate the title in the SAME LANGUAGE as the user's input text.
 - Datetime fields must be ISO 8601 with timezone offset or Z. Example: 2026-03-22T09:00:00+08:00
 - If the text has relative time (e.g. tomorrow, day after tomorrow, this Sunday evening), resolve it by the provided local datetime context.
-- If timezone is missing in user text, interpret it in the user's timezone and still output ISO with timezone.`;
+- If timezone is missing in user text, interpret it in the user's timezone and still output ISO with timezone.
+- timeOptions: an array of 1–3 possible start/due date interpretations.
+  - STRONGLY prefer returning exactly 1 option. Only return 2–3 when the user's input is genuinely ambiguous about dates (e.g. "next Friday or Saturday").
+  - Each option has startAt (nullable) and dueAt (nullable).
+- allowLateSubmission: boolean or null. Set to true/false only if the user explicitly mentions it; otherwise null.`;
 }
 
 function getMarkdownPrompt(basePrompt: string): string {
@@ -317,6 +332,8 @@ function getMarkdownPrompt(basePrompt: string): string {
 
 Requirements:
 - Output only markdown.
+- Use the SAME LANGUAGE as the user's input text.
+- Strictly follow the user's content. Do NOT add information, details, or requirements that the user did not mention.
 - Organize into clear sections and bullet points.
 - Include timeline interpretation based on provided local datetime context.
 - Keep the writing concise and task-oriented.`;
@@ -411,11 +428,22 @@ export async function parseTaskContent(input: {
                 additionalProperties: false,
                 properties: {
                   title: { type: ['string', 'null'] },
-                  startAt: { type: ['string', 'null'] },
-                  dueAt: { type: ['string', 'null'] },
+                  timeOptions: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      additionalProperties: false,
+                      properties: {
+                        startAt: { type: ['string', 'null'] },
+                        dueAt: { type: ['string', 'null'] },
+                      },
+                      required: ['startAt', 'dueAt'],
+                    },
+                  },
+                  allowLateSubmission: { type: ['boolean', 'null'] },
                   description: { type: ['string', 'null'] },
                 },
-                required: ['title', 'startAt', 'dueAt', 'description'],
+                required: ['title', 'timeOptions', 'allowLateSubmission', 'description'],
               },
             },
           },
@@ -472,18 +500,25 @@ export async function parseTaskContent(input: {
       };
     }
 
+    const normalizedTimeOptions: ParseTimeOption[] = parsed.data.timeOptions.map((opt) => ({
+      startAt: normalizeParsedDatetime(opt.startAt),
+      dueAt: normalizeParsedDatetime(opt.dueAt),
+    }));
+
     const normalized: ParseTaskResult = {
       title: parsed.data.title?.trim() || null,
-      startAt: normalizeParsedDatetime(parsed.data.startAt),
-      dueAt: normalizeParsedDatetime(parsed.data.dueAt),
+      timeOptions: normalizedTimeOptions.length > 0
+        ? normalizedTimeOptions
+        : [{ startAt: null, dueAt: null }],
+      allowLateSubmission: parsed.data.allowLateSubmission,
       description: parsed.data.description?.trim() || null,
     };
 
     return {
       structured: {
         title: normalized.title ?? fallback.title,
-        startAt: normalized.startAt,
-        dueAt: normalized.dueAt,
+        timeOptions: normalized.timeOptions,
+        allowLateSubmission: normalized.allowLateSubmission,
         description: normalized.description ?? fallback.description,
       },
       markdown: markdownRaw?.trim() ? markdownRaw.trim() : fallbackMarkdown(input.text),
@@ -497,13 +532,13 @@ export async function parseTaskContent(input: {
 }
 
 export async function parseTaskDescription(text: string, context?: ParseTaskContext): Promise<ParseTaskResult> {
-  const parsed = await parseTaskContent({
+  const result = await parseTaskContent({
     text,
     context: context ?? buildParseTaskContext('UTC'),
     attachments: [],
   });
 
-  return parsed.structured;
+  return result.structured;
 }
 
 export function assertParseInput(text: string) {

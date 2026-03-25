@@ -379,6 +379,32 @@ export async function createClassTaskDraft(classId: string, userId: string, inpu
   return toTaskSummary(task, null);
 }
 
+export async function findMyClassDraft(classId: string, userId: string) {
+  const membership = await getMembershipOrThrow(classId, userId);
+  requireOwnerOrAdmin(membership);
+
+  const draft = await prisma.task.findFirst({
+    where: {
+      classId,
+      createdBy: userId,
+      isPublished: false,
+      deletedAt: null,
+    },
+    include: {
+      class: { select: { name: true } },
+      attachments: true,
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  if (!draft) return null;
+
+  return {
+    ...toTaskSummary(draft, null),
+    attachments: draft.attachments.map(toAttachmentMeta),
+  };
+}
+
 export async function getTaskDetail(taskId: string, userId: string) {
   const { task, classMembership } = await assertTaskAccess(taskId, userId);
 
