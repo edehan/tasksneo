@@ -15,8 +15,21 @@ import { toast } from "sonner";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   ApiError,
+  deleteAttachment,
+  getFileUrl,
   publishTaskDraft,
+  updateTask,
   upsertMySubmission,
   uploadTaskAttachment,
   uploadSubmissionAttachment,
@@ -37,6 +50,7 @@ interface EditorPageProps {
   accentColor: string;
   initialContent?: string;
   initialAttachments?: AttachmentMeta[];
+  isAlreadyPublished?: boolean;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -50,6 +64,7 @@ export function EditorPage({
   accentColor,
   initialContent,
   initialAttachments,
+  isAlreadyPublished,
 }: EditorPageProps) {
   const { token } = useAuth();
   const router = useRouter();
@@ -62,8 +77,10 @@ export function EditorPage({
   const [submitting, setSubmitting] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // Sync initial content if it changes (e.g. async load)
   useEffect(() => {
@@ -162,18 +179,91 @@ export function EditorPage({
     e.target.value = "";
   }
 
+  async function handleRemoveAttachment(att: AttachmentMeta) {
+    if (!token) return;
+    try {
+      await deleteAttachment(token, att.id);
+      setAttachments((prev) => prev.filter((a) => a.id !== att.id));
+      toast.success("Attachment removed");
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : "Failed to remove attachment";
+      toast.error(message);
+    }
+  }
+
+  // ─── Inline image upload ─────────────────────────────────────────────────
+
+  function handleImageUploadClick() {
+    imageInputRef.current?.click();
+  }
+
+  async function handleImageFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !token) return;
+
+    setUploading(true);
+    try {
+      const uploadFn =
+        mode === "publish" ? uploadTaskAttachment : uploadSubmissionAttachment;
+      const att = await uploadFn(token, taskId, file);
+      setAttachments((prev) => [...prev, att]);
+
+      // Insert markdown image at cursor position
+      const textarea = textareaRef.current;
+      const markdown = `![${att.originalName ?? file.name}](${getFileUrl(att.fileKey)})`;
+      if (textarea) {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        setContent(
+          (prev) => prev.substring(0, start) + markdown + prev.substring(end),
+        );
+        requestAnimationFrame(() => {
+          textarea.focus();
+          const cursorPos = start + markdown.length;
+          textarea.setSelectionRange(cursorPos, cursorPos);
+        });
+      } else {
+        setContent((prev) => prev + markdown);
+      }
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : "Failed to upload image";
+      toast.error(message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
   // ─── Submit / Publish ─────────────────────────────────────────────────────
 
-  async function handleSubmitOrPublish() {
+  function handlePrimaryClick() {
+    if (mode === "publish" && !isAlreadyPublished) {
+      // New task — show confirmation before publishing
+      setShowPublishConfirm(true);
+    } else {
+      void doSubmitOrPublish();
+    }
+  }
+
+  async function doSubmitOrPublish() {
     if (!token) return;
 
     setSubmitting(true);
     try {
       if (mode === "publish") {
-        await publishTaskDraft(token, taskId, {
-          description: content || null,
-        });
-        toast.success("Task published");
+        if (isAlreadyPublished) {
+          await updateTask(token, taskId, {
+            description: content || null,
+          });
+          toast.success("Changes saved");
+        } else {
+          await publishTaskDraft(token, taskId, {
+            description: content || null,
+          });
+          toast.success("Task published");
+        }
       } else {
         await upsertMySubmission(token, taskId, content || null);
         toast.success("Submission saved");
@@ -184,7 +274,7 @@ export function EditorPage({
         err instanceof ApiError
           ? err.message
           : mode === "publish"
-            ? "Failed to publish task"
+            ? "Failed to save task"
             : "Failed to save submission";
       toast.error(message);
     } finally {
@@ -197,9 +287,16 @@ export function EditorPage({
   const breadcrumbLabel =
     mode === "submit"
       ? `Submitting to \u00b7 ${clsName}`
-      : `Publishing in \u00b7 ${clsName}`;
+      : isAlreadyPublished
+        ? `Editing \u00b7 ${clsName}`
+        : `Publishing in \u00b7 ${clsName}`;
 
-  const primaryLabel = mode === "submit" ? "Submit" : "Publish Task";
+  const primaryLabel =
+    mode === "submit"
+      ? "Submit"
+      : isAlreadyPublished
+        ? "Save Changes"
+        : "Publish Task";
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -249,7 +346,7 @@ export function EditorPage({
 
           {/* Primary action */}
           <Button
-            onClick={handleSubmitOrPublish}
+            onClick={handlePrimaryClick}
             disabled={submitting}
             className="gap-2 text-white hover:opacity-90"
             style={{ backgroundColor: accentColor }}
@@ -269,7 +366,12 @@ export function EditorPage({
         {/* Editor / Preview area */}
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Toolbar (only in edit mode) */}
-          {!preview && <EditorToolbar onInsert={handleInsert} />}
+          {!preview && (
+            <EditorToolbar
+              onInsert={handleInsert}
+              onImageUpload={handleImageUploadClick}
+            />
+          )}
 
           {/* Content */}
           {preview ? (
@@ -277,6 +379,7 @@ export function EditorPage({
               <MarkdownPreview
                 content={content}
                 accentColor={accentColor}
+                authToken={token ?? undefined}
               />
             </div>
           ) : (
@@ -326,6 +429,7 @@ export function EditorPage({
               <AttachmentSidebar
                 attachments={attachments}
                 accentColor={accentColor}
+                onRemove={handleRemoveAttachment}
               />
             </div>
           </div>
@@ -343,6 +447,40 @@ export function EditorPage({
         </div>
         <span className="text-xs text-text-muted-soft">Draft saved</span>
       </footer>
+
+      {/* Hidden image file input */}
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleImageFileChange}
+      />
+
+      {/* Publish confirmation dialog */}
+      <AlertDialog open={showPublishConfirm} onOpenChange={setShowPublishConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-serif">
+              Publish this task?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will notify all class members. You can still edit the task
+              after publishing.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void doSubmitOrPublish()}
+              className="text-white"
+              style={{ backgroundColor: accentColor }}
+            >
+              Confirm Publish
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

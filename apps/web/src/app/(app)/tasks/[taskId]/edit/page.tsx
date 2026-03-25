@@ -11,7 +11,6 @@ import {
   getClass,
   getTask,
   getTaskDraftMarkdown,
-  type AttachmentMeta,
   type ClassSummary,
   type TaskDetail,
 } from "@/lib/api";
@@ -21,7 +20,6 @@ export default function EditTaskPage() {
   const router = useRouter();
   const { token, loading: authLoading } = useAuth();
 
-  const classId = params?.classId as string;
   const taskId = params?.taskId as string;
 
   const [task, setTask] = useState<TaskDetail | null>(null);
@@ -31,25 +29,23 @@ export default function EditTaskPage() {
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
-    if (!token || !classId || !taskId) return;
+    if (!token || !taskId) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const [taskData, classData, mdData] = await Promise.all([
+      const [taskData, mdData] = await Promise.all([
         getTask(token, taskId),
-        getClass(token, classId),
         getTaskDraftMarkdown(token, taskId).catch(() => ({
           markdown: null as string | null,
         })),
       ]);
+      const classData = await getClass(token, taskData.classId);
 
       setTask(taskData);
       setCls(classData);
-      setMarkdown(
-        mdData.markdown ?? taskData.description ?? "",
-      );
+      setMarkdown(mdData.markdown ?? taskData.description ?? "");
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : "Failed to load task";
@@ -57,7 +53,7 @@ export default function EditTaskPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, classId, taskId]);
+  }, [token, taskId]);
 
   useEffect(() => {
     if (!authLoading && token) {
@@ -66,8 +62,6 @@ export default function EditTaskPage() {
       router.replace("/login");
     }
   }, [authLoading, token, loadData, router]);
-
-  // ─── Loading state ─────────────────────────────────────────────────────────
 
   if (authLoading || loading) {
     return (
@@ -94,18 +88,17 @@ export default function EditTaskPage() {
 
   if (!task || !cls) return null;
 
-  // ─── Render ────────────────────────────────────────────────────────────────
-
   return (
     <EditorPage
       mode="publish"
-      classId={classId}
+      classId={task.classId}
       taskId={taskId}
       className={cls.name}
       taskTitle={task.title}
       accentColor={cls.color}
       initialContent={markdown}
       initialAttachments={task.attachments}
+      isAlreadyPublished={task.isPublished}
     />
   );
 }

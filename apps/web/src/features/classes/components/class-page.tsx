@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Plus, Settings, Users } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -150,16 +150,36 @@ export function ClassPage() {
           />
           <h1 className="text-display">{cls.name}</h1>
         </div>
-        {isAdmin && (
-          <Button
-            onClick={() => setPostTaskOpen(true)}
-            style={{ backgroundColor: cls.color || "#8B7355" }}
-            className="text-white hover:opacity-90 shrink-0"
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => router.push(`/classes/${classId}/members`)}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
+            title="Members"
           >
-            <Plus className="mr-2 h-4 w-4" />
-            Post Task
-          </Button>
-        )}
+            <Users size={16} strokeWidth={2} />
+          </button>
+          {isAdmin && (
+            <>
+              <button
+                type="button"
+                onClick={() => router.push(`/classes/${classId}/settings`)}
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
+                title="Settings"
+              >
+                <Settings size={16} strokeWidth={2} />
+              </button>
+              <Button
+                onClick={() => setPostTaskOpen(true)}
+                style={{ backgroundColor: cls.color || "#8B7355" }}
+                className="text-white hover:opacity-90"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Post Task
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Controls row */}
@@ -244,7 +264,7 @@ export function ClassPage() {
           onOpenChange={setPostTaskOpen}
           onEditBody={({ taskId }) => {
             void loadData();
-            router.push(`/classes/${classId}/tasks/${taskId}/edit`);
+            router.push(`/tasks/${taskId}/edit`);
           }}
         />
       )}

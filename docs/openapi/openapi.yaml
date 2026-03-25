@@ -364,6 +364,12 @@ components:
           $ref: '#/components/schemas/TaskUserState'
           description: 当前用户对此任务的状态，可能为 null（未产生任何互动时）
           nullable: true
+        submittedCount:
+          type: integer
+          description: 该任务的已提交人数（所有成员可见）
+        memberCount:
+          type: integer
+          description: 该任务所属班级的成员总数（所有成员可见）
 
     TaskDetail:
       allOf:
@@ -478,13 +484,9 @@ components:
           type: string
           description: 用户输入的自然语言任务描述
 
-    ParseTaskResponse:
+    ParseTimeOption:
       type: object
-      description: LLM 解析结果，字段不确定时为 null，前端负责展示并让用户确认
       properties:
-        title:
-          type: string
-          nullable: true
         startAt:
           type: string
           format: date-time
@@ -493,9 +495,37 @@ components:
           type: string
           format: date-time
           nullable: true
+
+    ParseTaskResponse:
+      type: object
+      description: LLM 解析结果。timeOptions 包含 1–3 个可能的时间解释，当 AI 对用户输入的时间表达不确定时返回多个选项，前端展示让用户选择。
+      properties:
+        title:
+          type: string
+          nullable: true
+        timeOptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParseTimeOption'
+          minItems: 1
+          maxItems: 3
+          description: 1–3 个可能的起止时间选项。优先返回 1 个，仅在用户输入有歧义时返回多个。
+        allowLateSubmission:
+          type: boolean
+          nullable: true
+          description: 仅当用户明确提及时返回 true/false，否则 null
         description:
           type: string
           nullable: true
+
+    ParseDraftTaskResponse:
+      allOf:
+        - $ref: '#/components/schemas/ParseTaskResponse'
+        - type: object
+          properties:
+            markdownCached:
+              type: boolean
+              description: 是否已生成并缓存 markdown 正文草稿
 
     # ── Submissions ──
 
@@ -1338,6 +1368,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /classes/{classId}/tasks/drafts/mine:
+    parameters:
+      - name: classId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Tasks]
+      summary: 获取当前用户在该班级的最新草稿任务
+      description: |
+        返回当前用户在指定班级中最近创建的未发布草稿任务（含附件列表）。
+        如果没有草稿则 draft 为 null。仅 OWNER/ADMIN 可调用。
+      security:
+        - userAuth: []
+      responses:
+        '200':
+          description: 草稿任务（可能为 null）
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  draft:
+                    allOf:
+                      - $ref: '#/components/schemas/TaskSummary'
+                      - type: object
+                        properties:
+                          attachments:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/AttachmentMeta'
+                    nullable: true
+
   /tasks/parse:
     post:
       tags: [Tasks]
@@ -1364,6 +1429,70 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ParseTaskResponse'
+
+  /tasks/{taskId}/parse:
+    parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags: [Tasks]
+      summary: AI 解析草稿任务（含附件）
+      description: |
+        对已有草稿任务调用 LLM 解析。会读取任务已上传的附件一并发送给 AI。
+        解析结果自动更新草稿的 title、startAt、dueAt、description 字段（使用第一个 timeOption）。
+        同时生成 markdown 正文缓存（通过 GET /tasks/{taskId}/draft-markdown 读取）。
+        仅 OWNER/ADMIN 可调用。
+      security:
+        - userAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                  description: 用户输入的自然语言任务描述（可选，不传则使用任务已有的 sourceText）
+      responses:
+        '200':
+          description: 解析结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParseDraftTaskResponse'
+
+  /tasks/{taskId}/draft-markdown:
+    parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Tasks]
+      summary: 读取草稿任务的 AI 生成 markdown 缓存
+      description: |
+        返回 AI 解析时生成的 markdown 正文草稿（缓存在 Redis，TTL 3 天）。
+        仅 OWNER/ADMIN 可调用。
+      security:
+        - userAuth: []
+      responses:
+        '200':
+          description: markdown 缓存内容
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  markdown:
+                    type: string
+                    nullable: true
 
   /tasks/{taskId}:
     parameters:

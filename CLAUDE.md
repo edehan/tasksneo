@@ -18,7 +18,9 @@ Class task management system for educators. Teachers create classes, publish tas
 - API contract: `docs/openapi/openapi.yaml`
 - Environment variables reference: `.env.example`
 
-features details written in human language messy stored in `docs/features/`, read **only you are doing implementation**, These documents are not authoritative content.
+features details written in human language messy stored in `docs/features/` and the user journey specifications in `docs/ux/`, read **only you are doing implementation**, These documents are not authoritative content.
+
+These documents are drafts. If there are any conflicts, please trust the most recently edited one or make an inquiry. Remember, you are speaking with a product manager, not an engineer. If there are unreasonable requests, ask questions and offer your insights.
 
 ## Critical design decisions
 

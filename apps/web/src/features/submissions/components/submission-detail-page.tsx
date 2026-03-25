@@ -22,11 +22,12 @@ import type {
 } from "@/lib/api";
 import {
   getClass,
-  getSubmission,
+  getSubmissionById,
   getTask,
   gradeSubmission,
   listSubmissions,
-  getFileUrl,
+  downloadFile,
+  ApiError,
 } from "@/lib/api";
 
 // ─── Date formatting ─────────────────────────────────────────────────────────
@@ -61,14 +62,14 @@ export function SubmissionDetailPage() {
   const router = useRouter();
   const { token } = useAuth();
 
-  const classId = params?.classId as string;
-  const taskId = params?.taskId as string;
   const submissionId = params?.submissionId as string;
 
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
   const [cls, setCls] = useState<ClassSummary | null>(null);
   const [allRows, setAllRows] = useState<SubmissionListRow[]>([]);
   const [taskTitle, setTaskTitle] = useState<string>("");
+  const [taskId, setTaskId] = useState<string | null>(null);
+  const [classId, setClassId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Grading form state
@@ -79,17 +80,21 @@ export function SubmissionDetailPage() {
   // ─── Load data ──────────────────────────────────────────────────────────────
 
   const loadData = useCallback(async () => {
-    if (!token || !classId || !taskId || !submissionId) return;
+    if (!token || !submissionId) return;
     try {
-      const [submissionData, classData, taskData, submissionRows] =
-        await Promise.all([
-          getSubmission(token, taskId, submissionId),
-          getClass(token, classId),
-          getTask(token, taskId),
-          listSubmissions(token, taskId),
-        ]);
+      const submissionData = await getSubmissionById(token, submissionId);
+      const resolvedTaskId = submissionData.taskId;
+      setTaskId(resolvedTaskId);
+
+      const [taskData, submissionRows] = await Promise.all([
+        getTask(token, resolvedTaskId),
+        listSubmissions(token, resolvedTaskId),
+      ]);
+      const classData = await getClass(token, taskData.classId);
+
       setSubmission(submissionData);
       setCls(classData);
+      setClassId(taskData.classId);
       setTaskTitle(taskData.title);
       setAllRows(submissionRows);
 
@@ -101,7 +106,7 @@ export function SubmissionDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, classId, taskId, submissionId]);
+  }, [token, submissionId]);
 
   useEffect(() => {
     void loadData();
@@ -136,7 +141,7 @@ export function SubmissionDetailPage() {
   function navigateTo(row: SubmissionListRow) {
     if (!row.submission) return;
     router.push(
-      `/classes/${classId}/tasks/${taskId}/submissions/${row.submission.id}`,
+      `/submissions/${row.submission.id}`,
     );
   }
 
@@ -161,20 +166,26 @@ export function SubmissionDetailPage() {
 
   // ─── Attachment download ──────────────────────────────────────────────────
 
-  function handleDownload(att: {
+  async function handleDownload(att: {
     fileKey: string;
     originalName: string;
-    url: string;
+    url?: string;
   }) {
-    const url = att.url || getFileUrl(att.fileKey);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = att.originalName;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (!token) return;
+    try {
+      const blobUrl = await downloadFile(token, att.fileKey);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = att.originalName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : "Failed to download file";
+      toast.error(message);
+    }
   }
 
   // ─── Loading state ─────────────────────────────────────────────────────────
@@ -221,9 +232,7 @@ export function SubmissionDetailPage() {
         <button
           type="button"
           onClick={() =>
-            router.push(
-              `/classes/${classId}/tasks/${taskId}/submissions`,
-            )
+            router.push(`/tasks/${taskId}/submissions`)
           }
           className="flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors duration-100 hover:text-foreground"
         >
@@ -310,6 +319,7 @@ export function SubmissionDetailPage() {
             <MarkdownPreview
               content={submission.content}
               accentColor={accentColor}
+              authToken={token ?? undefined}
             />
           ) : (
             <p className="text-sm italic text-text-muted-soft">

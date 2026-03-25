@@ -7,6 +7,7 @@ import { authRouter } from './routes/auth.js';
 import { classesRouter } from './routes/classes.js';
 import { filesRouter } from './routes/files.js';
 import { schoolsRouter } from './routes/schools.js';
+import { submissionsRouter } from './routes/submissions.js';
 import { tasksRouter } from './routes/tasks.js';
 import { usersRouter } from './routes/users.js';
 import { startNotificationWorker } from './services/notification.service.js';
@@ -45,6 +46,7 @@ export function createApp(options?: { startWorker?: boolean }) {
   app.route('/schools', schoolsRouter);
   app.route('/classes', classesRouter);
   app.route('/tasks', tasksRouter);
+  app.route('/submissions', submissionsRouter);
   app.route('/files', filesRouter);
   app.route('/admin', adminRouter);
 

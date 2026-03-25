@@ -16,7 +16,7 @@ import {
   updateClass,
   updateMemberRole,
 } from '../services/class.service.js';
-import { createClassTask, createClassTaskDraft, listClassTasks } from '../services/task.service.js';
+import { createClassTask, createClassTaskDraft, findMyClassDraft, listClassTasks } from '../services/task.service.js';
 
 import type { AppVariables } from '../types/context.js';
 
@@ -155,6 +155,13 @@ classesRouter.post('/:classId/tasks', async (c) => {
   const body = createTaskBodySchema.parse(await c.req.json());
   const task = await createClassTask(params.classId, authUser.userId, body);
   return c.json(task, 201);
+});
+
+classesRouter.get('/:classId/tasks/drafts/mine', async (c) => {
+  const authUser = requireAuthUser(c);
+  const params = classIdParamSchema.parse(c.req.param());
+  const draft = await findMyClassDraft(params.classId, authUser.userId);
+  return c.json({ draft }, 200);
 });
 
 classesRouter.post('/:classId/tasks/drafts', async (c) => {

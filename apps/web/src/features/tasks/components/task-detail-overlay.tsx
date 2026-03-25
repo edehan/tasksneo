@@ -183,7 +183,11 @@ export function TaskDetailOverlay({
     <div
       ref={overlayRef}
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}
+      style={{
+        backgroundColor: "rgba(0,0,0,0.4)",
+        backdropFilter: "blur(4px)",
+        animation: "custom-overlay-fade-in 0.2s ease",
+      }}
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
@@ -192,7 +196,11 @@ export function TaskDetailOverlay({
       <div
         ref={modalRef}
         className="flex w-full max-w-[960px] flex-col overflow-hidden rounded-[18px] border border-border bg-card shadow-lg"
-        style={{ height: "85vh", maxHeight: "720px" }}
+        style={{
+          height: "85vh",
+          maxHeight: "720px",
+          animation: "custom-modal-enter 0.2s ease",
+        }}
       >
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <div className="relative shrink-0 border-b border-border p-6">
@@ -258,6 +266,7 @@ export function TaskDetailOverlay({
               <MarkdownPreview
                 content={bodyContent}
                 accentColor={task.classColor}
+                authToken={token ?? undefined}
               />
             ) : (
               <p className="text-sm italic text-text-muted-soft">
@@ -298,35 +307,37 @@ export function TaskDetailOverlay({
                   type="button"
                   onClick={() => {
                     onClose();
-                    router.push(`/classes/${task.classId}/tasks/${task.id}/edit`);
+                    router.push(`/tasks/${task.id}/edit`);
                   }}
                   className="rounded-[10px] border border-border bg-transparent px-4 py-2 text-[13px] font-medium text-muted-foreground transition-colors duration-100 hover:bg-secondary hover:text-foreground"
                 >
                   Edit Task
                 </button>
-                <button
-                  type="button"
-                  disabled={deleting}
-                  onClick={async () => {
-                    if (!token) return;
-                    if (!confirm("Are you sure you want to delete this task?")) return;
-                    setDeleting(true);
-                    try {
-                      await deleteTask(token, task.id);
-                      onClose();
-                    } catch {
-                      setDeleting(false);
-                    }
-                  }}
-                  className="rounded-[10px] border border-border bg-transparent px-4 py-2 text-[13px] font-medium text-destructive transition-colors duration-100 hover:bg-destructive/10 disabled:opacity-50"
-                >
-                  {deleting ? "Deleting..." : "Delete Task"}
-                </button>
+                {taskDetail?.stats?.submittedCount === 0 && (
+                  <button
+                    type="button"
+                    disabled={deleting}
+                    onClick={async () => {
+                      if (!token) return;
+                      if (!confirm("Are you sure you want to delete this task? This action cannot be undone.")) return;
+                      setDeleting(true);
+                      try {
+                        await deleteTask(token, task.id);
+                        onClose();
+                      } catch {
+                        setDeleting(false);
+                      }
+                    }}
+                    className="rounded-[10px] border border-border bg-transparent px-4 py-2 text-[13px] font-medium text-destructive transition-colors duration-100 hover:bg-destructive/10 disabled:opacity-50"
+                  >
+                    {deleting ? "Deleting..." : "Delete Task"}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => {
                     onClose();
-                    router.push(`/classes/${task.classId}/tasks/${task.id}/submissions`);
+                    router.push(`/tasks/${task.id}/submissions`);
                   }}
                   className="flex items-center gap-2 rounded-[10px] px-4 py-2 text-[13px] font-medium text-white shadow-sm transition-colors duration-100"
                   style={{ backgroundColor: task.classColor }}
@@ -351,7 +362,7 @@ export function TaskDetailOverlay({
                     onSubmit(task);
                   } else {
                     onClose();
-                    router.push(`/classes/${task.classId}/tasks/${task.id}/submit`);
+                    router.push(`/tasks/${task.id}/submit`);
                   }
                 }}
                 className="flex items-center gap-2 rounded-[10px] px-5 py-2.5 text-[13px] font-medium text-white shadow-sm transition-colors duration-100"

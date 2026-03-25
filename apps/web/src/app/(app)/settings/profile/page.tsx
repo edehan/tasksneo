@@ -1,7 +1,7 @@
 "use client";
 
-import { Camera, Loader2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Camera, Globe, Loader2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-provider";
@@ -12,7 +12,9 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -25,6 +27,54 @@ import {
   getMe,
   getFileUrl,
 } from "@/lib/api";
+
+function getBrowserTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return "UTC";
+  }
+}
+
+function getTimezoneOffset(tz: string): string {
+  try {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      timeZoneName: "shortOffset",
+    });
+    const parts = formatter.formatToParts(now);
+    const offsetPart = parts.find((p) => p.type === "timeZoneName");
+    return offsetPart?.value ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function getSupportedTimezones(): string[] {
+  try {
+    return Intl.supportedValuesOf("timeZone");
+  } catch {
+    // Fallback for older browsers
+    return [
+      "UTC",
+      "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
+      "Europe/London", "Europe/Paris", "Europe/Berlin",
+      "Asia/Tokyo", "Asia/Shanghai", "Asia/Singapore", "Asia/Kolkata",
+      "Australia/Sydney", "Pacific/Auckland",
+    ];
+  }
+}
+
+function groupTimezones(timezones: string[]): Record<string, string[]> {
+  const groups: Record<string, string[]> = {};
+  for (const tz of timezones) {
+    const region = tz.includes("/") ? tz.split("/")[0] : "Other";
+    if (!groups[region]) groups[region] = [];
+    groups[region].push(tz);
+  }
+  return groups;
+}
 
 export default function ProfilePage() {
   const { token, user, updateUser } = useAuth();
@@ -39,7 +89,12 @@ export default function ProfilePage() {
   const [nickname, setNickname] = useState("");
   const [schoolId, setSchoolId] = useState<string | null>(null);
   const [studentId, setStudentId] = useState("");
+  const [timezone, setTimezone] = useState("UTC");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  const browserTimezone = useMemo(() => getBrowserTimezone(), []);
+  const allTimezones = useMemo(() => getSupportedTimezones(), []);
+  const groupedTimezones = useMemo(() => groupTimezones(allTimezones), [allTimezones]);
 
   const loadData = useCallback(async () => {
     try {
@@ -62,6 +117,7 @@ export default function ProfilePage() {
       setNickname(user.nickname ?? "");
       setSchoolId(user.schoolId);
       setStudentId(user.studentId ?? "");
+      setTimezone(user.timezone);
     }
   }, [user]);
 
@@ -73,6 +129,7 @@ export default function ProfilePage() {
         nickname: nickname.trim() || null,
         schoolId,
         studentId: schoolId ? studentId.trim() || null : null,
+        timezone,
       });
       updateUser(updated);
       toast.success("Profile updated");
@@ -239,6 +296,42 @@ export default function ProfilePage() {
           />
         </div>
       )}
+
+      {/* Timezone */}
+      <div className="space-y-2">
+        <Label>Timezone</Label>
+        <Select value={timezone} onValueChange={setTimezone} disabled={saving}>
+          <SelectTrigger>
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-muted-foreground" />
+              <SelectValue />
+            </div>
+          </SelectTrigger>
+          <SelectContent className="max-h-64">
+            {browserTimezone !== timezone && (
+              <SelectGroup>
+                <SelectLabel>Detected</SelectLabel>
+                <SelectItem value={browserTimezone}>
+                  {browserTimezone} ({getTimezoneOffset(browserTimezone)})
+                </SelectItem>
+              </SelectGroup>
+            )}
+            {Object.entries(groupedTimezones).map(([region, tzList]) => (
+              <SelectGroup key={region}>
+                <SelectLabel>{region}</SelectLabel>
+                {tzList.map((tz) => (
+                  <SelectItem key={tz} value={tz}>
+                    {tz.replace(/_/g, " ")} ({getTimezoneOffset(tz)})
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          Used for displaying dates and deadlines in your local time.
+        </p>
+      </div>
 
       {/* Save */}
       <Button onClick={handleSave} disabled={saving}>

@@ -4,6 +4,29 @@
 
 ---
 
+## TODO LIST
+
+### Bug类
+- [x] 班级管理功能缺失,创建班级时应该限定学校
+- [x] 总视图显示逻辑的问题，view submission的统计功能
+- [x] 主视图甘特图优化
+- [x] 夜间模式自适应
+- [x] 全局动画过度和圆角
+- [x] 捕捉到多个时间段时的处理
+
+
+### 功能类
+- [] (推迟)任务的前置任务关联功能
+- [] (推迟)docx等文件解析 https://awslabs.github.io/mcp/servers/document-loader-mcp-server
+- [] 文件下载器
+- [] 自动批改功能
+- [] MCP和skills
+- [] 完善通知系统 https://github.com/novuhq/novu
+- [] s3储存和上传逻辑
+- [] cdci
+- [] 生产环境部署上线
+
+
 ## 功能概览
 
 - **班级管理**：创建班级、邀请码加入、成员角色管理（所有者 / 管理员 / 成员）

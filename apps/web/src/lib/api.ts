@@ -67,6 +67,7 @@ export interface TaskUserState {
   viewedAt: string | null;
   tags: string[];
   sortOrder: number;
+  submittedAt: string | null;
 }
 
 export interface TaskSummary {
@@ -85,6 +86,8 @@ export interface TaskSummary {
   createdAt: string;
   updatedAt: string;
   userState: TaskUserState | null;
+  submittedCount: number;
+  memberCount: number;
 }
 
 export interface AttachmentMeta {
@@ -94,7 +97,7 @@ export interface AttachmentMeta {
   renamedFile: string | null;
   mimeType: string | null;
   sizeBytes: number | null;
-  url: string;
+  url?: string;
   createdAt: string;
 }
 
@@ -110,10 +113,15 @@ export interface TaskDetail extends TaskSummary {
   stats: TaskStats | null;
 }
 
-export interface ParseTaskResponse {
-  title: string | null;
+export interface ParseTimeOption {
   startAt: string | null;
   dueAt: string | null;
+}
+
+export interface ParseTaskResponse {
+  title: string | null;
+  timeOptions: ParseTimeOption[];
+  allowLateSubmission: boolean | null;
   description: string | null;
 }
 
@@ -459,6 +467,32 @@ export async function listClassTasks(
   return apiRequest<TaskSummary[]>(`/classes/${classId}/tasks`, {}, token);
 }
 
+interface DraftWithAttachments extends TaskSummary {
+  attachments: AttachmentMeta[];
+}
+
+export async function getMyClassDraft(
+  token: string,
+  classId: string,
+): Promise<DraftWithAttachments | null> {
+  const res = await apiRequest<{ draft: DraftWithAttachments | null }>(
+    `/classes/${classId}/tasks/drafts/mine`,
+    {},
+    token,
+  );
+  return res.draft;
+}
+
+export interface MyTaskSummary extends TaskSummary {
+  classColor: string | null;
+}
+
+export async function listMyTasks(
+  token: string,
+): Promise<MyTaskSummary[]> {
+  return apiRequest<MyTaskSummary[]>("/tasks/mine", {}, token);
+}
+
 export async function createTask(
   token: string,
   classId: string,
@@ -642,6 +676,17 @@ export async function getSubmission(
   );
 }
 
+export async function getSubmissionById(
+  token: string,
+  submissionId: string,
+): Promise<SubmissionDetail> {
+  return apiRequest<SubmissionDetail>(
+    `/submissions/${submissionId}`,
+    {},
+    token,
+  );
+}
+
 export async function upsertMySubmission(
   token: string,
   taskId: string,
@@ -703,11 +748,13 @@ export async function uploadTaskAttachment(
 ): Promise<AttachmentMeta> {
   const formData = new FormData();
   formData.append("file", file);
-  return apiRequest<AttachmentMeta>(
+  // Backend returns AttachmentMeta[] — extract the first element
+  const result = await apiRequest<AttachmentMeta[]>(
     `/tasks/${taskId}/attachments`,
     { method: "POST", body: formData },
     token,
   );
+  return result[0];
 }
 
 export async function uploadSubmissionAttachment(
@@ -717,15 +764,44 @@ export async function uploadSubmissionAttachment(
 ): Promise<AttachmentMeta> {
   const formData = new FormData();
   formData.append("file", file);
-  return apiRequest<AttachmentMeta>(
+  // Backend returns AttachmentMeta[] — extract the first element
+  const result = await apiRequest<AttachmentMeta[]>(
     `/tasks/${taskId}/submissions/me/attachments`,
     { method: "POST", body: formData },
     token,
   );
+  return result[0];
 }
 
 export function getFileUrl(fileKey: string): string {
   return `${getApiBaseUrl()}/files/${fileKey}`;
+}
+
+export async function downloadFile(
+  token: string,
+  fileKey: string,
+): Promise<string> {
+  // GET /files/:fileKey returns a 302 redirect to presigned URL.
+  // We fetch with auth, follow the redirect, and return the final blob URL.
+  const res = await fetch(`${getApiBaseUrl()}/files/${fileKey}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    throw new ApiError("Failed to download file", "DOWNLOAD_FAILED", res.status);
+  }
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
+
+export async function deleteAttachment(
+  token: string,
+  attachmentId: string,
+): Promise<void> {
+  return apiRequest<void>(
+    `/files/attachments/${attachmentId}`,
+    { method: "DELETE" },
+    token,
+  );
 }
 
 // ─── Admin (kept for admin panel) ────────────────────────────────────────────

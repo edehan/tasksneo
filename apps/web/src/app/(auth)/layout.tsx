@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "@/components/auth-provider";
+import { PageTransition } from "@/components/page-transition";
 
 export default function AuthLayout({
   children,
@@ -28,7 +29,7 @@ export default function AuthLayout({
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">{children}</div>
+      <PageTransition className="w-full max-w-md">{children}</PageTransition>
     </div>
   );
 }

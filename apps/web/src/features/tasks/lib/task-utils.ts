@@ -1,16 +1,9 @@
-import type { TaskSummary, TaskUserState } from "@/lib/api";
+import type { TaskSummary } from "@/lib/api";
 
 export type TaskStatus = "unread" | "read" | "submitted";
 
-/** Extended user state that includes submission tracking (populated by dashboard). */
-export interface TaskUserStateExtended extends TaskUserState {
-  submittedAt?: string | null;
-}
-
-export interface TaskWithClass extends Omit<TaskSummary, "userState"> {
-  className: string;
+export interface TaskWithClass extends TaskSummary {
   classColor: string;
-  userState: TaskUserStateExtended | null;
 }
 
 export function getTaskStatus(task: TaskSummary): TaskStatus {

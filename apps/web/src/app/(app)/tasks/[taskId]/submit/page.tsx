@@ -21,7 +21,6 @@ export default function SubmitTaskPage() {
   const router = useRouter();
   const { token, loading: authLoading } = useAuth();
 
-  const classId = params?.classId as string;
   const taskId = params?.taskId as string;
 
   const [task, setTask] = useState<TaskDetail | null>(null);
@@ -36,17 +35,17 @@ export default function SubmitTaskPage() {
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
-    if (!token || !classId || !taskId) return;
+    if (!token || !taskId) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const [taskData, classData, submission] = await Promise.all([
+      const [taskData, submission] = await Promise.all([
         getTask(token, taskId),
-        getClass(token, classId),
         getMySubmission(token, taskId).catch(() => null),
       ]);
+      const classData = await getClass(token, taskData.classId);
 
       setTask(taskData);
       setCls(classData);
@@ -65,7 +64,7 @@ export default function SubmitTaskPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, classId, taskId]);
+  }, [token, taskId]);
 
   useEffect(() => {
     if (!authLoading && token) {
@@ -74,8 +73,6 @@ export default function SubmitTaskPage() {
       router.replace("/login");
     }
   }, [authLoading, token, loadData, router]);
-
-  // ─── Loading state ─────────────────────────────────────────────────────────
 
   if (authLoading || loading) {
     return (
@@ -102,12 +99,10 @@ export default function SubmitTaskPage() {
 
   if (!task || !cls) return null;
 
-  // ─── Render ────────────────────────────────────────────────────────────────
-
   return (
     <EditorPage
       mode="submit"
-      classId={classId}
+      classId={task.classId}
       taskId={taskId}
       className={cls.name}
       taskTitle={task.title}

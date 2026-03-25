@@ -17,8 +17,8 @@ import {
 } from "@/features/tasks/components/view-switcher";
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
 import { TaskDetailOverlay } from "@/features/tasks/components/task-detail-overlay";
-import type { ClassSummary, TaskSummary } from "@/lib/api";
-import { listClasses, listClassTasks } from "@/lib/api";
+import type { ClassSummary } from "@/lib/api";
+import { listClasses, listMyTasks } from "@/lib/api";
 
 type GanttRange = "week" | "month" | "2month";
 
@@ -50,28 +50,17 @@ export function DashboardPage() {
   const loadData = useCallback(async () => {
     if (!token) return;
     try {
-      const classList = await listClasses(token);
+      const [classList, myTasks] = await Promise.all([
+        listClasses(token),
+        listMyTasks(token),
+      ]);
       setClasses(classList);
-
-      const sharedClasses = classList.filter((c) => !c.isPersonal);
-      const allTasks: TaskWithClass[] = [];
-      await Promise.all(
-        sharedClasses.map(async (cls) => {
-          try {
-            const classTasks = await listClassTasks(token, cls.id);
-            for (const t of classTasks) {
-              allTasks.push({
-                ...t,
-                className: cls.name,
-                classColor: cls.color || "#8B7355",
-              } as TaskWithClass);
-            }
-          } catch {
-            // Skip classes that fail
-          }
-        }),
+      setTasks(
+        myTasks.map((t) => ({
+          ...t,
+          classColor: t.classColor || "#8B7355",
+        })),
       );
-      setTasks(allTasks);
     } catch {
       // Failed to load
     } finally {
@@ -247,6 +236,10 @@ export function DashboardPage() {
         <TaskDetailOverlay
           task={selectedTask}
           onClose={() => setSelectedTask(null)}
+          isAdmin={(() => {
+            const cls = classes.find((c) => c.id === selectedTask.classId);
+            return cls?.myRole === "OWNER" || cls?.myRole === "ADMIN";
+          })()}
         />
       )}
 
