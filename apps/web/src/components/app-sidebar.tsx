@@ -73,7 +73,12 @@ export function AppSidebar() {
   }, [loadClasses]);
 
   const personalClass = classes.find((c) => c.isPersonal);
-  const sharedClasses = classes.filter((c) => !c.isPersonal);
+  const managedClasses = classes.filter(
+    (c) => !c.isPersonal && (c.myRole === "OWNER" || c.myRole === "ADMIN"),
+  );
+  const joinedClasses = classes.filter(
+    (c) => !c.isPersonal && c.myRole === "MEMBER",
+  );
 
   const displayName = user?.nickname || user?.email || "User";
   const initials = displayName.slice(0, 2).toUpperCase();
@@ -227,49 +232,97 @@ export function AppSidebar() {
 
         <SidebarSeparator />
 
+        {/* Managed classes */}
+        {(loading || managedClasses.length > 0) && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-label-upper">
+              My Classes
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {loading ? (
+                  <>
+                    <SidebarMenuItem>
+                      <Skeleton className="h-8 w-full" />
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <Skeleton className="h-8 w-full" />
+                    </SidebarMenuItem>
+                  </>
+                ) : (
+                  managedClasses.map((cls) => (
+                    <SidebarMenuItem key={cls.id}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={pathname.startsWith(`/classes/${cls.id}`)}
+                      >
+                        <Link href={`/classes/${cls.id}`}>
+                          <span
+                            className="h-2 w-2 shrink-0 rounded-sm"
+                            style={{ backgroundColor: cls.color || "#8B7355" }}
+                          />
+                          <span className="truncate">{cls.name}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))
+                )}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
         {/* Joined classes */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-label-upper">
-            Joined Classes
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {loading ? (
-                <>
-                  <SidebarMenuItem>
-                    <Skeleton className="h-8 w-full" />
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <Skeleton className="h-8 w-full" />
-                  </SidebarMenuItem>
-                </>
-              ) : sharedClasses.length === 0 ? (
+        {(loading || joinedClasses.length > 0) && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-label-upper">
+              Joined Classes
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {loading ? (
+                  <>
+                    <SidebarMenuItem>
+                      <Skeleton className="h-8 w-full" />
+                    </SidebarMenuItem>
+                  </>
+                ) : (
+                  joinedClasses.map((cls) => (
+                    <SidebarMenuItem key={cls.id}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={pathname.startsWith(`/classes/${cls.id}`)}
+                      >
+                        <Link href={`/classes/${cls.id}`}>
+                          <span
+                            className="h-2 w-2 shrink-0 rounded-sm"
+                            style={{ backgroundColor: cls.color || "#8B7355" }}
+                          />
+                          <span className="truncate">{cls.name}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))
+                )}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* Empty state */}
+        {!loading && managedClasses.length === 0 && joinedClasses.length === 0 && !personalClass && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
                 <SidebarMenuItem>
                   <div className="px-2 py-1.5 text-xs text-muted-foreground">
                     No classes yet
                   </div>
                 </SidebarMenuItem>
-              ) : (
-                sharedClasses.map((cls) => (
-                  <SidebarMenuItem key={cls.id}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={pathname.startsWith(`/classes/${cls.id}`)}
-                    >
-                      <Link href={`/classes/${cls.id}`}>
-                        <span
-                          className="h-2 w-2 shrink-0 rounded-sm"
-                          style={{ backgroundColor: cls.color || "#8B7355" }}
-                        />
-                        <span className="truncate">{cls.name}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))
-              )}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       {/* Bottom buttons: Join Class + Create */}
@@ -279,7 +332,7 @@ export function AppSidebar() {
             <div className="flex gap-2">
               <JoinClassDialog
                 trigger={
-                  <SidebarMenuButton className="flex-1 bg-class-accent text-class-accent-foreground hover:opacity-90">
+                  <SidebarMenuButton className="flex-1 !rounded-full bg-class-accent text-class-accent-foreground hover:opacity-90">
                     <UserPlus className="h-4 w-4" />
                     <span>Join Class</span>
                   </SidebarMenuButton>
@@ -288,7 +341,7 @@ export function AppSidebar() {
               />
               <CreateClassDialog
                 trigger={
-                  <SidebarMenuButton className="shrink-0 w-auto px-3">
+                  <SidebarMenuButton className="shrink-0 w-auto !rounded-full px-3">
                     <Plus className="h-4 w-4" />
                     <span>Create</span>
                   </SidebarMenuButton>

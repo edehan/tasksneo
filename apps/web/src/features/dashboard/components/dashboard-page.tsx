@@ -236,6 +236,10 @@ export function DashboardPage() {
         <TaskDetailOverlay
           task={selectedTask}
           onClose={() => setSelectedTask(null)}
+          isAdmin={(() => {
+            const cls = classes.find((c) => c.id === selectedTask.classId);
+            return cls?.myRole === "OWNER" || cls?.myRole === "ADMIN";
+          })()}
         />
       )}
 
