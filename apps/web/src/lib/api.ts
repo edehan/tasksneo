@@ -166,6 +166,23 @@ export interface NotificationPref {
   isEnabled: boolean;
 }
 
+export interface NotificationItem {
+  id: string;
+  type: "TASK_PUBLISHED" | "TASK_DUE_REMINDER";
+  taskId: string | null;
+  classId: string | null;
+  taskTitle: string;
+  className: string;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface NotificationListResponse {
+  items: NotificationItem[];
+  nextCursor: string | null;
+  unreadCount: number;
+}
+
 // ─── Admin Types (kept for admin panel) ──────────────────────────────────────
 
 export interface AdminSchool {
@@ -318,6 +335,53 @@ export async function upsertNotificationPref(
   return apiRequest<NotificationPref>(
     "/users/me/notification-prefs",
     { method: "PUT", body: JSON.stringify(input) },
+    token,
+  );
+}
+
+export async function listMyNotifications(
+  token: string,
+  params?: { limit?: number; cursor?: string; unreadOnly?: boolean },
+): Promise<NotificationListResponse> {
+  const query = new URLSearchParams();
+  if (params?.limit) query.set("limit", String(params.limit));
+  if (params?.cursor) query.set("cursor", params.cursor);
+  if (params?.unreadOnly) query.set("unreadOnly", "true");
+  const qs = query.toString();
+  return apiRequest<NotificationListResponse>(
+    `/users/me/notifications${qs ? `?${qs}` : ""}`,
+    {},
+    token,
+  );
+}
+
+export async function markNotificationRead(
+  token: string,
+  id: string,
+): Promise<void> {
+  return apiRequest<void>(
+    `/users/me/notifications/${id}/read`,
+    { method: "PATCH" },
+    token,
+  );
+}
+
+export async function markAllNotificationsRead(
+  token: string,
+): Promise<void> {
+  return apiRequest<void>(
+    "/users/me/notifications/read-all",
+    { method: "POST" },
+    token,
+  );
+}
+
+export async function getUnreadNotificationCount(
+  token: string,
+): Promise<{ unreadCount: number }> {
+  return apiRequest<{ unreadCount: number }>(
+    "/users/me/notifications/unread-count",
+    {},
     token,
   );
 }

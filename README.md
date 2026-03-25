@@ -23,6 +23,7 @@
 - [] MCP和skills
 - [] 完善通知系统 https://github.com/novuhq/novu
 - [] s3储存和上传逻辑
+- [] 电子邮件验证，密码重置与验证码
 - [] cdci
 - [] 生产环境部署上线
 

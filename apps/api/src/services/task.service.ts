@@ -326,6 +326,7 @@ export async function createClassTask(classId: string, userId: string, input: Cr
       class: {
         select: {
           name: true,
+          color: true,
         },
       },
     },
@@ -338,7 +339,9 @@ export async function createClassTask(classId: string, userId: string, input: Cr
 
   await enqueueTaskPublishedNotifications({
     taskId: task.id,
+    classId,
     className: task.class?.name ?? '',
+    classColor: task.class?.color ?? '#7B6CB0',
     taskTitle: task.title,
     dueAt: task.dueAt,
     memberUserIds: memberIds.map((item) => item.userId),
@@ -507,6 +510,7 @@ export async function publishTask(taskId: string, userId: string, input: UpdateT
       class: {
         select: {
           name: true,
+          color: true,
         },
       },
     },
@@ -519,7 +523,9 @@ export async function publishTask(taskId: string, userId: string, input: UpdateT
 
   await enqueueTaskPublishedNotifications({
     taskId: updatedTask.id,
+    classId: task.classId,
     className: updatedTask.class?.name ?? '',
+    classColor: updatedTask.class?.color ?? '#7B6CB0',
     taskTitle: updatedTask.title,
     dueAt: updatedTask.dueAt,
     memberUserIds: memberIds.map((item) => item.userId),

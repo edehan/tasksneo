@@ -1,0 +1,215 @@
+"use client";
+
+import { Bell, Clock, Megaphone } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+
+import { useAuth } from "@/components/auth-provider";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import type { NotificationItem } from "@/lib/api";
+import {
+  getUnreadNotificationCount,
+  listMyNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from "@/lib/api";
+
+const POLL_INTERVAL = 60_000;
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const minutes = Math.floor(diff / 60_000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return `${Math.floor(days / 30)}mo ago`;
+}
+
+export function NotificationBell() {
+  const { token } = useAuth();
+  const router = useRouter();
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [items, setItems] = useState<NotificationItem[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchCount = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await getUnreadNotificationCount(token);
+      setUnreadCount(res.unreadCount);
+    } catch {
+      // Silently fail — badge is non-critical
+    }
+  }, [token]);
+
+  // Poll unread count
+  useEffect(() => {
+    void fetchCount();
+    intervalRef.current = setInterval(() => void fetchCount(), POLL_INTERVAL);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [fetchCount]);
+
+  // Fetch items when popover opens
+  useEffect(() => {
+    if (!open || !token) return;
+    setLoading(true);
+    listMyNotifications(token, { limit: 10 })
+      .then((res) => {
+        setItems(res.items);
+        setUnreadCount(res.unreadCount);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [open, token]);
+
+  async function handleMarkAllRead() {
+    if (!token) return;
+    try {
+      await markAllNotificationsRead(token);
+      setItems((prev) =>
+        prev.map((item) => ({
+          ...item,
+          readAt: item.readAt ?? new Date().toISOString(),
+        })),
+      );
+      setUnreadCount(0);
+    } catch {
+      // Silently fail
+    }
+  }
+
+  async function handleClickItem(item: NotificationItem) {
+    if (!token) return;
+
+    if (!item.readAt) {
+      try {
+        await markNotificationRead(token, item.id);
+        setItems((prev) =>
+          prev.map((n) =>
+            n.id === item.id
+              ? { ...n, readAt: new Date().toISOString() }
+              : n,
+          ),
+        );
+        setUnreadCount((c) => Math.max(0, c - 1));
+      } catch {
+        // Continue navigation even if mark-read fails
+      }
+    }
+
+    setOpen(false);
+    router.push("/dashboard");
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative h-8 w-8">
+          <Bell className="h-4 w-4" />
+          {unreadCount > 0 && (
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-white">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-0">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <h3 className="text-sm font-semibold">Notifications</h3>
+          {unreadCount > 0 && (
+            <button
+              type="button"
+              onClick={handleMarkAllRead}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Mark all as read
+            </button>
+          )}
+        </div>
+
+        {/* Items */}
+        <ScrollArea className="max-h-[360px]">
+          {loading ? (
+            <div className="space-y-1 p-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-14 animate-pulse rounded-md bg-muted" />
+              ))}
+            </div>
+          ) : items.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+              <Bell className="mb-2 h-5 w-5 text-text-muted-soft" />
+              <p className="text-sm">No notifications yet</p>
+            </div>
+          ) : (
+            <div className="p-1">
+              {items.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => void handleClickItem(item)}
+                  className="flex w-full items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-muted/50"
+                >
+                  {/* Icon */}
+                  <div className="mt-0.5 shrink-0">
+                    {item.type === "TASK_PUBLISHED" ? (
+                      <Megaphone className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </div>
+
+                  {/* Content */}
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className={`truncate text-sm ${!item.readAt ? "font-medium text-foreground" : "text-muted-foreground"}`}
+                    >
+                      {item.taskTitle}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {item.className} &middot; {timeAgo(item.createdAt)}
+                    </p>
+                  </div>
+
+                  {/* Unread dot */}
+                  {!item.readAt && (
+                    <div className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+
+        {/* Footer */}
+        {items.length > 0 && (
+          <div className="border-t px-4 py-2.5 text-center">
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                router.push("/dashboard");
+              }}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              View all notifications
+            </button>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}

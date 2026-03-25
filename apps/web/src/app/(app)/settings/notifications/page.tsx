@@ -22,10 +22,15 @@ export default function NotificationsPage() {
   const [emailEnabled, setEmailEnabled] = useState(false);
   const [emailAddress, setEmailAddress] = useState("");
 
+  // Webhook notification state
+  const [webhookEnabled, setWebhookEnabled] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState("");
+
   const loadPrefs = useCallback(async () => {
     if (!token) return;
     try {
       const prefs = await getNotificationPrefs(token);
+
       const emailPref = prefs.find(
         (p: NotificationPref) => p.channel === "EMAIL",
       );
@@ -33,8 +38,15 @@ export default function NotificationsPage() {
         setEmailEnabled(emailPref.isEnabled);
         setEmailAddress(emailPref.address);
       } else {
-        // Default to user email
         setEmailAddress(user?.email ?? "");
+      }
+
+      const webhookPref = prefs.find(
+        (p: NotificationPref) => p.channel === "WEBHOOK",
+      );
+      if (webhookPref) {
+        setWebhookEnabled(webhookPref.isEnabled);
+        setWebhookUrl(webhookPref.address);
       }
     } catch {
       toast.error("Failed to load notification preferences");
@@ -53,13 +65,33 @@ export default function NotificationsPage() {
       toast.error("Please enter an email address");
       return;
     }
+    if (webhookEnabled && !webhookUrl.trim()) {
+      toast.error("Please enter a webhook URL");
+      return;
+    }
+
     setSaving(true);
     try {
-      await upsertNotificationPref(token, {
-        channel: "EMAIL",
-        address: emailAddress.trim(),
-        isEnabled: emailEnabled,
-      });
+      const promises: Promise<unknown>[] = [
+        upsertNotificationPref(token, {
+          channel: "EMAIL",
+          address: emailAddress.trim() || (user?.email ?? ""),
+          isEnabled: emailEnabled,
+        }),
+      ];
+
+      // Only save webhook pref if user has interacted with it
+      if (webhookEnabled || webhookUrl.trim()) {
+        promises.push(
+          upsertNotificationPref(token, {
+            channel: "WEBHOOK",
+            address: webhookUrl.trim() || "https://",
+            isEnabled: webhookEnabled,
+          }),
+        );
+      }
+
+      await Promise.all(promises);
       toast.success("Notification preferences saved");
     } catch (err) {
       const message =
@@ -117,6 +149,44 @@ export default function NotificationsPage() {
             />
             <p className="text-xs text-muted-foreground">
               Defaults to your account email if left unchanged.
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* Webhook Notifications */}
+      <section className="space-y-5">
+        <h2 className="text-heading-md">Webhook Notifications</h2>
+        <p className="text-sm text-muted-foreground">
+          Send notification data as JSON to an external URL. Useful for bots,
+          automation tools, or custom integrations.
+        </p>
+        <div className="flex items-center justify-between rounded-lg border border-border p-4">
+          <div>
+            <p className="text-sm font-medium">Enable webhook notifications</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              POST a JSON payload for each notification event
+            </p>
+          </div>
+          <Switch
+            checked={webhookEnabled}
+            onCheckedChange={setWebhookEnabled}
+            disabled={saving}
+          />
+        </div>
+        {webhookEnabled && (
+          <div className="space-y-2">
+            <Label htmlFor="webhook-url">Webhook URL</Label>
+            <Input
+              id="webhook-url"
+              type="url"
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+              placeholder="https://example.com/webhook"
+              disabled={saving}
+            />
+            <p className="text-xs text-muted-foreground">
+              We will POST a JSON body with task details to this URL.
             </p>
           </div>
         )}

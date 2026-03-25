@@ -7,6 +7,7 @@ import { useAuth } from "@/components/auth-provider";
 import { CreateClassDialog } from "@/components/create-class-dialog";
 import { Button } from "@/components/ui/button";
 import { FilterBar } from "@/features/dashboard/components/filter-bar";
+import { InboxCard } from "@/features/dashboard/components/inbox-card";
 import { StatCards } from "@/features/dashboard/components/stat-cards";
 import { JoinClassDialog } from "@/features/classes/components/join-class-dialog";
 import { TaskGanttView } from "@/features/tasks/components/task-gantt-view";
@@ -188,6 +189,16 @@ export function DashboardPage() {
           inProgress={stats.inProgress}
           overdue={stats.overdue}
           notStarted={stats.notStarted}
+        />
+      </div>
+
+      {/* Inbox */}
+      <div className="mb-8">
+        <InboxCard
+          onTaskClick={(taskId) => {
+            const task = tasks.find((t) => t.id === taskId);
+            if (task) setSelectedTask(task);
+          }}
         />
       </div>
 

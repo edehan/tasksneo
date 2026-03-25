@@ -265,6 +265,7 @@ model NotificationJob {
   status      NotifStatus  @default(PENDING)
   scheduledAt DateTime     @map("scheduled_at") @db.Timestamptz
   sentAt      DateTime?    @map("sent_at") @db.Timestamptz
+  readAt      DateTime?    @map("read_at") @db.Timestamptz
   error       String?
   createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz
 
@@ -273,6 +274,7 @@ model NotificationJob {
   user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
   task   Task?   @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
+  @@index([userId, status, createdAt(sort: Desc)], map: "idx_notif_user_status_created")
   @@map("notification_jobs")
 }
 

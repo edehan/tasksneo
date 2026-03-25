@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronRight } from "lucide-react";
+import { NotificationBell } from "@/components/notification-bell";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 interface AppHeaderProps {
@@ -28,9 +29,10 @@ export function AppHeader({ breadcrumbs, children }: AppHeaderProps) {
           ))}
         </nav>
       )}
-      {children && (
-        <div className="ml-auto flex items-center gap-2">{children}</div>
-      )}
+      <div className="ml-auto flex items-center gap-2">
+        <NotificationBell />
+        {children}
+      </div>
     </header>
   );
 }

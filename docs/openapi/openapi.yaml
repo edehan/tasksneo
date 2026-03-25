@@ -187,6 +187,36 @@ components:
         isEnabled:
           type: boolean
 
+    NotificationItem:
+      type: object
+      required: [id, type, taskTitle, className, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [TASK_PUBLISHED, TASK_DUE_REMINDER]
+        taskId:
+          type: string
+          format: uuid
+          nullable: true
+        classId:
+          type: string
+          format: uuid
+          nullable: true
+        taskTitle:
+          type: string
+        className:
+          type: string
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
     UpsertNotificationPrefRequest:
       type: object
       required: [channel, address]
@@ -948,6 +978,111 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/NotificationPref'
+
+  /users/me/notifications:
+    get:
+      tags: [Users]
+      summary: 获取当前用户的通知收件箱
+      description: 分页返回通知历史，按创建时间倒序排列。仅返回已发送（SENT）的通知。
+      security:
+        - userAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+        - name: cursor
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: 上一页最后一条通知的 ID
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NotificationItem'
+                  nextCursor:
+                    type: string
+                    nullable: true
+                  unreadCount:
+                    type: integer
+
+  /users/me/notifications/unread-count:
+    get:
+      tags: [Users]
+      summary: 获取未读通知数量
+      description: 轻量级接口，仅返回未读数量，用于通知铃铛徽章。
+      security:
+        - userAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  unreadCount:
+                    type: integer
+
+  /users/me/notifications/{id}/read:
+    patch:
+      tags: [Users]
+      summary: 标记单条通知为已读
+      security:
+        - userAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+        '404':
+          description: 通知不存在或不属于当前用户
+
+  /users/me/notifications/read-all:
+    post:
+      tags: [Users]
+      summary: 标记所有通知为已读
+      security:
+        - userAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updated:
+                    type: integer
 
   /users/me/delete:
     post:
