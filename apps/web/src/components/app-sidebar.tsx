@@ -4,6 +4,7 @@ import {
   BookOpen,
   Home,
   LogOut,
+  Monitor,
   Moon,
   Plus,
   Settings,
@@ -21,7 +22,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuPortal,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -111,6 +116,43 @@ export function AppSidebar() {
                     <Settings className="mr-2 h-4 w-4" />
                     Settings
                   </DropdownMenuItem>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      {theme === "dark" ? (
+                        <Moon className="mr-2 h-4 w-4" />
+                      ) : theme === "light" ? (
+                        <Sun className="mr-2 h-4 w-4" />
+                      ) : (
+                        <Monitor className="mr-2 h-4 w-4" />
+                      )}
+                      Theme
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuItem onClick={() => setTheme("light")}>
+                          <Sun className="mr-2 h-4 w-4" />
+                          Light
+                          {theme === "light" && (
+                            <span className="ml-auto text-xs text-muted-foreground">&#10003;</span>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setTheme("dark")}>
+                          <Moon className="mr-2 h-4 w-4" />
+                          Dark
+                          {theme === "dark" && (
+                            <span className="ml-auto text-xs text-muted-foreground">&#10003;</span>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setTheme("system")}>
+                          <Monitor className="mr-2 h-4 w-4" />
+                          System
+                          {theme === "system" && (
+                            <span className="ml-auto text-xs text-muted-foreground">&#10003;</span>
+                          )}
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                  </DropdownMenuSub>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout}>
                     <LogOut className="mr-2 h-4 w-4" />
@@ -118,10 +160,10 @@ export function AppSidebar() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              {/* Inline dark mode toggle */}
+              {/* Quick theme toggle: light ↔ dark */}
               <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
                 title={theme === "dark" ? "Light mode" : "Dark mode"}
               >
                 {theme === "dark" ? (

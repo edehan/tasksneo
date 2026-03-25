@@ -183,7 +183,11 @@ export function TaskDetailOverlay({
     <div
       ref={overlayRef}
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}
+      style={{
+        backgroundColor: "rgba(0,0,0,0.4)",
+        backdropFilter: "blur(4px)",
+        animation: "custom-overlay-fade-in 0.2s ease",
+      }}
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
@@ -192,7 +196,11 @@ export function TaskDetailOverlay({
       <div
         ref={modalRef}
         className="flex w-full max-w-[960px] flex-col overflow-hidden rounded-[18px] border border-border bg-card shadow-lg"
-        style={{ height: "85vh", maxHeight: "720px" }}
+        style={{
+          height: "85vh",
+          maxHeight: "720px",
+          animation: "custom-modal-enter 0.2s ease",
+        }}
       >
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <div className="relative shrink-0 border-b border-border p-6">

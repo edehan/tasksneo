@@ -89,7 +89,7 @@ export function DateTimePicker({
           type="button"
           disabled={disabled}
           className={cn(
-            "flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors",
+            "flex h-9 w-full items-center justify-between rounded-lg border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors",
             "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
             "disabled:cursor-not-allowed disabled:opacity-50",
             !value && "text-muted-foreground",
@@ -126,7 +126,7 @@ export function DateTimePicker({
           <select
             value={hours}
             onChange={handleHourChange}
-            className="h-8 rounded-md border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           >
             {Array.from({ length: 24 }, (_, i) => (
               <option key={i} value={i}>
@@ -138,7 +138,7 @@ export function DateTimePicker({
           <select
             value={minutes}
             onChange={handleMinuteChange}
-            className="h-8 rounded-md border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           >
             {Array.from({ length: 60 }, (_, i) => (
               <option key={i} value={i}>
