@@ -8,7 +8,7 @@
 
 ### Bug类
 - [x] 班级管理功能缺失,创建班级时应该限定学校
-- [] 总视图显示逻辑的问题，view submission的统计功能
+- [x] 总视图显示逻辑的问题，view submission的统计功能
 - [] 主视图甘特图优化
 - [x] 夜间模式自适应
 - [x] 全局动画过度和圆角
@@ -16,7 +16,7 @@
 
 
 ### 功能类
-- [] (推迟)任务的前置任务关联功能缺失
+- [] (推迟)任务的前置任务关联功能
 - [] (推迟)docx等文件解析 https://awslabs.github.io/mcp/servers/document-loader-mcp-server
 - [] 文件下载器
 - [] 自动批改功能

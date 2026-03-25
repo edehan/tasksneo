@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
-import { isOverdue } from "@/features/tasks/lib/task-utils";
+import { isOverdue, sortTasksByDue } from "@/features/tasks/lib/task-utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -40,16 +41,11 @@ function diffDays(a: Date, b: Date): number {
   return (b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24);
 }
 
-function formatBarDate(iso: string): string {
+function formatShortDate(iso: string): string {
   const d = new Date(iso);
   const month = d.toLocaleString("en-US", { month: "short" });
   const day = d.getDate();
-  const hours = d.getHours();
-  const minutes = d.getMinutes();
-  const ampm = hours >= 12 ? "PM" : "AM";
-  const h = hours % 12 || 12;
-  const m = minutes.toString().padStart(2, "0");
-  return `${month} ${day}, ${h}:${m} ${ampm}`;
+  return `${month} ${day}`;
 }
 
 function formatMarkerDate(d: Date): string {
@@ -140,7 +136,10 @@ export function TaskGanttView({
   onTaskClick,
 }: TaskGanttViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
   const dayWidth = DAY_WIDTHS[ganttRange];
+
+  const sortedTasks = useMemo(() => sortTasksByDue(tasks), [tasks]);
 
   const { timelineStart, totalDays, markers } = useMemo(() => {
     const { start, end } = computeTimelineRange(tasks, ganttRange);
@@ -152,6 +151,45 @@ export function TaskGanttView({
   const todayOffset = diffDays(timelineStart, startOfDay(new Date()));
   const totalWidth = totalDays * dayWidth;
 
+  // Helper to access the Radix ScrollArea viewport element
+  const getViewport = useCallback((): HTMLElement | null => {
+    return (
+      scrollRef.current?.querySelector<HTMLElement>(
+        "[data-radix-scroll-area-viewport]",
+      ) ?? null
+    );
+  }, []);
+
+  // Feature 1: Wheel-to-horizontal-scroll
+  useEffect(() => {
+    const viewport = getViewport();
+    if (!viewport) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault();
+        viewport.scrollLeft += e.deltaY;
+      }
+    };
+
+    viewport.addEventListener("wheel", onWheel, { passive: false });
+    return () => viewport.removeEventListener("wheel", onWheel);
+  }, [getViewport]);
+
+  // Feature 3: Auto-scroll to today on mount / range change
+  useEffect(() => {
+    const viewport = getViewport();
+    if (!viewport) return;
+
+    const frame = requestAnimationFrame(() => {
+      const viewportWidth = viewport.clientWidth;
+      const todayPx = todayOffset * dayWidth;
+      viewport.scrollLeft = Math.max(0, todayPx - viewportWidth / 5);
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [ganttRange, dayWidth, todayOffset, getViewport]);
+
   if (tasks.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-muted-foreground">
@@ -162,44 +200,46 @@ export function TaskGanttView({
 
   return (
     <div className="flex overflow-hidden rounded-lg border">
-      {/* Left: pinned task column */}
-      <div
-        className="shrink-0 border-r bg-card"
-        style={{ width: LABEL_WIDTH }}
-      >
-        {/* Header spacer */}
+      {/* Left: pinned task column (hidden on mobile) */}
+      {!isMobile && (
         <div
-          className="border-b"
-          style={{ height: HEADER_HEIGHT }}
-        />
-        {/* Task rows */}
-        {tasks.map((task) => {
-          const submitted = isSubmitted(task);
-          return (
-            <div
-              key={task.id}
-              className="group flex cursor-pointer items-center gap-2 border-b px-3 transition-colors duration-150 hover:bg-surface-subtle"
-              style={{ height: ROW_HEIGHT }}
-              onClick={() => onTaskClick?.(task)}
-            >
-              <span
-                className="inline-block h-2 w-2 shrink-0 rounded-sm"
-                style={{ backgroundColor: task.classColor }}
-              />
-              <span
-                className={`truncate font-sans leading-none ${
-                  submitted
-                    ? "text-text-muted-soft line-through"
-                    : "text-foreground"
-                }`}
-                style={{ fontSize: 13 }}
+          className="shrink-0 border-r bg-card"
+          style={{ width: LABEL_WIDTH }}
+        >
+          {/* Header spacer */}
+          <div
+            className="border-b"
+            style={{ height: HEADER_HEIGHT }}
+          />
+          {/* Task rows */}
+          {sortedTasks.map((task) => {
+            const submitted = isSubmitted(task);
+            return (
+              <div
+                key={task.id}
+                className="group flex cursor-pointer items-center gap-2 border-b px-3 transition-colors duration-150 hover:bg-surface-subtle"
+                style={{ height: ROW_HEIGHT }}
+                onClick={() => onTaskClick?.(task)}
               >
-                {task.title}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+                <span
+                  className="inline-block h-2 w-2 shrink-0 rounded-sm"
+                  style={{ backgroundColor: task.classColor }}
+                />
+                <span
+                  className={`truncate font-sans leading-none ${
+                    submitted
+                      ? "text-text-muted-soft line-through"
+                      : "text-foreground"
+                  }`}
+                  style={{ fontSize: 13 }}
+                >
+                  {task.title}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Right: scrollable timeline */}
       <ScrollArea className="min-w-0 flex-1" ref={scrollRef}>
@@ -267,7 +307,7 @@ export function TaskGanttView({
             )}
 
             {/* Task rows with bars */}
-            {tasks.map((task) => {
+            {sortedTasks.map((task) => {
               const submitted = isSubmitted(task);
               const overdue = !submitted && isOverdue(task);
 
@@ -281,26 +321,24 @@ export function TaskGanttView({
               const startOffset = diffDays(timelineStart, barStartDate);
               const endOffset = diffDays(timelineStart, barEndDate);
 
-              const left = Math.max(0, startOffset) * dayWidth;
-              const right = Math.min(totalDays, endOffset) * dayWidth;
-              const width = Math.max(right - left, dayWidth * 0.5);
+              const barLeft = Math.max(0, startOffset) * dayWidth;
+              const barRight = Math.min(totalDays, endOffset) * dayWidth;
+              const barWidth = Math.max(barRight - barLeft, dayWidth * 0.5);
+              const barDays = endOffset - Math.max(0, startOffset);
 
-              // Bar color: submitted = muted gray, otherwise classColor with low opacity
-              const barBg = submitted ? "#c0b8ad28" : `${task.classColor}28`;
+              // Submission progress: submittedCount / (memberCount - 1), owner excluded
+              const eligible = Math.max(task.memberCount - 1, 1);
+              const progress = Math.min(task.submittedCount / eligible, 1);
+
+              // Bar colors: track = medium opacity, filled progress = deeper
+              const barBg = submitted ? "#c0b8ad30" : `${task.classColor}30`;
+              const fillBg = submitted ? "#c0b8ad60" : `${task.classColor}60`;
               const barBorder = overdue
                 ? `1px dashed ${task.classColor}`
                 : "none";
 
-              // Bar label color
+              // Bar label color (for mobile task title)
               const labelColor = submitted ? "#c0b8ad" : task.classColor;
-
-              // Build the bar label text
-              const barLabel =
-                task.startAt && task.dueAt
-                  ? `${formatBarDate(task.startAt)} — ${formatBarDate(task.dueAt)}`
-                  : task.dueAt
-                    ? `Due ${formatBarDate(task.dueAt)}`
-                    : "";
 
               return (
                 <div
@@ -309,11 +347,12 @@ export function TaskGanttView({
                   style={{ height: ROW_HEIGHT }}
                   onClick={() => onTaskClick?.(task)}
                 >
+                  {/* Bar (track) */}
                   <div
                     className="absolute top-1/2 rounded-sm transition-transform duration-150 group-hover:scale-y-[1.15]"
                     style={{
-                      left,
-                      width,
+                      left: barLeft,
+                      width: barWidth,
                       height: ROW_HEIGHT - 16,
                       transform: "translateY(-50%)",
                       backgroundColor: barBg,
@@ -322,20 +361,89 @@ export function TaskGanttView({
                       overflow: "hidden",
                     }}
                   >
-                    {barLabel && (
-                      <span
-                        className="pointer-events-none absolute inset-0 flex items-center truncate px-1.5 font-sans"
+                    {/* Progress fill */}
+                    {progress > 0 && (
+                      <div
+                        className="absolute inset-y-0 left-0"
                         style={{
-                          fontSize: 10,
-                          fontWeight: 600,
+                          width: `${progress * 100}%`,
+                          backgroundColor: fillBg,
+                          borderRadius: "inherit",
+                        }}
+                      />
+                    )}
+                    {/* Mobile: show task title inside bar */}
+                    {isMobile ? (
+                      <span
+                        className="pointer-events-none absolute inset-0 z-10 flex items-center truncate px-1.5 font-sans font-medium"
+                        style={{
+                          fontSize: 11,
                           color: labelColor,
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {barLabel}
+                        {task.title}
+                      </span>
+                    ) : (
+                      /* Desktop: submission count inside bar, right-aligned */
+                      <span
+                        className="pointer-events-none absolute inset-0 z-10 flex items-center justify-end truncate px-1.5 font-sans"
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 500,
+                          color: labelColor,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {task.submittedCount > 0
+                          ? `${task.submittedCount} submitted`
+                          : ""}
                       </span>
                     )}
                   </div>
+
+                  {/* Desktop: date labels outside the bar */}
+                  {!isMobile && (
+                    <>
+                      {/* Start date — left of bar, only for bars >= 2 days */}
+                      {task.startAt && barDays >= 2 && (
+                        <span
+                          className="pointer-events-none absolute flex items-center justify-end overflow-hidden font-sans text-muted-foreground"
+                          style={{
+                            top: 0,
+                            bottom: 0,
+                            left: 0,
+                            width: Math.max(0, barLeft - 4),
+                            fontSize: 10,
+                            fontWeight: 500,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {formatShortDate(task.startAt)}
+                        </span>
+                      )}
+                      {/* Due date — right of bar */}
+                      {task.dueAt && (
+                        <span
+                          className="pointer-events-none absolute flex items-center overflow-hidden font-sans text-muted-foreground"
+                          style={{
+                            top: 0,
+                            bottom: 0,
+                            left: barLeft + barWidth + 4,
+                            width: Math.max(
+                              0,
+                              totalWidth - (barLeft + barWidth + 4),
+                            ),
+                            fontSize: 10,
+                            fontWeight: 500,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {formatShortDate(task.dueAt)}
+                        </span>
+                      )}
+                    </>
+                  )}
                 </div>
               );
             })}

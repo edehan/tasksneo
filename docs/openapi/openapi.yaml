@@ -364,6 +364,12 @@ components:
           $ref: '#/components/schemas/TaskUserState'
           description: 当前用户对此任务的状态，可能为 null（未产生任何互动时）
           nullable: true
+        submittedCount:
+          type: integer
+          description: 该任务的已提交人数（所有成员可见）
+        memberCount:
+          type: integer
+          description: 该任务所属班级的成员总数（所有成员可见）
 
     TaskDetail:
       allOf:

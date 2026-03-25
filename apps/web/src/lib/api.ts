@@ -86,6 +86,8 @@ export interface TaskSummary {
   createdAt: string;
   updatedAt: string;
   userState: TaskUserState | null;
+  submittedCount: number;
+  memberCount: number;
 }
 
 export interface AttachmentMeta {

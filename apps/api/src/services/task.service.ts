@@ -149,7 +149,7 @@ async function getTaskWithUserState(taskId: string, userId: string) {
 export async function listClassTasks(classId: string, userId: string) {
   await getMembershipOrThrow(classId, userId);
 
-  const [tasks, states, submissions] = await Promise.all([
+  const [tasks, states, submissions, memberCount, submissionCounts] = await Promise.all([
     prisma.task.findMany({
       where: {
         classId,
@@ -191,14 +191,25 @@ export async function listClassTasks(classId: string, userId: string) {
         firstSubmittedAt: true,
       },
     }),
+    prisma.classMember.count({ where: { classId } }),
+    prisma.submission.groupBy({
+      by: ['taskId'],
+      _count: true,
+      where: {
+        task: { classId, deletedAt: null, isPublished: true },
+      },
+    }),
   ]);
 
   const stateMap = new Map(states.map((state) => [state.taskId, state]));
   const submissionMap = new Map(submissions.map((s) => [s.taskId, s.firstSubmittedAt]));
+  const subCountMap = new Map(submissionCounts.map((s) => [s.taskId, s._count]));
 
-  return tasks.map((task) =>
-    toTaskSummary(task, stateMap.get(task.id) ?? null, submissionMap.get(task.id) ?? null),
-  );
+  return tasks.map((task) => ({
+    ...toTaskSummary(task, stateMap.get(task.id) ?? null, submissionMap.get(task.id) ?? null),
+    submittedCount: subCountMap.get(task.id) ?? 0,
+    memberCount,
+  }));
 }
 
 export async function listMyTasks(userId: string) {
@@ -262,12 +273,34 @@ export async function listMyTasks(userId: string) {
     }),
   ]);
 
+  // Collect unique class IDs from tasks
+  const classIds = [...new Set(tasks.map((t) => t.classId).filter((id): id is string => id !== null))];
+
+  // Batch-fetch member counts per class and submission counts per task
+  const taskIds = tasks.map((t) => t.id);
+  const [memberCounts, submissionCounts] = await Promise.all([
+    prisma.classMember.groupBy({
+      by: ['classId'],
+      _count: true,
+      where: { classId: { in: classIds } },
+    }),
+    prisma.submission.groupBy({
+      by: ['taskId'],
+      _count: true,
+      where: { taskId: { in: taskIds } },
+    }),
+  ]);
+
   const stateMap = new Map(states.map((state) => [state.taskId, state]));
   const submissionMap = new Map(submissions.map((s) => [s.taskId, s.firstSubmittedAt]));
+  const memberCountMap = new Map(memberCounts.map((m) => [m.classId, m._count]));
+  const subCountMap = new Map(submissionCounts.map((s) => [s.taskId, s._count]));
 
   return tasks.map((task) => ({
     ...toTaskSummary(task, stateMap.get(task.id) ?? null, submissionMap.get(task.id) ?? null),
     classColor: task.class?.color ?? null,
+    submittedCount: subCountMap.get(task.id) ?? 0,
+    memberCount: task.classId ? (memberCountMap.get(task.classId) ?? 0) : 0,
   }));
 }
 
