@@ -1,6 +1,7 @@
 "use client";
 
-import { Loader2, Shield, ShieldCheck, Crown, LogOut } from "lucide-react";
+import { ArrowLeft, Loader2, Shield, ShieldCheck, Crown, LogOut } from "lucide-react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -224,6 +225,13 @@ export function MembersPage() {
 
   return (
     <div className="p-8 max-w-[960px] mx-auto">
+      <Link
+        href={`/classes/${classId}`}
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground mb-3"
+      >
+        <ArrowLeft size={14} strokeWidth={2} />
+        Back to {cls.name}
+      </Link>
       <div className="flex items-start justify-between gap-4 mb-8">
         <div>
           <h1 className="text-display mb-1">Members</h1>

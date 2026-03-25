@@ -1,6 +1,7 @@
 "use client";
 
-import { Copy, Loader2, RefreshCw } from "lucide-react";
+import { ArrowLeft, Copy, Loader2, RefreshCw } from "lucide-react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -181,10 +182,19 @@ export function ClassSettingsPage() {
 
   return (
     <div className="p-8 max-w-[640px] mx-auto">
-      <h1 className="text-display mb-1">Class Settings</h1>
-      <p className="text-muted-foreground mb-8">
-        Manage settings for {cls.name}.
-      </p>
+      <div className="mb-8">
+        <Link
+          href={`/classes/${classId}`}
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground mb-3"
+        >
+          <ArrowLeft size={14} strokeWidth={2} />
+          Back to {cls.name}
+        </Link>
+        <h1 className="text-display mb-1">Class Settings</h1>
+        <p className="text-muted-foreground">
+          Manage settings for {cls.name}.
+        </p>
+      </div>
 
       {/* Basic Info */}
       <section className="space-y-5 mb-8">

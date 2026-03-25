@@ -1,11 +1,12 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -16,7 +17,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ApiError, createClass } from "@/lib/api";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ApiError, createClass, listSchools, type School } from "@/lib/api";
 
 const PRESET_COLORS = [
   "#5B8C6A",
@@ -40,11 +48,39 @@ export function CreateClassDialog({
   trigger,
   onCreated,
 }: CreateClassDialogProps) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [color, setColor] = useState(PRESET_COLORS[0]);
   const [loading, setLoading] = useState(false);
+  const [restrictSchool, setRestrictSchool] = useState(false);
+  const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null);
+  const [schools, setSchools] = useState<School[]>([]);
+
+  // Load schools when school restriction is toggled on
+  useEffect(() => {
+    if (!restrictSchool) return;
+    if (schools.length > 0) return;
+    listSchools()
+      .then(setSchools)
+      .catch(() => {
+        // Silently fail — user can still create without restriction
+      });
+  }, [restrictSchool, schools.length]);
+
+  // When restriction is toggled on, default to user's school
+  useEffect(() => {
+    if (restrictSchool && !selectedSchoolId && user?.schoolId) {
+      setSelectedSchoolId(user.schoolId);
+    }
+  }, [restrictSchool, selectedSchoolId, user?.schoolId]);
+
+  function resetForm() {
+    setName("");
+    setColor(PRESET_COLORS[0]);
+    setRestrictSchool(false);
+    setSelectedSchoolId(null);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -52,11 +88,14 @@ export function CreateClassDialog({
 
     setLoading(true);
     try {
-      const cls = await createClass(token, { name: name.trim(), color });
+      const cls = await createClass(token, {
+        name: name.trim(),
+        color,
+        schoolId: restrictSchool && selectedSchoolId ? selectedSchoolId : undefined,
+      });
       toast.success(`Created "${cls.name}"`);
       setOpen(false);
-      setName("");
-      setColor(PRESET_COLORS[0]);
+      resetForm();
       onCreated?.();
     } catch (err) {
       const message =
@@ -72,10 +111,7 @@ export function CreateClassDialog({
       open={open}
       onOpenChange={(v) => {
         setOpen(v);
-        if (!v) {
-          setName("");
-          setColor(PRESET_COLORS[0]);
-        }
+        if (!v) resetForm();
       }}
     >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
@@ -118,6 +154,40 @@ export function CreateClassDialog({
                   />
                 ))}
               </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="restrict-school"
+                  checked={restrictSchool}
+                  onCheckedChange={(v) => {
+                    setRestrictSchool(v === true);
+                    if (!v) setSelectedSchoolId(null);
+                  }}
+                  disabled={loading}
+                />
+                <Label htmlFor="restrict-school" className="text-sm font-normal">
+                  Restrict to a specific school
+                </Label>
+              </div>
+              {restrictSchool && (
+                <Select
+                  value={selectedSchoolId ?? ""}
+                  onValueChange={setSelectedSchoolId}
+                  disabled={loading}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a school" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {schools.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
           <DialogFooter>
