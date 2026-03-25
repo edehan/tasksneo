@@ -652,6 +652,7 @@ export async function listTaskSubmissions(taskId: string, userId: string) {
 
   const submissions = await prisma.submission.findMany({
     where: { taskId },
+    include: { attachments: true },
   });
 
   const submissionMap = new Map(submissions.map((submission) => [submission.userId, submission]));
@@ -668,6 +669,7 @@ export async function listTaskSubmissions(taskId: string, userId: string) {
       role: row.role,
       submitted: Boolean(submission),
       submission: submission ? toSubmission(submission) : null,
+      attachments: submission ? submission.attachments.map(toAttachmentMeta) : [],
     };
   });
 }

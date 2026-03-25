@@ -12,6 +12,8 @@ import {
   ClipboardCheck,
   BarChart3,
 } from "lucide-react";
+
+import { BatchDownloadDialog } from "./batch-download-dialog";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-provider";
@@ -56,6 +58,7 @@ export function SubmissionsListPage() {
   const [rows, setRows] = useState<SubmissionListRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
 
   // ─── Load data ──────────────────────────────────────────────────────────────
 
@@ -203,16 +206,26 @@ export function SubmissionsListPage() {
           </p>
         </div>
 
-        {/* Export button */}
-        <button
-          type="button"
-          onClick={handleExport}
-          disabled={exporting}
-          className="flex shrink-0 items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2 text-[13px] font-medium text-muted-foreground transition-colors duration-100 hover:bg-secondary hover:text-foreground disabled:opacity-50"
-        >
-          <FileSpreadsheet size={14} strokeWidth={2} />
-          {exporting ? "Exporting..." : "Export CSV"}
-        </button>
+        {/* Action buttons */}
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setDownloadDialogOpen(true)}
+            className="flex items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2 text-[13px] font-medium text-muted-foreground transition-colors duration-100 hover:bg-secondary hover:text-foreground"
+          >
+            <Download size={14} strokeWidth={2} />
+            Download
+          </button>
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exporting}
+            className="flex items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2 text-[13px] font-medium text-muted-foreground transition-colors duration-100 hover:bg-secondary hover:text-foreground disabled:opacity-50"
+          >
+            <FileSpreadsheet size={14} strokeWidth={2} />
+            {exporting ? "Exporting..." : "Export CSV"}
+          </button>
+        </div>
       </div>
 
       {/* ── Stats bar ───────────────────────────────────────────────────── */}
@@ -384,6 +397,16 @@ export function SubmissionsListPage() {
           </tbody>
         </table>
       </div>
+
+      {/* ── Batch download dialog ─────────────────────────────────────── */}
+      <BatchDownloadDialog
+        open={downloadDialogOpen}
+        onOpenChange={setDownloadDialogOpen}
+        rows={rows}
+        task={task}
+        cls={cls}
+        accentColor={accentColor}
+      />
     </div>
   );
 }

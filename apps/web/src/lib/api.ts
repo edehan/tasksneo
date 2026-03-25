@@ -156,6 +156,7 @@ export interface SubmissionListRow {
   role: "OWNER" | "ADMIN" | "MEMBER";
   submitted: boolean;
   submission: SubmissionSummary | null;
+  attachments: AttachmentMeta[];
 }
 
 export interface NotificationPref {
@@ -791,6 +792,19 @@ export async function downloadFile(
   }
   const blob = await res.blob();
   return URL.createObjectURL(blob);
+}
+
+export async function downloadFileBlob(
+  token: string,
+  fileKey: string,
+): Promise<Blob> {
+  const res = await fetch(`${getApiBaseUrl()}/files/${fileKey}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    throw new ApiError("Failed to download file", "DOWNLOAD_FAILED", res.status);
+  }
+  return res.blob();
 }
 
 export async function deleteAttachment(

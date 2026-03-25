@@ -529,6 +529,39 @@ components:
 
     # ── Submissions ──
 
+    SubmissionListRow:
+      type: object
+      description: 班级成员提交情况行（管理员视图）
+      required: [userId, email, role, submitted, attachments]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        nickname:
+          type: string
+          nullable: true
+        email:
+          type: string
+        schoolName:
+          type: string
+          nullable: true
+        studentId:
+          type: string
+          nullable: true
+        role:
+          type: string
+          enum: [OWNER, ADMIN, MEMBER]
+        submitted:
+          type: boolean
+        submission:
+          $ref: '#/components/schemas/SubmissionSummary'
+          nullable: true
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttachmentMeta'
+          description: 该提交的附件列表（未提交者为空数组）
+
     SubmissionSummary:
       type: object
       required: [id, taskId, userId, firstSubmittedAt]
@@ -1662,7 +1695,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SubmissionSummary'
+                  $ref: '#/components/schemas/SubmissionListRow'
         '403':
           description: 权限不足
           content:

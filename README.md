@@ -18,7 +18,7 @@
 ### 功能类
 - [] (推迟)任务的前置任务关联功能
 - [] (推迟)docx等文件解析 https://awslabs.github.io/mcp/servers/document-loader-mcp-server
-- [] 文件下载器
+- [x] 文件下载器
 - [] 自动批改功能
 - [] MCP和skills
 - [] 完善通知系统 https://github.com/novuhq/novu
