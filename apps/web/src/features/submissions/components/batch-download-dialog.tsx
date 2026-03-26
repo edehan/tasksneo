@@ -8,6 +8,7 @@ import {
   type DragEvent,
 } from "react";
 import { Download, GripVertical, Package } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-provider";
@@ -54,6 +55,7 @@ interface BatchDownloadDialogProps {
 
 const ZONE_ACTIVE = "active";
 const ZONE_POOL = "pool";
+type TranslateFn = ReturnType<typeof useTranslations>;
 
 function TagComposer({
   tags,
@@ -61,12 +63,14 @@ function TagComposer({
   onReorder,
   disabled,
   preview,
+  t,
 }: {
   tags: NameTag[];
   order: string[];
   onReorder: (newOrder: string[]) => void;
   disabled: boolean;
   preview: string;
+  t: TranslateFn;
 }) {
   const tagMap = useMemo(() => new Map(tags.map((t) => [t.id, t])), [tags]);
   const poolIds = useMemo(
@@ -129,7 +133,7 @@ function TagComposer({
         } ${isDragging ? "opacity-30" : ""} ${disabled ? "cursor-default opacity-60" : ""}`}
       >
         <GripVertical size={11} className="shrink-0 text-muted-foreground/60" />
-        {tag.label}
+        {t(`tagLabels.${tag.id}`)}
       </div>
     );
   }
@@ -171,7 +175,7 @@ function TagComposer({
       >
         {order.length === 0 && !showDropHint && (
           <span className="text-[11px] text-muted-foreground/60">
-            Drag tags here
+            {t("tagComposer.dragTagsHere")}
           </span>
         )}
         {order.map((id, idx) => (
@@ -210,14 +214,14 @@ function TagComposer({
           ? poolIds.map((id) => renderTag(id, ZONE_POOL))
           : (
             <span className="text-[11px] text-muted-foreground/50">
-              Drag here to remove
+              {t("tagComposer.dragHereToRemove")}
             </span>
           )}
       </div>
 
       {/* Preview */}
       <p className="text-[11px] text-muted-foreground">
-        Preview: <span className="font-mono">{preview}</span>
+        {t("tagComposer.preview")}: <span className="font-mono">{preview}</span>
       </p>
     </div>
   );
@@ -233,6 +237,7 @@ export function BatchDownloadDialog({
   cls,
   accentColor,
 }: BatchDownloadDialogProps) {
+  const t = useTranslations("batchDownloadDialog");
   const { token } = useAuth();
 
   // Filter to eligible rows: submitted with attachments or content
@@ -310,13 +315,13 @@ export function BatchDownloadDialog({
     ? buildNameFromTags(
         folderOrder,
         {
-          nickname: sampleRow.nickname ?? "user",
+          nickname: sampleRow.nickname ?? t("sampleUser"),
           studentId: sampleRow.studentId ?? "",
           email: sampleRow.email,
         },
         "_",
       )
-    : "nickname_studentId";
+    : t("folderPreviewFallback");
 
   const zipPreview =
     buildNameFromTags(
@@ -345,7 +350,7 @@ export function BatchDownloadDialog({
         buildNameFromTags(
           folderOrder,
           {
-            nickname: r.nickname ?? "user",
+            nickname: r.nickname ?? t("sampleUser"),
             studentId: r.studentId ?? "",
             email: r.email,
           },
@@ -400,7 +405,7 @@ export function BatchDownloadDialog({
       const errors = results.filter((r) => r.error);
       if (errors.length > 0) {
         toast.warning(
-          `${errors.length} file(s) failed to download and were skipped`,
+          t("toast.skippedFiles", { count: errors.length }),
         );
       }
 
@@ -422,9 +427,9 @@ export function BatchDownloadDialog({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      toast.success("Download complete");
+      toast.success(t("toast.downloadComplete"));
     } catch {
-      toast.error("Failed to create download");
+      toast.error(t("toast.failedCreateDownload"));
     } finally {
       setDownloading(false);
       setPhase("idle");
@@ -439,6 +444,7 @@ export function BatchDownloadDialog({
     task.title,
     cls.name,
     dateVars,
+    t,
   ]);
 
   // ── Reset on open ─────────────────────────────────────────────────────
@@ -481,10 +487,10 @@ export function BatchDownloadDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="font-serif">
-            Download Submissions
+            {t("title")}
           </DialogTitle>
           <DialogDescription>
-            {eligibleRows.length} student(s) with downloadable content
+            {t("description", { count: eligibleRows.length })}
           </DialogDescription>
         </DialogHeader>
 
@@ -500,7 +506,7 @@ export function BatchDownloadDialog({
               htmlFor="select-all"
               className="text-[13px] font-medium text-foreground"
             >
-              Select all ({eligibleRows.length})
+              {t("selectAll", { count: eligibleRows.length })}
             </label>
             {selected.size > 0 && (
               <span className="ml-auto text-[12px] text-muted-foreground">
@@ -525,8 +531,7 @@ export function BatchDownloadDialog({
                   </span>
                   {row.attachments.length > 0 && (
                     <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground">
-                      {row.attachments.length} file
-                      {row.attachments.length > 1 ? "s" : ""}
+                      {t("filesCount", { count: row.attachments.length })}
                     </span>
                   )}
                 </label>
@@ -534,7 +539,7 @@ export function BatchDownloadDialog({
 
               {eligibleRows.length === 0 && (
                 <p className="py-6 text-center text-[13px] text-muted-foreground">
-                  No submissions with downloadable content
+                  {t("noSubmissions")}
                 </p>
               )}
             </div>
@@ -544,28 +549,30 @@ export function BatchDownloadDialog({
         {/* ── Naming rules ───────────────────────────────────────── */}
         <div className="space-y-3 border-t border-border pt-3">
           <p className="text-[12px] font-medium text-muted-foreground">
-            Naming Rules
+            {t("namingRules")}
           </p>
 
           <div className="space-y-1">
-            <p className="text-[12px] text-muted-foreground">Folder name</p>
+            <p className="text-[12px] text-muted-foreground">{t("folderName")}</p>
             <TagComposer
               tags={FOLDER_TAGS}
               order={folderOrder}
               onReorder={handleFolderReorder}
               disabled={downloading}
               preview={folderPreview}
+              t={t}
             />
           </div>
 
           <div className="space-y-1">
-            <p className="text-[12px] text-muted-foreground">Zip file name</p>
+            <p className="text-[12px] text-muted-foreground">{t("zipFileName")}</p>
             <TagComposer
               tags={ZIP_TAGS}
               order={zipOrder}
               onReorder={handleZipReorder}
               disabled={downloading}
               preview={zipPreview}
+              t={t}
             />
           </div>
         </div>
@@ -584,8 +591,11 @@ export function BatchDownloadDialog({
             </div>
             <p className="text-[12px] text-muted-foreground">
               {phase === "downloading"
-                ? `Downloading ${progress.completed} / ${progress.total} files...`
-                : "Generating zip..."}
+                ? t("progress.downloading", {
+                    completed: progress.completed,
+                    total: progress.total,
+                  })
+                : t("progress.generatingZip")}
             </p>
           </div>
         )}
@@ -605,8 +615,8 @@ export function BatchDownloadDialog({
               <Download size={14} strokeWidth={2} />
             )}
             {downloading
-              ? "Processing..."
-              : `Download Selected (${selected.size})`}
+              ? t("actions.processing")
+              : t("actions.downloadSelected", { count: selected.size })}
           </button>
         </DialogFooter>
       </DialogContent>

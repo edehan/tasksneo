@@ -3,6 +3,7 @@
 import { Plus, Settings, Users } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ function deriveDisplayStatus(task: TaskWithClass): "submitted" | "overdue" | "in
 }
 
 export function ClassPage() {
+  const t = useTranslations("classPage");
   const params = useParams();
   const router = useRouter();
   const { token, user } = useAuth();
@@ -134,7 +136,7 @@ export function ClassPage() {
   if (!cls) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-muted-foreground">Class not found.</p>
+        <p className="text-muted-foreground">{t("classNotFound")}</p>
       </div>
     );
   }
@@ -155,7 +157,7 @@ export function ClassPage() {
             type="button"
             onClick={() => router.push(`/classes/${classId}/members`)}
             className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
-            title="Members"
+            title={t("members")}
           >
             <Users size={16} strokeWidth={2} />
           </button>
@@ -165,7 +167,7 @@ export function ClassPage() {
                 type="button"
                 onClick={() => router.push(`/classes/${classId}/settings`)}
                 className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
-                title="Settings"
+                title={t("settings")}
               >
                 <Settings size={16} strokeWidth={2} />
               </button>
@@ -175,7 +177,7 @@ export function ClassPage() {
                 className="text-white hover:opacity-90"
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Post Task
+                {t("postTask")}
               </Button>
             </>
           )}
@@ -200,7 +202,7 @@ export function ClassPage() {
 
       {/* Section heading + range toggle */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-heading-md">{cls.name} Tasks</h2>
+        <h2 className="text-heading-md">{t("classTasks", { className: cls.name })}</h2>
         {viewMode === "gantt" && (
           <div className="flex items-center gap-1">
             {(["week", "month", "2month"] as const).map((r) => (
@@ -214,7 +216,11 @@ export function ClassPage() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {r === "week" ? "Week" : r === "month" ? "1 Month" : "2 Months"}
+                {r === "week"
+                  ? t("range.week")
+                  : r === "month"
+                    ? t("range.month")
+                    : t("range.twoMonths")}
               </button>
             ))}
           </div>
@@ -224,14 +230,14 @@ export function ClassPage() {
       {/* Task views */}
       {tasks.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <p className="text-muted-foreground mb-2">No tasks in this class yet.</p>
+          <p className="text-muted-foreground mb-2">{t("empty.noTasks")}</p>
           {isAdmin && (
             <Button
               variant="outline"
               onClick={() => setPostTaskOpen(true)}
             >
               <Plus className="mr-2 h-4 w-4" />
-              Post first task
+              {t("empty.postFirstTask")}
             </Button>
           )}
         </div>

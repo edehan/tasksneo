@@ -9,11 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useTranslations } from "next-intl";
 import type { NotificationPref } from "@/lib/api";
 import { ApiError, getNotificationPrefs, upsertNotificationPref } from "@/lib/api";
 
 export default function NotificationsPage() {
   const { token, user } = useAuth();
+  const t = useTranslations("settingsNotifications");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -45,11 +47,11 @@ export default function NotificationsPage() {
         setWebhookUrl(webhookPref.address);
       }
     } catch {
-      toast.error("Failed to load notification preferences");
+      toast.error(t("failedLoadPrefs"));
     } finally {
       setLoading(false);
     }
-  }, [token, user?.email]);
+  }, [token, t]);
 
   useEffect(() => {
     void loadPrefs();
@@ -58,7 +60,7 @@ export default function NotificationsPage() {
   async function handleSave() {
     if (!token) return;
     if (webhookEnabled && !webhookUrl.trim()) {
-      toast.error("Please enter a webhook URL");
+      toast.error(t("pleaseEnterWebhookUrl"));
       return;
     }
 
@@ -84,12 +86,12 @@ export default function NotificationsPage() {
       }
 
       await Promise.all(promises);
-      toast.success("Notification preferences saved");
+      toast.success(t("prefsSaved"));
     } catch (err) {
       const message =
         err instanceof ApiError
           ? err.message
-          : "Failed to save notification preferences";
+          : t("failedSavePrefs");
       toast.error(message);
     } finally {
       setSaving(false);
@@ -110,16 +112,13 @@ export default function NotificationsPage() {
     <div className="space-y-8">
       {/* Email Notifications */}
       <section className="space-y-5">
-        <h2 className="text-heading-md">Email Notifications</h2>
-        <p className="text-sm text-muted-foreground">
-          Receive email notifications when new tasks are posted or deadlines are
-          approaching.
-        </p>
+        <h2 className="text-heading-md">{t("emailNotifications")}</h2>
+        <p className="text-sm text-muted-foreground">{t("emailDescription")}</p>
         <div className="flex items-center justify-between rounded-lg border border-border p-4">
           <div>
-            <p className="text-sm font-medium">Enable email notifications</p>
+            <p className="text-sm font-medium">{t("enableEmail")}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Get notified about task updates via email
+              {t("emailUpdatesHint")}
             </p>
           </div>
           <Switch
@@ -130,24 +129,19 @@ export default function NotificationsPage() {
         </div>
         {emailEnabled && user?.email && (
           <p className="text-sm text-muted-foreground rounded-lg border border-border px-4 py-3">
-            Notifications will be sent to your account email ({user.email}).
+            {t("emailDestinationPrefix")} ({user.email}).
           </p>
         )}
       </section>
 
       {/* Webhook Notifications */}
       <section className="space-y-5">
-        <h2 className="text-heading-md">Webhook Notifications</h2>
-        <p className="text-sm text-muted-foreground">
-          Send notification data as JSON to an external URL. Useful for bots,
-          automation tools, or custom integrations.
-        </p>
+        <h2 className="text-heading-md">{t("webhookNotifications")}</h2>
+        <p className="text-sm text-muted-foreground">{t("webhookDescription")}</p>
         <div className="flex items-center justify-between rounded-lg border border-border p-4">
           <div>
-            <p className="text-sm font-medium">Enable webhook notifications</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              POST a JSON payload for each notification event
-            </p>
+            <p className="text-sm font-medium">{t("enableWebhook")}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{t("webhookHint")}</p>
           </div>
           <Switch
             checked={webhookEnabled}
@@ -157,7 +151,7 @@ export default function NotificationsPage() {
         </div>
         {webhookEnabled && (
           <div className="space-y-2">
-            <Label htmlFor="webhook-url">Webhook URL</Label>
+            <Label htmlFor="webhook-url">{t("webhookUrl")}</Label>
             <Input
               id="webhook-url"
               type="url"
@@ -166,9 +160,7 @@ export default function NotificationsPage() {
               placeholder="https://example.com/webhook"
               disabled={saving}
             />
-            <p className="text-xs text-muted-foreground">
-              We will POST a JSON body with task details to this URL.
-            </p>
+            <p className="text-xs text-muted-foreground">{t("webhookPostHint")}</p>
           </div>
         )}
       </section>
@@ -176,7 +168,7 @@ export default function NotificationsPage() {
       {/* Save */}
       <Button onClick={handleSave} disabled={saving}>
         {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Save Preferences
+        {t("savePreferences")}
       </Button>
     </div>
   );

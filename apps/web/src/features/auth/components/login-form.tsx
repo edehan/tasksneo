@@ -17,10 +17,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslations } from "next-intl";
 import { ApiError } from "@/lib/api";
 
 export function LoginForm() {
   const { login } = useAuth();
+  const t = useTranslations("authLogin");
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,7 +37,7 @@ export function LoginForm() {
       await login(email, password);
       router.replace("/dashboard");
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : "Login failed";
+      const message = err instanceof ApiError ? err.message : t("loginFailed");
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -45,13 +47,17 @@ export function LoginForm() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-serif">Welcome back</CardTitle>
-        <CardDescription>Sign in to your TaskFlow account</CardDescription>
+        <CardTitle className="text-2xl font-serif">
+          {t("welcomeBack")}
+        </CardTitle>
+        <CardDescription>
+          {t("signInToAccount")}
+        </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("email")}</Label>
             <Input
               id="email"
               type="email"
@@ -65,12 +71,12 @@ export function LoginForm() {
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("password")}</Label>
               <Link
                 href="/forgot-password"
                 className="text-sm text-muted-foreground underline-offset-4 hover:underline"
               >
-                Forgot password?
+                {t("forgotPassword")}
               </Link>
             </div>
             <Input
@@ -85,15 +91,15 @@ export function LoginForm() {
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
           <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting ? "Signing in..." : "Sign in"}
+            {submitting ? t("signingIn") : t("signIn")}
           </Button>
           <p className="text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
+            {t("noAccount")}{" "}
             <Link
               href="/register"
               className="text-primary underline-offset-4 hover:underline"
             >
-              Sign up
+              {t("signUp")}
             </Link>
           </p>
         </CardFooter>

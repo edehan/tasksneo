@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslations } from "next-intl";
 import { ApiError, resetPassword, verifyToken } from "@/lib/api";
 
 function ResetPasswordInner() {
@@ -24,6 +25,7 @@ function ResetPasswordInner() {
   const token = searchParams.get("token");
   const router = useRouter();
   const { setAuth } = useAuth();
+  const t = useTranslations("authResetPassword");
 
   const [verifying, setVerifying] = useState(true);
   const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
@@ -35,7 +37,7 @@ function ResetPasswordInner() {
 
   useEffect(() => {
     if (!token) {
-      setError("Missing reset token.");
+      setError(t("missingResetToken"));
       setVerifying(false);
       return;
     }
@@ -45,21 +47,21 @@ function ResetPasswordInner() {
         if (res.valid) {
           setVerifiedEmail(res.email);
         } else {
-          setError("This link is invalid or has expired.");
+          setError(t("invalidOrExpiredLink"));
         }
       })
       .catch(() => {
-        setError("This link is invalid or has expired.");
+        setError(t("invalidOrExpiredLink"));
       })
       .finally(() => setVerifying(false));
-  }, [token]);
+  }, [token, t]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!token || !password) return;
 
     if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
+      toast.error(t("passwordsDoNotMatch"));
       return;
     }
 
@@ -70,7 +72,9 @@ function ResetPasswordInner() {
       router.replace("/dashboard");
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Password reset failed";
+        err instanceof ApiError
+          ? err.message
+          : t("passwordResetFailed");
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -91,12 +95,16 @@ function ResetPasswordInner() {
     return (
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-serif">Link expired</CardTitle>
+          <CardTitle className="text-2xl font-serif">
+            {t("linkExpired")}
+          </CardTitle>
           <CardDescription>{error}</CardDescription>
         </CardHeader>
         <CardFooter className="justify-center">
           <Button asChild variant="outline">
-            <Link href="/forgot-password">Request a new link</Link>
+            <Link href="/forgot-password">
+              {t("requestNewLink")}
+            </Link>
           </Button>
         </CardFooter>
       </Card>
@@ -106,19 +114,22 @@ function ResetPasswordInner() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-serif">Set a new password</CardTitle>
+        <CardTitle className="text-2xl font-serif">
+          {t("setNewPassword")}
+        </CardTitle>
         <CardDescription>
-          Enter a new password for <strong>{verifiedEmail}</strong>
+          {t("enterNewPasswordFor")}{" "}
+          <strong>{verifiedEmail}</strong>
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="new-password">New password</Label>
+            <Label htmlFor="new-password">{t("newPassword")}</Label>
             <Input
               id="new-password"
               type="password"
-              placeholder="At least 8 characters"
+              placeholder={t("atLeast8Characters")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -128,11 +139,13 @@ function ResetPasswordInner() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirm-new-password">Confirm new password</Label>
+            <Label htmlFor="confirm-new-password">
+              {t("confirmNewPassword")}
+            </Label>
             <Input
               id="confirm-new-password"
               type="password"
-              placeholder="Repeat your password"
+              placeholder={t("repeatPassword")}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
@@ -143,7 +156,7 @@ function ResetPasswordInner() {
         </CardContent>
         <CardFooter>
           <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting ? "Resetting..." : "Reset password"}
+            {submitting ? t("resetting") : t("resetPassword")}
           </Button>
         </CardFooter>
       </form>

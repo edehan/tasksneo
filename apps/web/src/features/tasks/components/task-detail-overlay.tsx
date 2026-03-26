@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Calendar, X } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import type { TaskDetail } from "@/lib/api";
 import { deleteTask, getTask, markTaskViewed } from "@/lib/api";
 import { useAuth } from "@/components/auth-provider";
@@ -22,6 +23,7 @@ interface TaskDetailOverlayProps {
 // ─── Status derivation ──────────────────────────────────────────────────────
 
 type OverlayStatus = "submitted" | "overdue" | "in-progress" | "not-started";
+type TranslateFn = ReturnType<typeof useTranslations>;
 
 function deriveStatus(task: TaskWithClass): OverlayStatus {
   if (task.userState?.submittedAt) return "submitted";
@@ -36,40 +38,26 @@ function deriveStatus(task: TaskWithClass): OverlayStatus {
 function getStatusBadge(
   status: OverlayStatus,
   classColor: string,
+  t: TranslateFn,
 ): { label: string; bg: string; text: string } {
   switch (status) {
     case "submitted":
-      return { label: "Submitted", bg: "#5B8C6A18", text: "#5B8C6A" };
+      return { label: t("status.submitted"), bg: "#5B8C6A18", text: "#5B8C6A" };
     case "overdue":
-      return { label: "Overdue", bg: "#c45c5c18", text: "#c45c5c" };
+      return { label: t("status.overdue"), bg: "#c45c5c18", text: "#c45c5c" };
     case "in-progress":
       return {
-        label: "In Progress",
+        label: t("status.inProgress"),
         bg: classColor + "18",
         text: classColor,
       };
     case "not-started":
       return {
-        label: "Not Started",
+        label: t("status.notStarted"),
         bg: "var(--muted)",
         text: "var(--muted-foreground)",
       };
   }
-}
-
-// ─── Date formatting ─────────────────────────────────────────────────────────
-
-const shortDateFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-  hour12: true,
-});
-
-function formatDate(iso: string | null): string {
-  if (!iso) return "\u2014";
-  return shortDateFormatter.format(new Date(iso));
 }
 
 // ─── Footer status text ─────────────────────────────────────────────────────
@@ -77,11 +65,13 @@ function formatDate(iso: string | null): string {
 function getFooterText(
   status: OverlayStatus,
   dueAt: string | null,
+  t: TranslateFn,
+  formatDate: (iso: string | null) => string,
 ): string {
-  if (status === "submitted") return "You have already submitted";
-  if (status === "overdue") return "This assignment is past due";
-  if (dueAt) return `Due ${formatDate(dueAt)}`;
-  return "No due date";
+  if (status === "submitted") return t("footer.submitted");
+  if (status === "overdue") return t("footer.overdue");
+  if (dueAt) return t("footer.dueAt", { date: formatDate(dueAt) });
+  return t("footer.noDueDate");
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -92,6 +82,8 @@ export function TaskDetailOverlay({
   onSubmit,
   isAdmin = false,
 }: TaskDetailOverlayProps) {
+  const t = useTranslations("taskDetailOverlay");
+  const locale = useLocale();
   const { token } = useAuth();
   const router = useRouter();
   const [taskDetail, setTaskDetail] = useState<TaskDetail | null>(null);
@@ -100,8 +92,24 @@ export function TaskDetailOverlay({
   const overlayRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
+  const dateFormatter = new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  const formatDate = useCallback(
+    (iso: string | null): string => {
+      if (!iso) return "\u2014";
+      return dateFormatter.format(new Date(iso));
+    },
+    [dateFormatter],
+  );
+
   const status = deriveStatus(task);
-  const badge = getStatusBadge(status, task.classColor);
+  const badge = getStatusBadge(status, task.classColor, t);
   const isSubmitted = status === "submitted";
 
   // ─── Load full task detail ──────────────────────────────────────────────────
@@ -233,11 +241,11 @@ export function TaskDetailOverlay({
           <div className="mt-2 flex items-center gap-4 text-[12.5px] text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <Calendar size={12.5} strokeWidth={1.8} />
-              Start: {formatDate(task.startAt)}
+              {t("date.start")}: {formatDate(task.startAt)}
             </span>
             <span className="flex items-center gap-1.5">
               <Calendar size={12.5} strokeWidth={1.8} />
-              Due: {formatDate(task.dueAt)}
+              {t("date.due")}: {formatDate(task.dueAt)}
             </span>
           </div>
 
@@ -246,7 +254,7 @@ export function TaskDetailOverlay({
             type="button"
             onClick={onClose}
             className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground transition-colors duration-100 hover:bg-accent hover:text-foreground"
-            aria-label="Close"
+            aria-label={t("close")}
           >
             <X size={16} strokeWidth={2} />
           </button>
@@ -259,7 +267,7 @@ export function TaskDetailOverlay({
             {loading ? (
               <div className="flex h-32 items-center justify-center">
                 <span className="text-sm text-muted-foreground">
-                  Loading...
+                  {t("loading")}
                 </span>
               </div>
             ) : bodyContent ? (
@@ -270,7 +278,7 @@ export function TaskDetailOverlay({
               />
             ) : (
               <p className="text-sm italic text-text-muted-soft">
-                No description provided.
+                {t("noDescription")}
               </p>
             )}
           </div>
@@ -296,7 +304,7 @@ export function TaskDetailOverlay({
                 : "text-muted-foreground"
             }`}
           >
-            {getFooterText(status, task.dueAt)}
+            {getFooterText(status, task.dueAt, t, formatDate)}
           </span>
 
           {/* Right: action buttons */}
@@ -311,7 +319,7 @@ export function TaskDetailOverlay({
                   }}
                   className="rounded-[10px] border border-border bg-transparent px-4 py-2 text-[13px] font-medium text-muted-foreground transition-colors duration-100 hover:bg-secondary hover:text-foreground"
                 >
-                  Edit Task
+                  {t("actions.editTask")}
                 </button>
                 {taskDetail?.stats?.submittedCount === 0 && (
                   <button
@@ -319,7 +327,7 @@ export function TaskDetailOverlay({
                     disabled={deleting}
                     onClick={async () => {
                       if (!token) return;
-                      if (!confirm("Are you sure you want to delete this task? This action cannot be undone.")) return;
+                      if (!confirm(t("confirmDelete"))) return;
                       setDeleting(true);
                       try {
                         await deleteTask(token, task.id);
@@ -330,7 +338,7 @@ export function TaskDetailOverlay({
                     }}
                     className="rounded-[10px] border border-border bg-transparent px-4 py-2 text-[13px] font-medium text-destructive transition-colors duration-100 hover:bg-destructive/10 disabled:opacity-50"
                   >
-                    {deleting ? "Deleting..." : "Delete Task"}
+                    {deleting ? t("actions.deleting") : t("actions.deleteTask")}
                   </button>
                 )}
                 <button
@@ -342,7 +350,7 @@ export function TaskDetailOverlay({
                   className="flex items-center gap-2 rounded-[10px] px-4 py-2 text-[13px] font-medium text-white shadow-sm transition-colors duration-100"
                   style={{ backgroundColor: task.classColor }}
                 >
-                  View Submissions
+                  {t("actions.viewSubmissions")}
                   <ArrowRight size={14} strokeWidth={2} />
                 </button>
               </>
@@ -352,7 +360,7 @@ export function TaskDetailOverlay({
                 disabled
                 className="flex cursor-not-allowed items-center gap-2 rounded-[10px] bg-secondary px-5 py-2.5 text-[13px] font-medium text-muted-foreground"
               >
-                Submitted
+                {t("actions.submitted")}
               </button>
             ) : (
               <button
@@ -368,7 +376,7 @@ export function TaskDetailOverlay({
                 className="flex items-center gap-2 rounded-[10px] px-5 py-2.5 text-[13px] font-medium text-white shadow-sm transition-colors duration-100"
                 style={{ backgroundColor: task.classColor }}
               >
-                Submit Assignment
+                {t("actions.submitAssignment")}
                 <ArrowRight size={14} strokeWidth={2} />
               </button>
             )}

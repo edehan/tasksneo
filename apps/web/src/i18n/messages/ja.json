@@ -1,0 +1,583 @@
+{
+  "settingsLayout": {
+    "title": "設定",
+    "tabs": {
+      "profile": "プロフィール",
+      "notifications": "通知",
+      "account": "アカウント"
+    }
+  },
+  "settingsVerifyEmail": {
+    "missingTokenOrNotSignedIn": "確認トークンがないか、ログインしていません。",
+    "emailAddressUpdated": "メールアドレスを更新しました",
+    "verificationFailed": "確認に失敗しました",
+    "verifyingEmail": "メールを確認しています...",
+    "backToProfile": "プロフィールに戻る",
+    "emailUpdated": "メールを更新しました",
+    "emailChangedSuccessfully": "メールアドレスの変更が完了しました。"
+  },
+  "authForgotPassword": {
+    "somethingWentWrong": "問題が発生しました",
+    "resetEmailResent": "再設定メールを再送しました",
+    "failedResendEmail": "メールの再送に失敗しました",
+    "checkYourEmail": "メールをご確認ください",
+    "accountExistsPrefix": "次のアドレスに対応するアカウントが存在する場合",
+    "accountExistsSuffix": "、パスワード再設定リンクを送信しました。",
+    "didNotReceive": "メールが届きませんか？迷惑メールフォルダを確認するか再送してください。",
+    "sending": "送信中...",
+    "resendEmail": "メールを再送",
+    "backToSignIn": "サインインに戻る",
+    "resetYourPassword": "パスワードを再設定",
+    "description": "メールアドレスを入力すると、再設定リンクを送信します。",
+    "email": "メール",
+    "sendResetLink": "再設定リンクを送信",
+    "rememberPassword": "パスワードを思い出しましたか？",
+    "signIn": "サインイン"
+  },
+  "authResetPassword": {
+    "missingResetToken": "再設定トークンがありません。",
+    "invalidOrExpiredLink": "このリンクは無効か期限切れです。",
+    "passwordsDoNotMatch": "パスワードが一致しません",
+    "passwordResetFailed": "パスワード再設定に失敗しました",
+    "linkExpired": "リンクの有効期限が切れています",
+    "requestNewLink": "新しいリンクをリクエスト",
+    "setNewPassword": "新しいパスワードを設定",
+    "enterNewPasswordFor": "次のアカウントの新しいパスワードを入力",
+    "newPassword": "新しいパスワード",
+    "atLeast8Characters": "8文字以上",
+    "confirmNewPassword": "新しいパスワードを確認",
+    "repeatPassword": "パスワードを再入力",
+    "resetting": "再設定中...",
+    "resetPassword": "パスワードを再設定"
+  },
+  "authRegisterComplete": {
+    "missingVerificationToken": "確認トークンがありません。",
+    "invalidOrExpiredLink": "このリンクは無効か期限切れです。",
+    "passwordsDoNotMatch": "パスワードが一致しません",
+    "studentIdRequired": "学校を選択した場合は学籍番号が必要です",
+    "registrationFailed": "登録に失敗しました",
+    "linkExpired": "リンクの有効期限が切れています",
+    "backToRegistration": "登録に戻る",
+    "completeAccount": "アカウント設定を完了",
+    "setupProfileFor": "次のアカウントのプロフィールを設定",
+    "password": "パスワード",
+    "atLeast8Characters": "8文字以上",
+    "confirmPassword": "パスワードを確認",
+    "repeatPassword": "パスワードを再入力",
+    "nickname": "ニックネーム",
+    "optional": "（任意）",
+    "nicknamePlaceholder": "他のユーザーに表示される名前",
+    "school": "学校",
+    "selectSchool": "学校を選択",
+    "noSchool": "学校なし",
+    "studentId": "学籍番号",
+    "studentNumberPlaceholder": "あなたの学籍番号",
+    "creatingAccount": "アカウント作成中...",
+    "createAccount": "アカウントを作成"
+  },
+  "settingsNotifications": {
+    "failedLoadPrefs": "通知設定の読み込みに失敗しました",
+    "pleaseEnterWebhookUrl": "Webhook URLを入力してください",
+    "prefsSaved": "通知設定を保存しました",
+    "failedSavePrefs": "通知設定の保存に失敗しました",
+    "emailNotifications": "メール通知",
+    "emailDescription": "新しい課題の公開や締切が近づいたときにメールで通知します。",
+    "enableEmail": "メール通知を有効化",
+    "emailUpdatesHint": "課題の更新をメールで受け取る",
+    "emailDestinationPrefix": "通知はアカウントのメールアドレスに送信されます",
+    "webhookNotifications": "Webhook通知",
+    "webhookDescription": "通知データをJSONで外部URLに送信します。ボットや自動化、独自連携に便利です。",
+    "enableWebhook": "Webhook通知を有効化",
+    "webhookHint": "各通知イベントごとにJSONをPOSTします",
+    "webhookUrl": "Webhook URL",
+    "webhookPostHint": "このURLに課題詳細を含むJSONをPOSTします。",
+    "savePreferences": "設定を保存"
+  },
+  "authLogin": {
+    "loginFailed": "ログインに失敗しました",
+    "welcomeBack": "おかえりなさい",
+    "signInToAccount": "TaskFlowアカウントにサインイン",
+    "email": "メール",
+    "password": "パスワード",
+    "forgotPassword": "パスワードをお忘れですか？",
+    "signingIn": "サインイン中...",
+    "signIn": "サインイン",
+    "noAccount": "アカウントをお持ちでないですか？",
+    "signUp": "新規登録"
+  },
+  "authRegister": {
+    "registrationFailed": "登録に失敗しました",
+    "verificationEmailResent": "確認メールを再送しました",
+    "failedResendEmail": "メールの再送に失敗しました",
+    "checkYourEmail": "メールをご確認ください",
+    "sentVerificationPrefix": "確認リンクを次のメールアドレスに送信しました",
+    "sentVerificationSuffix": "メール内のリンクをクリックして登録を完了してください。",
+    "didNotReceive": "メールが届きませんか？迷惑メールフォルダを確認するか再送してください。",
+    "sending": "送信中...",
+    "resendEmail": "メールを再送",
+    "useDifferentEmail": "別のメールを使用",
+    "createAccount": "アカウントを作成",
+    "getStarted": "TaskFlowを始める",
+    "email": "メール",
+    "agreeTo": "私は次に同意します",
+    "termsOfService": "利用規約",
+    "and": "および",
+    "privacyPolicy": "プライバシーポリシー",
+    "continueWithEmail": "メールで続行",
+    "alreadyHaveAccount": "すでにアカウントをお持ちですか？",
+    "signIn": "サインイン"
+  },
+  "appSidebar": {
+    "user": "ユーザー",
+    "settings": "設定",
+    "theme": "テーマ",
+    "light": "ライト",
+    "dark": "ダーク",
+    "system": "システム",
+    "logOut": "ログアウト",
+    "lightMode": "ライトモード",
+    "darkMode": "ダークモード",
+    "homepage": "ホーム",
+    "personalSpace": "個人スペース",
+    "myClasses": "管理中のクラス",
+    "joinedClasses": "参加中のクラス",
+    "noClassesYet": "クラスがありません",
+    "joinClass": "クラスに参加",
+    "create": "作成"
+  },
+  "notificationBell": {
+    "notifications": "通知",
+    "markAllAsRead": "すべて既読にする",
+    "noNotificationsYet": "通知はありません",
+    "viewAllNotifications": "すべての通知を見る",
+    "time": {
+      "justNow": "たった今",
+      "minutesAgo": "{count}分前",
+      "hoursAgo": "{count}時間前",
+      "daysAgo": "{count}日前",
+      "monthsAgo": "{count}か月前"
+    }
+  },
+  "settingsAccount": {
+    "newPasswordsDoNotMatch": "新しいパスワードが一致しません",
+    "passwordMinLength": "パスワードは8文字以上必要です",
+    "passwordUpdated": "パスワードを更新しました",
+    "failedChangePassword": "パスワード変更に失敗しました",
+    "accountDeleted": "アカウントを削除しました",
+    "failedDeleteAccount": "アカウント削除に失敗しました",
+    "changePassword": "パスワード変更",
+    "currentPassword": "現在のパスワード",
+    "enterCurrentPassword": "現在のパスワードを入力",
+    "newPassword": "新しいパスワード",
+    "atLeast8Characters": "8文字以上",
+    "confirmNewPassword": "新しいパスワードを確認",
+    "repeatNewPassword": "新しいパスワードを再入力",
+    "passwordsDoNotMatch": "パスワードが一致しません",
+    "updatePassword": "パスワードを更新",
+    "dangerZone": "危険ゾーン",
+    "cannotDeleteAccount": "アカウントを削除できません",
+    "ownerOfPrefix": "あなたは次の所有者です",
+    "classesCount": "{count} クラス",
+    "ownerOfSuffix": "。アカウント削除前に所有権を移譲するかクラスを削除してください。",
+    "permanentDeleteWarning": "アカウントと関連データを完全に削除します。この操作は取り消せません。",
+    "deleteYourAccountTitle": "アカウントを削除しますか？",
+    "deleteYourAccountDescription": "アカウントを完全に削除し、すべてのクラスから退会し、提出物を削除します。元に戻せません。",
+    "typeToConfirmPrefix": "確認のため",
+    "typeToConfirmSuffix": "と入力してください",
+    "cancel": "キャンセル",
+    "deleteAccount": "アカウントを削除"
+  },
+  "settingsProfile": {
+    "profileUpdated": "プロフィールを更新しました",
+    "failedUpdateProfile": "プロフィール更新に失敗しました",
+    "selectImageFile": "画像ファイルを選択してください",
+    "imageSmallerThan5mb": "画像は5MB未満にしてください",
+    "avatarUpdated": "アバターを更新しました",
+    "failedUploadAvatar": "アバターのアップロードに失敗しました",
+    "avatar": "アバター",
+    "clickUploadPhoto": "クリックして新しい写真をアップロード。",
+    "acceptedImageTypes": "JPG、PNG、GIF。最大5MB。",
+    "nickname": "ニックネーム",
+    "nicknamePlaceholder": "呼び方を入力してください",
+    "email": "メール",
+    "school": "学校",
+    "selectYourSchool": "学校を選択",
+    "none": "なし",
+    "studentId": "学籍番号",
+    "studentIdPlaceholder": "あなたの学籍番号",
+    "timezone": "タイムゾーン",
+    "detected": "検出",
+    "timezoneHint": "日時と締切をローカル時刻で表示するために使います。",
+    "saveChanges": "変更を保存",
+    "changeEmail": {
+      "failedSendVerification": "確認メール送信に失敗しました",
+      "change": "変更",
+      "checkYourEmail": "メールをご確認ください",
+      "sentVerificationPrefix": "確認リンクを次のアドレスに送信しました",
+      "sentVerificationSuffix": "リンクをクリックして変更を確定してください。",
+      "close": "閉じる",
+      "title": "メールアドレスを変更",
+      "description": "新しいメールアドレスに確認リンクを送信します。リンクをクリックするまで変更は反映されません。",
+      "newEmailAddress": "新しいメールアドレス",
+      "cancel": "キャンセル",
+      "sending": "送信中...",
+      "sendVerification": "確認メールを送信"
+    }
+  },
+  "createClassDialog": {
+    "createdToast": "「{name}」を作成しました",
+    "failedCreate": "クラス作成に失敗しました",
+    "title": "新しいクラスを作成",
+    "className": "クラス名",
+    "classNamePlaceholder": "例: 応用数学",
+    "themeColor": "テーマカラー",
+    "restrictSchool": "特定の学校に限定",
+    "selectSchool": "学校を選択",
+    "cancel": "キャンセル",
+    "createClass": "クラスを作成"
+  },
+  "joinClassDialog": {
+    "joinedToast": "「{name}」に参加しました",
+    "failedJoin": "クラス参加に失敗しました。再試行してください。",
+    "title": "クラスに参加",
+    "description": "先生またはクラスメートから共有された招待コードを入力してください。",
+    "inviteCode": "招待コード",
+    "inviteCodePlaceholder": "例: abc123xyz",
+    "cancel": "キャンセル",
+    "join": "参加"
+  },
+  "timezonePrompt": {
+    "updatedTo": "タイムゾーンを {timezone} に更新しました",
+    "failedUpdate": "タイムゾーン更新に失敗しました",
+    "browserTimezonePrefix": "ブラウザのタイムゾーンは",
+    "accountTimezonePrefix": "、アカウント設定は",
+    "updateQuestion": "です。現在地に合わせて更新しますか？",
+    "dismiss": "閉じる",
+    "updating": "更新中...",
+    "update": "更新"
+  },
+  "taskEditorPage": {
+    "failedLoadTask": "課題の読み込みに失敗しました",
+    "goBack": "戻る"
+  },
+  "dashboardFilterBar": {
+    "unfinished": "未完了",
+    "notSubmitted": "未提出",
+    "overdue": "期限超過",
+    "showSubmitted": "提出済みを表示"
+  },
+  "dashboardStatCards": {
+    "totalTasks": "総タスク数",
+    "inProgress": "進行中",
+    "overdue": "期限超過",
+    "notStarted": "未開始"
+  },
+  "taskViewSwitcher": {
+    "gantt": "ガント",
+    "list": "リスト"
+  },
+  "dashboardPage": {
+    "title": "ホーム",
+    "subtitle": "すべてのクラスにまたがるタスクの概要です。",
+    "allTasks": "すべてのタスク",
+    "range": {
+      "week": "1週間",
+      "month": "1か月",
+      "twoMonths": "2か月"
+    },
+    "empty": {
+      "title": "タスクがまだありません",
+      "description": "クラスに参加または作成して開始しましょう。",
+      "joinClass": "クラスに参加",
+      "createClass": "クラスを作成"
+    }
+  },
+  "classPage": {
+    "classNotFound": "クラスが見つかりません。",
+    "members": "メンバー",
+    "settings": "設定",
+    "postTask": "課題を投稿",
+    "classTasks": "{className} のタスク",
+    "range": {
+      "week": "1週間",
+      "month": "1か月",
+      "twoMonths": "2か月"
+    },
+    "empty": {
+      "noTasks": "このクラスにはまだタスクがありません。",
+      "postFirstTask": "最初のタスクを投稿"
+    }
+  },
+  "dashboardInbox": {
+    "inbox": "受信トレイ",
+    "markAllAsRead": "すべて既読にする",
+    "time": {
+      "justNow": "たった今",
+      "minutesAgo": "{count}分前",
+      "hoursAgo": "{count}時間前",
+      "daysAgo": "{count}日前",
+      "monthsAgo": "{count}か月前"
+    }
+  },
+  "taskListView": {
+    "columns": {
+      "task": "タスク",
+      "startDate": "開始日",
+      "dueDate": "締切日",
+      "status": "ステータス"
+    },
+    "status": {
+      "submitted": "提出済み",
+      "overdue": "期限超過",
+      "inProgress": "進行中",
+      "notStarted": "未開始"
+    }
+  },
+  "taskDetailOverlay": {
+    "status": {
+      "submitted": "提出済み",
+      "overdue": "期限超過",
+      "inProgress": "進行中",
+      "notStarted": "未開始"
+    },
+    "date": {
+      "start": "開始",
+      "due": "締切"
+    },
+    "footer": {
+      "submitted": "すでに提出済みです",
+      "overdue": "この課題は締切を過ぎています",
+      "dueAt": "締切 {date}",
+      "noDueDate": "締切なし"
+    },
+    "close": "閉じる",
+    "loading": "読み込み中...",
+    "noDescription": "説明はありません。",
+    "confirmDelete": "この課題を削除しますか？この操作は取り消せません。",
+    "actions": {
+      "editTask": "課題を編集",
+      "deleting": "削除中...",
+      "deleteTask": "課題を削除",
+      "viewSubmissions": "提出を表示",
+      "submitted": "提出済み",
+      "submitAssignment": "課題を提出"
+    }
+  },
+  "taskGanttView": {
+    "noTasks": "表示するタスクがありません。",
+    "today": "今日",
+    "submittedCount": "{count}件提出済み"
+  },
+  "editorToolbar": {
+    "bold": "太字",
+    "italic": "斜体",
+    "heading": "見出し",
+    "code": "コード",
+    "quote": "引用",
+    "orderedList": "番号付きリスト",
+    "divider": "区切り線",
+    "image": "画像",
+    "link": "リンク"
+  },
+  "editorPage": {
+    "toast": {
+      "uploadedFiles": "{count}件のファイルをアップロードしました",
+      "failedUploadFile": "ファイルのアップロードに失敗しました",
+      "attachmentRemoved": "添付ファイルを削除しました",
+      "failedRemoveAttachment": "添付ファイルの削除に失敗しました",
+      "failedUploadImage": "画像のアップロードに失敗しました",
+      "changesSaved": "変更を保存しました",
+      "taskPublished": "課題を公開しました",
+      "submissionSaved": "提出を保存しました",
+      "failedSaveTask": "課題の保存に失敗しました",
+      "failedSaveSubmission": "提出の保存に失敗しました"
+    },
+    "breadcrumb": {
+      "submittingTo": "{className} に提出中",
+      "editing": "{className} を編集中",
+      "publishingIn": "{className} に公開"
+    },
+    "primary": {
+      "submit": "提出",
+      "saveChanges": "変更を保存",
+      "publishTask": "課題を公開"
+    },
+    "goBack": "戻る",
+    "toggle": {
+      "edit": "編集",
+      "preview": "プレビュー"
+    },
+    "editorPlaceholder": "Markdownで内容を入力...",
+    "uploading": "アップロード中...",
+    "dropOrClickUpload": "ファイルをドロップ、またはクリックしてアップロード",
+    "footer": {
+      "wordCount": "{count}語",
+      "markdownSupported": "Markdown対応",
+      "draftSaved": "下書きを保存しました"
+    },
+    "publishConfirm": {
+      "title": "この課題を公開しますか？",
+      "description": "公開するとクラス全員に通知されます。公開後も編集できます。",
+      "cancel": "キャンセル",
+      "confirm": "公開を確定"
+    }
+  },
+  "attachmentSidebar": {
+    "failedDownloadFile": "ファイルのダウンロードに失敗しました",
+    "attachmentsCount": "添付ファイル（{count}）",
+    "unknownFile": "不明なファイル",
+    "noFilesAttached": "添付ファイルはまだありません",
+    "downloadAll": "すべてダウンロード"
+  },
+  "postTaskDialog": {
+    "errors": {
+      "notAuthenticated": "認証されていません"
+    },
+    "untitledTask": "無題の課題",
+    "toast": {
+      "aiParsed": "AIが課題説明を解析しました",
+      "failedParseTask": "課題解析に失敗しました",
+      "uploadedFiles": "{count}件のファイルをアップロードしました",
+      "failedUploadFile": "ファイルのアップロードに失敗しました",
+      "failedCreateDraft": "下書き作成に失敗しました"
+    },
+    "title": "課題を投稿 — {className}",
+    "inputPlaceholder": "ここに課題内容を入力...\\n例: 「第5章の演習を2週間以内に提出、遅延提出を許可」",
+    "uploading": "アップロード中...",
+    "attach": "添付",
+    "collapse": "折りたたむ",
+    "expandForm": "フォームを展開",
+    "parsing": "解析中...",
+    "parsed": "解析済み",
+    "aiParse": "AI解析",
+    "timeOptions": {
+      "title": "AIが複数の日時解釈を検出しました。どれが意図ですか？",
+      "none": "該当なし（手動入力）"
+    },
+    "taskDetails": "課題詳細",
+    "taskTitle": "課題タイトル",
+    "taskTitlePlaceholder": "例: 第5章の宿題",
+    "titleRequired": "タイトルは必須です",
+    "startDate": "開始日時",
+    "optional": "任意",
+    "now": "今",
+    "startDateHint": "未設定時は現在時刻が使われます",
+    "dueDate": "締切日時",
+    "selectDueDate": "締切を選択",
+    "dueDateRequired": "締切は必須です",
+    "dueDateAfterStart": "締切は開始日時より後である必要があります",
+    "allowLateSubmission": "遅延提出を許可",
+    "prerequisites": "前提タスク",
+    "selectPrerequisites": "前提タスクを選択...",
+    "selectedTasks": "{count}件選択中",
+    "clear": "クリア",
+    "footerHint": {
+      "useAiOrExpand": "AI解析を使うかフォームを展開してください",
+      "ready": "続行できます",
+      "fillRequired": "必須項目を入力してください"
+    },
+    "editBody": "本文を編集 →"
+  },
+  "submissionsListPage": {
+    "toast": {
+      "failedLoadSubmissions": "提出一覧の読み込みに失敗しました",
+      "csvExported": "CSVをエクスポートしました",
+      "failedExportCsv": "CSVエクスポートに失敗しました"
+    },
+    "notFound": "課題またはクラスが見つかりません。",
+    "backToClass": "クラスへ戻る",
+    "subtitle": "提出の概要",
+    "actions": {
+      "download": "ダウンロード",
+      "exporting": "エクスポート中...",
+      "exportCsv": "CSVをエクスポート"
+    },
+    "stats": {
+      "totalMembers": "メンバー総数",
+      "submitted": "提出済み",
+      "graded": "採点済み",
+      "averageScore": "平均点"
+    },
+    "table": {
+      "student": "学生",
+      "submitted": "提出日時",
+      "score": "点数",
+      "status": "ステータス",
+      "action": "操作",
+      "pending": "保留",
+      "view": "表示",
+      "noMembers": "このクラスにメンバーがいません。"
+    },
+    "status": {
+      "graded": "採点済み",
+      "submitted": "提出済み",
+      "notSubmitted": "未提出"
+    }
+  },
+  "submissionDetailPage": {
+    "toast": {
+      "failedLoadSubmission": "提出の読み込みに失敗しました",
+      "gradeSaved": "採点を保存しました",
+      "failedSaveGrade": "採点の保存に失敗しました",
+      "failedDownloadFile": "ファイルのダウンロードに失敗しました"
+    },
+    "notFound": "提出が見つかりません。",
+    "student": "学生",
+    "backToSubmissions": "提出一覧に戻る",
+    "prev": "前へ",
+    "next": "次へ",
+    "firstSubmitted": "初回提出",
+    "lastUpdated": "最終更新",
+    "submissionContent": "提出内容",
+    "noTextContent": "テキスト提出はありません。",
+    "attachmentsCount": "添付ファイル（{count}）",
+    "downloadFile": "{name} をダウンロード",
+    "grading": "採点",
+    "score": "点数",
+    "scorePlaceholder": "例: 95.5",
+    "lastReviewed": "最終レビュー",
+    "reviewNote": "レビューコメント",
+    "reviewNotePlaceholder": "学生向けの任意フィードバック...",
+    "saving": "保存中...",
+    "saveGrade": "採点を保存"
+  },
+  "batchDownloadDialog": {
+    "title": "提出をダウンロード",
+    "description": "ダウンロード可能な内容がある学生: {count}名",
+    "selectAll": "すべて選択（{count}）",
+    "filesCount": "{count}件のファイル",
+    "noSubmissions": "ダウンロード可能な提出はありません",
+    "namingRules": "命名ルール",
+    "folderName": "フォルダ名",
+    "zipFileName": "ZIPファイル名",
+    "folderPreviewFallback": "ニックネーム_学籍番号",
+    "sampleUser": "ユーザー",
+    "tagLabels": {
+      "nickname": "ニックネーム",
+      "studentId": "学籍番号",
+      "email": "メール",
+      "taskTitle": "課題",
+      "className": "クラス",
+      "YYYY": "年",
+      "MM": "月"
+    },
+    "tagComposer": {
+      "dragTagsHere": "タグをここへドラッグ",
+      "dragHereToRemove": "ここへドラッグして削除",
+      "preview": "プレビュー"
+    },
+    "progress": {
+      "downloading": "{completed} / {total} 件をダウンロード中...",
+      "generatingZip": "ZIPを生成中..."
+    },
+    "actions": {
+      "processing": "処理中...",
+      "downloadSelected": "選択項目をダウンロード（{count}）"
+    },
+    "toast": {
+      "skippedFiles": "{count}件のファイルは失敗してスキップされました",
+      "downloadComplete": "ダウンロードが完了しました",
+      "failedCreateDownload": "ダウンロード作成に失敗しました"
+    }
+  }
+}

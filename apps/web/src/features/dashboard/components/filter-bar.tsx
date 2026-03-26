@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, Filter } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface Filters {
   unfinished: boolean;
@@ -16,18 +17,20 @@ interface FilterBarProps {
 
 interface FilterDef {
   key: keyof Filters;
-  label: string;
+  labelKey: string;
   showCheck?: boolean;
 }
 
 const filterDefs: FilterDef[] = [
-  { key: "unfinished", label: "Unfinished" },
-  { key: "notSubmitted", label: "Not Submitted" },
-  { key: "overdue", label: "Overdue" },
-  { key: "showSubmitted", label: "Show Submitted", showCheck: true },
+  { key: "unfinished", labelKey: "unfinished" },
+  { key: "notSubmitted", labelKey: "notSubmitted" },
+  { key: "overdue", labelKey: "overdue" },
+  { key: "showSubmitted", labelKey: "showSubmitted", showCheck: true },
 ];
 
 export function FilterBar({ filters, onChange }: FilterBarProps) {
+  const t = useTranslations("dashboardFilterBar");
+
   function toggle(key: keyof Filters) {
     onChange({ ...filters, [key]: !filters[key] });
   }
@@ -51,7 +54,7 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
             }`}
           >
             {def.showCheck && active && <Check className="h-3 w-3" />}
-            {def.label}
+            {t(def.labelKey)}
           </button>
         );
       })}

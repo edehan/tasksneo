@@ -16,9 +16,11 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslations } from "next-intl";
 import { ApiError, requestPasswordReset } from "@/lib/api";
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations("authForgotPassword");
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
@@ -33,7 +35,7 @@ export default function ForgotPasswordPage() {
       setSent(true);
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Something went wrong";
+        err instanceof ApiError ? err.message : t("somethingWentWrong");
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -44,10 +46,12 @@ export default function ForgotPasswordPage() {
     setSubmitting(true);
     try {
       await requestPasswordReset(email);
-      toast.success("Reset email resent");
+      toast.success(t("resetEmailResent"));
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to resend email";
+        err instanceof ApiError
+          ? err.message
+          : t("failedResendEmail");
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -61,14 +65,17 @@ export default function ForgotPasswordPage() {
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <Mail className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-serif">Check your email</CardTitle>
+          <CardTitle className="text-2xl font-serif">
+            {t("checkYourEmail")}
+          </CardTitle>
           <CardDescription>
-            If an account exists for <strong>{email}</strong>, we sent a password
-            reset link.
+            {t("accountExistsPrefix")}{" "}
+            <strong>{email}</strong>
+            {t("accountExistsSuffix")}
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center text-sm text-muted-foreground">
-          <p>Didn&apos;t receive the email? Check your spam folder or try resending.</p>
+          <p>{t("didNotReceive")}</p>
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
           <Button
@@ -77,10 +84,10 @@ export default function ForgotPasswordPage() {
             onClick={handleResend}
             disabled={submitting}
           >
-            {submitting ? "Sending..." : "Resend email"}
+            {submitting ? t("sending") : t("resendEmail")}
           </Button>
           <Button variant="ghost" className="w-full" asChild>
-            <Link href="/login">Back to sign in</Link>
+            <Link href="/login">{t("backToSignIn")}</Link>
           </Button>
         </CardFooter>
       </Card>
@@ -90,16 +97,15 @@ export default function ForgotPasswordPage() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-serif">Reset your password</CardTitle>
-        <CardDescription>
-          Enter your email address and we&apos;ll send you a link to reset your
-          password.
-        </CardDescription>
+        <CardTitle className="text-2xl font-serif">
+          {t("resetYourPassword")}
+        </CardTitle>
+        <CardDescription>{t("description")}</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="reset-email">Email</Label>
+            <Label htmlFor="reset-email">{t("email")}</Label>
             <Input
               id="reset-email"
               type="email"
@@ -114,15 +120,15 @@ export default function ForgotPasswordPage() {
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
           <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting ? "Sending..." : "Send reset link"}
+            {submitting ? t("sending") : t("sendResetLink")}
           </Button>
           <p className="text-sm text-muted-foreground">
-            Remember your password?{" "}
+            {t("rememberPassword")}{" "}
             <Link
               href="/login"
               className="text-primary underline-offset-4 hover:underline"
             >
-              Sign in
+              {t("signIn")}
             </Link>
           </p>
         </CardFooter>

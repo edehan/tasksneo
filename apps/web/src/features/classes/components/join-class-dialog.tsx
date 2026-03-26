@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslations } from "next-intl";
 import { ApiError, joinClass } from "@/lib/api";
 
 interface JoinClassDialogProps {
@@ -26,6 +27,7 @@ interface JoinClassDialogProps {
 
 export function JoinClassDialog({ trigger, onJoined }: JoinClassDialogProps) {
   const { token } = useAuth();
+  const t = useTranslations("joinClassDialog");
   const [open, setOpen] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,7 +42,7 @@ export function JoinClassDialog({ trigger, onJoined }: JoinClassDialogProps) {
 
     try {
       const cls = await joinClass(token, inviteCode.trim());
-      toast.success(`Joined "${cls.name}"`);
+      toast.success(t("joinedToast", { name: cls.name }));
       setOpen(false);
       setInviteCode("");
       onJoined?.();
@@ -48,7 +50,7 @@ export function JoinClassDialog({ trigger, onJoined }: JoinClassDialogProps) {
       if (err instanceof ApiError) {
         setError(err.message);
       } else {
-        setError("Failed to join class. Please try again.");
+        setError(t("failedJoin"));
       }
     } finally {
       setLoading(false);
@@ -70,13 +72,11 @@ export function JoinClassDialog({ trigger, onJoined }: JoinClassDialogProps) {
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Join a class</DialogTitle>
-            <DialogDescription>
-              Enter the invite code shared by your teacher or classmates.
-            </DialogDescription>
+            <DialogTitle>{t("title")}</DialogTitle>
+            <DialogDescription>{t("description")}</DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Label htmlFor="invite-code">Invite code</Label>
+            <Label htmlFor="invite-code">{t("inviteCode")}</Label>
             <Input
               id="invite-code"
               value={inviteCode}
@@ -84,7 +84,7 @@ export function JoinClassDialog({ trigger, onJoined }: JoinClassDialogProps) {
                 setInviteCode(e.target.value);
                 setError(null);
               }}
-              placeholder="e.g. abc123xyz"
+              placeholder={t("inviteCodePlaceholder")}
               className="mt-2 font-mono"
               autoFocus
               disabled={loading}
@@ -98,11 +98,11 @@ export function JoinClassDialog({ trigger, onJoined }: JoinClassDialogProps) {
               onClick={() => setOpen(false)}
               disabled={loading}
             >
-              Cancel
+              {t("cancel")}
             </Button>
             <Button type="submit" disabled={loading || !inviteCode.trim()}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Join
+              {t("join")}
             </Button>
           </DialogFooter>
         </form>

@@ -27,9 +27,11 @@ import {
   deleteAccount,
   listClasses,
 } from "@/lib/api";
+import { useTranslations } from "next-intl";
 
 export default function AccountPage() {
   const { token, user, logout } = useAuth();
+  const t = useTranslations("settingsAccount");
   const router = useRouter();
 
   // Password form
@@ -71,25 +73,27 @@ export default function AccountPage() {
     if (!token) return;
 
     if (newPassword !== confirmPassword) {
-      toast.error("New passwords do not match");
+      toast.error(t("newPasswordsDoNotMatch"));
       return;
     }
 
     if (newPassword.length < 8) {
-      toast.error("Password must be at least 8 characters");
+      toast.error(t("passwordMinLength"));
       return;
     }
 
     setChangingPassword(true);
     try {
       await updatePassword(token, currentPassword, newPassword);
-      toast.success("Password updated");
+      toast.success(t("passwordUpdated"));
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to change password";
+        err instanceof ApiError
+          ? err.message
+          : t("failedChangePassword");
       toast.error(message);
     } finally {
       setChangingPassword(false);
@@ -101,12 +105,14 @@ export default function AccountPage() {
     setDeleting(true);
     try {
       await deleteAccount(token);
-      toast.success("Account deleted");
+      toast.success(t("accountDeleted"));
       logout();
       router.push("/login");
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to delete account";
+        err instanceof ApiError
+          ? err.message
+          : t("failedDeleteAccount");
       toast.error(message);
       setDeleting(false);
     }
@@ -126,47 +132,51 @@ export default function AccountPage() {
     <div className="space-y-8">
       {/* Change Password */}
       <section className="space-y-5">
-        <h2 className="text-heading-md">Change Password</h2>
+        <h2 className="text-heading-md">{t("changePassword")}</h2>
         <form onSubmit={handleChangePassword} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="current-password">Current Password</Label>
+            <Label htmlFor="current-password">
+              {t("currentPassword")}
+            </Label>
             <Input
               id="current-password"
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="Enter current password"
+              placeholder={t("enterCurrentPassword")}
               disabled={changingPassword}
               autoComplete="current-password"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="new-password">New Password</Label>
+            <Label htmlFor="new-password">{t("newPassword")}</Label>
             <Input
               id="new-password"
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="At least 8 characters"
+              placeholder={t("atLeast8Characters")}
               disabled={changingPassword}
               autoComplete="new-password"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirm New Password</Label>
+            <Label htmlFor="confirm-password">
+              {t("confirmNewPassword")}
+            </Label>
             <Input
               id="confirm-password"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Repeat new password"
+              placeholder={t("repeatNewPassword")}
               disabled={changingPassword}
               autoComplete="new-password"
             />
             {confirmPassword.length > 0 &&
               newPassword !== confirmPassword && (
                 <p className="text-xs text-destructive">
-                  Passwords do not match
+                  {t("passwordsDoNotMatch")}
                 </p>
               )}
           </div>
@@ -177,7 +187,7 @@ export default function AccountPage() {
             {changingPassword && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Update Password
+            {t("updatePassword")}
           </Button>
         </form>
       </section>
@@ -186,7 +196,9 @@ export default function AccountPage() {
 
       {/* Danger Zone */}
       <section className="rounded-lg border-2 border-destructive/30 p-6">
-        <h2 className="text-heading-md text-destructive mb-2">Danger Zone</h2>
+        <h2 className="text-heading-md text-destructive mb-2">
+          {t("dangerZone")}
+        </h2>
 
         {loadingClasses ? (
           <div className="h-8 bg-muted animate-pulse rounded" />
@@ -195,23 +207,21 @@ export default function AccountPage() {
             <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-destructive">
-                Cannot delete account
+                {t("cannotDeleteAccount")}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                You are the owner of{" "}
+                {t("ownerOfPrefix")}{" "}
                 {ownedClasses.length === 1
                   ? `"${ownedClasses[0].name}"`
-                  : `${ownedClasses.length} classes`}
-                . Transfer ownership or delete those classes before deleting
-                your account.
+                  : t("classesCount", { count: ownedClasses.length })}
+                {t("ownerOfSuffix")}
               </p>
             </div>
           </div>
         ) : (
           <>
             <p className="text-sm text-muted-foreground mb-4">
-              Permanently delete your account and all associated data. This
-              action cannot be undone.
+              {t("permanentDeleteWarning")}
             </p>
             <AlertDialog
               open={deleteDialogOpen}
@@ -225,17 +235,18 @@ export default function AccountPage() {
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+                  <AlertDialogTitle>
+                    {t("deleteYourAccountTitle")}
+                  </AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will permanently delete your account, remove you from
-                    all classes, and delete all your submissions. This cannot be
-                    undone.
+                    {t("deleteYourAccountDescription")}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <div className="py-2">
                   <Label htmlFor="delete-confirm-email" className="mb-2 block">
-                    Type <span className="font-mono font-medium">{user.email}</span> to
-                    confirm
+                    {t("typeToConfirmPrefix")}{" "}
+                    <span className="font-mono font-medium">{user.email}</span>{" "}
+                    {t("typeToConfirmSuffix")}
                   </Label>
                   <Input
                     id="delete-confirm-email"
@@ -248,7 +259,7 @@ export default function AccountPage() {
                 </div>
                 <AlertDialogFooter>
                   <AlertDialogCancel disabled={deleting}>
-                    Cancel
+                    {t("cancel")}
                   </AlertDialogCancel>
                   <Button
                     variant="destructive"
@@ -260,7 +271,7 @@ export default function AccountPage() {
                     {deleting && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Delete Account
+                    {t("deleteAccount")}
                   </Button>
                 </AlertDialogFooter>
               </AlertDialogContent>

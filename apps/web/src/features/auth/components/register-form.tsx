@@ -17,9 +17,11 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslations } from "next-intl";
 import { ApiError, register } from "@/lib/api";
 
 export function RegisterForm() {
+  const t = useTranslations("authRegister");
   const [email, setEmail] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -35,7 +37,7 @@ export function RegisterForm() {
       setSent(true);
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Registration failed";
+        err instanceof ApiError ? err.message : t("registrationFailed");
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -46,10 +48,12 @@ export function RegisterForm() {
     setSubmitting(true);
     try {
       await register(email);
-      toast.success("Verification email resent");
+      toast.success(t("verificationEmailResent"));
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to resend email";
+        err instanceof ApiError
+          ? err.message
+          : t("failedResendEmail");
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -63,14 +67,17 @@ export function RegisterForm() {
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <Mail className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-serif">Check your email</CardTitle>
+          <CardTitle className="text-2xl font-serif">
+            {t("checkYourEmail")}
+          </CardTitle>
           <CardDescription>
-            We sent a verification link to <strong>{email}</strong>. Click the
-            link in the email to complete your registration.
+            {t("sentVerificationPrefix")}{" "}
+            <strong>{email}</strong>。
+            {t("sentVerificationSuffix")}
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center text-sm text-muted-foreground">
-          <p>Didn&apos;t receive the email? Check your spam folder or try resending.</p>
+          <p>{t("didNotReceive")}</p>
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
           <Button
@@ -79,7 +86,7 @@ export function RegisterForm() {
             onClick={handleResend}
             disabled={submitting}
           >
-            {submitting ? "Sending..." : "Resend email"}
+            {submitting ? t("sending") : t("resendEmail")}
           </Button>
           <Button
             variant="ghost"
@@ -90,7 +97,7 @@ export function RegisterForm() {
               setAgreedToTerms(false);
             }}
           >
-            Use a different email
+            {t("useDifferentEmail")}
           </Button>
         </CardFooter>
       </Card>
@@ -100,13 +107,15 @@ export function RegisterForm() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-serif">Create an account</CardTitle>
-        <CardDescription>Get started with TaskFlow</CardDescription>
+        <CardTitle className="text-2xl font-serif">
+          {t("createAccount")}
+        </CardTitle>
+        <CardDescription>{t("getStarted")}</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="reg-email">Email</Label>
+            <Label htmlFor="reg-email">{t("email")}</Label>
             <Input
               id="reg-email"
               type="email"
@@ -125,13 +134,13 @@ export function RegisterForm() {
               onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
             />
             <Label htmlFor="reg-terms" className="text-sm leading-snug font-normal">
-              I agree to the{" "}
+              {t("agreeTo")}{" "}
               <Link href="/terms" className="text-primary underline-offset-4 hover:underline" target="_blank">
-                Terms of Service
+                {t("termsOfService")}
               </Link>{" "}
-              and{" "}
+              {t("and")}{" "}
               <Link href="/privacy" className="text-primary underline-offset-4 hover:underline" target="_blank">
-                Privacy Policy
+                {t("privacyPolicy")}
               </Link>
             </Label>
           </div>
@@ -142,15 +151,15 @@ export function RegisterForm() {
             className="w-full"
             disabled={submitting || !agreedToTerms}
           >
-            {submitting ? "Sending..." : "Continue with email"}
+            {submitting ? t("sending") : t("continueWithEmail")}
           </Button>
           <p className="text-sm text-muted-foreground">
-            Already have an account?{" "}
+            {t("alreadyHaveAccount")}{" "}
             <Link
               href="/login"
               className="text-primary underline-offset-4 hover:underline"
             >
-              Sign in
+              {t("signIn")}
             </Link>
           </p>
         </CardFooter>

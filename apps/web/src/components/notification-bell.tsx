@@ -12,6 +12,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useTranslations } from "next-intl";
 import type { NotificationItem } from "@/lib/api";
 import {
   getUnreadNotificationCount,
@@ -22,20 +23,21 @@ import {
 
 const POLL_INTERVAL = 60_000;
 
-function timeAgo(dateStr: string): string {
+function timeAgo(dateStr: string, t: ReturnType<typeof useTranslations>): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const minutes = Math.floor(diff / 60_000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1) return t("time.justNow");
+  if (minutes < 60) return t("time.minutesAgo", { count: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t("time.hoursAgo", { count: hours });
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  return `${Math.floor(days / 30)}mo ago`;
+  if (days < 30) return t("time.daysAgo", { count: days });
+  return t("time.monthsAgo", { count: Math.floor(days / 30) });
 }
 
 export function NotificationBell() {
   const { token } = useAuth();
+  const t = useTranslations("notificationBell");
   const router = useRouter();
   const [unreadCount, setUnreadCount] = useState(0);
   const [items, setItems] = useState<NotificationItem[]>([]);
@@ -129,14 +131,14 @@ export function NotificationBell() {
       <PopoverContent align="end" className="w-80 p-0">
         {/* Header */}
         <div className="flex items-center justify-between border-b px-4 py-3">
-          <h3 className="text-sm font-semibold">Notifications</h3>
+          <h3 className="text-sm font-semibold">{t("notifications")}</h3>
           {unreadCount > 0 && (
             <button
               type="button"
               onClick={handleMarkAllRead}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              Mark all as read
+              {t("markAllAsRead")}
             </button>
           )}
         </div>
@@ -152,7 +154,7 @@ export function NotificationBell() {
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
               <Bell className="mb-2 h-5 w-5 text-text-muted-soft" />
-              <p className="text-sm">No notifications yet</p>
+              <p className="text-sm">{t("noNotificationsYet")}</p>
             </div>
           ) : (
             <div className="p-1">
@@ -180,7 +182,7 @@ export function NotificationBell() {
                       {item.taskTitle}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {item.className} &middot; {timeAgo(item.createdAt)}
+                      {item.className} &middot; {timeAgo(item.createdAt, t)}
                     </p>
                   </div>
 
@@ -205,7 +207,7 @@ export function NotificationBell() {
               }}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
-              View all notifications
+              {t("viewAllNotifications")}
             </button>
           </div>
         )}

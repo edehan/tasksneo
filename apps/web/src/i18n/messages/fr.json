@@ -1,0 +1,583 @@
+{
+  "settingsLayout": {
+    "title": "Parametres",
+    "tabs": {
+      "profile": "Profil",
+      "notifications": "Notifications",
+      "account": "Compte"
+    }
+  },
+  "settingsVerifyEmail": {
+    "missingTokenOrNotSignedIn": "Jeton de verification manquant ou non connecte.",
+    "emailAddressUpdated": "Adresse e-mail mise a jour",
+    "verificationFailed": "La verification a echoue",
+    "verifyingEmail": "Verification de votre e-mail...",
+    "backToProfile": "Retour au profil",
+    "emailUpdated": "E-mail mis a jour",
+    "emailChangedSuccessfully": "Votre adresse e-mail a bien ete modifiee."
+  },
+  "authForgotPassword": {
+    "somethingWentWrong": "Une erreur est survenue",
+    "resetEmailResent": "E-mail de reinitialisation renvoye",
+    "failedResendEmail": "Echec du renvoi de l'e-mail",
+    "checkYourEmail": "Verifiez votre e-mail",
+    "accountExistsPrefix": "Si un compte existe pour",
+    "accountExistsSuffix": ", nous avons envoye un lien de reinitialisation.",
+    "didNotReceive": "Vous n'avez pas recu l'e-mail ? Verifiez les spams ou renvoyez-le.",
+    "sending": "Envoi...",
+    "resendEmail": "Renvoyer l'e-mail",
+    "backToSignIn": "Retour a la connexion",
+    "resetYourPassword": "Reinitialisez votre mot de passe",
+    "description": "Saisissez votre adresse e-mail et nous vous enverrons un lien de reinitialisation.",
+    "email": "E-mail",
+    "sendResetLink": "Envoyer le lien de reinitialisation",
+    "rememberPassword": "Vous vous souvenez de votre mot de passe ?",
+    "signIn": "Se connecter"
+  },
+  "authResetPassword": {
+    "missingResetToken": "Jeton de reinitialisation manquant.",
+    "invalidOrExpiredLink": "Ce lien est invalide ou a expire.",
+    "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+    "passwordResetFailed": "La reinitialisation a echoue",
+    "linkExpired": "Lien expire",
+    "requestNewLink": "Demander un nouveau lien",
+    "setNewPassword": "Definir un nouveau mot de passe",
+    "enterNewPasswordFor": "Saisissez un nouveau mot de passe pour",
+    "newPassword": "Nouveau mot de passe",
+    "atLeast8Characters": "Au moins 8 caracteres",
+    "confirmNewPassword": "Confirmer le nouveau mot de passe",
+    "repeatPassword": "Repetez votre mot de passe",
+    "resetting": "Reinitialisation...",
+    "resetPassword": "Reinitialiser le mot de passe"
+  },
+  "authRegisterComplete": {
+    "missingVerificationToken": "Jeton de verification manquant.",
+    "invalidOrExpiredLink": "Ce lien est invalide ou a expire.",
+    "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+    "studentIdRequired": "L'identifiant etudiant est requis lorsqu'une ecole est selectionnee",
+    "registrationFailed": "Echec de l'inscription",
+    "linkExpired": "Lien expire",
+    "backToRegistration": "Retour a l'inscription",
+    "completeAccount": "Completer votre compte",
+    "setupProfileFor": "Configurer votre profil pour",
+    "password": "Mot de passe",
+    "atLeast8Characters": "Au moins 8 caracteres",
+    "confirmPassword": "Confirmer le mot de passe",
+    "repeatPassword": "Repetez votre mot de passe",
+    "nickname": "Pseudo",
+    "optional": "(optionnel)",
+    "nicknamePlaceholder": "Nom visible par les autres",
+    "school": "Ecole",
+    "selectSchool": "Selectionner une ecole",
+    "noSchool": "Pas d'ecole",
+    "studentId": "ID etudiant",
+    "studentNumberPlaceholder": "Votre numero etudiant",
+    "creatingAccount": "Creation du compte...",
+    "createAccount": "Creer un compte"
+  },
+  "settingsNotifications": {
+    "failedLoadPrefs": "Impossible de charger les preferences de notification",
+    "pleaseEnterWebhookUrl": "Veuillez saisir une URL webhook",
+    "prefsSaved": "Preferences de notification enregistrees",
+    "failedSavePrefs": "Impossible d'enregistrer les preferences de notification",
+    "emailNotifications": "Notifications e-mail",
+    "emailDescription": "Recevez des e-mails lorsque de nouvelles taches sont publiees ou que des echeances approchent.",
+    "enableEmail": "Activer les notifications e-mail",
+    "emailUpdatesHint": "Recevez les mises a jour des taches par e-mail",
+    "emailDestinationPrefix": "Les notifications seront envoyees a votre e-mail de compte",
+    "webhookNotifications": "Notifications webhook",
+    "webhookDescription": "Envoyez les notifications en JSON vers une URL externe. Utile pour bots, automatisation ou integrations.",
+    "enableWebhook": "Activer les notifications webhook",
+    "webhookHint": "Envoyer une charge JSON pour chaque evenement",
+    "webhookUrl": "URL webhook",
+    "webhookPostHint": "Nous enverrons un corps JSON avec les details de la tache a cette URL.",
+    "savePreferences": "Enregistrer les preferences"
+  },
+  "authLogin": {
+    "loginFailed": "Echec de la connexion",
+    "welcomeBack": "Bon retour",
+    "signInToAccount": "Connectez-vous a votre compte TaskFlow",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "forgotPassword": "Mot de passe oublie ?",
+    "signingIn": "Connexion...",
+    "signIn": "Se connecter",
+    "noAccount": "Vous n'avez pas de compte ?",
+    "signUp": "S'inscrire"
+  },
+  "authRegister": {
+    "registrationFailed": "Echec de l'inscription",
+    "verificationEmailResent": "E-mail de verification renvoye",
+    "failedResendEmail": "Echec du renvoi de l'e-mail",
+    "checkYourEmail": "Verifiez votre e-mail",
+    "sentVerificationPrefix": "Nous avons envoye un lien de verification a",
+    "sentVerificationSuffix": "Cliquez sur le lien de l'e-mail pour terminer l'inscription.",
+    "didNotReceive": "Vous n'avez pas recu l'e-mail ? Verifiez les spams ou renvoyez-le.",
+    "sending": "Envoi...",
+    "resendEmail": "Renvoyer l'e-mail",
+    "useDifferentEmail": "Utiliser un autre e-mail",
+    "createAccount": "Creer un compte",
+    "getStarted": "Demarrer avec TaskFlow",
+    "email": "E-mail",
+    "agreeTo": "J'accepte les",
+    "termsOfService": "Conditions d'utilisation",
+    "and": "et",
+    "privacyPolicy": "Politique de confidentialite",
+    "continueWithEmail": "Continuer avec l'e-mail",
+    "alreadyHaveAccount": "Vous avez deja un compte ?",
+    "signIn": "Se connecter"
+  },
+  "appSidebar": {
+    "user": "Utilisateur",
+    "settings": "Parametres",
+    "theme": "Theme",
+    "light": "Clair",
+    "dark": "Sombre",
+    "system": "Systeme",
+    "logOut": "Se deconnecter",
+    "lightMode": "Mode clair",
+    "darkMode": "Mode sombre",
+    "homepage": "Page d'accueil",
+    "personalSpace": "Espace personnel",
+    "myClasses": "Mes classes",
+    "joinedClasses": "Classes rejointes",
+    "noClassesYet": "Aucune classe",
+    "joinClass": "Rejoindre une classe",
+    "create": "Creer"
+  },
+  "notificationBell": {
+    "notifications": "Notifications",
+    "markAllAsRead": "Tout marquer comme lu",
+    "noNotificationsYet": "Aucune notification",
+    "viewAllNotifications": "Voir toutes les notifications",
+    "time": {
+      "justNow": "a l'instant",
+      "minutesAgo": "il y a {count} min",
+      "hoursAgo": "il y a {count} h",
+      "daysAgo": "il y a {count} j",
+      "monthsAgo": "il y a {count} mois"
+    }
+  },
+  "settingsAccount": {
+    "newPasswordsDoNotMatch": "Les nouveaux mots de passe ne correspondent pas",
+    "passwordMinLength": "Le mot de passe doit contenir au moins 8 caracteres",
+    "passwordUpdated": "Mot de passe mis a jour",
+    "failedChangePassword": "Echec du changement de mot de passe",
+    "accountDeleted": "Compte supprime",
+    "failedDeleteAccount": "Echec de la suppression du compte",
+    "changePassword": "Changer le mot de passe",
+    "currentPassword": "Mot de passe actuel",
+    "enterCurrentPassword": "Saisissez le mot de passe actuel",
+    "newPassword": "Nouveau mot de passe",
+    "atLeast8Characters": "Au moins 8 caracteres",
+    "confirmNewPassword": "Confirmer le nouveau mot de passe",
+    "repeatNewPassword": "Repetez le nouveau mot de passe",
+    "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+    "updatePassword": "Mettre a jour le mot de passe",
+    "dangerZone": "Zone dangereuse",
+    "cannotDeleteAccount": "Impossible de supprimer le compte",
+    "ownerOfPrefix": "Vous etes proprietaire de",
+    "classesCount": "{count} classes",
+    "ownerOfSuffix": ". Transferez la propriete ou supprimez ces classes avant de supprimer votre compte.",
+    "permanentDeleteWarning": "Supprime definitivement votre compte et toutes les donnees associees. Action irreversible.",
+    "deleteYourAccountTitle": "Supprimer votre compte ?",
+    "deleteYourAccountDescription": "Cela supprimera definitivement votre compte, vous retirera de toutes les classes et supprimera tous vos rendus.",
+    "typeToConfirmPrefix": "Tapez",
+    "typeToConfirmSuffix": "pour confirmer",
+    "cancel": "Annuler",
+    "deleteAccount": "Supprimer le compte"
+  },
+  "settingsProfile": {
+    "profileUpdated": "Profil mis a jour",
+    "failedUpdateProfile": "Echec de la mise a jour du profil",
+    "selectImageFile": "Veuillez selectionner une image",
+    "imageSmallerThan5mb": "L'image doit etre inferieure a 5 Mo",
+    "avatarUpdated": "Avatar mis a jour",
+    "failedUploadAvatar": "Echec de l'upload de l'avatar",
+    "avatar": "Avatar",
+    "clickUploadPhoto": "Cliquez pour televerser une nouvelle photo.",
+    "acceptedImageTypes": "JPG, PNG ou GIF. 5 Mo max.",
+    "nickname": "Pseudo",
+    "nicknamePlaceholder": "Comment devons-nous vous appeler ?",
+    "email": "E-mail",
+    "school": "Ecole",
+    "selectYourSchool": "Selectionnez votre ecole",
+    "none": "Aucun",
+    "studentId": "ID etudiant",
+    "studentIdPlaceholder": "Votre ID etudiant",
+    "timezone": "Fuseau horaire",
+    "detected": "Detecte",
+    "timezoneHint": "Utilise pour afficher les dates et echeances a l'heure locale.",
+    "saveChanges": "Enregistrer les modifications",
+    "changeEmail": {
+      "failedSendVerification": "Echec de l'envoi de verification",
+      "change": "Modifier",
+      "checkYourEmail": "Verifiez votre e-mail",
+      "sentVerificationPrefix": "Nous avons envoye un lien de verification a",
+      "sentVerificationSuffix": "Cliquez sur le lien pour confirmer le changement.",
+      "close": "Fermer",
+      "title": "Changer l'adresse e-mail",
+      "description": "Un lien de verification sera envoye a votre nouvelle adresse. L'e-mail ne changera qu'apres confirmation.",
+      "newEmailAddress": "Nouvelle adresse e-mail",
+      "cancel": "Annuler",
+      "sending": "Envoi...",
+      "sendVerification": "Envoyer la verification"
+    }
+  },
+  "createClassDialog": {
+    "createdToast": "\"{name}\" cree",
+    "failedCreate": "Echec de la creation de la classe",
+    "title": "Creer une nouvelle classe",
+    "className": "Nom de la classe",
+    "classNamePlaceholder": "ex. Mathematiques avancees",
+    "themeColor": "Couleur du theme",
+    "restrictSchool": "Limiter a une ecole specifique",
+    "selectSchool": "Selectionner une ecole",
+    "cancel": "Annuler",
+    "createClass": "Creer la classe"
+  },
+  "joinClassDialog": {
+    "joinedToast": "Vous avez rejoint \"{name}\"",
+    "failedJoin": "Impossible de rejoindre la classe. Reessayez.",
+    "title": "Rejoindre une classe",
+    "description": "Entrez le code invite partage par votre enseignant ou vos camarades.",
+    "inviteCode": "Code invite",
+    "inviteCodePlaceholder": "ex. abc123xyz",
+    "cancel": "Annuler",
+    "join": "Rejoindre"
+  },
+  "timezonePrompt": {
+    "updatedTo": "Fuseau horaire mis a jour vers {timezone}",
+    "failedUpdate": "Echec de la mise a jour du fuseau horaire",
+    "browserTimezonePrefix": "Le fuseau horaire du navigateur est",
+    "accountTimezonePrefix": ", mais votre compte est regle sur",
+    "updateQuestion": ". Mettre a jour pour correspondre a votre emplacement actuel ?",
+    "dismiss": "Ignorer",
+    "updating": "Mise a jour...",
+    "update": "Mettre a jour"
+  },
+  "taskEditorPage": {
+    "failedLoadTask": "Impossible de charger la tache",
+    "goBack": "Retour"
+  },
+  "dashboardFilterBar": {
+    "unfinished": "Non termine",
+    "notSubmitted": "Non rendu",
+    "overdue": "En retard",
+    "showSubmitted": "Afficher les rendus"
+  },
+  "dashboardStatCards": {
+    "totalTasks": "Taches totales",
+    "inProgress": "En cours",
+    "overdue": "En retard",
+    "notStarted": "Non commence"
+  },
+  "taskViewSwitcher": {
+    "gantt": "Gantt",
+    "list": "Liste"
+  },
+  "dashboardPage": {
+    "title": "Page d'accueil",
+    "subtitle": "Vue d’ensemble de toutes vos taches dans chaque classe.",
+    "allTasks": "Toutes les taches",
+    "range": {
+      "week": "Semaine",
+      "month": "1 mois",
+      "twoMonths": "2 mois"
+    },
+    "empty": {
+      "title": "Aucune tache pour le moment",
+      "description": "Rejoignez une classe ou creez-en une pour commencer.",
+      "joinClass": "Rejoindre une classe",
+      "createClass": "Creer une classe"
+    }
+  },
+  "classPage": {
+    "classNotFound": "Classe introuvable.",
+    "members": "Membres",
+    "settings": "Parametres",
+    "postTask": "Publier une tache",
+    "classTasks": "Taches de {className}",
+    "range": {
+      "week": "Semaine",
+      "month": "1 mois",
+      "twoMonths": "2 mois"
+    },
+    "empty": {
+      "noTasks": "Aucune tache dans cette classe pour le moment.",
+      "postFirstTask": "Publier la premiere tache"
+    }
+  },
+  "dashboardInbox": {
+    "inbox": "Boite de reception",
+    "markAllAsRead": "Tout marquer comme lu",
+    "time": {
+      "justNow": "a l'instant",
+      "minutesAgo": "il y a {count} min",
+      "hoursAgo": "il y a {count} h",
+      "daysAgo": "il y a {count} j",
+      "monthsAgo": "il y a {count} mois"
+    }
+  },
+  "taskListView": {
+    "columns": {
+      "task": "Tache",
+      "startDate": "Debut",
+      "dueDate": "Echeance",
+      "status": "Statut"
+    },
+    "status": {
+      "submitted": "Rendu",
+      "overdue": "En retard",
+      "inProgress": "En cours",
+      "notStarted": "Non commence"
+    }
+  },
+  "taskDetailOverlay": {
+    "status": {
+      "submitted": "Rendu",
+      "overdue": "En retard",
+      "inProgress": "En cours",
+      "notStarted": "Non commence"
+    },
+    "date": {
+      "start": "Debut",
+      "due": "Echeance"
+    },
+    "footer": {
+      "submitted": "Vous avez deja rendu",
+      "overdue": "Ce devoir est depasse",
+      "dueAt": "Echeance {date}",
+      "noDueDate": "Pas de date d'echeance"
+    },
+    "close": "Fermer",
+    "loading": "Chargement...",
+    "noDescription": "Aucune description fournie.",
+    "confirmDelete": "Voulez-vous vraiment supprimer cette tache ? Cette action est irreversible.",
+    "actions": {
+      "editTask": "Modifier la tache",
+      "deleting": "Suppression...",
+      "deleteTask": "Supprimer la tache",
+      "viewSubmissions": "Voir les rendus",
+      "submitted": "Rendu",
+      "submitAssignment": "Rendre le devoir"
+    }
+  },
+  "taskGanttView": {
+    "noTasks": "Aucune tache a afficher.",
+    "today": "AUJOURD'HUI",
+    "submittedCount": "{count} rendus"
+  },
+  "editorToolbar": {
+    "bold": "Gras",
+    "italic": "Italique",
+    "heading": "Titre",
+    "code": "Code",
+    "quote": "Citation",
+    "orderedList": "Liste numerotee",
+    "divider": "Separateur",
+    "image": "Image",
+    "link": "Lien"
+  },
+  "editorPage": {
+    "toast": {
+      "uploadedFiles": "{count, plural, one {# fichier televerse} other {# fichiers televerses}}",
+      "failedUploadFile": "Echec du televersement du fichier",
+      "attachmentRemoved": "Piece jointe supprimee",
+      "failedRemoveAttachment": "Echec de suppression de la piece jointe",
+      "failedUploadImage": "Echec du televersement de l'image",
+      "changesSaved": "Modifications enregistrees",
+      "taskPublished": "Tache publiee",
+      "submissionSaved": "Rendu enregistre",
+      "failedSaveTask": "Echec de sauvegarde de la tache",
+      "failedSaveSubmission": "Echec de sauvegarde du rendu"
+    },
+    "breadcrumb": {
+      "submittingTo": "Envoi vers · {className}",
+      "editing": "Modification · {className}",
+      "publishingIn": "Publication dans · {className}"
+    },
+    "primary": {
+      "submit": "Envoyer",
+      "saveChanges": "Enregistrer",
+      "publishTask": "Publier la tache"
+    },
+    "goBack": "Retour",
+    "toggle": {
+      "edit": "Modifier",
+      "preview": "Apercu"
+    },
+    "editorPlaceholder": "Ecrivez votre contenu en Markdown...",
+    "uploading": "Televersement...",
+    "dropOrClickUpload": "Deposez des fichiers ou cliquez pour televerser",
+    "footer": {
+      "wordCount": "{count} {count, plural, one {mot} other {mots}}",
+      "markdownSupported": "Markdown pris en charge",
+      "draftSaved": "Brouillon enregistre"
+    },
+    "publishConfirm": {
+      "title": "Publier cette tache ?",
+      "description": "Tous les membres de la classe seront notifies. Vous pourrez encore modifier ensuite.",
+      "cancel": "Annuler",
+      "confirm": "Confirmer la publication"
+    }
+  },
+  "attachmentSidebar": {
+    "failedDownloadFile": "Echec du telechargement du fichier",
+    "attachmentsCount": "Pieces jointes ({count})",
+    "unknownFile": "Fichier inconnu",
+    "noFilesAttached": "Aucun fichier joint",
+    "downloadAll": "Tout telecharger"
+  },
+  "postTaskDialog": {
+    "errors": {
+      "notAuthenticated": "Non authentifie"
+    },
+    "untitledTask": "Tache sans titre",
+    "toast": {
+      "aiParsed": "L'IA a analyse votre description de tache",
+      "failedParseTask": "Echec de l'analyse de la tache",
+      "uploadedFiles": "{count, plural, one {# fichier televerse} other {# fichiers televerses}}",
+      "failedUploadFile": "Echec du televersement",
+      "failedCreateDraft": "Echec de creation du brouillon"
+    },
+    "title": "Publier une tache — {className}",
+    "inputPlaceholder": "Decrivez votre tache ici...\\nex. \"Terminer les exercices du chapitre 5, dans 2 semaines, retard autorise\"",
+    "uploading": "Televersement...",
+    "attach": "Joindre",
+    "collapse": "Replier",
+    "expandForm": "Etendre le formulaire",
+    "parsing": "Analyse...",
+    "parsed": "Analysee",
+    "aiParse": "Analyse IA",
+    "timeOptions": {
+      "title": "L'IA a detecte plusieurs interpretations de date. Laquelle vouliez-vous ?",
+      "none": "Aucune de ces options — je saisis manuellement"
+    },
+    "taskDetails": "Details de la tache",
+    "taskTitle": "Titre de la tache",
+    "taskTitlePlaceholder": "ex. Devoir chapitre 5",
+    "titleRequired": "Le titre est obligatoire",
+    "startDate": "Date de debut",
+    "optional": "Optionnel",
+    "now": "Maintenant",
+    "startDateHint": "Par defaut: maintenant si non defini",
+    "dueDate": "Date d'echeance",
+    "selectDueDate": "Selectionner l'echeance",
+    "dueDateRequired": "L'echeance est obligatoire",
+    "dueDateAfterStart": "L'echeance doit etre posterieure au debut",
+    "allowLateSubmission": "Autoriser les retards",
+    "prerequisites": "Prerequis",
+    "selectPrerequisites": "Selectionnez des taches prerequises...",
+    "selectedTasks": "{count} {count, plural, one {tache selectionnee} other {taches selectionnees}}",
+    "clear": "Effacer",
+    "footerHint": {
+      "useAiOrExpand": "Utilisez l’analyse IA ou etendez le formulaire",
+      "ready": "Pret a continuer",
+      "fillRequired": "Remplissez les champs obligatoires pour continuer"
+    },
+    "editBody": "Modifier le contenu →"
+  },
+  "submissionsListPage": {
+    "toast": {
+      "failedLoadSubmissions": "Impossible de charger les rendus",
+      "csvExported": "CSV exporte avec succes",
+      "failedExportCsv": "Echec de l'export CSV"
+    },
+    "notFound": "Tache ou classe introuvable.",
+    "backToClass": "Retour a la classe",
+    "subtitle": "Vue des rendus",
+    "actions": {
+      "download": "Telecharger",
+      "exporting": "Export...",
+      "exportCsv": "Exporter CSV"
+    },
+    "stats": {
+      "totalMembers": "Membres total",
+      "submitted": "Rendus",
+      "graded": "Evalues",
+      "averageScore": "Moyenne"
+    },
+    "table": {
+      "student": "Etudiant",
+      "submitted": "Rendu",
+      "score": "Note",
+      "status": "Statut",
+      "action": "Action",
+      "pending": "En attente",
+      "view": "Voir",
+      "noMembers": "Aucun membre trouve dans cette classe."
+    },
+    "status": {
+      "graded": "Evalue",
+      "submitted": "Rendu",
+      "notSubmitted": "Non rendu"
+    }
+  },
+  "submissionDetailPage": {
+    "toast": {
+      "failedLoadSubmission": "Impossible de charger le rendu",
+      "gradeSaved": "Note enregistree",
+      "failedSaveGrade": "Echec de l'enregistrement de la note",
+      "failedDownloadFile": "Echec du telechargement du fichier"
+    },
+    "notFound": "Rendu introuvable.",
+    "student": "Etudiant",
+    "backToSubmissions": "Retour aux rendus",
+    "prev": "Prec",
+    "next": "Suiv",
+    "firstSubmitted": "Premier rendu",
+    "lastUpdated": "Derniere mise a jour",
+    "submissionContent": "Contenu du rendu",
+    "noTextContent": "Aucun contenu texte soumis.",
+    "attachmentsCount": "Pieces jointes ({count})",
+    "downloadFile": "Telecharger {name}",
+    "grading": "Evaluation",
+    "score": "Note",
+    "scorePlaceholder": "ex. 95.5",
+    "lastReviewed": "Derniere evaluation",
+    "reviewNote": "Commentaire",
+    "reviewNotePlaceholder": "Feedback optionnel pour l'etudiant...",
+    "saving": "Enregistrement...",
+    "saveGrade": "Enregistrer la note"
+  },
+  "batchDownloadDialog": {
+    "title": "Telecharger les rendus",
+    "description": "{count} etudiant(s) avec contenu telechargeable",
+    "selectAll": "Tout selectionner ({count})",
+    "filesCount": "{count} {count, plural, one {fichier} other {fichiers}}",
+    "noSubmissions": "Aucun rendu avec contenu telechargeable",
+    "namingRules": "Regles de nommage",
+    "folderName": "Nom du dossier",
+    "zipFileName": "Nom du fichier ZIP",
+    "folderPreviewFallback": "pseudo_idEtudiant",
+    "sampleUser": "utilisateur",
+    "tagLabels": {
+      "nickname": "Pseudo",
+      "studentId": "ID etudiant",
+      "email": "E-mail",
+      "taskTitle": "Tache",
+      "className": "Classe",
+      "YYYY": "Annee",
+      "MM": "Mois"
+    },
+    "tagComposer": {
+      "dragTagsHere": "Glissez les tags ici",
+      "dragHereToRemove": "Glissez ici pour supprimer",
+      "preview": "Apercu"
+    },
+    "progress": {
+      "downloading": "Telechargement {completed} / {total} fichiers...",
+      "generatingZip": "Generation du zip..."
+    },
+    "actions": {
+      "processing": "Traitement...",
+      "downloadSelected": "Telecharger la selection ({count})"
+    },
+    "toast": {
+      "skippedFiles": "{count} fichier(s) non telecharges et ignores",
+      "downloadComplete": "Telechargement termine",
+      "failedCreateDownload": "Echec de creation du telechargement"
+    }
+  }
+}

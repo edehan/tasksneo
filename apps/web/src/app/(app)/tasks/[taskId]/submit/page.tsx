@@ -3,6 +3,7 @@
 import { Loader2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { useAuth } from "@/components/auth-provider";
 import { EditorPage } from "@/features/editor/components/editor-page";
@@ -20,6 +21,7 @@ export default function SubmitTaskPage() {
   const params = useParams();
   const router = useRouter();
   const { token, loading: authLoading } = useAuth();
+  const t = useTranslations("taskEditorPage");
 
   const taskId = params?.taskId as string;
 
@@ -59,12 +61,12 @@ export default function SubmitTaskPage() {
       }
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to load task";
+        err instanceof ApiError ? err.message : t("failedLoadTask");
       setError(message);
     } finally {
       setLoading(false);
     }
-  }, [token, taskId]);
+  }, [token, taskId, t]);
 
   useEffect(() => {
     if (!authLoading && token) {
@@ -91,7 +93,7 @@ export default function SubmitTaskPage() {
           onClick={() => router.back()}
           className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
         >
-          Go back
+          {t("goBack")}
         </button>
       </div>
     );

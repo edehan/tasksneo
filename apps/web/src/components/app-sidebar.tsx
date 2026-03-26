@@ -45,11 +45,13 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { CreateClassDialog } from "@/components/create-class-dialog";
 import { JoinClassDialog } from "@/features/classes/components/join-class-dialog";
+import { useTranslations } from "next-intl";
 import type { ClassSummary } from "@/lib/api";
 import { listClasses } from "@/lib/api";
 
 export function AppSidebar() {
   const { token, user, logout } = useAuth();
+  const t = useTranslations("appSidebar");
   const { theme, setTheme } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
@@ -80,7 +82,7 @@ export function AppSidebar() {
     (c) => !c.isPersonal && c.myRole === "MEMBER",
   );
 
-  const displayName = user?.nickname || user?.email || "User";
+  const displayName = user?.nickname || user?.email || t("user");
   const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
@@ -119,7 +121,7 @@ export function AppSidebar() {
                     onClick={() => router.push("/settings/profile")}
                   >
                     <Settings className="mr-2 h-4 w-4" />
-                    Settings
+                    {t("settings")}
                   </DropdownMenuItem>
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
@@ -130,27 +132,27 @@ export function AppSidebar() {
                       ) : (
                         <Monitor className="mr-2 h-4 w-4" />
                       )}
-                      Theme
+                      {t("theme")}
                     </DropdownMenuSubTrigger>
                     <DropdownMenuPortal>
                       <DropdownMenuSubContent>
                         <DropdownMenuItem onClick={() => setTheme("light")}>
                           <Sun className="mr-2 h-4 w-4" />
-                          Light
+                          {t("light")}
                           {theme === "light" && (
                             <span className="ml-auto text-xs text-muted-foreground">&#10003;</span>
                           )}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setTheme("dark")}>
                           <Moon className="mr-2 h-4 w-4" />
-                          Dark
+                          {t("dark")}
                           {theme === "dark" && (
                             <span className="ml-auto text-xs text-muted-foreground">&#10003;</span>
                           )}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setTheme("system")}>
                           <Monitor className="mr-2 h-4 w-4" />
-                          System
+                          {t("system")}
                           {theme === "system" && (
                             <span className="ml-auto text-xs text-muted-foreground">&#10003;</span>
                           )}
@@ -161,7 +163,7 @@ export function AppSidebar() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout}>
                     <LogOut className="mr-2 h-4 w-4" />
-                    Log out
+                    {t("logOut")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -169,7 +171,11 @@ export function AppSidebar() {
               <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
-                title={theme === "dark" ? "Light mode" : "Dark mode"}
+                title={
+                  theme === "dark"
+                    ? t("lightMode")
+                    : t("darkMode")
+                }
               >
                 {theme === "dark" ? (
                   <Sun className="h-4 w-4" />
@@ -199,7 +205,7 @@ export function AppSidebar() {
                 >
                   <Link href="/dashboard">
                     <Home className="h-4 w-4" />
-                    <span>Homepage</span>
+                    <span>{t("homepage")}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -220,7 +226,7 @@ export function AppSidebar() {
                     >
                       <Link href={`/classes/${personalClass.id}`}>
                         <BookOpen className="h-4 w-4" />
-                        <span>Personal Space</span>
+                        <span>{t("personalSpace")}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -236,7 +242,7 @@ export function AppSidebar() {
         {(loading || managedClasses.length > 0) && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-label-upper">
-              My Classes
+              {t("myClasses")}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -276,7 +282,7 @@ export function AppSidebar() {
         {(loading || joinedClasses.length > 0) && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-label-upper">
-              Joined Classes
+              {t("joinedClasses")}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -316,7 +322,7 @@ export function AppSidebar() {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                    No classes yet
+                    {t("noClassesYet")}
                   </div>
                 </SidebarMenuItem>
               </SidebarMenu>
@@ -334,7 +340,7 @@ export function AppSidebar() {
                 trigger={
                   <SidebarMenuButton className="flex-1 !rounded-full bg-class-accent text-class-accent-foreground hover:opacity-90">
                     <UserPlus className="h-4 w-4" />
-                    <span>Join Class</span>
+                    <span>{t("joinClass")}</span>
                   </SidebarMenuButton>
                 }
                 onJoined={() => void loadClasses()}
@@ -343,7 +349,7 @@ export function AppSidebar() {
                 trigger={
                   <SidebarMenuButton className="shrink-0 w-auto !rounded-full px-3">
                     <Plus className="h-4 w-4" />
-                    <span>Create</span>
+                    <span>{t("create")}</span>
                   </SidebarMenuButton>
                 }
                 onCreated={() => void loadClasses()}

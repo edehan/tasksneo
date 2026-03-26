@@ -11,6 +11,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -66,6 +67,7 @@ export function EditorPage({
   initialAttachments,
   isAlreadyPublished,
 }: EditorPageProps) {
+  const t = useTranslations("editorPage");
   const { token } = useAuth();
   const router = useRouter();
 
@@ -145,11 +147,11 @@ export function EditorPage({
 
       setAttachments((prev) => [...prev, ...results]);
       toast.success(
-        `Uploaded ${results.length} file${results.length > 1 ? "s" : ""}`,
+        t("toast.uploadedFiles", { count: results.length }),
       );
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to upload file";
+        err instanceof ApiError ? err.message : t("toast.failedUploadFile");
       toast.error(message);
     } finally {
       setUploading(false);
@@ -184,10 +186,10 @@ export function EditorPage({
     try {
       await deleteAttachment(token, att.id);
       setAttachments((prev) => prev.filter((a) => a.id !== att.id));
-      toast.success("Attachment removed");
+      toast.success(t("toast.attachmentRemoved"));
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to remove attachment";
+        err instanceof ApiError ? err.message : t("toast.failedRemoveAttachment");
       toast.error(message);
     }
   }
@@ -229,7 +231,7 @@ export function EditorPage({
       }
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to upload image";
+        err instanceof ApiError ? err.message : t("toast.failedUploadImage");
       toast.error(message);
     } finally {
       setUploading(false);
@@ -257,16 +259,16 @@ export function EditorPage({
           await updateTask(token, taskId, {
             description: content || null,
           });
-          toast.success("Changes saved");
+          toast.success(t("toast.changesSaved"));
         } else {
           await publishTaskDraft(token, taskId, {
             description: content || null,
           });
-          toast.success("Task published");
+          toast.success(t("toast.taskPublished"));
         }
       } else {
         await upsertMySubmission(token, taskId, content || null);
-        toast.success("Submission saved");
+        toast.success(t("toast.submissionSaved"));
       }
       router.back();
     } catch (err) {
@@ -274,8 +276,8 @@ export function EditorPage({
         err instanceof ApiError
           ? err.message
           : mode === "publish"
-            ? "Failed to save task"
-            : "Failed to save submission";
+            ? t("toast.failedSaveTask")
+            : t("toast.failedSaveSubmission");
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -286,17 +288,17 @@ export function EditorPage({
 
   const breadcrumbLabel =
     mode === "submit"
-      ? `Submitting to \u00b7 ${clsName}`
+      ? t("breadcrumb.submittingTo", { className: clsName })
       : isAlreadyPublished
-        ? `Editing \u00b7 ${clsName}`
-        : `Publishing in \u00b7 ${clsName}`;
+        ? t("breadcrumb.editing", { className: clsName })
+        : t("breadcrumb.publishingIn", { className: clsName });
 
   const primaryLabel =
     mode === "submit"
-      ? "Submit"
+      ? t("primary.submit")
       : isAlreadyPublished
-        ? "Save Changes"
-        : "Publish Task";
+        ? t("primary.saveChanges")
+        : t("primary.publishTask");
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -310,7 +312,7 @@ export function EditorPage({
             type="button"
             onClick={() => router.back()}
             className="flex h-[34px] w-[34px] items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
-            aria-label="Go back"
+            aria-label={t("goBack")}
           >
             <ArrowLeft size={16} strokeWidth={2} />
           </button>
@@ -334,12 +336,12 @@ export function EditorPage({
             {preview ? (
               <>
                 <Edit3 size={13} strokeWidth={2} />
-                Edit
+                {t("toggle.edit")}
               </>
             ) : (
               <>
                 <Eye size={13} strokeWidth={2} />
-                Preview
+                {t("toggle.preview")}
               </>
             )}
           </button>
@@ -387,7 +389,7 @@ export function EditorPage({
               ref={textareaRef}
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Write your content in Markdown..."
+              placeholder={t("editorPlaceholder")}
               className="flex-1 resize-none bg-transparent px-8 py-7 font-mono text-sm leading-relaxed text-foreground placeholder:text-text-muted-soft focus:outline-none"
             />
           )}
@@ -412,7 +414,7 @@ export function EditorPage({
                   className="text-muted-foreground"
                 />
                 <span className="text-xs text-muted-foreground">
-                  {uploading ? "Uploading..." : "Drop files or click to upload"}
+                  {uploading ? t("uploading") : t("dropOrClickUpload")}
                 </span>
                 <input
                   type="file"
@@ -440,12 +442,12 @@ export function EditorPage({
       <footer className="flex shrink-0 items-center justify-between border-t border-border px-8 py-3">
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           <span>
-            {wordCount} {wordCount === 1 ? "word" : "words"}
+            {t("footer.wordCount", { count: wordCount })}
           </span>
           <span className="text-text-muted-soft">&middot;</span>
-          <span className="text-text-muted-soft">Markdown supported</span>
+          <span className="text-text-muted-soft">{t("footer.markdownSupported")}</span>
         </div>
-        <span className="text-xs text-text-muted-soft">Draft saved</span>
+        <span className="text-xs text-text-muted-soft">{t("footer.draftSaved")}</span>
       </footer>
 
       {/* Hidden image file input */}
@@ -462,21 +464,20 @@ export function EditorPage({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="font-serif">
-              Publish this task?
+              {t("publishConfirm.title")}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This will notify all class members. You can still edit the task
-              after publishing.
+              {t("publishConfirm.description")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("publishConfirm.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => void doSubmitOrPublish()}
               className="text-white"
               style={{ backgroundColor: accentColor }}
             >
-              Confirm Publish
+              {t("publishConfirm.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

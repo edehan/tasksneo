@@ -1,6 +1,9 @@
 "use client";
 
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
+import { useLocale, useTranslations } from "next-intl";
+
+type TranslateFn = ReturnType<typeof useTranslations>;
 
 // ─── Status derivation ──────────────────────────────────────────────────────
 
@@ -16,36 +19,20 @@ function deriveStatus(task: TaskWithClass): DerivedStatus {
   return "not-started";
 }
 
-// ─── Date formatting ────────────────────────────────────────────────────────
-
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-  hour12: true,
-});
-
-function formatDate(iso: string | null): string {
-  if (!iso) return "\u2014";
-  return dateFormatter.format(new Date(iso));
-}
-
-// ─── Status badge config ────────────────────────────────────────────────────
-
 function getStatusBadge(
   status: DerivedStatus,
   classColor: string,
+  t: TranslateFn,
 ): { label: string; bg: string; text: string } {
   switch (status) {
     case "submitted":
-      return { label: "Submitted", bg: "#5B8C6A18", text: "#5B8C6A" };
+      return { label: t("status.submitted"), bg: "#5B8C6A18", text: "#5B8C6A" };
     case "overdue":
-      return { label: "Overdue", bg: "#c45c5c18", text: "#c45c5c" };
+      return { label: t("status.overdue"), bg: "#c45c5c18", text: "#c45c5c" };
     case "in-progress":
-      return { label: "In Progress", bg: classColor + "18", text: classColor };
+      return { label: t("status.inProgress"), bg: classColor + "18", text: classColor };
     case "not-started":
-      return { label: "Not Started", bg: "var(--muted)", text: "var(--muted-foreground)" };
+      return { label: t("status.notStarted"), bg: "var(--muted)", text: "var(--muted-foreground)" };
   }
 }
 
@@ -62,6 +49,21 @@ export function TaskListView({
   showClass = true,
   onTaskClick,
 }: TaskListViewProps) {
+  const t = useTranslations("taskListView");
+  const locale = useLocale();
+  const dateFormatter = new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  function formatDate(iso: string | null): string {
+    if (!iso) return "\u2014";
+    return dateFormatter.format(new Date(iso));
+  }
+
   return (
     <div className="w-full">
       {/* Header row */}
@@ -72,23 +74,23 @@ export function TaskListView({
         }}
       >
         <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Task
+          {t("columns.task")}
         </span>
         <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Start Date
+          {t("columns.startDate")}
         </span>
         <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Due Date
+          {t("columns.dueDate")}
         </span>
         <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Status
+          {t("columns.status")}
         </span>
       </div>
 
       {/* Data rows */}
       {tasks.map((task) => {
         const status = deriveStatus(task);
-        const badge = getStatusBadge(status, task.classColor);
+        const badge = getStatusBadge(status, task.classColor, t);
         const isSubmitted = status === "submitted";
         const isOverdue = status === "overdue";
 

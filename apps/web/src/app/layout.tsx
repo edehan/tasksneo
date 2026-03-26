@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { NextIntlClientProvider } from "next-intl";
 
 import { AuthProvider } from "@/components/auth-provider";
+import { resolveLocaleFromAcceptLanguage, toHtmlLang } from "@/i18n/locale";
+import { getMessagesForLocale } from "@/i18n/messages";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -11,20 +15,28 @@ export const metadata: Metadata = {
   description: "TaskFlow frontend",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headerStore = await headers();
+  const locale = resolveLocaleFromAcceptLanguage(
+    headerStore.get("accept-language"),
+  );
+  const messages = await getMessagesForLocale(locale);
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={toHtmlLang(locale)} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased text-sm leading-relaxed">
-        <ThemeProvider>
-          <AuthProvider>
-            {children}
-            <Toaster richColors position="top-right" />
-          </AuthProvider>
-        </ThemeProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <ThemeProvider>
+            <AuthProvider>
+              {children}
+              <Toaster richColors position="top-right" />
+            </AuthProvider>
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

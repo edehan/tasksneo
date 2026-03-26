@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Bell,
   CheckCheck,
   ChevronDown,
   ChevronUp,
@@ -9,6 +8,7 @@ import {
   Megaphone,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -21,16 +21,18 @@ import {
 
 const STORAGE_KEY = "taskflow_inbox_collapsed";
 
-function timeAgo(dateStr: string): string {
+type TranslateFn = ReturnType<typeof useTranslations>;
+
+function timeAgo(dateStr: string, t: TranslateFn): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const minutes = Math.floor(diff / 60_000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1) return t("time.justNow");
+  if (minutes < 60) return t("time.minutesAgo", { count: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t("time.hoursAgo", { count: hours });
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  return `${Math.floor(days / 30)}mo ago`;
+  if (days < 30) return t("time.daysAgo", { count: days });
+  return t("time.monthsAgo", { count: Math.floor(days / 30) });
 }
 
 interface InboxCardProps {
@@ -38,6 +40,7 @@ interface InboxCardProps {
 }
 
 export function InboxCard({ onTaskClick }: InboxCardProps) {
+  const t = useTranslations("dashboardInbox");
   const { token } = useAuth();
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -131,7 +134,7 @@ export function InboxCard({ onTaskClick }: InboxCardProps) {
           ) : (
             <ChevronUp className="h-4 w-4 text-muted-foreground" />
           )}
-          <span className="text-heading-md">Inbox</span>
+          <span className="text-heading-md">{t("inbox")}</span>
           {unreadCount > 0 && (
             <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-medium text-primary-foreground">
               {unreadCount}
@@ -147,7 +150,7 @@ export function InboxCard({ onTaskClick }: InboxCardProps) {
             onClick={handleMarkAllRead}
           >
             <CheckCheck className="h-3.5 w-3.5" />
-            Mark all as read
+            {t("markAllAsRead")}
           </Button>
         )}
       </div>
@@ -197,7 +200,7 @@ export function InboxCard({ onTaskClick }: InboxCardProps) {
                   {/* Time + unread dot */}
                   <div className="flex shrink-0 items-center gap-2">
                     <span className="text-xs text-muted-foreground">
-                      {timeAgo(item.createdAt)}
+                      {timeAgo(item.createdAt, t)}
                     </span>
                     {!item.readAt && (
                       <div className="h-2 w-2 rounded-full bg-primary" />

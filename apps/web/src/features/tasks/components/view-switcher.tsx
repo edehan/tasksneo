@@ -1,6 +1,7 @@
 "use client";
 
 import { BarChart3, List } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export type ViewMode = "gantt" | "list";
 
@@ -10,6 +11,8 @@ interface ViewSwitcherProps {
 }
 
 export function ViewSwitcher({ mode, onChange }: ViewSwitcherProps) {
+  const t = useTranslations("taskViewSwitcher");
+
   return (
     <div className="flex items-center gap-1">
       <button
@@ -22,7 +25,7 @@ export function ViewSwitcher({ mode, onChange }: ViewSwitcherProps) {
         }`}
       >
         <BarChart3 className="h-4 w-4" />
-        Gantt
+        {t("gantt")}
       </button>
       <button
         type="button"
@@ -34,7 +37,7 @@ export function ViewSwitcher({ mode, onChange }: ViewSwitcherProps) {
         }`}
       >
         <List className="h-4 w-4" />
-        List
+        {t("list")}
       </button>
     </div>
   );

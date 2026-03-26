@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTranslations } from "next-intl";
 import type { School } from "@/lib/api";
 import {
   ApiError,
@@ -47,6 +48,7 @@ function CompleteRegistrationInner() {
   const token = searchParams.get("token");
   const router = useRouter();
   const { setAuth } = useAuth();
+  const t = useTranslations("authRegisterComplete");
 
   const [verifying, setVerifying] = useState(true);
   const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
@@ -64,7 +66,7 @@ function CompleteRegistrationInner() {
 
   useEffect(() => {
     if (!token) {
-      setError("Missing verification token.");
+      setError(t("missingVerificationToken"));
       setVerifying(false);
       return;
     }
@@ -74,14 +76,14 @@ function CompleteRegistrationInner() {
         if (res.valid) {
           setVerifiedEmail(res.email);
         } else {
-          setError("This link is invalid or has expired.");
+          setError(t("invalidOrExpiredLink"));
         }
       })
       .catch(() => {
-        setError("This link is invalid or has expired.");
+        setError(t("invalidOrExpiredLink"));
       })
       .finally(() => setVerifying(false));
-  }, [token]);
+  }, [token, t]);
 
   const loadSchools = useCallback(async () => {
     try {
@@ -103,12 +105,12 @@ function CompleteRegistrationInner() {
     if (!token || !password) return;
 
     if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
+      toast.error(t("passwordsDoNotMatch"));
       return;
     }
 
     if (schoolId && !studentId.trim()) {
-      toast.error("Student ID is required when a school is selected");
+      toast.error(t("studentIdRequired"));
       return;
     }
 
@@ -126,7 +128,7 @@ function CompleteRegistrationInner() {
       router.replace("/dashboard");
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Registration failed";
+        err instanceof ApiError ? err.message : t("registrationFailed");
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -147,12 +149,14 @@ function CompleteRegistrationInner() {
     return (
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-serif">Link expired</CardTitle>
+          <CardTitle className="text-2xl font-serif">
+            {t("linkExpired")}
+          </CardTitle>
           <CardDescription>{error}</CardDescription>
         </CardHeader>
         <CardFooter className="justify-center">
           <Button asChild variant="outline">
-            <Link href="/register">Back to registration</Link>
+            <Link href="/register">{t("backToRegistration")}</Link>
           </Button>
         </CardFooter>
       </Card>
@@ -162,19 +166,22 @@ function CompleteRegistrationInner() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-serif">Complete your account</CardTitle>
+        <CardTitle className="text-2xl font-serif">
+          {t("completeAccount")}
+        </CardTitle>
         <CardDescription>
-          Set up your profile for <strong>{verifiedEmail}</strong>
+          {t("setupProfileFor")}{" "}
+          <strong>{verifiedEmail}</strong>
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="comp-password">Password</Label>
+            <Label htmlFor="comp-password">{t("password")}</Label>
             <Input
               id="comp-password"
               type="password"
-              placeholder="At least 8 characters"
+              placeholder={t("atLeast8Characters")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -184,11 +191,13 @@ function CompleteRegistrationInner() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="comp-confirm-password">Confirm password</Label>
+            <Label htmlFor="comp-confirm-password">
+              {t("confirmPassword")}
+            </Label>
             <Input
               id="comp-confirm-password"
               type="password"
-              placeholder="Repeat your password"
+              placeholder={t("repeatPassword")}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
@@ -198,21 +207,26 @@ function CompleteRegistrationInner() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="comp-nickname">
-              Nickname <span className="text-muted-foreground">(optional)</span>
+              {t("nickname")}{" "}
+              <span className="text-muted-foreground">
+                {t("optional")}
+              </span>
             </Label>
             <Input
               id="comp-nickname"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
-              placeholder="How others will see you"
+              placeholder={t("nicknamePlaceholder")}
             />
           </div>
           {schools.length > 0 && (
             <>
               <div className="space-y-2">
                 <Label>
-                  School{" "}
-                  <span className="text-muted-foreground">(optional)</span>
+                  {t("school")}{" "}
+                  <span className="text-muted-foreground">
+                    {t("optional")}
+                  </span>
                 </Label>
                 <Select
                   value={schoolId ?? "none"}
@@ -222,10 +236,10 @@ function CompleteRegistrationInner() {
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a school" />
+                    <SelectValue placeholder={t("selectSchool")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">No school</SelectItem>
+                    <SelectItem value="none">{t("noSchool")}</SelectItem>
                     {schools.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.name}
@@ -236,13 +250,15 @@ function CompleteRegistrationInner() {
               </div>
               {schoolId && (
                 <div className="space-y-2">
-                  <Label htmlFor="comp-studentId">Student ID</Label>
+                  <Label htmlFor="comp-studentId">
+                    {t("studentId")}
+                  </Label>
                   <Input
                     id="comp-studentId"
                     value={studentId}
                     onChange={(e) => setStudentId(e.target.value)}
                     required
-                    placeholder="Your student number"
+                    placeholder={t("studentNumberPlaceholder")}
                   />
                 </div>
               )}
@@ -251,7 +267,7 @@ function CompleteRegistrationInner() {
         </CardContent>
         <CardFooter>
           <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting ? "Creating account..." : "Create account"}
+            {submitting ? t("creatingAccount") : t("createAccount")}
           </Button>
         </CardFooter>
       </form>
