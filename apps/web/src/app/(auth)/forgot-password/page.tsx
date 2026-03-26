@@ -14,28 +14,26 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ApiError, register } from "@/lib/api";
+import { ApiError, requestPasswordReset } from "@/lib/api";
 
-export function RegisterForm() {
+export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email || !agreedToTerms) return;
+    if (!email) return;
 
     setSubmitting(true);
     try {
-      await register(email);
+      await requestPasswordReset(email);
       setSent(true);
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Registration failed";
+        err instanceof ApiError ? err.message : "Something went wrong";
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -45,8 +43,8 @@ export function RegisterForm() {
   async function handleResend() {
     setSubmitting(true);
     try {
-      await register(email);
-      toast.success("Verification email resent");
+      await requestPasswordReset(email);
+      toast.success("Reset email resent");
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : "Failed to resend email";
@@ -65,8 +63,8 @@ export function RegisterForm() {
           </div>
           <CardTitle className="text-2xl font-serif">Check your email</CardTitle>
           <CardDescription>
-            We sent a verification link to <strong>{email}</strong>. Click the
-            link in the email to complete your registration.
+            If an account exists for <strong>{email}</strong>, we sent a password
+            reset link.
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center text-sm text-muted-foreground">
@@ -81,16 +79,8 @@ export function RegisterForm() {
           >
             {submitting ? "Sending..." : "Resend email"}
           </Button>
-          <Button
-            variant="ghost"
-            className="w-full"
-            onClick={() => {
-              setSent(false);
-              setEmail("");
-              setAgreedToTerms(false);
-            }}
-          >
-            Use a different email
+          <Button variant="ghost" className="w-full" asChild>
+            <Link href="/login">Back to sign in</Link>
           </Button>
         </CardFooter>
       </Card>
@@ -100,15 +90,18 @@ export function RegisterForm() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-serif">Create an account</CardTitle>
-        <CardDescription>Get started with TaskFlow</CardDescription>
+        <CardTitle className="text-2xl font-serif">Reset your password</CardTitle>
+        <CardDescription>
+          Enter your email address and we&apos;ll send you a link to reset your
+          password.
+        </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="reg-email">Email</Label>
+            <Label htmlFor="reset-email">Email</Label>
             <Input
-              id="reg-email"
+              id="reset-email"
               type="email"
               placeholder="you@example.com"
               value={email}
@@ -118,34 +111,13 @@ export function RegisterForm() {
               autoFocus
             />
           </div>
-          <div className="flex items-start gap-2">
-            <Checkbox
-              id="reg-terms"
-              checked={agreedToTerms}
-              onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
-            />
-            <Label htmlFor="reg-terms" className="text-sm leading-snug font-normal">
-              I agree to the{" "}
-              <Link href="/terms" className="text-primary underline-offset-4 hover:underline" target="_blank">
-                Terms of Service
-              </Link>{" "}
-              and{" "}
-              <Link href="/privacy" className="text-primary underline-offset-4 hover:underline" target="_blank">
-                Privacy Policy
-              </Link>
-            </Label>
-          </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={submitting || !agreedToTerms}
-          >
-            {submitting ? "Sending..." : "Continue with email"}
+          <Button type="submit" className="w-full" disabled={submitting}>
+            {submitting ? "Sending..." : "Send reset link"}
           </Button>
           <p className="text-sm text-muted-foreground">
-            Already have an account?{" "}
+            Remember your password?{" "}
             <Link
               href="/login"
               className="text-primary underline-offset-4 hover:underline"

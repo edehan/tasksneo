@@ -65,11 +65,20 @@ components:
 
     RegisterRequest:
       type: object
-      required: [email, password]
+      required: [email]
       properties:
         email:
           type: string
           format: email
+      description: Step 1 — sends a verification email to the address.
+
+    RegisterCompleteRequest:
+      type: object
+      required: [token, password]
+      properties:
+        token:
+          type: string
+          description: Token from verification email link
         password:
           type: string
           minLength: 8
@@ -82,11 +91,44 @@ components:
         studentId:
           type: string
           nullable: true
-          description: 若 schoolId 不为空则必填
+          description: Required when schoolId is provided
         timezone:
           type: string
-          description: IANA 时区标识符（如 Asia/Shanghai），由浏览器上报，未提供时默认 UTC
+          description: IANA timezone identifier (e.g. Asia/Shanghai), defaults to UTC
           example: Asia/Shanghai
+
+    ForgotPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+
+    ResetPasswordRequest:
+      type: object
+      required: [token, password]
+      properties:
+        token:
+          type: string
+        password:
+          type: string
+          minLength: 8
+
+    ChangeEmailRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+
+    ConfirmEmailRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
 
     LoginRequest:
       type: object
@@ -794,13 +836,14 @@ paths:
   /auth/register:
     post:
       tags: [Auth]
-      summary: 用户注册
+      summary: Send registration verification email
       description: |
-        创建新用户账号。
-        
-        - 注册成功后自动创建个人空间（isPersonal = true 的班级）。
-        - 若 `auth.registration_open` 为 false，返回 403。
-        - 若 schoolId 不为空，studentId 为必填项。
+        Step 1 of registration. Sends a verification email to the provided address.
+        The email contains a link with a token to complete registration.
+
+        - Rate limited to 5 emails per address per 24 hours.
+        - If `auth.registration_open` is false, returns 403.
+        - If email is already registered, returns 409.
       requestBody:
         required: true
         content:
@@ -808,26 +851,59 @@ paths:
             schema:
               $ref: '#/components/schemas/RegisterRequest'
       responses:
-        '201':
-          description: 注册成功，返回 Token 和用户信息
+        '200':
+          description: Verification email sent
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '400':
-          description: 请求参数不合法（如 schoolId 有值但 studentId 为空）
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  message:
+                    type: string
         '403':
-          description: 注册功能已关闭
+          description: Registration is closed
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '409':
-          description: 邮箱已被注册，或该学校下学号已被使用
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/register/complete:
+    post:
+      tags: [Auth]
+      summary: Complete registration after email verification
+      description: |
+        Step 2 of registration. Accepts the token from the verification email
+        along with account details. Creates the user and returns a JWT.
+
+        - Token is single-use and expires after 1 hour.
+        - Automatically creates a personal class for the user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterCompleteRequest'
+      responses:
+        '201':
+          description: Registration complete, returns JWT and user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid or expired token, or validation error
           content:
             application/json:
               schema:
@@ -857,14 +933,105 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '403':
-          description: 账号已被停用
+          description: Account is deactivated
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Request password reset email
+      description: |
+        Sends a password reset email if the address is registered.
+        Always returns 200 to prevent email enumeration.
+        Rate limited to 5 emails per address per 24 hours.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '200':
+          description: If the email exists, a reset link has been sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset password with token
+      description: |
+        Validates the reset token and sets a new password.
+        Returns a JWT so the user is logged in immediately.
+        Token is single-use and expires after 1 hour.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password reset successful, returns JWT and user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/verify-token:
+    get:
+      tags: [Auth]
+      summary: Verify a token is valid
+      description: |
+        Checks whether a verification token is still valid and returns the
+        associated email. Used by frontend pages before showing forms.
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: purpose
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [REGISTRATION, PASSWORD_RESET]
+      responses:
+        '200':
+          description: Token verification result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  email:
+                    type: string
+
   # ══════════════════════════════════════════════════════
-  # USERS (当前登录用户操作自己的数据)
+  # USERS
   # ══════════════════════════════════════════════════════
 
   /users/me:
@@ -937,7 +1104,75 @@ paths:
         '204':
           description: 修改成功，无返回体
         '400':
-          description: 原密码错误或新密码不合法
+          description: Invalid current password or new password too short
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/me/email/change:
+    post:
+      tags: [Users]
+      summary: Request email change verification
+      description: |
+        Sends a verification email to the new address. The user's email
+        will not change until they click the verification link.
+        Rate limited to 5 emails per address per 24 hours.
+      security:
+        - userAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeEmailRequest'
+      responses:
+        '200':
+          description: Verification email sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '409':
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/me/email/confirm:
+    post:
+      tags: [Users]
+      summary: Confirm email change
+      description: |
+        Validates the email change token and updates the user's email address.
+        Token is single-use and expires after 1 hour.
+      security:
+        - userAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmEmailRequest'
+      responses:
+        '200':
+          description: Email updated, returns updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          description: Invalid or expired token
           content:
             application/json:
               schema:

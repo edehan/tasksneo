@@ -136,6 +136,13 @@ export async function upsertMyNotificationPref(
   userId: string,
   input: { channel: NotifChannel; address: string; isEnabled?: boolean },
 ) {
+  // For EMAIL channel, always use the account email — no custom address override
+  let address = input.address;
+  if (input.channel === NotifChannel.EMAIL) {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+    address = user?.email ?? input.address;
+  }
+
   return prisma.userNotificationPref.upsert({
     where: {
       userId_channel: {
@@ -144,13 +151,13 @@ export async function upsertMyNotificationPref(
       },
     },
     update: {
-      address: input.address,
+      address,
       isEnabled: input.isEnabled ?? true,
     },
     create: {
       userId,
       channel: input.channel,
-      address: input.address,
+      address,
       isEnabled: input.isEnabled ?? true,
     },
   });

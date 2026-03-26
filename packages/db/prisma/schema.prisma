@@ -287,6 +287,29 @@ enum NotifStatus {
   @@map("notif_status")
 }
 
+// ─── Email Verification Tokens ───────────────────────────────────────────────
+
+model EmailVerificationToken {
+  id        String            @id @default(uuid())
+  email     String
+  token     String            @unique
+  purpose   EmailTokenPurpose
+  userId    String?           @map("user_id")
+  expiresAt DateTime          @map("expires_at") @db.Timestamptz
+  createdAt DateTime          @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([email, purpose, createdAt])
+  @@map("email_verification_tokens")
+}
+
+enum EmailTokenPurpose {
+  REGISTRATION
+  PASSWORD_RESET
+  EMAIL_CHANGE
+
+  @@map("email_token_purpose")
+}
+
 // ─── System Config ───────────────────────────────────────────────────────────
 
 model SystemConfig {

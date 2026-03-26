@@ -7,6 +7,15 @@ import { toast } from "sonner";
 import { useAuth } from "@/components/auth-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -22,6 +31,7 @@ import type { School } from "@/lib/api";
 import {
   ApiError,
   listSchools,
+  requestEmailChange,
   updateProfile,
   uploadAvatar,
   getMe,
@@ -241,18 +251,18 @@ export default function ProfilePage() {
         />
       </div>
 
-      {/* Email (read-only) */}
+      {/* Email */}
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          value={user.email}
-          disabled
-          className="opacity-60"
-        />
-        <p className="text-xs text-muted-foreground">
-          Email cannot be changed.
-        </p>
+        <div className="flex gap-2">
+          <Input
+            id="email"
+            value={user.email}
+            disabled
+            className="opacity-60"
+          />
+          <ChangeEmailDialog token={token} />
+        </div>
       </div>
 
       {/* School */}
@@ -339,5 +349,100 @@ export default function ProfilePage() {
         Save Changes
       </Button>
     </div>
+  );
+}
+
+function ChangeEmailDialog({ token }: { token: string | null }) {
+  const [open, setOpen] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  function handleOpenChange(isOpen: boolean) {
+    setOpen(isOpen);
+    if (!isOpen) {
+      setNewEmail("");
+      setSent(false);
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token || !newEmail) return;
+
+    setSubmitting(true);
+    try {
+      await requestEmailChange(token, newEmail);
+      setSent(true);
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : "Failed to send verification";
+      toast.error(message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="shrink-0">
+          Change
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        {sent ? (
+          <>
+            <DialogHeader>
+              <DialogTitle className="font-serif">Check your email</DialogTitle>
+              <DialogDescription>
+                We sent a verification link to <strong>{newEmail}</strong>.
+                Click the link to confirm the change.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => handleOpenChange(false)}>
+                Close
+              </Button>
+            </DialogFooter>
+          </>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <DialogHeader>
+              <DialogTitle className="font-serif">Change email address</DialogTitle>
+              <DialogDescription>
+                A verification link will be sent to your new email address.
+                Your email won&apos;t change until you click the link.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Label htmlFor="new-email">New email address</Label>
+              <Input
+                id="new-email"
+                type="email"
+                placeholder="new@example.com"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                required
+                autoFocus
+                className="mt-2"
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleOpenChange(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={submitting || !newEmail}>
+                {submitting ? "Sending..." : "Send verification"}
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

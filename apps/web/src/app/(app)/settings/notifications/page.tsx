@@ -20,7 +20,6 @@ export default function NotificationsPage() {
 
   // Email notification state
   const [emailEnabled, setEmailEnabled] = useState(false);
-  const [emailAddress, setEmailAddress] = useState("");
 
   // Webhook notification state
   const [webhookEnabled, setWebhookEnabled] = useState(false);
@@ -36,9 +35,6 @@ export default function NotificationsPage() {
       );
       if (emailPref) {
         setEmailEnabled(emailPref.isEnabled);
-        setEmailAddress(emailPref.address);
-      } else {
-        setEmailAddress(user?.email ?? "");
       }
 
       const webhookPref = prefs.find(
@@ -61,10 +57,6 @@ export default function NotificationsPage() {
 
   async function handleSave() {
     if (!token) return;
-    if (emailEnabled && !emailAddress.trim()) {
-      toast.error("Please enter an email address");
-      return;
-    }
     if (webhookEnabled && !webhookUrl.trim()) {
       toast.error("Please enter a webhook URL");
       return;
@@ -75,7 +67,7 @@ export default function NotificationsPage() {
       const promises: Promise<unknown>[] = [
         upsertNotificationPref(token, {
           channel: "EMAIL",
-          address: emailAddress.trim() || (user?.email ?? ""),
+          address: user?.email ?? "",
           isEnabled: emailEnabled,
         }),
       ];
@@ -136,21 +128,10 @@ export default function NotificationsPage() {
             disabled={saving}
           />
         </div>
-        {emailEnabled && (
-          <div className="space-y-2">
-            <Label htmlFor="notification-email">Notification Email</Label>
-            <Input
-              id="notification-email"
-              type="email"
-              value={emailAddress}
-              onChange={(e) => setEmailAddress(e.target.value)}
-              placeholder="your@email.com"
-              disabled={saving}
-            />
-            <p className="text-xs text-muted-foreground">
-              Defaults to your account email if left unchanged.
-            </p>
-          </div>
+        {emailEnabled && user?.email && (
+          <p className="text-sm text-muted-foreground rounded-lg border border-border px-4 py-3">
+            Notifications will be sent to your account email ({user.email}).
+          </p>
         )}
       </section>
 

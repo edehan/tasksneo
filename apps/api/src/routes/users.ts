@@ -6,6 +6,10 @@ import { requireAuthUser } from '../lib/context.js';
 import { uploadObject } from '../lib/storage.js';
 import { authMiddleware } from '../middleware/auth.js';
 import {
+  confirmEmailChange,
+  sendEmailChangeVerification,
+} from '../services/email-verification.service.js';
+import {
   getUnreadNotificationCount,
   listMyNotifications,
   markAllNotificationsRead,
@@ -56,6 +60,30 @@ usersRouter.patch('/me', async (c) => {
   const authUser = requireAuthUser(c);
   const body = updateProfileSchema.parse(await c.req.json());
   const user = await updateMyProfile(authUser.userId, body);
+  return c.json(user, 200);
+});
+
+// ── Email change ────────────────────────────────────────────────────────────
+
+const changeEmailSchema = z.object({
+  email: z.string().email(),
+});
+
+const confirmEmailSchema = z.object({
+  token: z.string().min(1),
+});
+
+usersRouter.post('/me/email/change', async (c) => {
+  const authUser = requireAuthUser(c);
+  const body = changeEmailSchema.parse(await c.req.json());
+  await sendEmailChangeVerification(authUser.userId, body.email);
+  return c.json({ message: 'Verification email sent' }, 200);
+});
+
+usersRouter.post('/me/email/confirm', async (c) => {
+  const authUser = requireAuthUser(c);
+  const body = confirmEmailSchema.parse(await c.req.json());
+  const user = await confirmEmailChange(body.token, authUser.userId);
   return c.json(user, 200);
 });
 

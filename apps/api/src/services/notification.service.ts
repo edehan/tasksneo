@@ -314,7 +314,7 @@ export async function processNotificationJob(notificationJobId: string) {
     const baseUrl = (await getConfigValue('app.base_url')) || 'http://localhost:3000';
 
     if (channel === NotifChannel.EMAIL) {
-      const targetEmail = pref?.address || user.email;
+      const targetEmail = user.email;
 
       await sendEmail(
         targetEmail,

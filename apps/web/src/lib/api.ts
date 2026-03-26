@@ -263,18 +263,75 @@ export async function login(
   });
 }
 
-export async function register(input: {
-  email: string;
+export async function register(email: string): Promise<{ message: string }> {
+  return apiRequest<{ message: string }>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function verifyToken(
+  token: string,
+  purpose: "REGISTRATION" | "PASSWORD_RESET",
+): Promise<{ valid: boolean; email: string }> {
+  return apiRequest<{ valid: boolean; email: string }>(
+    `/auth/verify-token?token=${encodeURIComponent(token)}&purpose=${purpose}`,
+  );
+}
+
+export async function completeRegistration(input: {
+  token: string;
   password: string;
   nickname?: string;
   schoolId?: string | null;
   studentId?: string | null;
   timezone?: string;
 }): Promise<AuthResponse> {
-  return apiRequest<AuthResponse>("/auth/register", {
+  return apiRequest<AuthResponse>("/auth/register/complete", {
     method: "POST",
     body: JSON.stringify(input),
   });
+}
+
+export async function requestPasswordReset(
+  email: string,
+): Promise<{ message: string }> {
+  return apiRequest<{ message: string }>("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resetPassword(
+  token: string,
+  password: string,
+): Promise<AuthResponse> {
+  return apiRequest<AuthResponse>("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, password }),
+  });
+}
+
+export async function requestEmailChange(
+  authToken: string,
+  newEmail: string,
+): Promise<{ message: string }> {
+  return apiRequest<{ message: string }>(
+    "/users/me/email/change",
+    { method: "POST", body: JSON.stringify({ email: newEmail }) },
+    authToken,
+  );
+}
+
+export async function confirmEmailChange(
+  authToken: string,
+  verificationToken: string,
+): Promise<UserProfile> {
+  return apiRequest<UserProfile>(
+    "/users/me/email/confirm",
+    { method: "POST", body: JSON.stringify({ token: verificationToken }) },
+    authToken,
+  );
 }
 
 // ─── Users ───────────────────────────────────────────────────────────────────
