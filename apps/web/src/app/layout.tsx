@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 
 import { AuthProvider } from "@/components/auth-provider";
-import { resolveLocaleFromAcceptLanguage, toHtmlLang } from "@/i18n/locale";
-import { getMessagesForLocale } from "@/i18n/messages";
+import { LocaleProvider } from "@/components/locale-provider";
+import { toHtmlLang, type AppLocale } from "@/i18n/locale";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -20,21 +20,20 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const headerStore = await headers();
-  const locale = resolveLocaleFromAcceptLanguage(
-    headerStore.get("accept-language"),
-  );
-  const messages = await getMessagesForLocale(locale);
+  const locale = (await getLocale()) as AppLocale;
+  const messages = await getMessages();
 
   return (
     <html lang={toHtmlLang(locale)} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased text-sm leading-relaxed">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>
-            <AuthProvider>
-              {children}
-              <Toaster richColors position="top-right" />
-            </AuthProvider>
+            <LocaleProvider>
+              <AuthProvider>
+                {children}
+                <Toaster richColors position="top-right" />
+              </AuthProvider>
+            </LocaleProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

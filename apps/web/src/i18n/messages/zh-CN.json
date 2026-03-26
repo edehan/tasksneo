@@ -143,7 +143,12 @@
     "joinedClasses": "我加入的班级",
     "noClassesYet": "暂无班级",
     "joinClass": "加入班级",
-    "create": "创建"
+    "create": "创建",
+    "language": "语言",
+    "langEn": "English",
+    "langZhCN": "中文",
+    "langFr": "Français",
+    "langJa": "日本語"
   },
   "notificationBell": {
     "notifications": "通知",

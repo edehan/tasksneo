@@ -2,6 +2,7 @@
 
 import {
   BookOpen,
+  Globe,
   Home,
   LogOut,
   Monitor,
@@ -46,6 +47,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CreateClassDialog } from "@/components/create-class-dialog";
 import { JoinClassDialog } from "@/features/classes/components/join-class-dialog";
 import { useTranslations } from "next-intl";
+import { useAppLocale } from "@/components/locale-provider";
+import { SUPPORTED_LOCALES, type AppLocale } from "@/i18n/locale";
 import type { ClassSummary } from "@/lib/api";
 import { listClasses } from "@/lib/api";
 
@@ -53,6 +56,7 @@ export function AppSidebar() {
   const { token, user, logout } = useAuth();
   const t = useTranslations("appSidebar");
   const { theme, setTheme } = useTheme();
+  const { locale, setLocale } = useAppLocale();
   const pathname = usePathname();
   const router = useRouter();
   const [classes, setClasses] = useState<ClassSummary[]>([]);
@@ -157,6 +161,36 @@ export function AppSidebar() {
                             <span className="ml-auto text-xs text-muted-foreground">&#10003;</span>
                           )}
                         </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                  </DropdownMenuSub>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Globe className="mr-2 h-4 w-4" />
+                      {t("language")}
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                      <DropdownMenuSubContent>
+                        {SUPPORTED_LOCALES.map((loc) => {
+                          const labelKey = `lang${loc === "zh-CN" ? "ZhCN" : loc.charAt(0).toUpperCase() + loc.slice(1)}` as
+                            | "langEn"
+                            | "langZhCN"
+                            | "langFr"
+                            | "langJa";
+                          return (
+                            <DropdownMenuItem
+                              key={loc}
+                              onClick={() => setLocale(loc as AppLocale)}
+                            >
+                              {t(labelKey)}
+                              {locale === loc && (
+                                <span className="ml-auto text-xs text-muted-foreground">
+                                  &#10003;
+                                </span>
+                              )}
+                            </DropdownMenuItem>
+                          );
+                        })}
                       </DropdownMenuSubContent>
                     </DropdownMenuPortal>
                   </DropdownMenuSub>

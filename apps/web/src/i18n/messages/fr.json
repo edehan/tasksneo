@@ -143,7 +143,12 @@
     "joinedClasses": "Classes rejointes",
     "noClassesYet": "Aucune classe",
     "joinClass": "Rejoindre une classe",
-    "create": "Creer"
+    "create": "Creer",
+    "language": "Langue",
+    "langEn": "English",
+    "langZhCN": "中文",
+    "langFr": "Français",
+    "langJa": "日本語"
   },
   "notificationBell": {
     "notifications": "Notifications",

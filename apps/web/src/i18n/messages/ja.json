@@ -143,7 +143,12 @@
     "joinedClasses": "参加中のクラス",
     "noClassesYet": "クラスがありません",
     "joinClass": "クラスに参加",
-    "create": "作成"
+    "create": "作成",
+    "language": "言語",
+    "langEn": "English",
+    "langZhCN": "中文",
+    "langFr": "Français",
+    "langJa": "日本語"
   },
   "notificationBell": {
     "notifications": "通知",

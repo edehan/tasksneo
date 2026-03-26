@@ -1,4 +1,4 @@
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { getRequestConfig } from "next-intl/server";
 
 import {
@@ -8,6 +8,8 @@ import {
   type AppLocale,
 } from "@/i18n/locale";
 import { getMessagesForLocale } from "@/i18n/messages";
+
+const LOCALE_COOKIE = "taskflow_locale";
 
 function ensureAppLocale(locale: string | null | undefined): AppLocale {
   const matched = matchLocaleTag(locale);
@@ -20,10 +22,20 @@ export default getRequestConfig(async ({ requestLocale }) => {
   let locale = ensureAppLocale(routeLocale);
 
   if (!routeLocale) {
-    const headerStore = await headers();
-    locale = resolveLocaleFromAcceptLanguage(
-      headerStore.get("accept-language"),
-    );
+    // 1. Check user's explicit locale preference (cookie)
+    const cookieStore = await cookies();
+    const cookieLocale = cookieStore.get(LOCALE_COOKIE)?.value;
+    const matched = matchLocaleTag(cookieLocale);
+
+    if (matched) {
+      locale = matched;
+    } else {
+      // 2. Fall back to browser Accept-Language header
+      const headerStore = await headers();
+      locale = resolveLocaleFromAcceptLanguage(
+        headerStore.get("accept-language"),
+      );
+    }
   }
 
   return {
