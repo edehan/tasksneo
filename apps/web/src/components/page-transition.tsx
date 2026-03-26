@@ -9,13 +9,13 @@ interface PageTransitionProps {
 }
 
 export function PageTransition({ children, className }: PageTransitionProps) {
-  const pathname = usePathname();
+  const _pathname = usePathname();
   const [key, setKey] = useState(0);
 
   useEffect(() => {
     // Increment key on each navigation to re-trigger the CSS animation
     setKey((k) => k + 1);
-  }, [pathname]);
+  }, []);
 
   return (
     <div

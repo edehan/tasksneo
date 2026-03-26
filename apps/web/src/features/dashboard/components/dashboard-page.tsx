@@ -1,30 +1,32 @@
 "use client";
 
 import { BookOpen, UserPlus } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
 import { CreateClassDialog } from "@/components/create-class-dialog";
 import { Button } from "@/components/ui/button";
+import { JoinClassDialog } from "@/features/classes/components/join-class-dialog";
 import { FilterBar } from "@/features/dashboard/components/filter-bar";
 import { InboxCard } from "@/features/dashboard/components/inbox-card";
 import { StatCards } from "@/features/dashboard/components/stat-cards";
-import { JoinClassDialog } from "@/features/classes/components/join-class-dialog";
+import { TaskDetailOverlay } from "@/features/tasks/components/task-detail-overlay";
 import { TaskGanttView } from "@/features/tasks/components/task-gantt-view";
 import { TaskListView } from "@/features/tasks/components/task-list-view";
 import {
-  ViewSwitcher,
   type ViewMode,
+  ViewSwitcher,
 } from "@/features/tasks/components/view-switcher";
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
-import { TaskDetailOverlay } from "@/features/tasks/components/task-detail-overlay";
 import type { ClassSummary } from "@/lib/api";
 import { listClasses, listMyTasks } from "@/lib/api";
 
 type GanttRange = "week" | "month" | "2month";
 
-function deriveDisplayStatus(task: TaskWithClass): "submitted" | "overdue" | "in-progress" | "not-started" {
+function deriveDisplayStatus(
+  task: TaskWithClass,
+): "submitted" | "overdue" | "in-progress" | "not-started" {
   if (task.userState?.submittedAt) return "submitted";
   const now = Date.now();
   const dueAt = task.dueAt ? new Date(task.dueAt).getTime() : null;
@@ -84,10 +86,17 @@ export function DashboardPage() {
       if (status === "submitted" && !filters.showSubmitted) return false;
 
       // If any specific filter is active, only show matching tasks
-      const hasActiveFilter = filters.unfinished || filters.notSubmitted || filters.overdue;
+      const hasActiveFilter =
+        filters.unfinished || filters.notSubmitted || filters.overdue;
       if (!hasActiveFilter) return true;
 
-      if (filters.unfinished && (status === "in-progress" || status === "not-started" || status === "overdue")) return true;
+      if (
+        filters.unfinished &&
+        (status === "in-progress" ||
+          status === "not-started" ||
+          status === "overdue")
+      )
+        return true;
       if (filters.notSubmitted && status !== "submitted") return true;
       if (filters.overdue && status === "overdue") return true;
 
@@ -174,9 +183,7 @@ export function DashboardPage() {
     <div className="p-8 max-w-[960px] mx-auto">
       {/* Title */}
       <h1 className="text-display mb-1">{t("title")}</h1>
-      <p className="text-muted-foreground mb-8">
-        {t("subtitle")}
-      </p>
+      <p className="text-muted-foreground mb-8">{t("subtitle")}</p>
 
       {/* Controls row */}
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">

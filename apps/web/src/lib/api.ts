@@ -423,9 +423,7 @@ export async function markNotificationRead(
   );
 }
 
-export async function markAllNotificationsRead(
-  token: string,
-): Promise<void> {
+export async function markAllNotificationsRead(token: string): Promise<void> {
   return apiRequest<void>(
     "/users/me/notifications/read-all",
     { method: "POST" },
@@ -609,9 +607,7 @@ export interface MyTaskSummary extends TaskSummary {
   classColor: string | null;
 }
 
-export async function listMyTasks(
-  token: string,
-): Promise<MyTaskSummary[]> {
+export async function listMyTasks(token: string): Promise<MyTaskSummary[]> {
   return apiRequest<MyTaskSummary[]>("/tasks/mine", {}, token);
 }
 
@@ -921,7 +917,11 @@ export async function downloadFile(
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) {
-    throw new ApiError("Failed to download file", "DOWNLOAD_FAILED", res.status);
+    throw new ApiError(
+      "Failed to download file",
+      "DOWNLOAD_FAILED",
+      res.status,
+    );
   }
   const blob = await res.blob();
   return URL.createObjectURL(blob);
@@ -935,7 +935,11 @@ export async function downloadFileBlob(
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) {
-    throw new ApiError("Failed to download file", "DOWNLOAD_FAILED", res.status);
+    throw new ApiError(
+      "Failed to download file",
+      "DOWNLOAD_FAILED",
+      res.status,
+    );
   }
   return res.blob();
 }

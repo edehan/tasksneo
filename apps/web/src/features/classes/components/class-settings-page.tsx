@@ -7,18 +7,6 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-provider";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,14 +18,26 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import type { ClassSummary, School } from "@/lib/api";
 import {
   ApiError,
-  getClass,
-  updateClass,
   deleteClass,
-  refreshInviteCode,
+  getClass,
   listSchools,
+  refreshInviteCode,
+  updateClass,
 } from "@/lib/api";
 
 const PRESET_COLORS = [
@@ -191,9 +191,7 @@ export function ClassSettingsPage() {
           Back to {cls.name}
         </Link>
         <h1 className="text-display mb-1">Class Settings</h1>
-        <p className="text-muted-foreground">
-          Manage settings for {cls.name}.
-        </p>
+        <p className="text-muted-foreground">Manage settings for {cls.name}.</p>
       </div>
 
       {/* Basic Info */}
@@ -272,7 +270,9 @@ export function ClassSettingsPage() {
                 color,
               })
                 .then(() => toast.success("School restriction updated"))
-                .catch(() => toast.error("Failed to update school restriction"));
+                .catch(() =>
+                  toast.error("Failed to update school restriction"),
+                );
             }
           }}
         >
@@ -368,7 +368,9 @@ export function ClassSettingsPage() {
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Delete &quot;{cls.name}&quot;?</AlertDialogTitle>
+                  <AlertDialogTitle>
+                    Delete &quot;{cls.name}&quot;?
+                  </AlertDialogTitle>
                   <AlertDialogDescription>
                     This will permanently delete the class, including all tasks,
                     submissions, and member data. This action cannot be undone.

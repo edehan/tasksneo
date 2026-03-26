@@ -152,9 +152,7 @@ export function buildNameFromTags(
   vars: Record<string, string>,
   separator: string,
 ): string {
-  const parts = tagIds
-    .map((id) => vars[id] ?? "")
-    .filter((v) => v.length > 0);
+  const parts = tagIds.map((id) => vars[id] ?? "").filter((v) => v.length > 0);
   return parts.join(separator) || "download";
 }
 

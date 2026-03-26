@@ -2,10 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-
-import { useAuth } from "@/components/auth-provider";
 import { AppHeader } from "@/components/app-header";
 import { AppSidebar } from "@/components/app-sidebar";
+import { useAuth } from "@/components/auth-provider";
 import { PageTransition } from "@/components/page-transition";
 import { TimezonePrompt } from "@/components/timezone-prompt";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";

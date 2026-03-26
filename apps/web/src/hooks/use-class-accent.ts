@@ -39,7 +39,10 @@ export function useClassAccent(): string {
       void updateAccent(classId);
     } else {
       setAccent(DEFAULT_ACCENT);
-      document.documentElement.style.setProperty("--class-accent", DEFAULT_ACCENT);
+      document.documentElement.style.setProperty(
+        "--class-accent",
+        DEFAULT_ACCENT,
+      );
     }
   }, [classId, updateAccent]);
 

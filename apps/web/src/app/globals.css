@@ -49,24 +49,24 @@
   --sidebar-ring: #8a8078;
 
   /* Semantic status */
-  --status-success: #5B8C6A;
+  --status-success: #5b8c6a;
   --status-warning: #d4a030;
   --status-error: #c45c5c;
-  --status-info: #5886A5;
+  --status-info: #5886a5;
 
   /* Extended tokens */
   --text-muted-soft: #c0b8ad;
   --surface-subtle: #f9f6f0;
 
   /* Class accent — dynamically set via JS per active class */
-  --class-accent: #7B6CB0;
+  --class-accent: #7b6cb0;
   --class-accent-foreground: #ffffff;
 
-  --chart-1: #5B8C6A;
-  --chart-2: #7B6CB0;
-  --chart-3: #C4785B;
-  --chart-4: #5886A5;
-  --chart-5: #8B7355;
+  --chart-1: #5b8c6a;
+  --chart-2: #7b6cb0;
+  --chart-3: #c4785b;
+  --chart-4: #5886a5;
+  --chart-5: #8b7355;
 }
 
 .dark {
@@ -187,7 +187,8 @@
   *,
   *::before,
   *::after {
-    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-property:
+      background-color, border-color, color, fill, stroke, box-shadow;
     transition-duration: 0.25s;
     transition-timing-function: ease;
   }
@@ -202,18 +203,32 @@
 /* ─── Overlay / modal animations ───────────────────────────────────────────── */
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes page-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes custom-modal-enter {
-  from { opacity: 0; transform: scale(0.97); }
-  to   { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @layer utilities {

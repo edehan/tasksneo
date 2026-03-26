@@ -2,14 +2,10 @@
 
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-
 import { useAuth } from "@/components/auth-provider";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -20,14 +16,17 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import type { ClassSummary } from "@/lib/api";
 import {
   ApiError,
-  updatePassword,
   deleteAccount,
   listClasses,
+  updatePassword,
 } from "@/lib/api";
-import { useTranslations } from "next-intl";
 
 export default function AccountPage() {
   const { token, user, logout } = useAuth();
@@ -91,9 +90,7 @@ export default function AccountPage() {
       setConfirmPassword("");
     } catch (err) {
       const message =
-        err instanceof ApiError
-          ? err.message
-          : t("failedChangePassword");
+        err instanceof ApiError ? err.message : t("failedChangePassword");
       toast.error(message);
     } finally {
       setChangingPassword(false);
@@ -110,9 +107,7 @@ export default function AccountPage() {
       router.push("/login");
     } catch (err) {
       const message =
-        err instanceof ApiError
-          ? err.message
-          : t("failedDeleteAccount");
+        err instanceof ApiError ? err.message : t("failedDeleteAccount");
       toast.error(message);
       setDeleting(false);
     }
@@ -135,9 +130,7 @@ export default function AccountPage() {
         <h2 className="text-heading-md">{t("changePassword")}</h2>
         <form onSubmit={handleChangePassword} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="current-password">
-              {t("currentPassword")}
-            </Label>
+            <Label htmlFor="current-password">{t("currentPassword")}</Label>
             <Input
               id="current-password"
               type="password"
@@ -161,9 +154,7 @@ export default function AccountPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirm-password">
-              {t("confirmNewPassword")}
-            </Label>
+            <Label htmlFor="confirm-password">{t("confirmNewPassword")}</Label>
             <Input
               id="confirm-password"
               type="password"
@@ -173,12 +164,11 @@ export default function AccountPage() {
               disabled={changingPassword}
               autoComplete="new-password"
             />
-            {confirmPassword.length > 0 &&
-              newPassword !== confirmPassword && (
-                <p className="text-xs text-destructive">
-                  {t("passwordsDoNotMatch")}
-                </p>
-              )}
+            {confirmPassword.length > 0 && newPassword !== confirmPassword && (
+              <p className="text-xs text-destructive">
+                {t("passwordsDoNotMatch")}
+              </p>
+            )}
           </div>
           <Button
             type="submit"
@@ -264,9 +254,7 @@ export default function AccountPage() {
                   <Button
                     variant="destructive"
                     onClick={handleDeleteAccount}
-                    disabled={
-                      deleting || deleteConfirmEmail !== user.email
-                    }
+                    disabled={deleting || deleteConfirmEmail !== user.email}
                   >
                     {deleting && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />

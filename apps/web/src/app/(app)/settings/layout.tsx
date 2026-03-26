@@ -25,7 +25,7 @@ export default function SettingsLayout({
       <nav className="flex gap-1 border-b border-border mb-8">
         {settingsTabs.map((tab) => {
           const isActive =
-            pathname === tab.href || pathname.startsWith(tab.href + "/");
+            pathname === tab.href || pathname.startsWith(`${tab.href}/`);
           return (
             <Link
               key={tab.href}

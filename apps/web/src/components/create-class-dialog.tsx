@@ -1,9 +1,9 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -24,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useTranslations } from "next-intl";
 import { ApiError, createClass, listSchools, type School } from "@/lib/api";
 
 const PRESET_COLORS = [
@@ -93,15 +92,15 @@ export function CreateClassDialog({
       const cls = await createClass(token, {
         name: name.trim(),
         color,
-        schoolId: restrictSchool && selectedSchoolId ? selectedSchoolId : undefined,
+        schoolId:
+          restrictSchool && selectedSchoolId ? selectedSchoolId : undefined,
       });
       toast.success(t("createdToast", { name: cls.name }));
       setOpen(false);
       resetForm();
       onCreated?.();
     } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : t("failedCreate");
+      const message = err instanceof ApiError ? err.message : t("failedCreate");
       toast.error(message);
     } finally {
       setLoading(false);
@@ -120,9 +119,7 @@ export function CreateClassDialog({
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle className="font-serif">
-              {t("title")}
-            </DialogTitle>
+            <DialogTitle className="font-serif">{t("title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-5 py-4">
             <div className="space-y-2">
@@ -168,7 +165,10 @@ export function CreateClassDialog({
                   }}
                   disabled={loading}
                 />
-                <Label htmlFor="restrict-school" className="text-sm font-normal">
+                <Label
+                  htmlFor="restrict-school"
+                  className="text-sm font-normal"
+                >
                   {t("restrictSchool")}
                 </Label>
               </div>

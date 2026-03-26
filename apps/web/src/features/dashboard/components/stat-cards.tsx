@@ -22,7 +22,12 @@ const cards: CardDef[] = [
   { labelKey: "notStarted", key: "notStarted" },
 ];
 
-export function StatCards({ total, inProgress, overdue, notStarted }: StatCardsProps) {
+export function StatCards({
+  total,
+  inProgress,
+  overdue,
+  notStarted,
+}: StatCardsProps) {
   const t = useTranslations("dashboardStatCards");
   const values: StatCardsProps = { total, inProgress, overdue, notStarted };
 
@@ -40,7 +45,9 @@ export function StatCards({ total, inProgress, overdue, notStarted }: StatCardsP
           >
             {values[card.key]}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">{t(card.labelKey)}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {t(card.labelKey)}
+          </p>
         </div>
       ))}
     </div>

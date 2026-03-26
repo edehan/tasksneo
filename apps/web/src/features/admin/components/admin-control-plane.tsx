@@ -33,7 +33,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -43,10 +42,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import {
   type AdminSchool,
   ApiError,
-  type StorageStatus,
   createAdminSchool,
   deleteAdminSchool,
   getAdminConfig,
@@ -55,6 +54,7 @@ import {
   listAdminUsers,
   patchAdminConfig,
   patchAdminUser,
+  type StorageStatus,
   sendAdminTestEmail,
   type UserProfile,
 } from "@/lib/api";
@@ -238,7 +238,9 @@ export function AdminControlPlane() {
   );
   const [schoolDeletingId, setSchoolDeletingId] = useState<string | null>(null);
 
-  const [storageStatus, setStorageStatus] = useState<StorageStatus | null>(null);
+  const [storageStatus, setStorageStatus] = useState<StorageStatus | null>(
+    null,
+  );
   const [storageChecking, setStorageChecking] = useState(false);
 
   const { resolvedTheme, setTheme } = useTheme();
@@ -738,30 +740,48 @@ export function AdminControlPlane() {
               {storageStatus ? (
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Endpoint</Label>
-                    <p className="text-sm font-mono">{storageStatus.endpoint}</p>
+                    <Label className="text-xs text-muted-foreground">
+                      Endpoint
+                    </Label>
+                    <p className="text-sm font-mono">
+                      {storageStatus.endpoint}
+                    </p>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Bucket</Label>
+                    <Label className="text-xs text-muted-foreground">
+                      Bucket
+                    </Label>
                     <p className="text-sm font-mono">{storageStatus.bucket}</p>
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">SSL</Label>
-                    <p className="text-sm">{storageStatus.useSSL ? "Enabled" : "Disabled"}</p>
+                    <p className="text-sm">
+                      {storageStatus.useSSL ? "Enabled" : "Disabled"}
+                    </p>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">Region</Label>
+                    <Label className="text-xs text-muted-foreground">
+                      Region
+                    </Label>
                     <p className="text-sm font-mono">{storageStatus.region}</p>
                   </div>
                   <div className="space-y-1 sm:col-span-2">
-                    <Label className="text-xs text-muted-foreground">Status</Label>
+                    <Label className="text-xs text-muted-foreground">
+                      Status
+                    </Label>
                     <div className="flex items-center gap-2">
-                      <span className={cn(
-                        "inline-block h-2.5 w-2.5 rounded-full",
-                        storageStatus.connected ? "bg-green-500" : "bg-red-500",
-                      )} />
+                      <span
+                        className={cn(
+                          "inline-block h-2.5 w-2.5 rounded-full",
+                          storageStatus.connected
+                            ? "bg-green-500"
+                            : "bg-red-500",
+                        )}
+                      />
                       <span className="text-sm">
-                        {storageStatus.connected ? "Connected" : `Disconnected${storageStatus.error ? `: ${storageStatus.error}` : ""}`}
+                        {storageStatus.connected
+                          ? "Connected"
+                          : `Disconnected${storageStatus.error ? `: ${storageStatus.error}` : ""}`}
                       </span>
                     </div>
                   </div>
@@ -781,16 +801,23 @@ export function AdminControlPlane() {
                     setStorageStatus(status);
                     setNotice({
                       tone: status.connected ? "success" : "error",
-                      message: status.connected ? "Storage connection OK." : `Storage check failed: ${status.error ?? "unknown"}`,
+                      message: status.connected
+                        ? "Storage connection OK."
+                        : `Storage check failed: ${status.error ?? "unknown"}`,
                     });
                   } catch {
-                    setNotice({ tone: "error", message: "Failed to check storage status." });
+                    setNotice({
+                      tone: "error",
+                      message: "Failed to check storage status.",
+                    });
                   } finally {
                     setStorageChecking(false);
                   }
                 }}
               >
-                {storageChecking && <Loader2 className="h-4 w-4 animate-spin" />}
+                {storageChecking && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
                 Test Connection
               </Button>
             </CardContent>

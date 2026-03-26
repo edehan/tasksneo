@@ -1,7 +1,7 @@
 "use client";
 
-import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
 import { useLocale, useTranslations } from "next-intl";
+import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
 
 type TranslateFn = ReturnType<typeof useTranslations>;
 
@@ -30,9 +30,17 @@ function getStatusBadge(
     case "overdue":
       return { label: t("status.overdue"), bg: "#c45c5c18", text: "#c45c5c" };
     case "in-progress":
-      return { label: t("status.inProgress"), bg: classColor + "18", text: classColor };
+      return {
+        label: t("status.inProgress"),
+        bg: `${classColor}18`,
+        text: classColor,
+      };
     case "not-started":
-      return { label: t("status.notStarted"), bg: "var(--muted)", text: "var(--muted-foreground)" };
+      return {
+        label: t("status.notStarted"),
+        bg: "var(--muted)",
+        text: "var(--muted-foreground)",
+      };
   }
 }
 
@@ -70,7 +78,8 @@ export function TaskListView({
       <div
         className="grid items-center border-b border-border px-4 pb-2"
         style={{
-          gridTemplateColumns: "minmax(0,2.2fr) minmax(0,1fr) minmax(0,1fr) 110px",
+          gridTemplateColumns:
+            "minmax(0,2.2fr) minmax(0,1fr) minmax(0,1fr) 110px",
         }}
       >
         <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
@@ -99,7 +108,8 @@ export function TaskListView({
             key={task.id}
             className="grid h-12 cursor-pointer items-center border-b border-border px-4 transition-colors duration-150 hover:bg-surface-subtle"
             style={{
-              gridTemplateColumns: "minmax(0,2.2fr) minmax(0,1fr) minmax(0,1fr) 110px",
+              gridTemplateColumns:
+                "minmax(0,2.2fr) minmax(0,1fr) minmax(0,1fr) 110px",
             }}
             onClick={() => onTaskClick?.(task)}
             role="button"

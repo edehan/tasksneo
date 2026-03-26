@@ -23,9 +23,7 @@ export default function PrivacyPage() {
           account management, task notifications, and class collaboration
           features.
         </p>
-        <h2 className="text-heading-md !text-foreground">
-          3. Data Storage
-        </h2>
+        <h2 className="text-heading-md !text-foreground">3. Data Storage</h2>
         <p>
           Your data is stored securely on our servers. Uploaded files are stored
           in our object storage system and are only accessible to authorized
@@ -39,13 +37,10 @@ export default function PrivacyPage() {
           resets, and task notifications. You can manage notification
           preferences in your account settings.
         </p>
-        <h2 className="text-heading-md !text-foreground">
-          5. Data Deletion
-        </h2>
+        <h2 className="text-heading-md !text-foreground">5. Data Deletion</h2>
         <p>
           You can delete your account at any time from the account settings
-          page. This will permanently remove your personal data and
-          submissions.
+          page. This will permanently remove your personal data and submissions.
         </p>
         <p className="pt-4 text-xs text-muted-foreground/60">
           This is a placeholder document. A complete Privacy Policy will be

@@ -1,34 +1,28 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  BarChart3,
+  CheckCircle2,
+  ClipboardCheck,
   Download,
   Eye,
   FileSpreadsheet,
   Users,
-  CheckCircle2,
-  ClipboardCheck,
-  BarChart3,
 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-
-import { BatchDownloadDialog } from "./batch-download-dialog";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-
 import { useAuth } from "@/components/auth-provider";
-import type {
-  ClassSummary,
-  SubmissionListRow,
-  TaskDetail,
-} from "@/lib/api";
+import type { ClassSummary, SubmissionListRow, TaskDetail } from "@/lib/api";
 import {
+  exportSubmissionsCsv,
   getClass,
   getTask,
   listSubmissions,
-  exportSubmissionsCsv,
 } from "@/lib/api";
+import { BatchDownloadDialog } from "./batch-download-dialog";
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -95,7 +89,8 @@ export function SubmissionsListPage() {
     ).length;
     const scores = rows
       .filter(
-        (r) => r.submission?.score !== null && r.submission?.score !== undefined,
+        (r) =>
+          r.submission?.score !== null && r.submission?.score !== undefined,
       )
       .map((r) => parseFloat(r.submission!.score!));
     const avg =
@@ -142,20 +137,14 @@ export function SubmissionsListPage() {
         {/* Stats bar skeleton */}
         <div className="mb-8 grid grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-20 animate-pulse rounded-lg bg-muted"
-            />
+            <div key={i} className="h-20 animate-pulse rounded-lg bg-muted" />
           ))}
         </div>
         {/* Table skeleton */}
         <div className="space-y-2">
           <div className="h-10 animate-pulse rounded bg-muted" />
           {Array.from({ length: 5 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-12 animate-pulse rounded bg-muted"
-            />
+            <div key={i} className="h-12 animate-pulse rounded bg-muted" />
           ))}
         </div>
       </div>
@@ -165,9 +154,7 @@ export function SubmissionsListPage() {
   if (!task || !cls) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="text-sm text-muted-foreground">
-          {t("notFound")}
-        </p>
+        <p className="text-sm text-muted-foreground">{t("notFound")}</p>
       </div>
     );
   }
@@ -309,7 +296,7 @@ export function SubmissionsListPage() {
                   {/* Submitted date */}
                   <td className="px-4 py-3 text-[13px] text-muted-foreground">
                     {hasSubmission
-                      ? formatDate(row.submission!.firstSubmittedAt)
+                      ? formatDate(row.submission?.firstSubmittedAt)
                       : "\u2014"}
                   </td>
 
@@ -320,7 +307,7 @@ export function SubmissionsListPage() {
                         className="font-serif text-[15px] font-semibold"
                         style={{ color: accentColor }}
                       >
-                        {row.submission!.score}
+                        {row.submission?.score}
                       </span>
                     ) : (
                       <span className="text-[13px] text-text-muted-soft">
@@ -364,9 +351,7 @@ export function SubmissionsListPage() {
                       <button
                         type="button"
                         onClick={() =>
-                          router.push(
-                            `/submissions/${row.submission!.id}`,
-                          )
+                          router.push(`/submissions/${row.submission?.id}`)
                         }
                         className="inline-flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[12px] font-medium text-white transition-colors duration-100"
                         style={{ backgroundColor: accentColor }}

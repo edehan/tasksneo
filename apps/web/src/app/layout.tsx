@@ -4,9 +4,9 @@ import { getLocale, getMessages } from "next-intl/server";
 
 import { AuthProvider } from "@/components/auth-provider";
 import { LocaleProvider } from "@/components/locale-provider";
-import { toHtmlLang, type AppLocale } from "@/i18n/locale";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { type AppLocale, toHtmlLang } from "@/i18n/locale";
 
 import "./globals.css";
 

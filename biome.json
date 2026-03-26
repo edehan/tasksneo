@@ -6,7 +6,15 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"ignoreUnknown": false
+		"ignoreUnknown": true,
+		"includes": [
+			"apps/**",
+			"packages/**",
+			"!**/node_modules",
+			"!**/.next",
+			"!**/dist",
+			"!**/*.css"
+		]
 	},
 	"formatter": {
 		"enabled": true,
@@ -15,7 +23,25 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": true
+			"recommended": true,
+			"a11y": {
+				"noStaticElementInteractions": "warn",
+				"useKeyWithClickEvents": "warn",
+				"useSemanticElements": "warn",
+				"useButtonType": "warn",
+				"noLabelWithoutControl": "warn",
+				"useFocusableInteractive": "warn"
+			},
+			"suspicious": {
+				"noArrayIndexKey": "warn",
+				"noDocumentCookie": "warn"
+			},
+			"style": {
+				"noNonNullAssertion": "warn"
+			},
+			"performance": {
+				"noImgElement": "warn"
+			}
 		}
 	},
 	"javascript": {
@@ -30,5 +56,25 @@
 				"organizeImports": "on"
 			}
 		}
-	}
+	},
+	"overrides": [
+		{
+			"includes": ["apps/web/**"],
+			"formatter": {
+				"indentStyle": "space",
+				"indentWidth": 2
+			},
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noUnknownAtRules": "off"
+					}
+				},
+				"domains": {
+					"next": "recommended",
+					"react": "recommended"
+				}
+			}
+		}
+	]
 }

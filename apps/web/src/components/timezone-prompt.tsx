@@ -1,13 +1,12 @@
 "use client";
 
 import { Globe } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
-
+import { toast } from "sonner";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
-import { useTranslations } from "next-intl";
 import { ApiError, updateProfile } from "@/lib/api";
-import { toast } from "sonner";
 
 const DISMISS_KEY = "taskflow_tz_dismiss";
 
@@ -129,13 +128,12 @@ export function TimezonePrompt() {
       localStorage.removeItem(DISMISS_KEY);
       toast.success(t("updatedTo", { timezone: browserTz }));
     } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : t("failedUpdate");
+      const message = err instanceof ApiError ? err.message : t("failedUpdate");
       toast.error(message);
     } finally {
       setUpdating(false);
     }
-  }, [token, browserTz, updateUser]);
+  }, [token, browserTz, updateUser, t]);
 
   const handleDismiss = useCallback(() => {
     if (user && browserTz) {

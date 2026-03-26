@@ -1,13 +1,12 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
-
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
-import { useTranslations } from "next-intl";
 import { confirmEmailChange, getMe } from "@/lib/api";
 
 function VerifyEmailInner() {
@@ -17,7 +16,9 @@ function VerifyEmailInner() {
   const { token: authToken, updateUser } = useAuth();
   const t = useTranslations("settingsVerifyEmail");
 
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    "loading",
+  );
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
@@ -47,9 +48,7 @@ function VerifyEmailInner() {
     return (
       <div className="flex flex-col items-center gap-4 py-12">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
-        <p className="text-sm text-muted-foreground">
-          {t("verifyingEmail")}
-        </p>
+        <p className="text-sm text-muted-foreground">{t("verifyingEmail")}</p>
       </div>
     );
   }
@@ -64,7 +63,10 @@ function VerifyEmailInner() {
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">{errorMessage}</p>
         </div>
-        <Button variant="outline" onClick={() => router.push("/settings/profile")}>
+        <Button
+          variant="outline"
+          onClick={() => router.push("/settings/profile")}
+        >
           {t("backToProfile")}
         </Button>
       </div>
@@ -82,7 +84,10 @@ function VerifyEmailInner() {
           {t("emailChangedSuccessfully")}
         </p>
       </div>
-      <Button variant="outline" onClick={() => router.push("/settings/profile")}>
+      <Button
+        variant="outline"
+        onClick={() => router.push("/settings/profile")}
+      >
         {t("backToProfile")}
       </Button>
     </div>

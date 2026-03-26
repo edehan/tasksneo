@@ -1,15 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { ArrowRight, Calendar, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import type { TaskDetail } from "@/lib/api";
-import { deleteTask, getTask, markTaskViewed } from "@/lib/api";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
-import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
 import { MarkdownPreview } from "@/features/editor/components/markdown-preview";
 import { AttachmentSidebar } from "@/features/tasks/components/attachment-sidebar";
+import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
+import type { TaskDetail } from "@/lib/api";
+import { deleteTask, getTask, markTaskViewed } from "@/lib/api";
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
@@ -48,7 +48,7 @@ function getStatusBadge(
     case "in-progress":
       return {
         label: t("status.inProgress"),
-        bg: classColor + "18",
+        bg: `${classColor}18`,
         text: classColor,
       };
     case "not-started":

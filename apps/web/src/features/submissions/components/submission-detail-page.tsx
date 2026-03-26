@@ -1,17 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
+  Clock,
   Download,
   FileText,
   Save,
-  Clock,
 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-provider";
@@ -22,13 +22,13 @@ import type {
   SubmissionListRow,
 } from "@/lib/api";
 import {
+  ApiError,
+  downloadFile,
   getClass,
   getSubmissionById,
   getTask,
   gradeSubmission,
   listSubmissions,
-  downloadFile,
-  ApiError,
 } from "@/lib/api";
 
 // ─── File size formatting ────────────────────────────────────────────────────
@@ -56,7 +56,7 @@ export function SubmissionDetailPage() {
   const [allRows, setAllRows] = useState<SubmissionListRow[]>([]);
   const [taskTitle, setTaskTitle] = useState<string>("");
   const [taskId, setTaskId] = useState<string | null>(null);
-  const [classId, setClassId] = useState<string | null>(null);
+  const [_classId, setClassId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Grading form state
@@ -141,9 +141,7 @@ export function SubmissionDetailPage() {
 
   function navigateTo(row: SubmissionListRow) {
     if (!row.submission) return;
-    router.push(
-      `/submissions/${row.submission.id}`,
-    );
+    router.push(`/submissions/${row.submission.id}`);
   }
 
   // ─── Save grade ─────────────────────────────────────────────────────────────
@@ -232,9 +230,7 @@ export function SubmissionDetailPage() {
       <div className="mb-6 flex items-center justify-between">
         <button
           type="button"
-          onClick={() =>
-            router.push(`/tasks/${taskId}/submissions`)
-          }
+          onClick={() => router.push(`/tasks/${taskId}/submissions`)}
           className="flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors duration-100 hover:text-foreground"
         >
           <ArrowLeft size={14} strokeWidth={2} />

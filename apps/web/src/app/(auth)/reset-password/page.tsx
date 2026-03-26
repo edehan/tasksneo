@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
-
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useTranslations } from "next-intl";
 import { ApiError, resetPassword, verifyToken } from "@/lib/api";
 
 function ResetPasswordInner() {
@@ -72,9 +71,7 @@ function ResetPasswordInner() {
       router.replace("/dashboard");
     } catch (err) {
       const message =
-        err instanceof ApiError
-          ? err.message
-          : t("passwordResetFailed");
+        err instanceof ApiError ? err.message : t("passwordResetFailed");
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -102,9 +99,7 @@ function ResetPasswordInner() {
         </CardHeader>
         <CardFooter className="justify-center">
           <Button asChild variant="outline">
-            <Link href="/forgot-password">
-              {t("requestNewLink")}
-            </Link>
+            <Link href="/forgot-password">{t("requestNewLink")}</Link>
           </Button>
         </CardFooter>
       </Card>
@@ -118,8 +113,7 @@ function ResetPasswordInner() {
           {t("setNewPassword")}
         </CardTitle>
         <CardDescription>
-          {t("enterNewPasswordFor")}{" "}
-          <strong>{verifiedEmail}</strong>
+          {t("enterNewPasswordFor")} <strong>{verifiedEmail}</strong>
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>

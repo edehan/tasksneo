@@ -1,9 +1,9 @@
 export interface AuthUser {
-  userId: string;
-  email: string;
+	userId: string;
+	email: string;
 }
 
 export interface AppVariables {
-  authUser?: AuthUser;
-  isAdmin?: boolean;
+	authUser?: AuthUser;
+	isAdmin?: boolean;
 }

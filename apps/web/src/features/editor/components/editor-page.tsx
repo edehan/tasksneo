@@ -1,20 +1,12 @@
 "use client";
 
-import {
-  ArrowLeft,
-  Edit3,
-  Eye,
-  Loader2,
-  Send,
-  Upload,
-} from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowLeft, Edit3, Eye, Loader2, Send, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-provider";
-import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,20 +17,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { EditorToolbar } from "@/features/editor/components/editor-toolbar";
+import { MarkdownPreview } from "@/features/editor/components/markdown-preview";
+import { AttachmentSidebar } from "@/features/tasks/components/attachment-sidebar";
 import {
   ApiError,
+  type AttachmentMeta,
   deleteAttachment,
   getFileUrl,
   publishTaskDraft,
   updateTask,
-  upsertMySubmission,
-  uploadTaskAttachment,
   uploadSubmissionAttachment,
-  type AttachmentMeta,
+  uploadTaskAttachment,
+  upsertMySubmission,
 } from "@/lib/api";
-import { EditorToolbar } from "@/features/editor/components/editor-toolbar";
-import { MarkdownPreview } from "@/features/editor/components/markdown-preview";
-import { AttachmentSidebar } from "@/features/tasks/components/attachment-sidebar";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -103,9 +96,7 @@ export function EditorPage({
 
   // ─── Word count ──────────────────────────────────────────────────────────
 
-  const wordCount = content.trim()
-    ? content.trim().split(/\s+/).length
-    : 0;
+  const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
 
   // ─── Toolbar insert ──────────────────────────────────────────────────────
 
@@ -146,9 +137,7 @@ export function EditorPage({
       );
 
       setAttachments((prev) => [...prev, ...results]);
-      toast.success(
-        t("toast.uploadedFiles", { count: results.length }),
-      );
+      toast.success(t("toast.uploadedFiles", { count: results.length }));
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("toast.failedUploadFile");
@@ -189,7 +178,9 @@ export function EditorPage({
       toast.success(t("toast.attachmentRemoved"));
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : t("toast.failedRemoveAttachment");
+        err instanceof ApiError
+          ? err.message
+          : t("toast.failedRemoveAttachment");
       toast.error(message);
     }
   }
@@ -441,13 +432,15 @@ export function EditorPage({
       {/* Footer */}
       <footer className="flex shrink-0 items-center justify-between border-t border-border px-8 py-3">
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <span>
-            {t("footer.wordCount", { count: wordCount })}
-          </span>
+          <span>{t("footer.wordCount", { count: wordCount })}</span>
           <span className="text-text-muted-soft">&middot;</span>
-          <span className="text-text-muted-soft">{t("footer.markdownSupported")}</span>
+          <span className="text-text-muted-soft">
+            {t("footer.markdownSupported")}
+          </span>
         </div>
-        <span className="text-xs text-text-muted-soft">{t("footer.draftSaved")}</span>
+        <span className="text-xs text-text-muted-soft">
+          {t("footer.draftSaved")}
+        </span>
       </footer>
 
       {/* Hidden image file input */}
@@ -460,7 +453,10 @@ export function EditorPage({
       />
 
       {/* Publish confirmation dialog */}
-      <AlertDialog open={showPublishConfirm} onOpenChange={setShowPublishConfirm}>
+      <AlertDialog
+        open={showPublishConfirm}
+        onOpenChange={setShowPublishConfirm}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="font-serif">

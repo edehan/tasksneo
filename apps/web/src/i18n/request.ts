@@ -2,10 +2,10 @@ import { cookies, headers } from "next/headers";
 import { getRequestConfig } from "next-intl/server";
 
 import {
+  type AppLocale,
   DEFAULT_LOCALE,
   matchLocaleTag,
   resolveLocaleFromAcceptLanguage,
-  type AppLocale,
 } from "@/i18n/locale";
 import { getMessagesForLocale } from "@/i18n/messages";
 

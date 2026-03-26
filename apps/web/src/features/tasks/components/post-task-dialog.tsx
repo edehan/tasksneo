@@ -11,9 +11,9 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useLocale, useTranslations } from "next-intl";
 
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -33,16 +33,16 @@ import {
 } from "@/components/ui/popover";
 import {
   ApiError,
+  type AttachmentMeta,
   createTaskDraft,
   deleteTask,
   getMyClassDraft,
   listClassTasks,
+  type ParseTimeOption,
   parseTaskDraft,
+  type TaskSummary,
   updateTask,
   uploadTaskAttachment,
-  type AttachmentMeta,
-  type ParseTimeOption,
-  type TaskSummary,
 } from "@/lib/api";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -153,7 +153,7 @@ export function PostTaskDialog({
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, token, classId]);
+  }, [open, token, classId, draftId]);
 
   // ─── Load class tasks for prerequisites ─────────────────────────────────
 
@@ -282,9 +282,7 @@ export function PostTaskDialog({
       );
 
       setAttachments((prev) => [...prev, ...results]);
-      toast.success(
-        t("toast.uploadedFiles", { count: results.length }),
-      );
+      toast.success(t("toast.uploadedFiles", { count: results.length }));
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("toast.failedUploadFile");
@@ -390,9 +388,7 @@ export function PostTaskDialog({
                 setRawText(e.target.value);
                 if (parsed) setParsed(false);
               }}
-              placeholder={
-                t("inputPlaceholder")
-              }
+              placeholder={t("inputPlaceholder")}
               className="w-full resize-none rounded-t-lg bg-transparent px-4 py-3 text-sm text-foreground placeholder:text-text-muted-soft focus:outline-none"
               style={{ minHeight: 130 }}
             />
@@ -552,7 +548,9 @@ export function PostTaskDialog({
             }}
           >
             <div className="pt-5">
-              <span className="text-label-upper mb-3 block">{t("taskDetails")}</span>
+              <span className="text-label-upper mb-3 block">
+                {t("taskDetails")}
+              </span>
 
               {/* Title */}
               <div className="mb-4 space-y-1.5">
@@ -572,7 +570,9 @@ export function PostTaskDialog({
                   }
                 />
                 {(titleTouched || attempted) && !titleValid && (
-                  <p className="text-xs text-destructive">{t("titleRequired")}</p>
+                  <p className="text-xs text-destructive">
+                    {t("titleRequired")}
+                  </p>
                 )}
               </div>
 
@@ -742,14 +742,14 @@ export function PostTaskDialog({
           <div className="flex items-center gap-2">
             {/* Clear button — visible when there's any content to clear */}
             {(draftId || rawText.trim() || title.trim()) && (
-                <button
-                  type="button"
-                  onClick={handleClear}
-                  className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <Trash2 size={12} strokeWidth={2} />
+              <button
+                type="button"
+                onClick={handleClear}
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+              >
+                <Trash2 size={12} strokeWidth={2} />
                 {t("clear")}
-                </button>
+              </button>
             )}
             <span className="text-xs text-muted-foreground">
               {!expanded && rawText.trim()

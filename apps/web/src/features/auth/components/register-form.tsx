@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
 import { Mail } from "lucide-react";
+import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { useState } from "react";
 import { toast } from "sonner";
-
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,7 +17,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useTranslations } from "next-intl";
 import { ApiError, register } from "@/lib/api";
 
 export function RegisterForm() {
@@ -51,9 +50,7 @@ export function RegisterForm() {
       toast.success(t("verificationEmailResent"));
     } catch (err) {
       const message =
-        err instanceof ApiError
-          ? err.message
-          : t("failedResendEmail");
+        err instanceof ApiError ? err.message : t("failedResendEmail");
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -71,8 +68,7 @@ export function RegisterForm() {
             {t("checkYourEmail")}
           </CardTitle>
           <CardDescription>
-            {t("sentVerificationPrefix")}{" "}
-            <strong>{email}</strong>。
+            {t("sentVerificationPrefix")} <strong>{email}</strong>。
             {t("sentVerificationSuffix")}
           </CardDescription>
         </CardHeader>
@@ -133,13 +129,24 @@ export function RegisterForm() {
               checked={agreedToTerms}
               onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
             />
-            <Label htmlFor="reg-terms" className="text-sm leading-snug font-normal">
+            <Label
+              htmlFor="reg-terms"
+              className="text-sm leading-snug font-normal"
+            >
               {t("agreeTo")}{" "}
-              <Link href="/terms" className="text-primary underline-offset-4 hover:underline" target="_blank">
+              <Link
+                href="/terms"
+                className="text-primary underline-offset-4 hover:underline"
+                target="_blank"
+              >
                 {t("termsOfService")}
               </Link>{" "}
               {t("and")}{" "}
-              <Link href="/privacy" className="text-primary underline-offset-4 hover:underline" target="_blank">
+              <Link
+                href="/privacy"
+                className="text-primary underline-offset-4 hover:underline"
+                target="_blank"
+              >
                 {t("privacyPolicy")}
               </Link>
             </Label>

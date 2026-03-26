@@ -1,9 +1,9 @@
 "use client";
 
 import { Bell, Clock, Megaphone } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-
+import { useTranslations } from "next-intl";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +12,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useTranslations } from "next-intl";
 import type { NotificationItem } from "@/lib/api";
 import {
   getUnreadNotificationCount,
@@ -23,7 +22,10 @@ import {
 
 const POLL_INTERVAL = 60_000;
 
-function timeAgo(dateStr: string, t: ReturnType<typeof useTranslations>): string {
+function timeAgo(
+  dateStr: string,
+  t: ReturnType<typeof useTranslations>,
+): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const minutes = Math.floor(diff / 60_000);
   if (minutes < 1) return t("time.justNow");
@@ -101,9 +103,7 @@ export function NotificationBell() {
         await markNotificationRead(token, item.id);
         setItems((prev) =>
           prev.map((n) =>
-            n.id === item.id
-              ? { ...n, readAt: new Date().toISOString() }
-              : n,
+            n.id === item.id ? { ...n, readAt: new Date().toISOString() } : n,
           ),
         );
         setUnreadCount((c) => Math.max(0, c - 1));
@@ -148,7 +148,10 @@ export function NotificationBell() {
           {loading ? (
             <div className="space-y-1 p-2">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-14 animate-pulse rounded-md bg-muted" />
+                <div
+                  key={i}
+                  className="h-14 animate-pulse rounded-md bg-muted"
+                />
               ))}
             </div>
           ) : items.length === 0 ? (

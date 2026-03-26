@@ -7,8 +7,8 @@ import {
   Clock,
   Megaphone,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -99,9 +99,7 @@ export function InboxCard({ onTaskClick }: InboxCardProps) {
         await markNotificationRead(token, item.id);
         setItems((prev) =>
           prev.map((n) =>
-            n.id === item.id
-              ? { ...n, readAt: new Date().toISOString() }
-              : n,
+            n.id === item.id ? { ...n, readAt: new Date().toISOString() } : n,
           ),
         );
         setUnreadCount((c) => Math.max(0, c - 1));
