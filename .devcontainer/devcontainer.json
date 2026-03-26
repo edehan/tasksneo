@@ -1,0 +1,41 @@
+{
+  "name": "TaskFlow",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [3000, 3001, 5432, 6379, 9000, 9001],
+  "postCreateCommand": "corepack enable && corepack prepare pnpm@10.32.1 --activate && pnpm install",
+  "postStartCommand": "bash scripts/dev-infra.sh",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.defaultFormatter": "biomejs.biome",
+        "editor.formatOnSave": true,
+        "editor.insertSpaces": false,
+        "prisma.pinToPrisma6": true,
+        "sqltools.connections": [
+          {
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "taskflow-dev",
+            "database": "taskflow",
+            "username": "taskflow"
+          }
+        ]
+      },
+      "extensions": [
+        "biomejs.biome",
+        "Prisma.prisma",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-pg",
+        "ms-azuretools.vscode-docker",
+        "eamodio.gitlens",
+        "bradlc.vscode-tailwindcss"
+      ]
+    }
+  },
+  "remoteUser": "node"
+}

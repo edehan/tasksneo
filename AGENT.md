@@ -58,12 +58,21 @@ taskflow/
 │   │   └── data_policy.md
 │   └── deployment/
 │       ├── local-dev.md
-│       └── local-preview.md
+│       └── production.md           # Production deployment guide
 │
 ├── infra/
 │   ├── docker-compose.dev.yml      # Local dev: postgres, redis, minio
-│   ├── docker-compose.preview.yml  # Local preview: full stack in Docker
-│   └── docker-compose.prod.yml     # Production (placeholder)
+│   ├── docker-compose.prod.yml     # Production: postgres, redis, api
+│   └── .env.prod.example           # Production env template
+│
+├── .devcontainer/
+│   └── devcontainer.json           # VS Code / GitHub Codespaces dev environment
+│
+├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml                  # Lint, type check, build on PR/push
+│   │   └── security.yml            # Dependency audit
+│   └── dependabot.yml              # Automated dependency updates
 │
 ├── AGENT.md                        # This file
 ├── CLAUDE.md                       # Claude Code specific context

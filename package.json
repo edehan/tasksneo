@@ -10,14 +10,9 @@
     "dev:web": "bash scripts/dev-web.sh",
     "dev:seed": "pnpm --filter @taskflow/api seed:dev",
     "dev:down": "bash scripts/dev-down.sh",
-    "preview:deploy": "bash scripts/preview-deploy.sh",
-    "preview:status": "bash scripts/preview-status.sh",
-    "preview:logs": "bash scripts/preview-logs.sh",
-    "preview:reset": "bash scripts/preview-reset-data.sh",
-    "preview:hooks": "bash scripts/setup-git-hooks.sh",
-    "preview:hooks:enable": "bash scripts/setup-git-hooks.sh",
-    "preview:hooks:disable": "bash scripts/disable-git-hooks.sh",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "biome check .",
+    "typecheck": "pnpm --filter @taskflow/db exec prisma generate && pnpm --filter @taskflow/api exec tsc --noEmit",
+    "test": "pnpm --filter @taskflow/api test"
   },
   "keywords": [],
   "author": "",

@@ -22,11 +22,11 @@
 - [] 自动批改功能
 - [] MCP和skills
 - [x] 完善通知系统 
-- [] s3储存和上传逻辑
+- [x] s3储存和上传逻辑
 - [x] 电子邮件验证，密码重置与验证码
 - [x] i18n
-- [] cdci
-- [] 生产环境部署上线
+- [x] cdci
+- [x] 生产环境部署上线
 
 
 ## 功能概览
@@ -123,36 +123,6 @@ pnpm dev:down
 TASKFLOW_DEV_SEED=true pnpm dev
 ```
 
-## 本地预发布
-
-本地预发布用于阶段性验收和稳定体验，不与日常开发端口冲突。
-
-- 入口文档：[`docs/deployment/local-preview.md`](docs/deployment/local-preview.md)
-- 预发布前端：`http://localhost:35540`
-- 预发布 API：`http://localhost:35541`
-
-初始化顺序：
-
-```bash
-cp .env.preview.example .env.preview
-cp .env.test.example .env.test
-pnpm preview:deploy
-```
-
-说明：
-
-- `dev` 是默认协作入口，支持热更新
-- `preview` 使用独立 Docker volumes，数据默认保留
-- `test` 应使用 `.env.test`，避免影响 `preview`
-- `preview` 默认手工部署；只有显式启用 hook 后才会在 commit 后自动刷新
-
-可选 hook 命令：
-
-```bash
-pnpm preview:hooks:enable
-pnpm preview:hooks:disable
-```
-
 ### 环境变量说明
 
 复制 `.env.example` 后，必填项：
@@ -171,21 +141,21 @@ pnpm preview:hooks:disable
 
 ## 生产部署
 
-远程生产部署流程仍在建设中，当前仓库已优先完善本地开发与本地预发布。
+详见 [`docs/deployment/production.md`](docs/deployment/production.md)。
 
-在正式生产部署链路完成之前，请先使用：
+架构：前端部署到 Vercel / Cloudflare Pages，后端 + PostgreSQL + Redis 以 Docker 运行在 VPS 上，文件储存使用第三方 S3 兼容服务。
 
-- 本地开发：`docker-compose.dev.yml`
-- 本地预发布：`docker-compose.preview.yml`
+---
 
-后续会补充正式生产 compose、反向代理与远程 CI/CD。
+## 分支策略
 
-当前预留的生产部署占位文件：
+| 分支 | 用途 |
+|------|------|
+| `main` | 生产发布，受保护 |
+| `dev` | 日常集成分支 |
+| `feat/*`, `fix/*` | 功能/修复分支，完成后 PR 合并到 `dev` |
 
-```bash
-infra/docker-compose.prod.yml
-infra/nginx/nginx.conf
-```
+发布流程：`dev` 稳定后提 PR 合并到 `main`。
 
 ---
 
