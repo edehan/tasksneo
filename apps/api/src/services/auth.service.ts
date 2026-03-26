@@ -24,7 +24,11 @@ export interface LoginInput {
   password: string;
 }
 
-export async function register(input: RegisterInput) {
+/**
+ * Shared helper: creates user, credential, and personal class in a transaction.
+ * Used by both direct registration and email-verified registration.
+ */
+export async function createUserWithPersonalClass(input: RegisterInput) {
   await assertRegistrationOpen();
 
   if (input.schoolId && !input.studentId) {
@@ -108,6 +112,10 @@ export async function register(input: RegisterInput) {
     token: signUserJwt({ sub: fullUser.id, email: fullUser.email }, getJwtSecret()),
     user: toUserProfile(fullUser),
   };
+}
+
+export async function register(input: RegisterInput) {
+  return createUserWithPersonalClass(input);
 }
 
 export async function login(input: LoginInput) {

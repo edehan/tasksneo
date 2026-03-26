@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 interface StatCardsProps {
   total: number;
   inProgress: number;
@@ -8,19 +10,20 @@ interface StatCardsProps {
 }
 
 interface CardDef {
-  label: string;
+  labelKey: string;
   key: keyof StatCardsProps;
   errorColor?: boolean;
 }
 
 const cards: CardDef[] = [
-  { label: "Total Tasks", key: "total" },
-  { label: "In Progress", key: "inProgress" },
-  { label: "Overdue", key: "overdue", errorColor: true },
-  { label: "Not Started", key: "notStarted" },
+  { labelKey: "totalTasks", key: "total" },
+  { labelKey: "inProgress", key: "inProgress" },
+  { labelKey: "overdue", key: "overdue", errorColor: true },
+  { labelKey: "notStarted", key: "notStarted" },
 ];
 
 export function StatCards({ total, inProgress, overdue, notStarted }: StatCardsProps) {
+  const t = useTranslations("dashboardStatCards");
   const values: StatCardsProps = { total, inProgress, overdue, notStarted };
 
   return (
@@ -37,7 +40,7 @@ export function StatCards({ total, inProgress, overdue, notStarted }: StatCardsP
           >
             {values[card.key]}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">{card.label}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t(card.labelKey)}</p>
         </div>
       ))}
     </div>

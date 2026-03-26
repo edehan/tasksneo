@@ -3,6 +3,7 @@
 import { Download, FileText, Loader2, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 import { useAuth } from "@/components/auth-provider";
 import type { AttachmentMeta } from "@/lib/api";
@@ -76,6 +77,7 @@ export function AttachmentSidebar({
   accentColor,
   onRemove,
 }: AttachmentSidebarProps) {
+  const t = useTranslations("attachmentSidebar");
   const { token } = useAuth();
   const accent = accentColor ?? "var(--class-accent)";
   const [downloading, setDownloading] = useState<string | null>(null);
@@ -95,7 +97,7 @@ export function AttachmentSidebar({
       URL.revokeObjectURL(blobUrl);
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to download file";
+        err instanceof ApiError ? err.message : t("failedDownloadFile");
       toast.error(message);
     } finally {
       setDownloading(null);
@@ -106,7 +108,7 @@ export function AttachmentSidebar({
     <div className="flex h-full flex-col bg-surface-subtle/60 p-4">
       {/* Header */}
       <span className="text-label-upper mb-3">
-        Attachments ({attachments.length})
+        {t("attachmentsCount", { count: attachments.length })}
       </span>
 
       {/* File list */}
@@ -132,9 +134,9 @@ export function AttachmentSidebar({
               <div className="min-w-0 flex-1">
                 <p
                   className="truncate text-[12.5px] font-medium text-foreground"
-                  title={att.originalName ?? "Unknown file"}
+                  title={att.originalName ?? t("unknownFile")}
                 >
-                  {att.originalName ?? "Unknown file"}
+                  {att.originalName ?? t("unknownFile")}
                 </p>
                 <p className="text-[11px] text-muted-foreground">
                   {formatFileSize(att.sizeBytes)}
@@ -193,7 +195,7 @@ export function AttachmentSidebar({
 
         {attachments.length === 0 && (
           <p className="py-4 text-center text-xs italic text-muted-foreground">
-            No files attached yet
+            {t("noFilesAttached")}
           </p>
         )}
       </div>
@@ -210,7 +212,7 @@ export function AttachmentSidebar({
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-transparent px-3 py-2 text-[12.5px] font-medium text-muted-foreground transition-colors duration-100 hover:bg-secondary hover:text-foreground"
         >
           <Download size={14} strokeWidth={2} />
-          Download All
+          {t("downloadAll")}
         </button>
       )}
     </div>

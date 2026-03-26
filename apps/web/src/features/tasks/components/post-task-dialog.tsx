@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useLocale, useTranslations } from "next-intl";
 
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -63,10 +64,10 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function formatOptionDate(iso: string | null): string {
+function formatOptionDate(iso: string | null, locale: string): string {
   if (!iso) return "—";
   try {
-    return new Date(iso).toLocaleString(undefined, {
+    return new Date(iso).toLocaleString(locale, {
       month: "short",
       day: "numeric",
       hour: "numeric",
@@ -87,6 +88,8 @@ export function PostTaskDialog({
   onOpenChange,
   onEditBody,
 }: PostTaskDialogProps) {
+  const t = useTranslations("postTaskDialog");
+  const locale = useLocale();
   const { token } = useAuth();
 
   // Form state
@@ -172,10 +175,10 @@ export function PostTaskDialog({
 
   const ensureDraft = useCallback(async (): Promise<string> => {
     if (draftIdRef.current) return draftIdRef.current;
-    if (!token) throw new Error("Not authenticated");
+    if (!token) throw new Error(t("errors.notAuthenticated"));
 
     const draft = await createTaskDraft(token, classId, {
-      title: title.trim() || "Untitled Task",
+      title: title.trim() || t("untitledTask"),
       sourceText: rawText.trim() || null,
       startAt: startAt ? startAt.toISOString() : null,
       dueAt: dueAt ? dueAt.toISOString() : null,
@@ -185,7 +188,7 @@ export function PostTaskDialog({
     setDraftId(draft.id);
     draftIdRef.current = draft.id;
     return draft.id;
-  }, [token, classId, title, rawText, startAt, dueAt, allowLate, blockedBy]);
+  }, [token, classId, title, rawText, startAt, dueAt, allowLate, blockedBy, t]);
 
   // ─── Reset ─────────────────────────────────────────────────────────────
 
@@ -252,10 +255,10 @@ export function PostTaskDialog({
 
       setParsed(true);
       setExpanded(true);
-      toast.success("AI parsed your task description");
+      toast.success(t("toast.aiParsed"));
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to parse task";
+        err instanceof ApiError ? err.message : t("toast.failedParseTask");
       toast.error(message);
     } finally {
       setParsing(false);
@@ -280,11 +283,11 @@ export function PostTaskDialog({
 
       setAttachments((prev) => [...prev, ...results]);
       toast.success(
-        `Uploaded ${results.length} file${results.length > 1 ? "s" : ""}`,
+        t("toast.uploadedFiles", { count: results.length }),
       );
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to upload file";
+        err instanceof ApiError ? err.message : t("toast.failedUploadFile");
       toast.error(message);
     } finally {
       setUploading(false);
@@ -332,7 +335,7 @@ export function PostTaskDialog({
       onEditBody({ taskId, title: title.trim() });
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to create task draft";
+        err instanceof ApiError ? err.message : t("toast.failedCreateDraft");
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -374,7 +377,7 @@ export function PostTaskDialog({
               className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
               style={{ backgroundColor: themeColor }}
             />
-            Post Task &mdash; {clsName}
+            {t("title", { className: clsName })}
           </DialogTitle>
         </DialogHeader>
 
@@ -388,7 +391,7 @@ export function PostTaskDialog({
                 if (parsed) setParsed(false);
               }}
               placeholder={
-                'Describe your task here...\ne.g. "Complete Chapter 5 exercises, due in 2 weeks, allow late submissions"'
+                t("inputPlaceholder")
               }
               className="w-full resize-none rounded-t-lg bg-transparent px-4 py-3 text-sm text-foreground placeholder:text-text-muted-soft focus:outline-none"
               style={{ minHeight: 130 }}
@@ -417,7 +420,7 @@ export function PostTaskDialog({
                 ) : (
                   <Paperclip size={13} strokeWidth={2} />
                 )}
-                {uploading ? "Uploading..." : "Attach"}
+                {uploading ? t("uploading") : t("attach")}
               </button>
 
               {/* Expand Form */}
@@ -431,7 +434,7 @@ export function PostTaskDialog({
                 ) : (
                   <ChevronDown size={13} strokeWidth={2} />
                 )}
-                {expanded ? "Collapse" : "Expand Form"}
+                {expanded ? t("collapse") : t("expandForm")}
               </button>
 
               {/* AI Parse */}
@@ -465,7 +468,7 @@ export function PostTaskDialog({
                   ) : (
                     <Sparkles size={13} strokeWidth={2} />
                   )}
-                  {parsing ? "Parsing..." : parsed ? "Parsed" : "AI Parse"}
+                  {parsing ? t("parsing") : parsed ? t("parsed") : t("aiParse")}
                 </button>
               )}
             </div>
@@ -506,8 +509,7 @@ export function PostTaskDialog({
           {pendingTimeOptions && pendingTimeOptions.length > 1 && (
             <div className="mt-3 rounded-lg border border-border bg-background p-4">
               <p className="mb-2.5 text-sm font-medium text-foreground">
-                AI detected multiple possible time interpretations. Which one
-                did you mean?
+                {t("timeOptions.title")}
               </p>
               <div className="flex flex-col gap-2">
                 {pendingTimeOptions.map((opt, i) => (
@@ -525,8 +527,8 @@ export function PostTaskDialog({
                       style={{ backgroundColor: themeColor }}
                     />
                     <span className="text-foreground">
-                      {formatOptionDate(opt.startAt)} →{" "}
-                      {formatOptionDate(opt.dueAt)}
+                      {formatOptionDate(opt.startAt, locale)} →{" "}
+                      {formatOptionDate(opt.dueAt, locale)}
                     </span>
                   </button>
                 ))}
@@ -535,7 +537,7 @@ export function PostTaskDialog({
                   onClick={() => setPendingTimeOptions(null)}
                   className="px-3 py-1.5 text-left text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  None of these — I&apos;ll enter manually
+                  {t("timeOptions.none")}
                 </button>
               </div>
             </div>
@@ -550,19 +552,19 @@ export function PostTaskDialog({
             }}
           >
             <div className="pt-5">
-              <span className="text-label-upper mb-3 block">Task Details</span>
+              <span className="text-label-upper mb-3 block">{t("taskDetails")}</span>
 
               {/* Title */}
               <div className="mb-4 space-y-1.5">
                 <Label htmlFor="post-task-title" className="text-sm">
-                  Task Title <span className="text-destructive">*</span>
+                  {t("taskTitle")} <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="post-task-title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   onBlur={() => setTitleTouched(true)}
-                  placeholder="e.g. Chapter 5 Homework"
+                  placeholder={t("taskTitlePlaceholder")}
                   className={
                     (titleTouched || attempted) && !titleValid
                       ? "border-destructive focus-visible:ring-destructive"
@@ -570,20 +572,20 @@ export function PostTaskDialog({
                   }
                 />
                 {(titleTouched || attempted) && !titleValid && (
-                  <p className="text-xs text-destructive">Title is required</p>
+                  <p className="text-xs text-destructive">{t("titleRequired")}</p>
                 )}
               </div>
 
               {/* Dates */}
               <div className="mb-4 flex gap-3">
                 <div className="flex-1 space-y-1.5">
-                  <Label className="text-sm">Start Date</Label>
+                  <Label className="text-sm">{t("startDate")}</Label>
                   <div className="flex items-center gap-2">
                     <div className="flex-1">
                       <DateTimePicker
                         value={startAt}
                         onChange={setStartAt}
-                        placeholder="Optional"
+                        placeholder={t("optional")}
                         disabled={submitting}
                       />
                     </div>
@@ -593,16 +595,16 @@ export function PostTaskDialog({
                       className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
                     >
                       <Clock size={11} strokeWidth={2} />
-                      Now
+                      {t("now")}
                     </button>
                   </div>
                   <p className="text-xs text-text-muted-soft">
-                    Defaults to now if not set
+                    {t("startDateHint")}
                   </p>
                 </div>
                 <div className="flex-1 space-y-1.5">
                   <Label className="text-sm">
-                    Due Date <span className="text-destructive">*</span>
+                    {t("dueDate")} <span className="text-destructive">*</span>
                   </Label>
                   <DateTimePicker
                     value={dueAt}
@@ -610,7 +612,7 @@ export function PostTaskDialog({
                       setDueAt(v);
                       if (v) setAttempted(false);
                     }}
-                    placeholder="Select due date"
+                    placeholder={t("selectDueDate")}
                     disabled={submitting}
                     className={
                       attempted && !dueAtValid
@@ -620,12 +622,12 @@ export function PostTaskDialog({
                   />
                   {attempted && !dueAtValid && (
                     <p className="text-xs text-destructive">
-                      Due date is required
+                      {t("dueDateRequired")}
                     </p>
                   )}
                   {startAt && dueAt && !datesValid && (
                     <p className="text-xs text-destructive">
-                      Due date must be after start date
+                      {t("dueDateAfterStart")}
                     </p>
                   )}
                 </div>
@@ -645,14 +647,14 @@ export function PostTaskDialog({
                   )}
                 </div>
                 <span className="text-sm text-foreground">
-                  Allow late submission
+                  {t("allowLateSubmission")}
                 </span>
               </label>
 
               {/* Prerequisites */}
               {classTasks.length > 0 && (
                 <div className="space-y-1.5">
-                  <Label className="text-sm">Prerequisites</Label>
+                  <Label className="text-sm">{t("prerequisites")}</Label>
                   <Popover open={prereqOpen} onOpenChange={setPrereqOpen}>
                     <PopoverTrigger asChild>
                       <button
@@ -661,8 +663,8 @@ export function PostTaskDialog({
                       >
                         <span className="text-muted-foreground">
                           {blockedBy.length === 0
-                            ? "Select prerequisite tasks..."
-                            : `${blockedBy.length} task${blockedBy.length > 1 ? "s" : ""} selected`}
+                            ? t("selectPrerequisites")
+                            : t("selectedTasks", { count: blockedBy.length })}
                         </span>
                         <ChevronDown
                           size={14}
@@ -740,23 +742,23 @@ export function PostTaskDialog({
           <div className="flex items-center gap-2">
             {/* Clear button — visible when there's any content to clear */}
             {(draftId || rawText.trim() || title.trim()) && (
-              <button
-                type="button"
-                onClick={handleClear}
-                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-              >
-                <Trash2 size={12} strokeWidth={2} />
-                Clear
-              </button>
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash2 size={12} strokeWidth={2} />
+                {t("clear")}
+                </button>
             )}
             <span className="text-xs text-muted-foreground">
               {!expanded && rawText.trim()
-                ? "Use AI Parse or expand form to fill details"
+                ? t("footerHint.useAiOrExpand")
                 : !dueAtValid && expanded
-                  ? "Due date is required"
+                  ? t("dueDateRequired")
                   : formValid
-                    ? "Ready to continue"
-                    : "Fill required fields to continue"}
+                    ? t("footerHint.ready")
+                    : t("footerHint.fillRequired")}
             </span>
           </div>
           <Button
@@ -766,7 +768,7 @@ export function PostTaskDialog({
             style={{ backgroundColor: formValid ? themeColor : undefined }}
           >
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Edit Body &rarr;
+            {t("editBody")}
           </Button>
         </div>
       </DialogContent>

@@ -2,13 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-
-const settingsTabs = [
-  { label: "Profile", href: "/settings/profile" },
-  { label: "Notifications", href: "/settings/notifications" },
-  { label: "Account", href: "/settings/account" },
-];
 
 export default function SettingsLayout({
   children,
@@ -16,10 +11,17 @@ export default function SettingsLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const t = useTranslations("settingsLayout");
+
+  const settingsTabs = [
+    { label: t("tabs.profile"), href: "/settings/profile" },
+    { label: t("tabs.notifications"), href: "/settings/notifications" },
+    { label: t("tabs.account"), href: "/settings/account" },
+  ];
 
   return (
     <div className="p-8 max-w-[640px] mx-auto">
-      <h1 className="text-display mb-6">Settings</h1>
+      <h1 className="text-display mb-6">{t("title")}</h1>
       <nav className="flex gap-1 border-b border-border mb-8">
         {settingsTabs.map((tab) => {
           const isActive =

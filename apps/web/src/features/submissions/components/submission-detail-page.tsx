@@ -11,6 +11,7 @@ import {
   Save,
   Clock,
 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-provider";
@@ -30,22 +31,6 @@ import {
   ApiError,
 } from "@/lib/api";
 
-// ─── Date formatting ─────────────────────────────────────────────────────────
-
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-  hour12: true,
-});
-
-function formatDate(iso: string | null | undefined): string {
-  if (!iso) return "\u2014";
-  return dateFormatter.format(new Date(iso));
-}
-
 // ─── File size formatting ────────────────────────────────────────────────────
 
 function formatFileSize(bytes: number | null): string {
@@ -58,6 +43,8 @@ function formatFileSize(bytes: number | null): string {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function SubmissionDetailPage() {
+  const t = useTranslations("submissionDetailPage");
+  const locale = useLocale();
   const params = useParams();
   const router = useRouter();
   const { token } = useAuth();
@@ -76,6 +63,20 @@ export function SubmissionDetailPage() {
   const [score, setScore] = useState("");
   const [reviewNote, setReviewNote] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const dateFormatter = new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  function formatDate(iso: string | null | undefined): string {
+    if (!iso) return "\u2014";
+    return dateFormatter.format(new Date(iso));
+  }
 
   // ─── Load data ──────────────────────────────────────────────────────────────
 
@@ -102,11 +103,11 @@ export function SubmissionDetailPage() {
       setScore(submissionData.score ?? "");
       setReviewNote(submissionData.reviewNote ?? "");
     } catch {
-      toast.error("Failed to load submission");
+      toast.error(t("toast.failedLoadSubmission"));
     } finally {
       setLoading(false);
     }
-  }, [token, submissionId]);
+  }, [token, submissionId, t]);
 
   useEffect(() => {
     void loadData();
@@ -156,9 +157,9 @@ export function SubmissionDetailPage() {
         reviewNote: reviewNote.trim() || null,
       });
       setSubmission(updated);
-      toast.success("Grade saved successfully");
+      toast.success(t("toast.gradeSaved"));
     } catch {
-      toast.error("Failed to save grade");
+      toast.error(t("toast.failedSaveGrade"));
     } finally {
       setSaving(false);
     }
@@ -183,7 +184,7 @@ export function SubmissionDetailPage() {
       URL.revokeObjectURL(blobUrl);
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to download file";
+        err instanceof ApiError ? err.message : t("toast.failedDownloadFile");
       toast.error(message);
     }
   }
@@ -216,13 +217,13 @@ export function SubmissionDetailPage() {
   if (!submission || !cls) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="text-sm text-muted-foreground">Submission not found.</p>
+        <p className="text-sm text-muted-foreground">{t("notFound")}</p>
       </div>
     );
   }
 
   const accentColor = cls.color || "#7B6CB0";
-  const displayName = studentRow?.nickname || studentRow?.email || "Student";
+  const displayName = studentRow?.nickname || studentRow?.email || t("student");
   const attachments = submission.attachments ?? [];
 
   return (
@@ -237,7 +238,7 @@ export function SubmissionDetailPage() {
           className="flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors duration-100 hover:text-foreground"
         >
           <ArrowLeft size={14} strokeWidth={2} />
-          Back to submissions
+          {t("backToSubmissions")}
         </button>
 
         <div className="flex items-center gap-2">
@@ -248,7 +249,7 @@ export function SubmissionDetailPage() {
             className="flex items-center gap-1 rounded-[8px] border border-border px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors duration-100 hover:bg-secondary hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ChevronLeft size={14} strokeWidth={2} />
-            Prev
+            {t("prev")}
           </button>
           <span className="text-[12px] text-muted-foreground">
             {currentIndex >= 0
@@ -261,7 +262,7 @@ export function SubmissionDetailPage() {
             onClick={() => nextSubmission && navigateTo(nextSubmission)}
             className="flex items-center gap-1 rounded-[8px] border border-border px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors duration-100 hover:bg-secondary hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Next
+            {t("next")}
             <ChevronRight size={14} strokeWidth={2} />
           </button>
         </div>
@@ -301,11 +302,11 @@ export function SubmissionDetailPage() {
           <div className="shrink-0 text-right">
             <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
               <Clock size={12} strokeWidth={1.8} />
-              First submitted: {formatDate(submission.firstSubmittedAt)}
+              {t("firstSubmitted")}: {formatDate(submission.firstSubmittedAt)}
             </div>
             <div className="mt-1 flex items-center gap-1.5 text-[12px] text-muted-foreground">
               <Clock size={12} strokeWidth={1.8} />
-              Last updated: {formatDate(submission.lastUpdatedAt)}
+              {t("lastUpdated")}: {formatDate(submission.lastUpdatedAt)}
             </div>
           </div>
         </div>
@@ -313,7 +314,7 @@ export function SubmissionDetailPage() {
 
       {/* ── Submission content ──────────────────────────────────────────── */}
       <div className="mb-8">
-        <h2 className="text-heading-md mb-4">Submission Content</h2>
+        <h2 className="text-heading-md mb-4">{t("submissionContent")}</h2>
         <div className="rounded-lg border border-border bg-card p-6">
           {submission.content ? (
             <MarkdownPreview
@@ -323,7 +324,7 @@ export function SubmissionDetailPage() {
             />
           ) : (
             <p className="text-sm italic text-text-muted-soft">
-              No text content submitted.
+              {t("noTextContent")}
             </p>
           )}
         </div>
@@ -333,7 +334,7 @@ export function SubmissionDetailPage() {
       {attachments.length > 0 && (
         <div className="mb-8">
           <h2 className="text-heading-md mb-4">
-            Attachments ({attachments.length})
+            {t("attachmentsCount", { count: attachments.length })}
           </h2>
           <div className="rounded-lg border border-border bg-card p-4">
             <div className="space-y-1.5">
@@ -362,7 +363,7 @@ export function SubmissionDetailPage() {
                     type="button"
                     onClick={() => handleDownload(att)}
                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-secondary text-muted-foreground transition-colors duration-100 hover:text-foreground"
-                    aria-label={`Download ${att.originalName}`}
+                    aria-label={t("downloadFile", { name: att.originalName })}
                   >
                     <Download size={14} strokeWidth={2} />
                   </button>
@@ -375,7 +376,7 @@ export function SubmissionDetailPage() {
 
       {/* ── Grading panel ───────────────────────────────────────────────── */}
       <div className="rounded-lg border border-border bg-card p-6">
-        <h2 className="text-heading-md mb-4">Grading</h2>
+        <h2 className="text-heading-md mb-4">{t("grading")}</h2>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           {/* Score input */}
@@ -384,7 +385,7 @@ export function SubmissionDetailPage() {
               htmlFor="score-input"
               className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wide text-muted-foreground"
             >
-              Score
+              {t("score")}
             </label>
             <input
               id="score-input"
@@ -392,7 +393,7 @@ export function SubmissionDetailPage() {
               step="any"
               value={score}
               onChange={(e) => setScore(e.target.value)}
-              placeholder="e.g. 95.5"
+              placeholder={t("scorePlaceholder")}
               className="h-10 w-full rounded-[8px] border border-border bg-background px-3 text-[14px] text-foreground outline-none transition-colors duration-100 placeholder:text-text-muted-soft focus:border-transparent focus:ring-2 focus:ring-class-accent"
             />
           </div>
@@ -401,7 +402,7 @@ export function SubmissionDetailPage() {
           {submission.reviewedAt && (
             <div className="flex items-end">
               <p className="text-[12px] text-muted-foreground">
-                Last reviewed: {formatDate(submission.reviewedAt)}
+                {t("lastReviewed")}: {formatDate(submission.reviewedAt)}
               </p>
             </div>
           )}
@@ -413,13 +414,13 @@ export function SubmissionDetailPage() {
             htmlFor="review-note"
             className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wide text-muted-foreground"
           >
-            Review Note
+            {t("reviewNote")}
           </label>
           <textarea
             id="review-note"
             value={reviewNote}
             onChange={(e) => setReviewNote(e.target.value)}
-            placeholder="Optional feedback for the student..."
+            placeholder={t("reviewNotePlaceholder")}
             rows={4}
             className="w-full resize-none rounded-[8px] border border-border bg-background px-3 py-2.5 text-[14px] leading-relaxed text-foreground outline-none transition-colors duration-100 placeholder:text-text-muted-soft focus:border-transparent focus:ring-2 focus:ring-class-accent"
           />
@@ -435,7 +436,7 @@ export function SubmissionDetailPage() {
             style={{ backgroundColor: accentColor }}
           >
             <Save size={14} strokeWidth={2} />
-            {saving ? "Saving..." : "Save Grade"}
+            {saving ? t("saving") : t("saveGrade")}
           </button>
         </div>
       </div>

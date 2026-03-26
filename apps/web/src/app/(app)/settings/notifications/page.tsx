@@ -9,39 +9,49 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useTranslations } from "next-intl";
 import type { NotificationPref } from "@/lib/api";
 import { ApiError, getNotificationPrefs, upsertNotificationPref } from "@/lib/api";
 
 export default function NotificationsPage() {
   const { token, user } = useAuth();
+  const t = useTranslations("settingsNotifications");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   // Email notification state
   const [emailEnabled, setEmailEnabled] = useState(false);
-  const [emailAddress, setEmailAddress] = useState("");
+
+  // Webhook notification state
+  const [webhookEnabled, setWebhookEnabled] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState("");
 
   const loadPrefs = useCallback(async () => {
     if (!token) return;
     try {
       const prefs = await getNotificationPrefs(token);
+
       const emailPref = prefs.find(
         (p: NotificationPref) => p.channel === "EMAIL",
       );
       if (emailPref) {
         setEmailEnabled(emailPref.isEnabled);
-        setEmailAddress(emailPref.address);
-      } else {
-        // Default to user email
-        setEmailAddress(user?.email ?? "");
+      }
+
+      const webhookPref = prefs.find(
+        (p: NotificationPref) => p.channel === "WEBHOOK",
+      );
+      if (webhookPref) {
+        setWebhookEnabled(webhookPref.isEnabled);
+        setWebhookUrl(webhookPref.address);
       }
     } catch {
-      toast.error("Failed to load notification preferences");
+      toast.error(t("failedLoadPrefs"));
     } finally {
       setLoading(false);
     }
-  }, [token, user?.email]);
+  }, [token, t]);
 
   useEffect(() => {
     void loadPrefs();
@@ -49,23 +59,39 @@ export default function NotificationsPage() {
 
   async function handleSave() {
     if (!token) return;
-    if (emailEnabled && !emailAddress.trim()) {
-      toast.error("Please enter an email address");
+    if (webhookEnabled && !webhookUrl.trim()) {
+      toast.error(t("pleaseEnterWebhookUrl"));
       return;
     }
+
     setSaving(true);
     try {
-      await upsertNotificationPref(token, {
-        channel: "EMAIL",
-        address: emailAddress.trim(),
-        isEnabled: emailEnabled,
-      });
-      toast.success("Notification preferences saved");
+      const promises: Promise<unknown>[] = [
+        upsertNotificationPref(token, {
+          channel: "EMAIL",
+          address: user?.email ?? "",
+          isEnabled: emailEnabled,
+        }),
+      ];
+
+      // Only save webhook pref if user has interacted with it
+      if (webhookEnabled || webhookUrl.trim()) {
+        promises.push(
+          upsertNotificationPref(token, {
+            channel: "WEBHOOK",
+            address: webhookUrl.trim() || "https://",
+            isEnabled: webhookEnabled,
+          }),
+        );
+      }
+
+      await Promise.all(promises);
+      toast.success(t("prefsSaved"));
     } catch (err) {
       const message =
         err instanceof ApiError
           ? err.message
-          : "Failed to save notification preferences";
+          : t("failedSavePrefs");
       toast.error(message);
     } finally {
       setSaving(false);
@@ -86,16 +112,13 @@ export default function NotificationsPage() {
     <div className="space-y-8">
       {/* Email Notifications */}
       <section className="space-y-5">
-        <h2 className="text-heading-md">Email Notifications</h2>
-        <p className="text-sm text-muted-foreground">
-          Receive email notifications when new tasks are posted or deadlines are
-          approaching.
-        </p>
+        <h2 className="text-heading-md">{t("emailNotifications")}</h2>
+        <p className="text-sm text-muted-foreground">{t("emailDescription")}</p>
         <div className="flex items-center justify-between rounded-lg border border-border p-4">
           <div>
-            <p className="text-sm font-medium">Enable email notifications</p>
+            <p className="text-sm font-medium">{t("enableEmail")}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Get notified about task updates via email
+              {t("emailUpdatesHint")}
             </p>
           </div>
           <Switch
@@ -104,20 +127,40 @@ export default function NotificationsPage() {
             disabled={saving}
           />
         </div>
-        {emailEnabled && (
+        {emailEnabled && user?.email && (
+          <p className="text-sm text-muted-foreground rounded-lg border border-border px-4 py-3">
+            {t("emailDestinationPrefix")} ({user.email}).
+          </p>
+        )}
+      </section>
+
+      {/* Webhook Notifications */}
+      <section className="space-y-5">
+        <h2 className="text-heading-md">{t("webhookNotifications")}</h2>
+        <p className="text-sm text-muted-foreground">{t("webhookDescription")}</p>
+        <div className="flex items-center justify-between rounded-lg border border-border p-4">
+          <div>
+            <p className="text-sm font-medium">{t("enableWebhook")}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{t("webhookHint")}</p>
+          </div>
+          <Switch
+            checked={webhookEnabled}
+            onCheckedChange={setWebhookEnabled}
+            disabled={saving}
+          />
+        </div>
+        {webhookEnabled && (
           <div className="space-y-2">
-            <Label htmlFor="notification-email">Notification Email</Label>
+            <Label htmlFor="webhook-url">{t("webhookUrl")}</Label>
             <Input
-              id="notification-email"
-              type="email"
-              value={emailAddress}
-              onChange={(e) => setEmailAddress(e.target.value)}
-              placeholder="your@email.com"
+              id="webhook-url"
+              type="url"
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+              placeholder="https://example.com/webhook"
               disabled={saving}
             />
-            <p className="text-xs text-muted-foreground">
-              Defaults to your account email if left unchanged.
-            </p>
+            <p className="text-xs text-muted-foreground">{t("webhookPostHint")}</p>
           </div>
         )}
       </section>
@@ -125,7 +168,7 @@ export default function NotificationsPage() {
       {/* Save */}
       <Button onClick={handleSave} disabled={saving}>
         {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Save Preferences
+        {t("savePreferences")}
       </Button>
     </div>
   );

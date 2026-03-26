@@ -156,6 +156,7 @@ export interface SubmissionListRow {
   role: "OWNER" | "ADMIN" | "MEMBER";
   submitted: boolean;
   submission: SubmissionSummary | null;
+  attachments: AttachmentMeta[];
 }
 
 export interface NotificationPref {
@@ -163,6 +164,23 @@ export interface NotificationPref {
   channel: "EMAIL" | "WEBHOOK" | "TELEGRAM";
   address: string;
   isEnabled: boolean;
+}
+
+export interface NotificationItem {
+  id: string;
+  type: "TASK_PUBLISHED" | "TASK_DUE_REMINDER";
+  taskId: string | null;
+  classId: string | null;
+  taskTitle: string;
+  className: string;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface NotificationListResponse {
+  items: NotificationItem[];
+  nextCursor: string | null;
+  unreadCount: number;
 }
 
 // ─── Admin Types (kept for admin panel) ──────────────────────────────────────
@@ -245,18 +263,75 @@ export async function login(
   });
 }
 
-export async function register(input: {
-  email: string;
+export async function register(email: string): Promise<{ message: string }> {
+  return apiRequest<{ message: string }>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function verifyToken(
+  token: string,
+  purpose: "REGISTRATION" | "PASSWORD_RESET",
+): Promise<{ valid: boolean; email: string }> {
+  return apiRequest<{ valid: boolean; email: string }>(
+    `/auth/verify-token?token=${encodeURIComponent(token)}&purpose=${purpose}`,
+  );
+}
+
+export async function completeRegistration(input: {
+  token: string;
   password: string;
   nickname?: string;
   schoolId?: string | null;
   studentId?: string | null;
   timezone?: string;
 }): Promise<AuthResponse> {
-  return apiRequest<AuthResponse>("/auth/register", {
+  return apiRequest<AuthResponse>("/auth/register/complete", {
     method: "POST",
     body: JSON.stringify(input),
   });
+}
+
+export async function requestPasswordReset(
+  email: string,
+): Promise<{ message: string }> {
+  return apiRequest<{ message: string }>("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resetPassword(
+  token: string,
+  password: string,
+): Promise<AuthResponse> {
+  return apiRequest<AuthResponse>("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, password }),
+  });
+}
+
+export async function requestEmailChange(
+  authToken: string,
+  newEmail: string,
+): Promise<{ message: string }> {
+  return apiRequest<{ message: string }>(
+    "/users/me/email/change",
+    { method: "POST", body: JSON.stringify({ email: newEmail }) },
+    authToken,
+  );
+}
+
+export async function confirmEmailChange(
+  authToken: string,
+  verificationToken: string,
+): Promise<UserProfile> {
+  return apiRequest<UserProfile>(
+    "/users/me/email/confirm",
+    { method: "POST", body: JSON.stringify({ token: verificationToken }) },
+    authToken,
+  );
 }
 
 // ─── Users ───────────────────────────────────────────────────────────────────
@@ -317,6 +392,53 @@ export async function upsertNotificationPref(
   return apiRequest<NotificationPref>(
     "/users/me/notification-prefs",
     { method: "PUT", body: JSON.stringify(input) },
+    token,
+  );
+}
+
+export async function listMyNotifications(
+  token: string,
+  params?: { limit?: number; cursor?: string; unreadOnly?: boolean },
+): Promise<NotificationListResponse> {
+  const query = new URLSearchParams();
+  if (params?.limit) query.set("limit", String(params.limit));
+  if (params?.cursor) query.set("cursor", params.cursor);
+  if (params?.unreadOnly) query.set("unreadOnly", "true");
+  const qs = query.toString();
+  return apiRequest<NotificationListResponse>(
+    `/users/me/notifications${qs ? `?${qs}` : ""}`,
+    {},
+    token,
+  );
+}
+
+export async function markNotificationRead(
+  token: string,
+  id: string,
+): Promise<void> {
+  return apiRequest<void>(
+    `/users/me/notifications/${id}/read`,
+    { method: "PATCH" },
+    token,
+  );
+}
+
+export async function markAllNotificationsRead(
+  token: string,
+): Promise<void> {
+  return apiRequest<void>(
+    "/users/me/notifications/read-all",
+    { method: "POST" },
+    token,
+  );
+}
+
+export async function getUnreadNotificationCount(
+  token: string,
+): Promise<{ unreadCount: number }> {
+  return apiRequest<{ unreadCount: number }>(
+    "/users/me/notifications/unread-count",
+    {},
     token,
   );
 }
@@ -791,6 +913,19 @@ export async function downloadFile(
   }
   const blob = await res.blob();
   return URL.createObjectURL(blob);
+}
+
+export async function downloadFileBlob(
+  token: string,
+  fileKey: string,
+): Promise<Blob> {
+  const res = await fetch(`${getApiBaseUrl()}/files/${fileKey}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    throw new ApiError("Failed to download file", "DOWNLOAD_FAILED", res.status);
+  }
+  return res.blob();
 }
 
 export async function deleteAttachment(

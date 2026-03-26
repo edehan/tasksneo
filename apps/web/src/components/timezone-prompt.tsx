@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 import { ApiError, updateProfile } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -91,6 +92,7 @@ function formatOffset(tz: string): string {
 
 export function TimezonePrompt() {
   const { token, user, updateUser } = useAuth();
+  const t = useTranslations("timezonePrompt");
   const [visible, setVisible] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [browserTz, setBrowserTz] = useState<string | null>(null);
@@ -125,10 +127,10 @@ export function TimezonePrompt() {
       updateUser(updated);
       setVisible(false);
       localStorage.removeItem(DISMISS_KEY);
-      toast.success(`Timezone updated to ${browserTz}`);
+      toast.success(t("updatedTo", { timezone: browserTz }));
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to update timezone";
+        err instanceof ApiError ? err.message : t("failedUpdate");
       toast.error(message);
     } finally {
       setUpdating(false);
@@ -149,15 +151,15 @@ export function TimezonePrompt() {
       <div className="mx-auto flex max-w-3xl items-center gap-3">
         <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
         <p className="flex-1 text-sm text-foreground">
-          Your browser timezone is{" "}
+          {t("browserTimezonePrefix")}{" "}
           <span className="font-medium">
             {browserTz} ({formatOffset(browserTz)})
           </span>
-          , but your account is set to{" "}
+          {t("accountTimezonePrefix")}{" "}
           <span className="font-medium">
             {user.timezone} ({formatOffset(user.timezone)})
           </span>
-          . Update to match your current location?
+          {t("updateQuestion")}
         </p>
         <div className="flex shrink-0 items-center gap-2">
           <Button
@@ -166,10 +168,10 @@ export function TimezonePrompt() {
             onClick={handleDismiss}
             disabled={updating}
           >
-            Dismiss
+            {t("dismiss")}
           </Button>
           <Button size="sm" onClick={handleUpdate} disabled={updating}>
-            {updating ? "Updating..." : "Update"}
+            {updating ? t("updating") : t("update")}
           </Button>
         </div>
       </div>

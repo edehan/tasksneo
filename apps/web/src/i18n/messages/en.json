@@ -1,0 +1,588 @@
+{
+  "settingsLayout": {
+    "title": "Settings",
+    "tabs": {
+      "profile": "Profile",
+      "notifications": "Notifications",
+      "account": "Account"
+    }
+  },
+  "settingsVerifyEmail": {
+    "missingTokenOrNotSignedIn": "Missing verification token or not signed in.",
+    "emailAddressUpdated": "Email address updated",
+    "verificationFailed": "Verification failed",
+    "verifyingEmail": "Verifying your email...",
+    "backToProfile": "Back to profile",
+    "emailUpdated": "Email updated",
+    "emailChangedSuccessfully": "Your email address has been changed successfully."
+  },
+  "authForgotPassword": {
+    "somethingWentWrong": "Something went wrong",
+    "resetEmailResent": "Reset email resent",
+    "failedResendEmail": "Failed to resend email",
+    "checkYourEmail": "Check your email",
+    "accountExistsPrefix": "If an account exists for",
+    "accountExistsSuffix": ", we sent a password reset link.",
+    "didNotReceive": "Didn't receive the email? Check your spam folder or try resending.",
+    "sending": "Sending...",
+    "resendEmail": "Resend email",
+    "backToSignIn": "Back to sign in",
+    "resetYourPassword": "Reset your password",
+    "description": "Enter your email address and we'll send you a link to reset your password.",
+    "email": "Email",
+    "sendResetLink": "Send reset link",
+    "rememberPassword": "Remember your password?",
+    "signIn": "Sign in"
+  },
+  "authResetPassword": {
+    "missingResetToken": "Missing reset token.",
+    "invalidOrExpiredLink": "This link is invalid or has expired.",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "passwordResetFailed": "Password reset failed",
+    "linkExpired": "Link expired",
+    "requestNewLink": "Request a new link",
+    "setNewPassword": "Set a new password",
+    "enterNewPasswordFor": "Enter a new password for",
+    "newPassword": "New password",
+    "atLeast8Characters": "At least 8 characters",
+    "confirmNewPassword": "Confirm new password",
+    "repeatPassword": "Repeat your password",
+    "resetting": "Resetting...",
+    "resetPassword": "Reset password"
+  },
+  "authRegisterComplete": {
+    "missingVerificationToken": "Missing verification token.",
+    "invalidOrExpiredLink": "This link is invalid or has expired.",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "studentIdRequired": "Student ID is required when a school is selected",
+    "registrationFailed": "Registration failed",
+    "linkExpired": "Link expired",
+    "backToRegistration": "Back to registration",
+    "completeAccount": "Complete your account",
+    "setupProfileFor": "Set up your profile for",
+    "password": "Password",
+    "atLeast8Characters": "At least 8 characters",
+    "confirmPassword": "Confirm password",
+    "repeatPassword": "Repeat your password",
+    "nickname": "Nickname",
+    "optional": "(optional)",
+    "nicknamePlaceholder": "How others will see you",
+    "school": "School",
+    "selectSchool": "Select a school",
+    "noSchool": "No school",
+    "studentId": "Student ID",
+    "studentNumberPlaceholder": "Your student number",
+    "creatingAccount": "Creating account...",
+    "createAccount": "Create account"
+  },
+  "settingsNotifications": {
+    "failedLoadPrefs": "Failed to load notification preferences",
+    "pleaseEnterWebhookUrl": "Please enter a webhook URL",
+    "prefsSaved": "Notification preferences saved",
+    "failedSavePrefs": "Failed to save notification preferences",
+    "emailNotifications": "Email Notifications",
+    "emailDescription": "Receive email notifications when new tasks are posted or deadlines are approaching.",
+    "enableEmail": "Enable email notifications",
+    "emailUpdatesHint": "Get notified about task updates via email",
+    "emailDestinationPrefix": "Notifications will be sent to your account email",
+    "webhookNotifications": "Webhook Notifications",
+    "webhookDescription": "Send notification data as JSON to an external URL. Useful for bots, automation tools, or custom integrations.",
+    "enableWebhook": "Enable webhook notifications",
+    "webhookHint": "POST a JSON payload for each notification event",
+    "webhookUrl": "Webhook URL",
+    "webhookPostHint": "We will POST a JSON body with task details to this URL.",
+    "savePreferences": "Save Preferences"
+  },
+  "authLogin": {
+    "loginFailed": "Login failed",
+    "welcomeBack": "Welcome back",
+    "signInToAccount": "Sign in to your TaskFlow account",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "signingIn": "Signing in...",
+    "signIn": "Sign in",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign up"
+  },
+  "authRegister": {
+    "registrationFailed": "Registration failed",
+    "verificationEmailResent": "Verification email resent",
+    "failedResendEmail": "Failed to resend email",
+    "checkYourEmail": "Check your email",
+    "sentVerificationPrefix": "We sent a verification link to",
+    "sentVerificationSuffix": "Click the link in the email to complete your registration.",
+    "didNotReceive": "Didn't receive the email? Check your spam folder or try resending.",
+    "sending": "Sending...",
+    "resendEmail": "Resend email",
+    "useDifferentEmail": "Use a different email",
+    "createAccount": "Create an account",
+    "getStarted": "Get started with TaskFlow",
+    "email": "Email",
+    "agreeTo": "I agree to the",
+    "termsOfService": "Terms of Service",
+    "and": "and",
+    "privacyPolicy": "Privacy Policy",
+    "continueWithEmail": "Continue with email",
+    "alreadyHaveAccount": "Already have an account?",
+    "signIn": "Sign in"
+  },
+  "appSidebar": {
+    "user": "User",
+    "settings": "Settings",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "logOut": "Log out",
+    "lightMode": "Light mode",
+    "darkMode": "Dark mode",
+    "homepage": "Homepage",
+    "personalSpace": "Personal Space",
+    "myClasses": "My Classes",
+    "joinedClasses": "Joined Classes",
+    "noClassesYet": "No classes yet",
+    "joinClass": "Join Class",
+    "create": "Create",
+    "language": "Language",
+    "langEn": "English",
+    "langZhCN": "中文",
+    "langFr": "Français",
+    "langJa": "日本語"
+  },
+  "notificationBell": {
+    "notifications": "Notifications",
+    "markAllAsRead": "Mark all as read",
+    "noNotificationsYet": "No notifications yet",
+    "viewAllNotifications": "View all notifications",
+    "time": {
+      "justNow": "just now",
+      "minutesAgo": "{count}m ago",
+      "hoursAgo": "{count}h ago",
+      "daysAgo": "{count}d ago",
+      "monthsAgo": "{count}mo ago"
+    }
+  },
+  "settingsAccount": {
+    "newPasswordsDoNotMatch": "New passwords do not match",
+    "passwordMinLength": "Password must be at least 8 characters",
+    "passwordUpdated": "Password updated",
+    "failedChangePassword": "Failed to change password",
+    "accountDeleted": "Account deleted",
+    "failedDeleteAccount": "Failed to delete account",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "enterCurrentPassword": "Enter current password",
+    "newPassword": "New Password",
+    "atLeast8Characters": "At least 8 characters",
+    "confirmNewPassword": "Confirm New Password",
+    "repeatNewPassword": "Repeat new password",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "updatePassword": "Update Password",
+    "dangerZone": "Danger Zone",
+    "cannotDeleteAccount": "Cannot delete account",
+    "ownerOfPrefix": "You are the owner of",
+    "classesCount": "{count} classes",
+    "ownerOfSuffix": ". Transfer ownership or delete those classes before deleting your account.",
+    "permanentDeleteWarning": "Permanently delete your account and all associated data. This action cannot be undone.",
+    "deleteYourAccountTitle": "Delete your account?",
+    "deleteYourAccountDescription": "This will permanently delete your account, remove you from all classes, and delete all your submissions. This cannot be undone.",
+    "typeToConfirmPrefix": "Type",
+    "typeToConfirmSuffix": "to confirm",
+    "cancel": "Cancel",
+    "deleteAccount": "Delete Account"
+  },
+  "settingsProfile": {
+    "profileUpdated": "Profile updated",
+    "failedUpdateProfile": "Failed to update profile",
+    "selectImageFile": "Please select an image file",
+    "imageSmallerThan5mb": "Image must be smaller than 5MB",
+    "avatarUpdated": "Avatar updated",
+    "failedUploadAvatar": "Failed to upload avatar",
+    "avatar": "Avatar",
+    "clickUploadPhoto": "Click to upload a new photo.",
+    "acceptedImageTypes": "JPG, PNG or GIF. Max 5MB.",
+    "nickname": "Nickname",
+    "nicknamePlaceholder": "How should we call you?",
+    "email": "Email",
+    "school": "School",
+    "selectYourSchool": "Select your school",
+    "none": "None",
+    "studentId": "Student ID",
+    "studentIdPlaceholder": "Your student ID",
+    "timezone": "Timezone",
+    "detected": "Detected",
+    "timezoneHint": "Used for displaying dates and deadlines in your local time.",
+    "saveChanges": "Save Changes",
+    "changeEmail": {
+      "failedSendVerification": "Failed to send verification",
+      "change": "Change",
+      "checkYourEmail": "Check your email",
+      "sentVerificationPrefix": "We sent a verification link to",
+      "sentVerificationSuffix": "Click the link to confirm the change.",
+      "close": "Close",
+      "title": "Change email address",
+      "description": "A verification link will be sent to your new email address. Your email won't change until you click the link.",
+      "newEmailAddress": "New email address",
+      "cancel": "Cancel",
+      "sending": "Sending...",
+      "sendVerification": "Send verification"
+    }
+  },
+  "createClassDialog": {
+    "createdToast": "Created \"{name}\"",
+    "failedCreate": "Failed to create class",
+    "title": "Create New Class",
+    "className": "Class Name",
+    "classNamePlaceholder": "e.g. Advanced Mathematics",
+    "themeColor": "Theme Color",
+    "restrictSchool": "Restrict to a specific school",
+    "selectSchool": "Select a school",
+    "cancel": "Cancel",
+    "createClass": "Create Class"
+  },
+  "joinClassDialog": {
+    "joinedToast": "Joined \"{name}\"",
+    "failedJoin": "Failed to join class. Please try again.",
+    "title": "Join a class",
+    "description": "Enter the invite code shared by your teacher or classmates.",
+    "inviteCode": "Invite code",
+    "inviteCodePlaceholder": "e.g. abc123xyz",
+    "cancel": "Cancel",
+    "join": "Join"
+  },
+  "timezonePrompt": {
+    "updatedTo": "Timezone updated to {timezone}",
+    "failedUpdate": "Failed to update timezone",
+    "browserTimezonePrefix": "Your browser timezone is",
+    "accountTimezonePrefix": ", but your account is set to",
+    "updateQuestion": ". Update to match your current location?",
+    "dismiss": "Dismiss",
+    "updating": "Updating...",
+    "update": "Update"
+  },
+  "taskEditorPage": {
+    "failedLoadTask": "Failed to load task",
+    "goBack": "Go back"
+  },
+  "dashboardFilterBar": {
+    "unfinished": "Unfinished",
+    "notSubmitted": "Not Submitted",
+    "overdue": "Overdue",
+    "showSubmitted": "Show Submitted"
+  },
+  "dashboardStatCards": {
+    "totalTasks": "Total Tasks",
+    "inProgress": "In Progress",
+    "overdue": "Overdue",
+    "notStarted": "Not Started"
+  },
+  "taskViewSwitcher": {
+    "gantt": "Gantt",
+    "list": "List"
+  },
+  "dashboardPage": {
+    "title": "Homepage",
+    "subtitle": "Overview of all your tasks across every class.",
+    "allTasks": "All Tasks",
+    "range": {
+      "week": "Week",
+      "month": "1 Month",
+      "twoMonths": "2 Months"
+    },
+    "empty": {
+      "title": "No tasks yet",
+      "description": "Join a class or create one to get started with your tasks.",
+      "joinClass": "Join Class",
+      "createClass": "Create Class"
+    }
+  },
+  "classPage": {
+    "classNotFound": "Class not found.",
+    "members": "Members",
+    "settings": "Settings",
+    "postTask": "Post Task",
+    "classTasks": "{className} Tasks",
+    "range": {
+      "week": "Week",
+      "month": "1 Month",
+      "twoMonths": "2 Months"
+    },
+    "empty": {
+      "noTasks": "No tasks in this class yet.",
+      "postFirstTask": "Post first task"
+    }
+  },
+  "dashboardInbox": {
+    "inbox": "Inbox",
+    "markAllAsRead": "Mark all as read",
+    "time": {
+      "justNow": "just now",
+      "minutesAgo": "{count}m ago",
+      "hoursAgo": "{count}h ago",
+      "daysAgo": "{count}d ago",
+      "monthsAgo": "{count}mo ago"
+    }
+  },
+  "taskListView": {
+    "columns": {
+      "task": "Task",
+      "startDate": "Start Date",
+      "dueDate": "Due Date",
+      "status": "Status"
+    },
+    "status": {
+      "submitted": "Submitted",
+      "overdue": "Overdue",
+      "inProgress": "In Progress",
+      "notStarted": "Not Started"
+    }
+  },
+  "taskDetailOverlay": {
+    "status": {
+      "submitted": "Submitted",
+      "overdue": "Overdue",
+      "inProgress": "In Progress",
+      "notStarted": "Not Started"
+    },
+    "date": {
+      "start": "Start",
+      "due": "Due"
+    },
+    "footer": {
+      "submitted": "You have already submitted",
+      "overdue": "This assignment is past due",
+      "dueAt": "Due {date}",
+      "noDueDate": "No due date"
+    },
+    "close": "Close",
+    "loading": "Loading...",
+    "noDescription": "No description provided.",
+    "confirmDelete": "Are you sure you want to delete this task? This action cannot be undone.",
+    "actions": {
+      "editTask": "Edit Task",
+      "deleting": "Deleting...",
+      "deleteTask": "Delete Task",
+      "viewSubmissions": "View Submissions",
+      "submitted": "Submitted",
+      "submitAssignment": "Submit Assignment"
+    }
+  },
+  "taskGanttView": {
+    "noTasks": "No tasks to display.",
+    "today": "TODAY",
+    "submittedCount": "{count} submitted"
+  },
+  "editorToolbar": {
+    "bold": "Bold",
+    "italic": "Italic",
+    "heading": "Heading",
+    "code": "Code",
+    "quote": "Quote",
+    "orderedList": "Ordered List",
+    "divider": "Divider",
+    "image": "Image",
+    "link": "Link"
+  },
+  "editorPage": {
+    "toast": {
+      "uploadedFiles": "Uploaded {count, plural, one {# file} other {# files}}",
+      "failedUploadFile": "Failed to upload file",
+      "attachmentRemoved": "Attachment removed",
+      "failedRemoveAttachment": "Failed to remove attachment",
+      "failedUploadImage": "Failed to upload image",
+      "changesSaved": "Changes saved",
+      "taskPublished": "Task published",
+      "submissionSaved": "Submission saved",
+      "failedSaveTask": "Failed to save task",
+      "failedSaveSubmission": "Failed to save submission"
+    },
+    "breadcrumb": {
+      "submittingTo": "Submitting to · {className}",
+      "editing": "Editing · {className}",
+      "publishingIn": "Publishing in · {className}"
+    },
+    "primary": {
+      "submit": "Submit",
+      "saveChanges": "Save Changes",
+      "publishTask": "Publish Task"
+    },
+    "goBack": "Go back",
+    "toggle": {
+      "edit": "Edit",
+      "preview": "Preview"
+    },
+    "editorPlaceholder": "Write your content in Markdown...",
+    "uploading": "Uploading...",
+    "dropOrClickUpload": "Drop files or click to upload",
+    "footer": {
+      "wordCount": "{count} {count, plural, one {word} other {words}}",
+      "markdownSupported": "Markdown supported",
+      "draftSaved": "Draft saved"
+    },
+    "publishConfirm": {
+      "title": "Publish this task?",
+      "description": "This will notify all class members. You can still edit the task after publishing.",
+      "cancel": "Cancel",
+      "confirm": "Confirm Publish"
+    }
+  },
+  "attachmentSidebar": {
+    "failedDownloadFile": "Failed to download file",
+    "attachmentsCount": "Attachments ({count})",
+    "unknownFile": "Unknown file",
+    "noFilesAttached": "No files attached yet",
+    "downloadAll": "Download All"
+  },
+  "postTaskDialog": {
+    "errors": {
+      "notAuthenticated": "Not authenticated"
+    },
+    "untitledTask": "Untitled Task",
+    "toast": {
+      "aiParsed": "AI parsed your task description",
+      "failedParseTask": "Failed to parse task",
+      "uploadedFiles": "Uploaded {count, plural, one {# file} other {# files}}",
+      "failedUploadFile": "Failed to upload file",
+      "failedCreateDraft": "Failed to create task draft"
+    },
+    "title": "Post Task — {className}",
+    "inputPlaceholder": "Describe your task here...\\ne.g. \"Complete Chapter 5 exercises, due in 2 weeks, allow late submissions\"",
+    "uploading": "Uploading...",
+    "attach": "Attach",
+    "collapse": "Collapse",
+    "expandForm": "Expand Form",
+    "parsing": "Parsing...",
+    "parsed": "Parsed",
+    "aiParse": "AI Parse",
+    "timeOptions": {
+      "title": "AI detected multiple possible time interpretations. Which one did you mean?",
+      "none": "None of these — I'll enter manually"
+    },
+    "taskDetails": "Task Details",
+    "taskTitle": "Task Title",
+    "taskTitlePlaceholder": "e.g. Chapter 5 Homework",
+    "titleRequired": "Title is required",
+    "startDate": "Start Date",
+    "optional": "Optional",
+    "now": "Now",
+    "startDateHint": "Defaults to now if not set",
+    "dueDate": "Due Date",
+    "selectDueDate": "Select due date",
+    "dueDateRequired": "Due date is required",
+    "dueDateAfterStart": "Due date must be after start date",
+    "allowLateSubmission": "Allow late submission",
+    "prerequisites": "Prerequisites",
+    "selectPrerequisites": "Select prerequisite tasks...",
+    "selectedTasks": "{count} {count, plural, one {task} other {tasks}} selected",
+    "clear": "Clear",
+    "footerHint": {
+      "useAiOrExpand": "Use AI Parse or expand form to fill details",
+      "ready": "Ready to continue",
+      "fillRequired": "Fill required fields to continue"
+    },
+    "editBody": "Edit Body →"
+  },
+  "submissionsListPage": {
+    "toast": {
+      "failedLoadSubmissions": "Failed to load submissions",
+      "csvExported": "CSV exported successfully",
+      "failedExportCsv": "Failed to export CSV"
+    },
+    "notFound": "Task or class not found.",
+    "backToClass": "Back to class",
+    "subtitle": "Submissions overview",
+    "actions": {
+      "download": "Download",
+      "exporting": "Exporting...",
+      "exportCsv": "Export CSV"
+    },
+    "stats": {
+      "totalMembers": "Total Members",
+      "submitted": "Submitted",
+      "graded": "Graded",
+      "averageScore": "Average Score"
+    },
+    "table": {
+      "student": "Student",
+      "submitted": "Submitted",
+      "score": "Score",
+      "status": "Status",
+      "action": "Action",
+      "pending": "Pending",
+      "view": "View",
+      "noMembers": "No members found in this class."
+    },
+    "status": {
+      "graded": "Graded",
+      "submitted": "Submitted",
+      "notSubmitted": "Not Submitted"
+    }
+  },
+  "submissionDetailPage": {
+    "toast": {
+      "failedLoadSubmission": "Failed to load submission",
+      "gradeSaved": "Grade saved successfully",
+      "failedSaveGrade": "Failed to save grade",
+      "failedDownloadFile": "Failed to download file"
+    },
+    "notFound": "Submission not found.",
+    "student": "Student",
+    "backToSubmissions": "Back to submissions",
+    "prev": "Prev",
+    "next": "Next",
+    "firstSubmitted": "First submitted",
+    "lastUpdated": "Last updated",
+    "submissionContent": "Submission Content",
+    "noTextContent": "No text content submitted.",
+    "attachmentsCount": "Attachments ({count})",
+    "downloadFile": "Download {name}",
+    "grading": "Grading",
+    "score": "Score",
+    "scorePlaceholder": "e.g. 95.5",
+    "lastReviewed": "Last reviewed",
+    "reviewNote": "Review Note",
+    "reviewNotePlaceholder": "Optional feedback for the student...",
+    "saving": "Saving...",
+    "saveGrade": "Save Grade"
+  },
+  "batchDownloadDialog": {
+    "title": "Download Submissions",
+    "description": "{count} student(s) with downloadable content",
+    "selectAll": "Select all ({count})",
+    "filesCount": "{count} {count, plural, one {file} other {files}}",
+    "noSubmissions": "No submissions with downloadable content",
+    "namingRules": "Naming Rules",
+    "folderName": "Folder name",
+    "zipFileName": "Zip file name",
+    "folderPreviewFallback": "nickname_studentId",
+    "sampleUser": "user",
+    "tagLabels": {
+      "nickname": "Nickname",
+      "studentId": "Student ID",
+      "email": "Email",
+      "taskTitle": "Task",
+      "className": "Class",
+      "YYYY": "Year",
+      "MM": "Month"
+    },
+    "tagComposer": {
+      "dragTagsHere": "Drag tags here",
+      "dragHereToRemove": "Drag here to remove",
+      "preview": "Preview"
+    },
+    "progress": {
+      "downloading": "Downloading {completed} / {total} files...",
+      "generatingZip": "Generating zip..."
+    },
+    "actions": {
+      "processing": "Processing...",
+      "downloadSelected": "Download Selected ({count})"
+    },
+    "toast": {
+      "skippedFiles": "{count} file(s) failed to download and were skipped",
+      "downloadComplete": "Download complete",
+      "failedCreateDownload": "Failed to create download"
+    }
+  }
+}

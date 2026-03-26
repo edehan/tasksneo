@@ -12,6 +12,9 @@ import {
   ClipboardCheck,
   BarChart3,
 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+
+import { BatchDownloadDialog } from "./batch-download-dialog";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-provider";
@@ -27,24 +30,11 @@ import {
   exportSubmissionsCsv,
 } from "@/lib/api";
 
-// ─── Date formatting ─────────────────────────────────────────────────────────
-
-const dateFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-  hour12: true,
-});
-
-function formatDate(iso: string | null | undefined): string {
-  if (!iso) return "\u2014";
-  return dateFormatter.format(new Date(iso));
-}
-
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function SubmissionsListPage() {
+  const t = useTranslations("submissionsListPage");
+  const locale = useLocale();
   const params = useParams();
   const router = useRouter();
   const { token } = useAuth();
@@ -56,6 +46,20 @@ export function SubmissionsListPage() {
   const [rows, setRows] = useState<SubmissionListRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
+
+  const dateFormatter = new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  function formatDate(iso: string | null | undefined): string {
+    if (!iso) return "\u2014";
+    return dateFormatter.format(new Date(iso));
+  }
 
   // ─── Load data ──────────────────────────────────────────────────────────────
 
@@ -71,11 +75,11 @@ export function SubmissionsListPage() {
       setCls(classData);
       setRows(submissionRows);
     } catch {
-      toast.error("Failed to load submissions");
+      toast.error(t("toast.failedLoadSubmissions"));
     } finally {
       setLoading(false);
     }
-  }, [token, taskId]);
+  }, [token, taskId, t]);
 
   useEffect(() => {
     void loadData();
@@ -118,9 +122,9 @@ export function SubmissionsListPage() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      toast.success("CSV exported successfully");
+      toast.success(t("toast.csvExported"));
     } catch {
-      toast.error("Failed to export CSV");
+      toast.error(t("toast.failedExportCsv"));
     } finally {
       setExporting(false);
     }
@@ -162,7 +166,7 @@ export function SubmissionsListPage() {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <p className="text-sm text-muted-foreground">
-          Task or class not found.
+          {t("notFound")}
         </p>
       </div>
     );
@@ -179,7 +183,7 @@ export function SubmissionsListPage() {
         className="mb-6 flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors duration-100 hover:text-foreground"
       >
         <ArrowLeft size={14} strokeWidth={2} />
-        Back to class
+        {t("backToClass")}
       </button>
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
@@ -199,45 +203,55 @@ export function SubmissionsListPage() {
           </div>
           <h1 className="text-display">{task.title}</h1>
           <p className="mt-1 text-[13px] text-muted-foreground">
-            Submissions overview
+            {t("subtitle")}
           </p>
         </div>
 
-        {/* Export button */}
-        <button
-          type="button"
-          onClick={handleExport}
-          disabled={exporting}
-          className="flex shrink-0 items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2 text-[13px] font-medium text-muted-foreground transition-colors duration-100 hover:bg-secondary hover:text-foreground disabled:opacity-50"
-        >
-          <FileSpreadsheet size={14} strokeWidth={2} />
-          {exporting ? "Exporting..." : "Export CSV"}
-        </button>
+        {/* Action buttons */}
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setDownloadDialogOpen(true)}
+            className="flex items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2 text-[13px] font-medium text-muted-foreground transition-colors duration-100 hover:bg-secondary hover:text-foreground"
+          >
+            <Download size={14} strokeWidth={2} />
+            {t("actions.download")}
+          </button>
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exporting}
+            className="flex items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2 text-[13px] font-medium text-muted-foreground transition-colors duration-100 hover:bg-secondary hover:text-foreground disabled:opacity-50"
+          >
+            <FileSpreadsheet size={14} strokeWidth={2} />
+            {exporting ? t("actions.exporting") : t("actions.exportCsv")}
+          </button>
+        </div>
       </div>
 
       {/* ── Stats bar ───────────────────────────────────────────────────── */}
       <div className="mb-8 grid grid-cols-4 gap-4">
         <StatCard
           icon={<Users size={16} strokeWidth={1.8} />}
-          label="Total Members"
+          label={t("stats.totalMembers")}
           value={String(stats.total)}
           accentColor={accentColor}
         />
         <StatCard
           icon={<CheckCircle2 size={16} strokeWidth={1.8} />}
-          label="Submitted"
+          label={t("stats.submitted")}
           value={String(stats.submitted)}
           accentColor="#5B8C6A"
         />
         <StatCard
           icon={<ClipboardCheck size={16} strokeWidth={1.8} />}
-          label="Graded"
+          label={t("stats.graded")}
           value={String(stats.graded)}
           accentColor="#7B6CB0"
         />
         <StatCard
           icon={<BarChart3 size={16} strokeWidth={1.8} />}
-          label="Average Score"
+          label={t("stats.averageScore")}
           value={stats.avg}
           accentColor="#C4785B"
         />
@@ -249,19 +263,19 @@ export function SubmissionsListPage() {
           <thead>
             <tr className="border-b border-border bg-surface-subtle/60">
               <th className="px-4 py-3 text-left text-[12px] font-semibold text-muted-foreground">
-                Student
+                {t("table.student")}
               </th>
               <th className="px-4 py-3 text-left text-[12px] font-semibold text-muted-foreground">
-                Submitted
+                {t("table.submitted")}
               </th>
               <th className="px-4 py-3 text-left text-[12px] font-semibold text-muted-foreground">
-                Score
+                {t("table.score")}
               </th>
               <th className="px-4 py-3 text-left text-[12px] font-semibold text-muted-foreground">
-                Status
+                {t("table.status")}
               </th>
               <th className="px-4 py-3 text-right text-[12px] font-semibold text-muted-foreground">
-                Action
+                {t("table.action")}
               </th>
             </tr>
           </thead>
@@ -310,7 +324,7 @@ export function SubmissionsListPage() {
                       </span>
                     ) : (
                       <span className="text-[13px] text-text-muted-soft">
-                        {hasSubmission ? "Pending" : "\u2014"}
+                        {hasSubmission ? t("table.pending") : "\u2014"}
                       </span>
                     )}
                   </td>
@@ -325,7 +339,7 @@ export function SubmissionsListPage() {
                           color: "#7B6CB0",
                         }}
                       >
-                        Graded
+                        {t("status.graded")}
                       </span>
                     ) : hasSubmission ? (
                       <span
@@ -335,11 +349,11 @@ export function SubmissionsListPage() {
                           color: "#5B8C6A",
                         }}
                       >
-                        Submitted
+                        {t("status.submitted")}
                       </span>
                     ) : (
                       <span className="inline-block rounded-md bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                        Not Submitted
+                        {t("status.notSubmitted")}
                       </span>
                     )}
                   </td>
@@ -358,12 +372,12 @@ export function SubmissionsListPage() {
                         style={{ backgroundColor: accentColor }}
                       >
                         <Eye size={12} strokeWidth={2} />
-                        View
+                        {t("table.view")}
                       </button>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 rounded-[8px] bg-muted px-3 py-1.5 text-[12px] font-medium text-text-muted-soft">
                         <Eye size={12} strokeWidth={2} />
-                        View
+                        {t("table.view")}
                       </span>
                     )}
                   </td>
@@ -377,13 +391,23 @@ export function SubmissionsListPage() {
                   colSpan={5}
                   className="px-4 py-12 text-center text-[13px] text-muted-foreground"
                 >
-                  No members found in this class.
+                  {t("table.noMembers")}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+
+      {/* ── Batch download dialog ─────────────────────────────────────── */}
+      <BatchDownloadDialog
+        open={downloadDialogOpen}
+        onOpenChange={setDownloadDialogOpen}
+        rows={rows}
+        task={task}
+        cls={cls}
+        accentColor={accentColor}
+      />
     </div>
   );
 }

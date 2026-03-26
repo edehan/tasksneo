@@ -6,6 +6,16 @@ import { requireAuthUser } from '../lib/context.js';
 import { uploadObject } from '../lib/storage.js';
 import { authMiddleware } from '../middleware/auth.js';
 import {
+  confirmEmailChange,
+  sendEmailChangeVerification,
+} from '../services/email-verification.service.js';
+import {
+  getUnreadNotificationCount,
+  listMyNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from '../services/notification.service.js';
+import {
   deleteMyAccount,
   getMyProfile,
   listMyNotificationPrefs,
@@ -53,6 +63,30 @@ usersRouter.patch('/me', async (c) => {
   return c.json(user, 200);
 });
 
+// ── Email change ────────────────────────────────────────────────────────────
+
+const changeEmailSchema = z.object({
+  email: z.string().email(),
+});
+
+const confirmEmailSchema = z.object({
+  token: z.string().min(1),
+});
+
+usersRouter.post('/me/email/change', async (c) => {
+  const authUser = requireAuthUser(c);
+  const body = changeEmailSchema.parse(await c.req.json());
+  await sendEmailChangeVerification(authUser.userId, body.email);
+  return c.json({ message: 'Verification email sent' }, 200);
+});
+
+usersRouter.post('/me/email/confirm', async (c) => {
+  const authUser = requireAuthUser(c);
+  const body = confirmEmailSchema.parse(await c.req.json());
+  const user = await confirmEmailChange(body.token, authUser.userId);
+  return c.json(user, 200);
+});
+
 usersRouter.patch('/me/password', async (c) => {
   const authUser = requireAuthUser(c);
   const body = updatePasswordSchema.parse(await c.req.json());
@@ -75,6 +109,49 @@ const upsertNotificationHandler: MiddlewareHandler<{ Variables: AppVariables }> 
 
 usersRouter.put('/me/notification-prefs', upsertNotificationHandler);
 usersRouter.post('/me/notification-prefs', upsertNotificationHandler);
+
+// ── Notification inbox ──────────────────────────────────────────────────────
+
+const listNotificationsSchema = z.object({
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+  cursor: z.string().uuid().optional(),
+  unreadOnly: z.coerce.boolean().default(false),
+});
+
+usersRouter.get('/me/notifications', async (c) => {
+  const authUser = requireAuthUser(c);
+  const query = listNotificationsSchema.parse(c.req.query());
+  const result = await listMyNotifications(authUser.userId, {
+    limit: query.limit,
+    cursor: query.cursor,
+    unreadOnly: query.unreadOnly,
+  });
+  return c.json(result, 200);
+});
+
+usersRouter.get('/me/notifications/unread-count', async (c) => {
+  const authUser = requireAuthUser(c);
+  const result = await getUnreadNotificationCount(authUser.userId);
+  return c.json(result, 200);
+});
+
+usersRouter.patch('/me/notifications/:id/read', async (c) => {
+  const authUser = requireAuthUser(c);
+  const id = c.req.param('id');
+  const result = await markNotificationRead(id, authUser.userId);
+
+  if (!result) {
+    return c.json({ error: 'Notification not found', code: 'NOT_FOUND' }, 404);
+  }
+
+  return c.json(result, 200);
+});
+
+usersRouter.post('/me/notifications/read-all', async (c) => {
+  const authUser = requireAuthUser(c);
+  const result = await markAllNotificationsRead(authUser.userId);
+  return c.json(result, 200);
+});
 
 usersRouter.post('/me/delete', async (c) => {
   const authUser = requireAuthUser(c);

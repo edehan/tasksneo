@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTranslations } from "next-intl";
 import { ApiError, createClass, listSchools, type School } from "@/lib/api";
 
 const PRESET_COLORS = [
@@ -49,6 +50,7 @@ export function CreateClassDialog({
   onCreated,
 }: CreateClassDialogProps) {
   const { token, user } = useAuth();
+  const t = useTranslations("createClassDialog");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [color, setColor] = useState(PRESET_COLORS[0]);
@@ -93,13 +95,13 @@ export function CreateClassDialog({
         color,
         schoolId: restrictSchool && selectedSchoolId ? selectedSchoolId : undefined,
       });
-      toast.success(`Created "${cls.name}"`);
+      toast.success(t("createdToast", { name: cls.name }));
       setOpen(false);
       resetForm();
       onCreated?.();
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to create class";
+        err instanceof ApiError ? err.message : t("failedCreate");
       toast.error(message);
     } finally {
       setLoading(false);
@@ -119,23 +121,23 @@ export function CreateClassDialog({
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle className="font-serif">
-              Create New Class
+              {t("title")}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-5 py-4">
             <div className="space-y-2">
-              <Label htmlFor="class-name">Class Name</Label>
+              <Label htmlFor="class-name">{t("className")}</Label>
               <Input
                 id="class-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Advanced Mathematics"
+                placeholder={t("classNamePlaceholder")}
                 autoFocus
                 disabled={loading}
               />
             </div>
             <div className="space-y-2">
-              <Label>Theme Color</Label>
+              <Label>{t("themeColor")}</Label>
               <div className="flex flex-wrap gap-2.5">
                 {PRESET_COLORS.map((c) => (
                   <button
@@ -167,7 +169,7 @@ export function CreateClassDialog({
                   disabled={loading}
                 />
                 <Label htmlFor="restrict-school" className="text-sm font-normal">
-                  Restrict to a specific school
+                  {t("restrictSchool")}
                 </Label>
               </div>
               {restrictSchool && (
@@ -177,7 +179,7 @@ export function CreateClassDialog({
                   disabled={loading}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a school" />
+                    <SelectValue placeholder={t("selectSchool")} />
                   </SelectTrigger>
                   <SelectContent>
                     {schools.map((s) => (
@@ -197,7 +199,7 @@ export function CreateClassDialog({
               onClick={() => setOpen(false)}
               disabled={loading}
             >
-              Cancel
+              {t("cancel")}
             </Button>
             <Button
               type="submit"
@@ -206,7 +208,7 @@ export function CreateClassDialog({
               className="text-white hover:opacity-90"
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Class
+              {t("createClass")}
             </Button>
           </DialogFooter>
         </form>

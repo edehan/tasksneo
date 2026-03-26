@@ -7,6 +7,15 @@ import { toast } from "sonner";
 import { useAuth } from "@/components/auth-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -22,11 +31,13 @@ import type { School } from "@/lib/api";
 import {
   ApiError,
   listSchools,
+  requestEmailChange,
   updateProfile,
   uploadAvatar,
   getMe,
   getFileUrl,
 } from "@/lib/api";
+import { useTranslations } from "next-intl";
 
 function getBrowserTimezone(): string {
   try {
@@ -78,6 +89,7 @@ function groupTimezones(timezones: string[]): Record<string, string[]> {
 
 export default function ProfilePage() {
   const { token, user, updateUser } = useAuth();
+  const t = useTranslations("settingsProfile");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [schools, setSchools] = useState<School[]>([]);
@@ -132,10 +144,10 @@ export default function ProfilePage() {
         timezone,
       });
       updateUser(updated);
-      toast.success("Profile updated");
+      toast.success(t("profileUpdated"));
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to update profile";
+        err instanceof ApiError ? err.message : t("failedUpdateProfile");
       toast.error(message);
     } finally {
       setSaving(false);
@@ -148,13 +160,13 @@ export default function ProfilePage() {
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
+      toast.error(t("selectImageFile"));
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be smaller than 5MB");
+      toast.error(t("imageSmallerThan5mb"));
       return;
     }
 
@@ -165,10 +177,10 @@ export default function ProfilePage() {
       // Reload user data to get updated profile
       const updated = await getMe(token);
       updateUser(updated);
-      toast.success("Avatar updated");
+      toast.success(t("avatarUpdated"));
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to upload avatar";
+        err instanceof ApiError ? err.message : t("failedUploadAvatar");
       toast.error(message);
     } finally {
       setUploading(false);
@@ -190,7 +202,7 @@ export default function ProfilePage() {
     <div className="space-y-8">
       {/* Avatar */}
       <div className="space-y-2">
-        <Label>Avatar</Label>
+        <Label>{t("avatar")}</Label>
         <div className="flex items-center gap-4">
           <button
             type="button"
@@ -215,9 +227,9 @@ export default function ProfilePage() {
             </div>
           </button>
           <div className="text-sm text-muted-foreground">
-            Click to upload a new photo.
+            {t("clickUploadPhoto")}
             <br />
-            JPG, PNG or GIF. Max 5MB.
+            {t("acceptedImageTypes")}
           </div>
           <input
             ref={fileInputRef}
@@ -231,33 +243,33 @@ export default function ProfilePage() {
 
       {/* Nickname */}
       <div className="space-y-2">
-        <Label htmlFor="nickname">Nickname</Label>
+        <Label htmlFor="nickname">{t("nickname")}</Label>
         <Input
           id="nickname"
           value={nickname}
           onChange={(e) => setNickname(e.target.value)}
-          placeholder="How should we call you?"
+          placeholder={t("nicknamePlaceholder")}
           disabled={saving}
         />
       </div>
 
-      {/* Email (read-only) */}
+      {/* Email */}
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          value={user.email}
-          disabled
-          className="opacity-60"
-        />
-        <p className="text-xs text-muted-foreground">
-          Email cannot be changed.
-        </p>
+        <Label htmlFor="email">{t("email")}</Label>
+        <div className="flex gap-2">
+          <Input
+            id="email"
+            value={user.email}
+            disabled
+            className="opacity-60"
+          />
+          <ChangeEmailDialog token={token} />
+        </div>
       </div>
 
       {/* School */}
       <div className="space-y-2">
-        <Label>School</Label>
+        <Label>{t("school")}</Label>
         {loading ? (
           <div className="h-10 bg-muted animate-pulse rounded-md" />
         ) : (
@@ -269,10 +281,10 @@ export default function ProfilePage() {
             disabled={saving}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select your school" />
+              <SelectValue placeholder={t("selectYourSchool")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="none">{t("none")}</SelectItem>
               {schools.map((school) => (
                 <SelectItem key={school.id} value={school.id}>
                   {school.name}
@@ -286,12 +298,12 @@ export default function ProfilePage() {
       {/* Student ID (visible when school selected) */}
       {schoolId && (
         <div className="space-y-2">
-          <Label htmlFor="student-id">Student ID</Label>
+          <Label htmlFor="student-id">{t("studentId")}</Label>
           <Input
             id="student-id"
             value={studentId}
             onChange={(e) => setStudentId(e.target.value)}
-            placeholder="Your student ID"
+            placeholder={t("studentIdPlaceholder")}
             disabled={saving}
           />
         </div>
@@ -299,7 +311,7 @@ export default function ProfilePage() {
 
       {/* Timezone */}
       <div className="space-y-2">
-        <Label>Timezone</Label>
+        <Label>{t("timezone")}</Label>
         <Select value={timezone} onValueChange={setTimezone} disabled={saving}>
           <SelectTrigger>
             <div className="flex items-center gap-2">
@@ -310,7 +322,7 @@ export default function ProfilePage() {
           <SelectContent className="max-h-64">
             {browserTimezone !== timezone && (
               <SelectGroup>
-                <SelectLabel>Detected</SelectLabel>
+                <SelectLabel>{t("detected")}</SelectLabel>
                 <SelectItem value={browserTimezone}>
                   {browserTimezone} ({getTimezoneOffset(browserTimezone)})
                 </SelectItem>
@@ -329,15 +341,115 @@ export default function ProfilePage() {
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
-          Used for displaying dates and deadlines in your local time.
+          {t("timezoneHint")}
         </p>
       </div>
 
       {/* Save */}
       <Button onClick={handleSave} disabled={saving}>
         {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Save Changes
+        {t("saveChanges")}
       </Button>
     </div>
+  );
+}
+
+function ChangeEmailDialog({ token }: { token: string | null }) {
+  const t = useTranslations("settingsProfile.changeEmail");
+  const [open, setOpen] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  function handleOpenChange(isOpen: boolean) {
+    setOpen(isOpen);
+    if (!isOpen) {
+      setNewEmail("");
+      setSent(false);
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token || !newEmail) return;
+
+    setSubmitting(true);
+    try {
+      await requestEmailChange(token, newEmail);
+      setSent(true);
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : t("failedSendVerification");
+      toast.error(message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="shrink-0">
+          {t("change")}
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        {sent ? (
+          <>
+            <DialogHeader>
+              <DialogTitle className="font-serif">
+                {t("checkYourEmail")}
+              </DialogTitle>
+              <DialogDescription>
+                {t("sentVerificationPrefix")}{" "}
+                <strong>{newEmail}</strong>。
+                {t("sentVerificationSuffix")}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => handleOpenChange(false)}>
+                {t("close")}
+              </Button>
+            </DialogFooter>
+          </>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <DialogHeader>
+              <DialogTitle className="font-serif">
+                {t("title")}
+              </DialogTitle>
+              <DialogDescription>{t("description")}</DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Label htmlFor="new-email">{t("newEmailAddress")}</Label>
+              <Input
+                id="new-email"
+                type="email"
+                placeholder="new@example.com"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                required
+                autoFocus
+                className="mt-2"
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleOpenChange(false)}
+              >
+                {t("cancel")}
+              </Button>
+              <Button type="submit" disabled={submitting || !newEmail}>
+                {submitting ? t("sending") : t("sendVerification")}
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

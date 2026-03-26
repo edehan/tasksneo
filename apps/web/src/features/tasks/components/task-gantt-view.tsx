@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
@@ -41,15 +42,15 @@ function diffDays(a: Date, b: Date): number {
   return (b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24);
 }
 
-function formatShortDate(iso: string): string {
+function formatShortDate(iso: string, locale: string): string {
   const d = new Date(iso);
-  const month = d.toLocaleString("en-US", { month: "short" });
+  const month = d.toLocaleString(locale, { month: "short" });
   const day = d.getDate();
   return `${month} ${day}`;
 }
 
-function formatMarkerDate(d: Date): string {
-  const month = d.toLocaleString("en-US", { month: "short" }).toUpperCase();
+function formatMarkerDate(d: Date, locale: string): string {
+  const month = d.toLocaleString(locale, { month: "short" }).toUpperCase();
   const day = d.getDate();
   return `${month} ${day}`;
 }
@@ -114,6 +115,7 @@ function computeMarkers(
   start: Date,
   end: Date,
   range: GanttRange,
+  locale: string,
 ): { label: string; dayOffset: number }[] {
   const interval = range === "week" ? 1 : range === "month" ? 7 : 14;
   const markers: { label: string; dayOffset: number }[] = [];
@@ -121,7 +123,7 @@ function computeMarkers(
 
   while (cursor <= end) {
     const offset = diffDays(start, cursor);
-    markers.push({ label: formatMarkerDate(cursor), dayOffset: offset });
+    markers.push({ label: formatMarkerDate(cursor, locale), dayOffset: offset });
     cursor.setDate(cursor.getDate() + interval);
   }
 
@@ -135,6 +137,8 @@ export function TaskGanttView({
   ganttRange,
   onTaskClick,
 }: TaskGanttViewProps) {
+  const t = useTranslations("taskGanttView");
+  const locale = useLocale();
   const scrollRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const dayWidth = DAY_WIDTHS[ganttRange];
@@ -144,9 +148,9 @@ export function TaskGanttView({
   const { timelineStart, totalDays, markers } = useMemo(() => {
     const { start, end } = computeTimelineRange(tasks, ganttRange);
     const total = Math.ceil(diffDays(start, end));
-    const m = computeMarkers(start, end, ganttRange);
+    const m = computeMarkers(start, end, ganttRange, locale);
     return { timelineStart: start, totalDays: total, markers: m };
-  }, [tasks, ganttRange]);
+  }, [tasks, ganttRange, locale]);
 
   const todayOffset = diffDays(timelineStart, startOfDay(new Date()));
   const totalWidth = totalDays * dayWidth;
@@ -193,7 +197,7 @@ export function TaskGanttView({
   if (tasks.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-muted-foreground">
-        No tasks to display.
+        {t("noTasks")}
       </p>
     );
   }
@@ -278,7 +282,7 @@ export function TaskGanttView({
                   lineHeight: 1,
                 }}
               >
-                TODAY
+                {t("today")}
               </div>
             )}
           </div>
@@ -396,7 +400,7 @@ export function TaskGanttView({
                         }}
                       >
                         {task.submittedCount > 0
-                          ? `${task.submittedCount} submitted`
+                          ? t("submittedCount", { count: task.submittedCount })
                           : ""}
                       </span>
                     )}
@@ -419,7 +423,7 @@ export function TaskGanttView({
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {formatShortDate(task.startAt)}
+                          {formatShortDate(task.startAt, locale)}
                         </span>
                       )}
                       {/* Due date — right of bar */}
@@ -439,7 +443,7 @@ export function TaskGanttView({
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {formatShortDate(task.dueAt)}
+                          {formatShortDate(task.dueAt, locale)}
                         </span>
                       )}
                     </>

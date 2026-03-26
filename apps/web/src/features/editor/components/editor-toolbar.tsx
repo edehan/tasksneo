@@ -11,6 +11,7 @@ import {
   Minus,
   Quote,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -23,7 +24,7 @@ interface EditorToolbarProps {
 
 interface ToolbarItem {
   type: "button";
-  label: string;
+  labelKey: string;
   icon: React.ReactNode;
   before: string;
   after?: string;
@@ -38,61 +39,61 @@ type ToolbarEntry = ToolbarItem | ToolbarSeparator;
 const TOOLBAR_ITEMS: ToolbarEntry[] = [
   {
     type: "button",
-    label: "Bold",
+    labelKey: "bold",
     icon: <Bold size={15} strokeWidth={2} />,
     before: "**",
     after: "**",
   },
   {
     type: "button",
-    label: "Italic",
+    labelKey: "italic",
     icon: <Italic size={15} strokeWidth={2} />,
     before: "*",
     after: "*",
   },
   {
     type: "button",
-    label: "Heading",
+    labelKey: "heading",
     icon: <Heading size={15} strokeWidth={2} />,
     before: "## ",
   },
   { type: "separator" },
   {
     type: "button",
-    label: "Code",
+    labelKey: "code",
     icon: <Code2 size={15} strokeWidth={2} />,
     before: "`",
     after: "`",
   },
   {
     type: "button",
-    label: "Quote",
+    labelKey: "quote",
     icon: <Quote size={15} strokeWidth={2} />,
     before: "> ",
   },
   {
     type: "button",
-    label: "Ordered List",
+    labelKey: "orderedList",
     icon: <ListOrdered size={15} strokeWidth={2} />,
     before: "1. ",
   },
   {
     type: "button",
-    label: "Divider",
+    labelKey: "divider",
     icon: <Minus size={15} strokeWidth={2} />,
     before: "---\n",
   },
   { type: "separator" },
   {
     type: "button",
-    label: "Image",
+    labelKey: "image",
     icon: <ImageIcon size={15} strokeWidth={2} />,
     before: "![alt](",
     after: ")",
   },
   {
     type: "button",
-    label: "Link",
+    labelKey: "link",
     icon: <Link2 size={15} strokeWidth={2} />,
     before: "[text](",
     after: ")",
@@ -102,6 +103,8 @@ const TOOLBAR_ITEMS: ToolbarEntry[] = [
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function EditorToolbar({ onInsert, onImageUpload }: EditorToolbarProps) {
+  const t = useTranslations("editorToolbar");
+
   return (
     <div className="flex items-center gap-0.5 border-b border-border px-4 py-2">
       {TOOLBAR_ITEMS.map((item, i) => {
@@ -115,16 +118,16 @@ export function EditorToolbar({ onInsert, onImageUpload }: EditorToolbarProps) {
         }
 
         const handleClick =
-          item.label === "Image" && onImageUpload
+          item.labelKey === "image" && onImageUpload
             ? onImageUpload
             : () => onInsert(item.before, item.after);
 
         return (
           <button
-            key={item.label}
+            key={item.labelKey}
             type="button"
             onClick={handleClick}
-            title={item.label}
+            title={t(item.labelKey)}
             className="flex h-8 w-8 items-center justify-center rounded-[7px] bg-transparent text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-[var(--class-accent)]"
           >
             {item.icon}

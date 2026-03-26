@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { Mail } from "lucide-react";
 import { toast } from "sonner";
 
-import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,96 +14,108 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { School } from "@/lib/api";
-import { ApiError, listSchools } from "@/lib/api";
-
-function detectBrowserTimezone(): string {
-  try {
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (timezone && timezone.length <= 64) {
-      return timezone;
-    }
-  } catch {
-    // Fall back to UTC when browser timezone is unavailable.
-  }
-
-  return "UTC";
-}
+import { useTranslations } from "next-intl";
+import { ApiError, register } from "@/lib/api";
 
 export function RegisterForm() {
-  const { register } = useAuth();
-  const router = useRouter();
-
+  const t = useTranslations("authRegister");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [nickname, setNickname] = useState("");
-  const [schoolId, setSchoolId] = useState<string | null>(null);
-  const [studentId, setStudentId] = useState("");
-  const [schools, setSchools] = useState<School[]>([]);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const detectedTimezone = detectBrowserTimezone();
-
-  const loadSchools = useCallback(async () => {
-    try {
-      const data = await listSchools();
-      setSchools(data);
-    } catch {
-      // Non-critical, school selection is optional
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadSchools();
-  }, [loadSchools]);
+  const [sent, setSent] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email || !password) return;
-
-    if (schoolId && !studentId.trim()) {
-      toast.error("Student ID is required when a school is selected");
-      return;
-    }
+    if (!email || !agreedToTerms) return;
 
     setSubmitting(true);
     try {
-      await register({
-        email,
-        password,
-        nickname: nickname || undefined,
-        schoolId: schoolId || undefined,
-        studentId: schoolId ? studentId : undefined,
-        timezone: detectedTimezone,
-      });
-      router.replace("/dashboard");
+      await register(email);
+      setSent(true);
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Registration failed";
+        err instanceof ApiError ? err.message : t("registrationFailed");
       toast.error(message);
     } finally {
       setSubmitting(false);
     }
   }
 
+  async function handleResend() {
+    setSubmitting(true);
+    try {
+      await register(email);
+      toast.success(t("verificationEmailResent"));
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : t("failedResendEmail");
+      toast.error(message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (sent) {
+    return (
+      <Card>
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <Mail className="h-6 w-6 text-primary" />
+          </div>
+          <CardTitle className="text-2xl font-serif">
+            {t("checkYourEmail")}
+          </CardTitle>
+          <CardDescription>
+            {t("sentVerificationPrefix")}{" "}
+            <strong>{email}</strong>。
+            {t("sentVerificationSuffix")}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="text-center text-sm text-muted-foreground">
+          <p>{t("didNotReceive")}</p>
+        </CardContent>
+        <CardFooter className="flex flex-col gap-3">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={handleResend}
+            disabled={submitting}
+          >
+            {submitting ? t("sending") : t("resendEmail")}
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full"
+            onClick={() => {
+              setSent(false);
+              setEmail("");
+              setAgreedToTerms(false);
+            }}
+          >
+            {t("useDifferentEmail")}
+          </Button>
+        </CardFooter>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-serif">Create an account</CardTitle>
-        <CardDescription>Get started with TaskFlow</CardDescription>
+        <CardTitle className="text-2xl font-serif">
+          {t("createAccount")}
+        </CardTitle>
+        <CardDescription>{t("getStarted")}</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="reg-email">Email</Label>
+            <Label htmlFor="reg-email">{t("email")}</Label>
             <Input
               id="reg-email"
               type="email"
@@ -116,83 +127,39 @@ export function RegisterForm() {
               autoFocus
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="reg-password">Password</Label>
-            <Input
-              id="reg-password"
-              type="password"
-              placeholder="At least 8 characters"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              autoComplete="new-password"
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="reg-terms"
+              checked={agreedToTerms}
+              onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="reg-nickname">
-              Nickname <span className="text-muted-foreground">(optional)</span>
+            <Label htmlFor="reg-terms" className="text-sm leading-snug font-normal">
+              {t("agreeTo")}{" "}
+              <Link href="/terms" className="text-primary underline-offset-4 hover:underline" target="_blank">
+                {t("termsOfService")}
+              </Link>{" "}
+              {t("and")}{" "}
+              <Link href="/privacy" className="text-primary underline-offset-4 hover:underline" target="_blank">
+                {t("privacyPolicy")}
+              </Link>
             </Label>
-            <Input
-              id="reg-nickname"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              placeholder="How others will see you"
-            />
           </div>
-          {schools.length > 0 && (
-            <>
-              <div className="space-y-2">
-                <Label>
-                  School{" "}
-                  <span className="text-muted-foreground">(optional)</span>
-                </Label>
-                <Select
-                  value={schoolId ?? "none"}
-                  onValueChange={(v) => {
-                    setSchoolId(v === "none" ? null : v);
-                    if (v === "none") setStudentId("");
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a school" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No school</SelectItem>
-                    {schools.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {schoolId && (
-                <div className="space-y-2">
-                  <Label htmlFor="reg-studentId">Student ID</Label>
-                  <Input
-                    id="reg-studentId"
-                    value={studentId}
-                    onChange={(e) => setStudentId(e.target.value)}
-                    required
-                    placeholder="Your student number"
-                  />
-                </div>
-              )}
-            </>
-          )}
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
-          <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting ? "Creating account..." : "Create account"}
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={submitting || !agreedToTerms}
+          >
+            {submitting ? t("sending") : t("continueWithEmail")}
           </Button>
           <p className="text-sm text-muted-foreground">
-            Already have an account?{" "}
+            {t("alreadyHaveAccount")}{" "}
             <Link
               href="/login"
               className="text-primary underline-offset-4 hover:underline"
             >
-              Sign in
+              {t("signIn")}
             </Link>
           </p>
         </CardFooter>

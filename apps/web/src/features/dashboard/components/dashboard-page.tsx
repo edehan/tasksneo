@@ -2,11 +2,13 @@
 
 import { BookOpen, UserPlus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { useAuth } from "@/components/auth-provider";
 import { CreateClassDialog } from "@/components/create-class-dialog";
 import { Button } from "@/components/ui/button";
 import { FilterBar } from "@/features/dashboard/components/filter-bar";
+import { InboxCard } from "@/features/dashboard/components/inbox-card";
 import { StatCards } from "@/features/dashboard/components/stat-cards";
 import { JoinClassDialog } from "@/features/classes/components/join-class-dialog";
 import { TaskGanttView } from "@/features/tasks/components/task-gantt-view";
@@ -33,6 +35,7 @@ function deriveDisplayStatus(task: TaskWithClass): "submitted" | "overdue" | "in
 }
 
 export function DashboardPage() {
+  const t = useTranslations("dashboardPage");
   const { token } = useAuth();
   const [classes, setClasses] = useState<ClassSummary[]>([]);
   const [tasks, setTasks] = useState<TaskWithClass[]>([]);
@@ -144,22 +147,22 @@ export function DashboardPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
         <BookOpen className="h-12 w-12 text-text-muted-soft mb-4" />
-        <h2 className="text-heading-lg mb-2">No tasks yet</h2>
+        <h2 className="text-heading-lg mb-2">{t("empty.title")}</h2>
         <p className="text-muted-foreground mb-6 max-w-sm">
-          Join a class or create one to get started with your tasks.
+          {t("empty.description")}
         </p>
         <div className="flex gap-3">
           <JoinClassDialog
             trigger={
               <Button variant="outline">
                 <UserPlus className="mr-2 h-4 w-4" />
-                Join Class
+                {t("empty.joinClass")}
               </Button>
             }
             onJoined={() => void loadData()}
           />
           <CreateClassDialog
-            trigger={<Button>Create Class</Button>}
+            trigger={<Button>{t("empty.createClass")}</Button>}
             onCreated={() => void loadData()}
           />
         </div>
@@ -170,9 +173,9 @@ export function DashboardPage() {
   return (
     <div className="p-8 max-w-[960px] mx-auto">
       {/* Title */}
-      <h1 className="text-display mb-1">Homepage</h1>
+      <h1 className="text-display mb-1">{t("title")}</h1>
       <p className="text-muted-foreground mb-8">
-        Overview of all your tasks across every class.
+        {t("subtitle")}
       </p>
 
       {/* Controls row */}
@@ -191,9 +194,19 @@ export function DashboardPage() {
         />
       </div>
 
+      {/* Inbox */}
+      <div className="mb-8">
+        <InboxCard
+          onTaskClick={(taskId) => {
+            const task = tasks.find((t) => t.id === taskId);
+            if (task) setSelectedTask(task);
+          }}
+        />
+      </div>
+
       {/* Section heading + Gantt range toggle */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-heading-md">All Tasks</h2>
+        <h2 className="text-heading-md">{t("allTasks")}</h2>
         {viewMode === "gantt" && (
           <div className="flex items-center gap-1">
             {(["week", "month", "2month"] as const).map((r) => (
@@ -207,7 +220,11 @@ export function DashboardPage() {
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {r === "week" ? "Week" : r === "month" ? "1 Month" : "2 Months"}
+                {r === "week"
+                  ? t("range.week")
+                  : r === "month"
+                    ? t("range.month")
+                    : t("range.twoMonths")}
               </button>
             ))}
           </div>

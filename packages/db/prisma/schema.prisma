@@ -265,6 +265,7 @@ model NotificationJob {
   status      NotifStatus  @default(PENDING)
   scheduledAt DateTime     @map("scheduled_at") @db.Timestamptz
   sentAt      DateTime?    @map("sent_at") @db.Timestamptz
+  readAt      DateTime?    @map("read_at") @db.Timestamptz
   error       String?
   createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz
 
@@ -273,6 +274,7 @@ model NotificationJob {
   user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
   task   Task?   @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
+  @@index([userId, status, createdAt(sort: Desc)], map: "idx_notif_user_status_created")
   @@map("notification_jobs")
 }
 
@@ -283,6 +285,29 @@ enum NotifStatus {
   FAILED
 
   @@map("notif_status")
+}
+
+// ─── Email Verification Tokens ───────────────────────────────────────────────
+
+model EmailVerificationToken {
+  id        String            @id @default(uuid())
+  email     String
+  token     String            @unique
+  purpose   EmailTokenPurpose
+  userId    String?           @map("user_id")
+  expiresAt DateTime          @map("expires_at") @db.Timestamptz
+  createdAt DateTime          @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([email, purpose, createdAt])
+  @@map("email_verification_tokens")
+}
+
+enum EmailTokenPurpose {
+  REGISTRATION
+  PASSWORD_RESET
+  EMAIL_CHANGE
+
+  @@map("email_token_purpose")
 }
 
 // ─── System Config ───────────────────────────────────────────────────────────
