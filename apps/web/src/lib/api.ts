@@ -899,6 +899,18 @@ export function getFileUrl(fileKey: string): string {
   return `${getApiBaseUrl()}/files/${fileKey}`;
 }
 
+export async function getPresignedFileUrl(
+  token: string,
+  fileKey: string,
+): Promise<string> {
+  const res = await apiRequest<{ url: string }>(
+    `/files/${fileKey}/url`,
+    {},
+    token,
+  );
+  return res.url;
+}
+
 export async function downloadFile(
   token: string,
   fileKey: string,
@@ -940,6 +952,21 @@ export async function deleteAttachment(
 }
 
 // ─── Admin (kept for admin panel) ────────────────────────────────────────────
+
+export interface StorageStatus {
+  endpoint: string;
+  bucket: string;
+  useSSL: boolean;
+  region: string;
+  connected: boolean;
+  error?: string;
+}
+
+export async function getAdminStorageStatus(
+  token: string,
+): Promise<StorageStatus> {
+  return apiRequest<StorageStatus>("/admin/storage-status", {}, token);
+}
 
 export async function getAdminConfig(
   token: string,

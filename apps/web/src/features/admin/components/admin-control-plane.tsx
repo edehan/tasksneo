@@ -46,9 +46,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   type AdminSchool,
   ApiError,
+  type StorageStatus,
   createAdminSchool,
   deleteAdminSchool,
   getAdminConfig,
+  getAdminStorageStatus,
   listAdminSchools,
   listAdminUsers,
   patchAdminConfig,
@@ -236,6 +238,9 @@ export function AdminControlPlane() {
   );
   const [schoolDeletingId, setSchoolDeletingId] = useState<string | null>(null);
 
+  const [storageStatus, setStorageStatus] = useState<StorageStatus | null>(null);
+  const [storageChecking, setStorageChecking] = useState(false);
+
   const { resolvedTheme, setTheme } = useTheme();
 
   const filteredUsers = useMemo(() => {
@@ -252,10 +257,11 @@ export function AdminControlPlane() {
   const loadAdminData = useCallback(async (adminToken: string) => {
     setDataLoading(true);
     try {
-      const [config, adminUsers, adminSchools] = await Promise.all([
+      const [config, adminUsers, adminSchools, storage] = await Promise.all([
         getAdminConfig(adminToken),
         listAdminUsers(adminToken),
         listAdminSchools(adminToken),
+        getAdminStorageStatus(adminToken).catch(() => null),
       ]);
 
       const normalized = normalizeConfig(config);
@@ -263,6 +269,7 @@ export function AdminControlPlane() {
       setConfigForm(normalized);
       setUsers(adminUsers);
       setSchools(adminSchools);
+      if (storage) setStorageStatus(storage);
     } finally {
       setDataLoading(false);
     }
@@ -715,6 +722,76 @@ export function AdminControlPlane() {
               >
                 {configSaving && <Loader2 className="h-4 w-4 animate-spin" />}
                 Save Configuration
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Object Storage (S3)</CardTitle>
+              <CardDescription>
+                Read-only status of the S3-compatible storage backend.
+                Configuration is set via environment variables.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {storageStatus ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Endpoint</Label>
+                    <p className="text-sm font-mono">{storageStatus.endpoint}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Bucket</Label>
+                    <p className="text-sm font-mono">{storageStatus.bucket}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">SSL</Label>
+                    <p className="text-sm">{storageStatus.useSSL ? "Enabled" : "Disabled"}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Region</Label>
+                    <p className="text-sm font-mono">{storageStatus.region}</p>
+                  </div>
+                  <div className="space-y-1 sm:col-span-2">
+                    <Label className="text-xs text-muted-foreground">Status</Label>
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        "inline-block h-2.5 w-2.5 rounded-full",
+                        storageStatus.connected ? "bg-green-500" : "bg-red-500",
+                      )} />
+                      <span className="text-sm">
+                        {storageStatus.connected ? "Connected" : `Disconnected${storageStatus.error ? `: ${storageStatus.error}` : ""}`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Loading...</p>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={storageChecking}
+                onClick={async () => {
+                  if (!token) return;
+                  setStorageChecking(true);
+                  try {
+                    const status = await getAdminStorageStatus(token);
+                    setStorageStatus(status);
+                    setNotice({
+                      tone: status.connected ? "success" : "error",
+                      message: status.connected ? "Storage connection OK." : `Storage check failed: ${status.error ?? "unknown"}`,
+                    });
+                  } catch {
+                    setNotice({ tone: "error", message: "Failed to check storage status." });
+                  } finally {
+                    setStorageChecking(false);
+                  }
+                }}
+              >
+                {storageChecking && <Loader2 className="h-4 w-4 animate-spin" />}
+                Test Connection
               </Button>
             </CardContent>
           </Card>

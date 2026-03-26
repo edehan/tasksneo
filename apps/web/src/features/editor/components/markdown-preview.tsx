@@ -4,7 +4,7 @@ import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { downloadFile, getFileUrl } from "@/lib/api";
+import { getPresignedFileUrl, getFileUrl } from "@/lib/api";
 
 interface MarkdownPreviewProps {
   content: string;
@@ -16,31 +16,21 @@ interface MarkdownPreviewProps {
 // ─── Authenticated image loader ───────────────────────────────────────────
 
 function AuthImage({ src, alt, token }: { src: string; alt: string; token: string }) {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    let revoke: string | null = null;
-
     // Extract fileKey from the API URL pattern: .../files/{fileKey}
     const apiBase = getFileUrl("");
     if (!src.startsWith(apiBase)) {
-      // Not an API file URL — shouldn't reach here, but handle gracefully
-      setBlobUrl(src);
+      setImageUrl(src);
       return;
     }
     const fileKey = src.slice(apiBase.length);
 
-    downloadFile(token, fileKey)
-      .then((url) => {
-        revoke = url;
-        setBlobUrl(url);
-      })
+    getPresignedFileUrl(token, fileKey)
+      .then((url) => setImageUrl(url))
       .catch(() => setError(true));
-
-    return () => {
-      if (revoke) URL.revokeObjectURL(revoke);
-    };
   }, [src, token]);
 
   if (error) {
@@ -51,7 +41,7 @@ function AuthImage({ src, alt, token }: { src: string; alt: string; token: strin
     );
   }
 
-  if (!blobUrl) {
+  if (!imageUrl) {
     return (
       <span className="my-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
         <Loader2 size={14} className="animate-spin" />
@@ -60,7 +50,7 @@ function AuthImage({ src, alt, token }: { src: string; alt: string; token: strin
     );
   }
 
-  return <img src={blobUrl} alt={alt} className="my-3 max-w-full rounded-lg" />;
+  return <img src={imageUrl} alt={alt} className="my-3 max-w-full rounded-lg" />;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────

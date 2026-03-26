@@ -35,7 +35,7 @@ import {
   updateProfile,
   uploadAvatar,
   getMe,
-  getFileUrl,
+  getPresignedFileUrl,
 } from "@/lib/api";
 import { useTranslations } from "next-intl";
 
@@ -173,7 +173,8 @@ export default function ProfilePage() {
     setUploading(true);
     try {
       const attachment = await uploadAvatar(token, file);
-      setAvatarUrl(getFileUrl(attachment.fileKey));
+      const presigned = await getPresignedFileUrl(token, attachment.fileKey);
+      setAvatarUrl(presigned);
       // Reload user data to get updated profile
       const updated = await getMe(token);
       updateUser(updated);

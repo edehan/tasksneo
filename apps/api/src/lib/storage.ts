@@ -5,6 +5,7 @@ import { loadEnv } from './env.js';
 
 let minio: MinioClient | null = null;
 let bucketName: string | null = null;
+let bucketVerified = false;
 
 function getClient() {
   if (minio && bucketName) {
@@ -14,24 +15,42 @@ function getClient() {
   const env = loadEnv();
 
   minio = new MinioClient({
-    endPoint: env.minioEndpoint,
-    port: env.minioPort,
-    useSSL: false,
-    accessKey: env.minioAccessKey,
-    secretKey: env.minioSecretKey,
+    endPoint: env.s3Endpoint,
+    ...(env.s3Port != null && { port: env.s3Port }),
+    useSSL: env.s3UseSSL,
+    accessKey: env.s3AccessKey,
+    secretKey: env.s3SecretKey,
+    region: env.s3Region,
+    pathStyle: env.s3PathStyle,
   });
 
-  bucketName = env.minioBucket;
+  bucketName = env.s3Bucket;
 
   return { minio, bucket: bucketName };
 }
 
 async function ensureBucketExists() {
-  const { minio, bucket } = getClient();
-  const exists = await minio.bucketExists(bucket).catch(() => false);
+  if (bucketVerified) return;
 
-  if (!exists) {
-    await minio.makeBucket(bucket);
+  const { minio, bucket } = getClient();
+
+  try {
+    const exists = await minio.bucketExists(bucket);
+
+    if (!exists) {
+      try {
+        await minio.makeBucket(bucket);
+      } catch (createErr) {
+        // External S3 providers may deny CreateBucket permission.
+        // If the bucket doesn't exist and we can't create it, log a warning.
+        console.warn(`[storage] Could not create bucket "${bucket}":`, createErr);
+        return;
+      }
+    }
+
+    bucketVerified = true;
+  } catch {
+    // bucketExists failed — connectivity issue. Don't cache; will retry next call.
   }
 }
 
@@ -75,4 +94,38 @@ export async function getPresignedUrl(fileKey: string, expirySeconds = 300): Pro
   const { minio, bucket } = getClient();
   await ensureBucketExists();
   return minio.presignedGetObject(bucket, fileKey, expirySeconds);
+}
+
+export async function getStorageStatus(): Promise<{
+  endpoint: string;
+  bucket: string;
+  useSSL: boolean;
+  region: string;
+  connected: boolean;
+  error?: string;
+}> {
+  const env = loadEnv();
+
+  try {
+    const { minio, bucket } = getClient();
+    const exists = await minio.bucketExists(bucket);
+
+    return {
+      endpoint: env.s3Endpoint,
+      bucket,
+      useSSL: env.s3UseSSL,
+      region: env.s3Region,
+      connected: exists,
+      ...(!exists && { error: `Bucket "${bucket}" not found` }),
+    };
+  } catch (err) {
+    return {
+      endpoint: env.s3Endpoint,
+      bucket: env.s3Bucket,
+      useSSL: env.s3UseSSL,
+      region: env.s3Region,
+      connected: false,
+      error: err instanceof Error ? err.message : 'Unknown error',
+    };
+  }
 }

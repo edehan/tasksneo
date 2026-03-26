@@ -8,11 +8,14 @@ export interface AppEnv {
   systemConfigSecret: string;
   jwtSecret: string;
   redisUrl: string;
-  minioEndpoint: string;
-  minioPort: number;
-  minioAccessKey: string;
-  minioSecretKey: string;
-  minioBucket: string;
+  s3Endpoint: string;
+  s3Port: number | undefined;
+  s3AccessKey: string;
+  s3SecretKey: string;
+  s3Bucket: string;
+  s3UseSSL: boolean;
+  s3Region: string;
+  s3PathStyle: boolean;
 }
 
 const DEFAULT_LISTEN_ADDR = '0.0.0.0:3001';
@@ -37,8 +40,31 @@ function requireEnv(name: string): string {
   return value;
 }
 
+function requireEnvEither(primary: string, fallback: string): string {
+  const value = process.env[primary] ?? process.env[fallback];
+  if (!value) {
+    throw new AppError(500, 'MISSING_CONFIG', `Missing environment variable: ${primary} (or ${fallback})`);
+  }
+
+  return value;
+}
+
+function optionalEnvPort(primary: string, fallback: string): number | undefined {
+  const raw = process.env[primary] ?? process.env[fallback];
+  if (!raw) return undefined;
+  const num = Number(raw);
+  return Number.isNaN(num) ? undefined : num;
+}
+
 export function loadEnv(): AppEnv {
   const { host, port } = parseListenAddr(process.env.LISTEN_ADDR ?? DEFAULT_LISTEN_ADDR);
+
+  const s3Port = optionalEnvPort('S3_PORT', 'MINIO_PORT');
+  const s3UseSSLRaw = process.env.S3_USE_SSL;
+  // Default: true for cloud (no port or port 443), false for local MinIO (port 9000 etc.)
+  const s3UseSSL = s3UseSSLRaw != null
+    ? s3UseSSLRaw === 'true'
+    : (s3Port == null || s3Port === 443);
 
   return {
     listenHost: host,
@@ -48,11 +74,14 @@ export function loadEnv(): AppEnv {
     systemConfigSecret: requireEnv('SYSTEM_CONFIG_SECRET'),
     jwtSecret: requireEnv('JWT_SECRET'),
     redisUrl: requireEnv('REDIS_URL'),
-    minioEndpoint: requireEnv('MINIO_ENDPOINT'),
-    minioPort: Number(requireEnv('MINIO_PORT')),
-    minioAccessKey: requireEnv('MINIO_ACCESS_KEY'),
-    minioSecretKey: requireEnv('MINIO_SECRET_KEY'),
-    minioBucket: requireEnv('MINIO_BUCKET'),
+    s3Endpoint: requireEnvEither('S3_ENDPOINT', 'MINIO_ENDPOINT'),
+    s3Port,
+    s3AccessKey: requireEnvEither('S3_ACCESS_KEY', 'MINIO_ACCESS_KEY'),
+    s3SecretKey: requireEnvEither('S3_SECRET_KEY', 'MINIO_SECRET_KEY'),
+    s3Bucket: requireEnvEither('S3_BUCKET', 'MINIO_BUCKET'),
+    s3UseSSL,
+    s3Region: process.env.S3_REGION ?? 'auto',
+    s3PathStyle: (process.env.S3_PATH_STYLE ?? 'true') === 'true',
   };
 }
 

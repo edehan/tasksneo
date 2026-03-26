@@ -19,6 +19,14 @@ export const filesRouter = new Hono<{ Variables: AppVariables }>();
 
 filesRouter.use('*', authMiddleware);
 
+filesRouter.get('/:fileKey{.+}/url', async (c) => {
+  const authUser = requireAuthUser(c);
+  const fileKey = c.req.param('fileKey');
+  const params = fileParamSchema.parse({ fileKey });
+  const url = await getAuthorizedFileUrl(params.fileKey, authUser.userId);
+  return c.json({ url, expiresIn: 300 });
+});
+
 filesRouter.get('/:fileKey{.+}', async (c) => {
   const authUser = requireAuthUser(c);
   const params = fileParamSchema.parse(c.req.param());

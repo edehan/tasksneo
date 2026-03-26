@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { AppError } from '../lib/errors.js';
 import { requireAuthUser } from '../lib/context.js';
-import { getObjectBuffer, uploadObject } from '../lib/storage.js';
+import { getObjectBuffer, getPresignedUrl, uploadObject } from '../lib/storage.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { assertParseInput, buildParseTaskContext, parseTaskContent, parseTaskDescription } from '../services/ai.service.js';
 import { deleteTaskDraftMarkdown, getTaskDraftMarkdown, setTaskDraftMarkdown } from '../services/task-draft-cache.service.js';
@@ -204,27 +204,45 @@ tasksRouter.post('/:taskId/parse', async (c) => {
       originalName: true,
       mimeType: true,
       fileKey: true,
+      sizeBytes: true,
     },
   });
 
   const attachmentPayload = [] as Array<{
     originalName: string;
     mimeType: string | null;
-    bytes: Buffer;
+    bytes?: Buffer;
+    presignedUrl?: string;
+    sizeBytes?: number;
   }>;
 
   for (const attachment of attachments) {
-    const bytes = await getObjectBuffer(attachment.fileKey);
+    const mime = (attachment.mimeType ?? '').toLowerCase();
 
-    if (!bytes) {
-      continue;
+    if (mime.startsWith('image/')) {
+      // Use presigned URL for images — avoids downloading to API memory
+      const presignedUrl = await getPresignedUrl(attachment.fileKey, 600);
+      attachmentPayload.push({
+        originalName: attachment.originalName,
+        mimeType: attachment.mimeType,
+        presignedUrl,
+        sizeBytes: attachment.sizeBytes != null ? Number(attachment.sizeBytes) : undefined,
+      });
+    } else {
+      // PDFs and text files: download bytes for base64 encoding
+      const bytes = await getObjectBuffer(attachment.fileKey);
+
+      if (!bytes) {
+        continue;
+      }
+
+      attachmentPayload.push({
+        originalName: attachment.originalName,
+        mimeType: attachment.mimeType,
+        bytes,
+        sizeBytes: bytes.byteLength,
+      });
     }
-
-    attachmentPayload.push({
-      originalName: attachment.originalName,
-      mimeType: attachment.mimeType,
-      bytes,
-    });
   }
 
   const parsed = await parseTaskContent({

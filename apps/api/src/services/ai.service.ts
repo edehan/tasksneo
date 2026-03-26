@@ -52,7 +52,9 @@ type GatewayAttachmentPart =
 export interface ParseAttachmentInput {
   originalName: string;
   mimeType: string | null;
-  bytes: Buffer;
+  bytes?: Buffer;
+  presignedUrl?: string;
+  sizeBytes?: number;
 }
 
 export interface ParseTaskContext {
@@ -158,7 +160,7 @@ function isTextLikeMime(mimeType: string): boolean {
 function extractInlineAttachmentText(attachment: ParseAttachmentInput): string | null {
   const mimeType = normalizeAttachmentMime(attachment.mimeType);
 
-  if (!isTextLikeMime(mimeType)) {
+  if (!isTextLikeMime(mimeType) || !attachment.bytes) {
     return null;
   }
 
@@ -186,21 +188,25 @@ function toGatewayAttachmentPart(attachment: ParseAttachmentInput): GatewayAttac
     return null;
   }
 
-  if (attachment.bytes.byteLength > MAX_ATTACHMENT_BYTES) {
+  // Skip oversized attachments (only check when bytes are available; URL-only
+  // attachments were already validated at upload time)
+  if (attachment.bytes && attachment.bytes.byteLength > MAX_ATTACHMENT_BYTES) {
     return null;
   }
 
   if (mimeType.startsWith('image/')) {
+    const url = attachment.presignedUrl
+      ?? (attachment.bytes ? `data:${mimeType};base64,${attachment.bytes.toString('base64')}` : null);
+
+    if (!url) return null;
+
     return {
       type: 'image_url',
-      image_url: {
-        url: `data:${mimeType};base64,${attachment.bytes.toString('base64')}`,
-        detail: 'auto',
-      },
+      image_url: { url, detail: 'auto' },
     };
   }
 
-  if (mimeType === 'application/pdf') {
+  if (mimeType === 'application/pdf' && attachment.bytes) {
     return {
       type: 'file',
       file: {
@@ -225,7 +231,8 @@ function buildAttachmentContextBlock(attachments: ParseAttachmentInput[]): strin
     const mimeType = normalizeAttachmentMime(attachment.mimeType) || 'unknown';
     const inlineText = extractInlineAttachmentText(attachment);
 
-    lines.push(`- ${attachment.originalName} (${mimeType}, ${attachment.bytes.byteLength} bytes)`);
+    const size = attachment.bytes?.byteLength ?? attachment.sizeBytes ?? 0;
+    lines.push(`- ${attachment.originalName} (${mimeType}, ${size} bytes)`);
 
     if (inlineText) {
       lines.push(`  content:\n${inlineText}`);

@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 
+import { getStorageStatus } from '../lib/storage.js';
 import { adminMiddleware } from '../middleware/admin.js';
 import {
   createAdminSchool,
@@ -57,6 +58,11 @@ adminRouter.post('/config/test-email', async (c) => {
   const body = sendTestEmailSchema.parse(await c.req.json());
   await sendAdminTestEmail(body.to);
   return c.body(null, 204);
+});
+
+adminRouter.get('/storage-status', async (c) => {
+  const status = await getStorageStatus();
+  return c.json(status, 200);
 });
 
 adminRouter.get('/users', async (c) => {
