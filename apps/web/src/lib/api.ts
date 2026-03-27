@@ -27,6 +27,7 @@ export interface UserProfile {
   studentId: string | null;
   timezone: string;
   isActive: boolean;
+  avatarFileKey: string | null;
   createdAt: string;
 }
 

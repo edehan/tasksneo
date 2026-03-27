@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Download, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { DataExportDialog } from "@/features/settings/components/data-export-dialog";
 import type { ClassSummary } from "@/lib/api";
 import {
   ApiError,
@@ -43,6 +44,9 @@ export default function AccountPage() {
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  // Data export
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   // Check ownership
   const [ownedClasses, setOwnedClasses] = useState<ClassSummary[]>([]);
@@ -181,6 +185,25 @@ export default function AccountPage() {
           </Button>
         </form>
       </section>
+
+      <Separator />
+
+      {/* Data Export */}
+      <section className="space-y-3">
+        <h2 className="text-heading-md">{t("dataExport.title")}</h2>
+        <p className="text-sm text-muted-foreground">
+          {t("dataExport.description")}
+        </p>
+        <Button variant="outline" onClick={() => setExportDialogOpen(true)}>
+          <Download className="h-4 w-4" />
+          {t("dataExport.exportButton")}
+        </Button>
+      </section>
+
+      <DataExportDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+      />
 
       <Separator />
 

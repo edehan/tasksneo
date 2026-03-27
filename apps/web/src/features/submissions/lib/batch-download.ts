@@ -65,8 +65,17 @@ export async function downloadAllWithConcurrency(
 
 // ─── Zip builder ────────────────────────────────────────────────────────────
 
-export async function buildZip(entries: ZipEntry[]): Promise<Blob> {
+export async function buildZip(
+  entries: ZipEntry[],
+  rootFiles?: Array<{ name: string; content: Blob | string }>,
+): Promise<Blob> {
   const zip = new JSZip();
+
+  if (rootFiles) {
+    for (const file of rootFiles) {
+      zip.file(file.name, file.content);
+    }
+  }
 
   for (const entry of entries) {
     const folder = zip.folder(entry.folderName);

@@ -14,22 +14,28 @@ import {
 const SALT_ROUNDS = 10;
 
 export async function getMyProfile(userId: string) {
-	const user = await prisma.user.findUnique({
-		where: { id: userId },
-		include: {
-			school: {
-				select: {
-					name: true,
+	const [user, avatar] = await Promise.all([
+		prisma.user.findUnique({
+			where: { id: userId },
+			include: {
+				school: {
+					select: {
+						name: true,
+					},
 				},
 			},
-		},
-	});
+		}),
+		prisma.attachment.findFirst({
+			where: { avatarUserId: userId },
+			select: { fileKey: true },
+		}),
+	]);
 
 	if (!user) {
 		throw new AppError(404, "USER_NOT_FOUND", "User not found");
 	}
 
-	return toUserProfile(user);
+	return toUserProfile(user, avatar?.fileKey ?? null);
 }
 
 export async function updateMyProfile(

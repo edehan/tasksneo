@@ -2,6 +2,7 @@ import type { ClassRole, User } from "@taskflow/db";
 
 export function toUserProfile(
 	user: User & { school: { name: string } | null },
+	avatarFileKey?: string | null,
 ) {
 	return {
 		id: user.id,
@@ -12,6 +13,7 @@ export function toUserProfile(
 		studentId: user.studentId,
 		timezone: user.timezone,
 		isActive: user.isActive,
+		avatarFileKey: avatarFileKey ?? null,
 		createdAt: user.createdAt.toISOString(),
 	};
 }

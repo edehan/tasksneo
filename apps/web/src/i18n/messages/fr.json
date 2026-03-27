@@ -191,7 +191,38 @@
     "typeToConfirmPrefix": "Tapez",
     "typeToConfirmSuffix": "pour confirmer",
     "cancel": "Annuler",
-    "deleteAccount": "Supprimer le compte"
+    "deleteAccount": "Supprimer le compte",
+    "dataExport": {
+      "title": "Exporter mes donnees",
+      "description": "Telechargez une archive ZIP contenant vos rendus, les taches de vos classes gerees, votre avatar et les metadonnees.",
+      "exportButton": "Exporter les donnees"
+    }
+  },
+  "dataExportDialog": {
+    "title": "Exporter mes donnees",
+    "description": "Telechargez toutes vos donnees personnelles sous forme de fichier ZIP.",
+    "summary": {
+      "gathering": "Analyse de vos donnees...",
+      "ready": "Cliquez ci-dessous pour commencer l'exportation.",
+      "classes": "{count, plural, =0 {Aucune classe} =1 {1 classe} other {# classes}}",
+      "submissions": "{count, plural, =0 {Aucun rendu} =1 {1 rendu} other {# rendus}}",
+      "tasks": "{count, plural, =0 {Aucune tache geree} =1 {1 tache geree} other {# taches gerees}}",
+      "files": "{count, plural, =1 {1 fichier} other {# fichiers}}"
+    },
+    "progress": {
+      "gathering": "Recuperation de vos donnees...",
+      "downloading": "Telechargement {completed} / {total} fichiers...",
+      "generatingZip": "Generation de l'archive ZIP..."
+    },
+    "actions": {
+      "startExport": "Lancer l'exportation",
+      "processing": "Traitement en cours..."
+    },
+    "toast": {
+      "exportComplete": "Exportation terminee",
+      "skippedFiles": "{count, plural, =1 {1 fichier} other {# fichiers}} n'ont pas pu etre telecharges",
+      "exportFailed": "Echec de l'exportation"
+    }
   },
   "settingsProfile": {
     "profileUpdated": "Profil mis a jour",
