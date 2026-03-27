@@ -9,19 +9,19 @@ interface PageTransitionProps {
 }
 
 export function PageTransition({ children, className }: PageTransitionProps) {
-  const _pathname = usePathname();
+  const pathname = usePathname();
   const [key, setKey] = useState(0);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally re-trigger animation on route change
   useEffect(() => {
-    // Increment key on each navigation to re-trigger the CSS animation
     setKey((k) => k + 1);
-  }, []);
+  }, [pathname]);
 
   return (
     <div
       key={key}
       className={className}
-      style={{ animation: "page-fade-in 0.2s ease-out" }}
+      style={{ animation: "page-fade-in 0.4s ease-out" }}
     >
       {children}
     </div>
