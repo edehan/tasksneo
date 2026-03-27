@@ -14,6 +14,11 @@ import {
 	sendAdminTestEmail,
 	updateAdminUser,
 } from "../services/admin.service.js";
+import {
+	cancelAnnouncement,
+	createAnnouncement,
+	listAnnouncements,
+} from "../services/announcement.service.js";
 
 import type { AppVariables } from "../types/context.js";
 
@@ -37,6 +42,15 @@ const patchAdminUserSchema = z.object({
 
 const createSchoolSchema = z.object({
 	name: z.string().trim().min(1),
+});
+
+const createAnnouncementSchema = z.object({
+	title: z.string().trim().min(1).max(200),
+	content: z.string().trim().min(1).max(5000),
+});
+
+const announcementIdParamSchema = z.object({
+	announcementId: z.string().uuid(),
 });
 
 export const adminRouter = new Hono<{ Variables: AppVariables }>();
@@ -98,4 +112,26 @@ adminRouter.delete("/schools/:schoolId", async (c) => {
 	const params = schoolIdParamSchema.parse(c.req.param());
 	await deleteAdminSchool(params.schoolId);
 	return c.body(null, 204);
+});
+
+// ── Announcements ──────────────────────────────────────────────────────────
+
+adminRouter.get("/announcements", async (c) => {
+	const announcements = await listAnnouncements();
+	return c.json(announcements, 200);
+});
+
+adminRouter.post("/announcements", async (c) => {
+	const body = createAnnouncementSchema.parse(await c.req.json());
+	const announcement = await createAnnouncement(body.title, body.content);
+	return c.json(announcement, 201);
+});
+
+adminRouter.post("/announcements/:announcementId/cancel", async (c) => {
+	const params = announcementIdParamSchema.parse(c.req.param());
+	const result = await cancelAnnouncement(params.announcementId);
+	if (!result) {
+		return c.json({ error: "Not found", code: "NOT_FOUND" }, 404);
+	}
+	return c.json(result, 200);
 });

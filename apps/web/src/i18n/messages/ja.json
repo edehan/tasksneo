@@ -155,6 +155,7 @@
     "markAllAsRead": "すべて既読にする",
     "noNotificationsYet": "通知はありません",
     "viewAllNotifications": "すべての通知を見る",
+    "systemAnnouncement": "システムアナウンス",
     "time": {
       "justNow": "たった今",
       "minutesAgo": "{count}分前",

@@ -155,6 +155,7 @@
     "markAllAsRead": "Tout marquer comme lu",
     "noNotificationsYet": "Aucune notification",
     "viewAllNotifications": "Voir toutes les notifications",
+    "systemAnnouncement": "Annonce système",
     "time": {
       "justNow": "a l'instant",
       "minutesAgo": "il y a {count} min",

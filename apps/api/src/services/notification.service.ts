@@ -17,6 +17,18 @@ interface TaskNotificationPayload {
 	type: "TASK_PUBLISHED" | "TASK_DUE_REMINDER";
 }
 
+interface AnnouncementNotificationPayload {
+	userId: string;
+	type: "SITE_ANNOUNCEMENT";
+	announcementId: string;
+	title: string;
+	content: string;
+}
+
+type NotificationPayload =
+	| TaskNotificationPayload
+	| AnnouncementNotificationPayload;
+
 function parseBeforeDueHours(value: string | null): number[] {
 	if (!value) {
 		return [];
@@ -153,7 +165,10 @@ export async function enqueueTaskPublishedNotifications(params: {
 	}
 }
 
-function buildSubject(payload: TaskNotificationPayload) {
+function buildSubject(payload: NotificationPayload) {
+	if (payload.type === "SITE_ANNOUNCEMENT") {
+		return `[TaskFlow] 系统公告：${payload.title}`;
+	}
 	if (payload.type === "TASK_PUBLISHED") {
 		return `[TaskFlow] 新任务：${payload.taskTitle}`;
 	}
@@ -161,7 +176,11 @@ function buildSubject(payload: TaskNotificationPayload) {
 	return `[TaskFlow] 任务截止提醒：${payload.taskTitle}`;
 }
 
-function buildText(payload: TaskNotificationPayload, timezone: string) {
+function buildText(payload: NotificationPayload, timezone: string) {
+	if (payload.type === "SITE_ANNOUNCEMENT") {
+		return `系统公告\n\n${payload.title}\n\n${payload.content}`;
+	}
+
 	const dueText = formatDueAt(payload.dueAt, timezone);
 
 	if (payload.type === "TASK_PUBLISHED") {
@@ -171,11 +190,51 @@ function buildText(payload: TaskNotificationPayload, timezone: string) {
 	return `你在班级 ${payload.className} 中有一个任务即将到期。\n\n任务名称：${payload.taskTitle}\n截止时间：${dueText}`;
 }
 
+function buildAnnouncementHtml(
+	payload: AnnouncementNotificationPayload,
+	baseUrl: string,
+) {
+	const accentColor = "#C4785B";
+	const unsubscribeUrl = `${baseUrl}/settings/notifications`;
+	const contentHtml = escapeHtml(payload.content).replace(/\n/g, "<br>");
+
+	return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#faf7f2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#faf7f2;">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background-color:#fffdf8;border-radius:8px;overflow:hidden;border:1px solid #e8e2d8;">
+        <tr><td style="height:4px;background-color:${accentColor};"></td></tr>
+        <tr><td style="padding:24px 32px 16px;">
+          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#8a8078;">TaskFlow · 系统公告</p>
+        </td></tr>
+        <tr><td style="padding:0 32px 24px;">
+          <p style="margin:0 0 16px;font-size:18px;font-weight:600;line-height:1.4;color:#2c2825;">${escapeHtml(payload.title)}</p>
+          <p style="margin:0;font-size:15px;line-height:1.6;color:#2c2825;">${contentHtml}</p>
+        </td></tr>
+        <tr><td style="padding:16px 32px;border-top:1px solid #e8e2d8;">
+          <p style="margin:0;font-size:12px;color:#c0b8ad;text-align:center;">
+            此邮件由 TaskFlow 自动发送 &middot;
+            <a href="${unsubscribeUrl}" style="color:#8a8078;text-decoration:underline;">退订通知</a>
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
 function buildHtml(
-	payload: TaskNotificationPayload,
+	payload: NotificationPayload,
 	timezone: string,
 	baseUrl: string,
 ) {
+	if (payload.type === "SITE_ANNOUNCEMENT") {
+		return buildAnnouncementHtml(payload, baseUrl);
+	}
+
 	const dueText = formatDueAt(payload.dueAt, timezone);
 	const accentColor = payload.classColor || "#7B6CB0";
 	const taskUrl = `${baseUrl}/dashboard`;
@@ -239,7 +298,7 @@ function escapeHtml(str: string): string {
 
 async function sendWebhook(
 	webhookUrl: string,
-	payload: TaskNotificationPayload,
+	payload: NotificationPayload,
 	timezone: string,
 	baseUrl: string,
 ) {
@@ -247,17 +306,26 @@ async function sendWebhook(
 	const timeout = setTimeout(() => controller.abort(), 10_000);
 
 	try {
+		const body =
+			payload.type === "SITE_ANNOUNCEMENT"
+				? {
+						type: payload.type,
+						title: payload.title,
+						content: payload.content,
+					}
+				: {
+						type: payload.type,
+						taskId: payload.taskId,
+						taskTitle: payload.taskTitle,
+						className: payload.className,
+						dueAt: formatDueAt(payload.dueAt, timezone),
+						url: `${baseUrl}/dashboard`,
+					};
+
 		const res = await fetch(webhookUrl, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				type: payload.type,
-				taskId: payload.taskId,
-				taskTitle: payload.taskTitle,
-				className: payload.className,
-				dueAt: formatDueAt(payload.dueAt, timezone),
-				url: `${baseUrl}/dashboard`,
-			}),
+			body: JSON.stringify(body),
 			signal: controller.signal,
 		});
 
@@ -287,7 +355,7 @@ export async function processNotificationJob(notificationJobId: string) {
 	});
 
 	try {
-		const payload = job.payload as unknown as TaskNotificationPayload;
+		const payload = job.payload as unknown as NotificationPayload;
 		const channel = job.channel;
 
 		const pref = await prisma.userNotificationPref.findUnique({
@@ -386,6 +454,8 @@ export interface NotificationItemResult {
 	classId: string | null;
 	taskTitle: string;
 	className: string;
+	title: string | null;
+	content: string | null;
 	readAt: Date | null;
 	createdAt: Date;
 }
@@ -398,14 +468,17 @@ function toNotificationItem(job: {
 	createdAt: Date;
 }): NotificationItemResult {
 	const p = job.payload as Record<string, unknown> | null;
+	const type = (p?.type as string) ?? "TASK_PUBLISHED";
 
 	return {
 		id: job.id,
-		type: (p?.type as string) ?? "TASK_PUBLISHED",
+		type,
 		taskId: job.taskId,
 		classId: (p?.classId as string) ?? null,
 		taskTitle: (p?.taskTitle as string) ?? "",
 		className: (p?.className as string) ?? "",
+		title: (p?.title as string) ?? null,
+		content: (p?.content as string) ?? null,
 		readAt: job.readAt,
 		createdAt: job.createdAt,
 	};

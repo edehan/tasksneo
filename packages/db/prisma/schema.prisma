@@ -310,6 +310,20 @@ enum EmailTokenPurpose {
   @@map("email_token_purpose")
 }
 
+// ─── Site Announcements ─────────────────────────────────────────────────
+
+model SiteAnnouncement {
+  id          String    @id @default(uuid())
+  title       String
+  content     String
+  scheduledAt DateTime  @map("scheduled_at") @db.Timestamptz
+  publishedAt DateTime? @map("published_at") @db.Timestamptz
+  cancelledAt DateTime? @map("cancelled_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("site_announcements")
+}
+
 // ─── System Config ───────────────────────────────────────────────────────────
 
 model SystemConfig {

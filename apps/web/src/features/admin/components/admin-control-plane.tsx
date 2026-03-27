@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, LogOut, Moon, Send, Sun } from "lucide-react";
+import { Loader2, LogOut, Megaphone, Moon, Send, Sun, X } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -44,12 +44,16 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  type AdminAnnouncement,
   type AdminSchool,
   ApiError,
+  cancelAdminAnnouncement,
+  createAdminAnnouncement,
   createAdminSchool,
   deleteAdminSchool,
   getAdminConfig,
   getAdminStorageStatus,
+  listAdminAnnouncements,
   listAdminSchools,
   listAdminUsers,
   patchAdminConfig,
@@ -243,6 +247,12 @@ export function AdminControlPlane() {
   );
   const [storageChecking, setStorageChecking] = useState(false);
 
+  const [announcements, setAnnouncements] = useState<AdminAnnouncement[]>([]);
+  const [announcementTitle, setAnnouncementTitle] = useState("");
+  const [announcementContent, setAnnouncementContent] = useState("");
+  const [announcementCreating, setAnnouncementCreating] = useState(false);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
   const { resolvedTheme, setTheme } = useTheme();
 
   const filteredUsers = useMemo(() => {
@@ -259,12 +269,16 @@ export function AdminControlPlane() {
   const loadAdminData = useCallback(async (adminToken: string) => {
     setDataLoading(true);
     try {
-      const [config, adminUsers, adminSchools, storage] = await Promise.all([
-        getAdminConfig(adminToken),
-        listAdminUsers(adminToken),
-        listAdminSchools(adminToken),
-        getAdminStorageStatus(adminToken).catch(() => null),
-      ]);
+      const [config, adminUsers, adminSchools, storage, adminAnnouncements] =
+        await Promise.all([
+          getAdminConfig(adminToken),
+          listAdminUsers(adminToken),
+          listAdminSchools(adminToken),
+          getAdminStorageStatus(adminToken).catch(() => null),
+          listAdminAnnouncements(adminToken).catch(
+            () => [] as AdminAnnouncement[],
+          ),
+        ]);
 
       const normalized = normalizeConfig(config);
       setConfigInitial(normalized);
@@ -272,6 +286,7 @@ export function AdminControlPlane() {
       setUsers(adminUsers);
       setSchools(adminSchools);
       if (storage) setStorageStatus(storage);
+      setAnnouncements(adminAnnouncements);
     } finally {
       setDataLoading(false);
     }
@@ -493,6 +508,54 @@ export function AdminControlPlane() {
     }
   }
 
+  async function handleCreateAnnouncement() {
+    if (!token) return;
+    const title = announcementTitle.trim();
+    const content = announcementContent.trim();
+    if (!title || !content) {
+      setNotice({ tone: "error", message: "Title and content are required." });
+      return;
+    }
+
+    setAnnouncementCreating(true);
+    try {
+      const created = await createAdminAnnouncement(token, { title, content });
+      setAnnouncements((prev) => [created, ...prev]);
+      setAnnouncementTitle("");
+      setAnnouncementContent("");
+      setNotice({
+        tone: "success",
+        message: `Announcement scheduled. Will publish in 10 minutes.`,
+      });
+    } catch (error) {
+      setNotice({
+        tone: "error",
+        message: `Create announcement failed: ${getErrorMessage(error)}`,
+      });
+    } finally {
+      setAnnouncementCreating(false);
+    }
+  }
+
+  async function handleCancelAnnouncement(id: string) {
+    if (!token) return;
+    setCancellingId(id);
+    try {
+      const updated = await cancelAdminAnnouncement(token, id);
+      setAnnouncements((prev) =>
+        prev.map((a) => (a.id === updated.id ? updated : a)),
+      );
+      setNotice({ tone: "success", message: "Announcement cancelled." });
+    } catch (error) {
+      setNotice({
+        tone: "error",
+        message: `Cancel failed: ${getErrorMessage(error)}`,
+      });
+    } finally {
+      setCancellingId(null);
+    }
+  }
+
   if (authLoading) {
     return (
       <main className="mx-auto flex min-h-screen max-w-5xl items-center justify-center px-6 py-10">
@@ -605,6 +668,7 @@ export function AdminControlPlane() {
           <TabsTrigger value="config">Config</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="schools">Schools</TabsTrigger>
+          <TabsTrigger value="announcements">Announcements</TabsTrigger>
         </TabsList>
 
         <TabsContent value="config" className="space-y-6">
@@ -987,6 +1051,97 @@ export function AdminControlPlane() {
             </CardContent>
           </Card>
         </TabsContent>
+        <TabsContent value="announcements">
+          <Card>
+            <CardHeader>
+              <CardTitle>Site Announcements</CardTitle>
+              <CardDescription>
+                Broadcast notices to all users (maintenance, policy changes,
+                etc.). Announcements publish after a 10-minute delay, during
+                which you can cancel.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="ann-title">Title</Label>
+                  <Input
+                    id="ann-title"
+                    placeholder="e.g. Scheduled maintenance on March 30"
+                    value={announcementTitle}
+                    onChange={(e) => setAnnouncementTitle(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ann-content">Content</Label>
+                  <Textarea
+                    id="ann-content"
+                    rows={4}
+                    placeholder="Notification body sent to all users..."
+                    value={announcementContent}
+                    onChange={(e) => setAnnouncementContent(e.target.value)}
+                  />
+                </div>
+                <Button
+                  onClick={() => void handleCreateAnnouncement()}
+                  disabled={announcementCreating}
+                >
+                  {announcementCreating && (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
+                  <Megaphone className="h-4 w-4" />
+                  Schedule Announcement
+                </Button>
+              </div>
+
+              {announcements.length > 0 && (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Scheduled</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {announcements.map((a) => (
+                      <TableRow key={a.id}>
+                        <TableCell className="max-w-[300px]">
+                          <p className="truncate font-medium">{a.title}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {a.content}
+                          </p>
+                        </TableCell>
+                        <TableCell>
+                          <AnnouncementStatusBadge announcement={a} />
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {formatDateTime(a.scheduledAt)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {a.status === "SCHEDULED" ? (
+                            <CountdownCancelButton
+                              scheduledAt={a.scheduledAt}
+                              cancelling={cancellingId === a.id}
+                              onCancel={() =>
+                                void handleCancelAnnouncement(a.id)
+                              }
+                            />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              —
+                            </span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       <Dialog
@@ -1055,5 +1210,89 @@ export function AdminControlPlane() {
         </AlertDialogContent>
       </AlertDialog>
     </main>
+  );
+}
+
+// ── Announcement Sub-components ─────────────────────────────────────────────
+
+function AnnouncementStatusBadge({
+  announcement,
+}: {
+  announcement: AdminAnnouncement;
+}) {
+  const colorMap = {
+    SCHEDULED:
+      "border-amber-500/40 bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400",
+    PUBLISHED:
+      "border-green-500/40 bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400",
+    CANCELLED: "border-border bg-muted text-muted-foreground",
+  };
+
+  return (
+    <Badge variant="outline" className={colorMap[announcement.status]}>
+      {announcement.status === "SCHEDULED"
+        ? "Scheduled"
+        : announcement.status === "PUBLISHED"
+          ? "Published"
+          : "Cancelled"}
+    </Badge>
+  );
+}
+
+function CountdownCancelButton({
+  scheduledAt,
+  cancelling,
+  onCancel,
+}: {
+  scheduledAt: string;
+  cancelling: boolean;
+  onCancel: () => void;
+}) {
+  const [remaining, setRemaining] = useState("");
+  const [hovered, setHovered] = useState(false);
+
+  useEffect(() => {
+    function tick() {
+      const diff = new Date(scheduledAt).getTime() - Date.now();
+      if (diff <= 0) {
+        setRemaining("Publishing...");
+        return;
+      }
+      const mins = Math.floor(diff / 60_000);
+      const secs = Math.floor((diff % 60_000) / 1_000);
+      setRemaining(`${mins}:${secs.toString().padStart(2, "0")}`);
+    }
+
+    tick();
+    const id = setInterval(tick, 1_000);
+    return () => clearInterval(id);
+  }, [scheduledAt]);
+
+  if (cancelling) {
+    return (
+      <Button size="sm" variant="outline" disabled>
+        <Loader2 className="h-3 w-3 animate-spin" />
+        Cancelling...
+      </Button>
+    );
+  }
+
+  return (
+    <Button
+      size="sm"
+      variant={hovered ? "destructive" : "outline"}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={onCancel}
+    >
+      {hovered ? (
+        <>
+          <X className="h-3 w-3" />
+          Cancel
+        </>
+      ) : (
+        <>Publishing in {remaining}</>
+      )}
+    </Button>
   );
 }

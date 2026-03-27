@@ -155,6 +155,7 @@
     "markAllAsRead": "全部标记为已读",
     "noNotificationsYet": "暂无通知",
     "viewAllNotifications": "查看全部通知",
+    "systemAnnouncement": "系统公告",
     "time": {
       "justNow": "刚刚",
       "minutesAgo": "{count}分钟前",

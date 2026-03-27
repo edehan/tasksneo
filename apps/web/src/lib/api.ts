@@ -168,11 +168,13 @@ export interface NotificationPref {
 
 export interface NotificationItem {
   id: string;
-  type: "TASK_PUBLISHED" | "TASK_DUE_REMINDER";
+  type: "TASK_PUBLISHED" | "TASK_DUE_REMINDER" | "SITE_ANNOUNCEMENT";
   taskId: string | null;
   classId: string | null;
   taskTitle: string;
   className: string;
+  title: string | null;
+  content: string | null;
   readAt: string | null;
   createdAt: string;
 }
@@ -188,6 +190,17 @@ export interface NotificationListResponse {
 export interface AdminSchool {
   id: string;
   name: string;
+}
+
+export interface AdminAnnouncement {
+  id: string;
+  title: string;
+  content: string;
+  status: "SCHEDULED" | "PUBLISHED" | "CANCELLED";
+  scheduledAt: string;
+  publishedAt: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
 }
 
 export interface AdminUpdateUserInput {
@@ -1052,6 +1065,36 @@ export async function deleteAdminSchool(
     {
       method: "DELETE",
     },
+    token,
+  );
+}
+
+// ── Admin Announcements ──────────────────────────────────────────────────────
+
+export async function listAdminAnnouncements(
+  token: string,
+): Promise<AdminAnnouncement[]> {
+  return apiRequest<AdminAnnouncement[]>("/admin/announcements", {}, token);
+}
+
+export async function createAdminAnnouncement(
+  token: string,
+  input: { title: string; content: string },
+): Promise<AdminAnnouncement> {
+  return apiRequest<AdminAnnouncement>(
+    "/admin/announcements",
+    { method: "POST", body: JSON.stringify(input) },
+    token,
+  );
+}
+
+export async function cancelAdminAnnouncement(
+  token: string,
+  announcementId: string,
+): Promise<AdminAnnouncement> {
+  return apiRequest<AdminAnnouncement>(
+    `/admin/announcements/${announcementId}/cancel`,
+    { method: "POST" },
     token,
   );
 }
