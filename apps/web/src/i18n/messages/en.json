@@ -519,7 +519,10 @@
     "toast": {
       "failedLoadSubmissions": "Failed to load submissions",
       "csvExported": "CSV exported successfully",
-      "failedExportCsv": "Failed to export CSV"
+      "failedExportCsv": "Failed to export CSV",
+      "markedExemplary": "Marked as exemplary submission",
+      "unmarkedExemplary": "Removed exemplary mark",
+      "failedToggleExemplary": "Failed to toggle exemplary status"
     },
     "notFound": "Task or class not found.",
     "backToClass": "Back to class",
@@ -543,12 +546,15 @@
       "action": "Action",
       "pending": "Pending",
       "view": "View",
-      "noMembers": "No members found in this class."
+      "noMembers": "No members found in this class.",
+      "markExemplary": "Mark as exemplary",
+      "unmarkExemplary": "Remove exemplary mark"
     },
     "status": {
       "graded": "Graded",
       "submitted": "Submitted",
-      "notSubmitted": "Not Submitted"
+      "notSubmitted": "Not Submitted",
+      "exemplary": "Exemplary"
     }
   },
   "submissionDetailPage": {
@@ -556,7 +562,10 @@
       "failedLoadSubmission": "Failed to load submission",
       "gradeSaved": "Grade saved successfully",
       "failedSaveGrade": "Failed to save grade",
-      "failedDownloadFile": "Failed to download file"
+      "failedDownloadFile": "Failed to download file",
+      "markedExemplary": "Marked as exemplary submission",
+      "unmarkedExemplary": "Removed exemplary mark",
+      "failedToggleExemplary": "Failed to toggle exemplary status"
     },
     "notFound": "Submission not found.",
     "student": "Student",
@@ -576,7 +585,11 @@
     "reviewNote": "Review Note",
     "reviewNotePlaceholder": "Optional feedback for the student...",
     "saving": "Saving...",
-    "saveGrade": "Save Grade"
+    "saveGrade": "Save Grade",
+    "exemplary": {
+      "mark": "Exemplary",
+      "unmark": "Unmark Exemplary"
+    }
   },
   "batchDownloadDialog": {
     "title": "Download Submissions",

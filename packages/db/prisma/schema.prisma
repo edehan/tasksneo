@@ -215,6 +215,9 @@ model Submission {
   reviewedAt   DateTime? @map("reviewed_at") @db.Timestamptz
   reviewNote   String?   @map("review_note")
 
+  // 模范作业标记，仅管理员可设置，需已评分且评语 ≥ 30 字符
+  isExemplary  Boolean   @default(false) @map("is_exemplary")
+
   taskId String @map("task_id")
   userId String @map("user_id")
   // task 故意不加 onDelete Cascade：任务软删后提交记录需要保留

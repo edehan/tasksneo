@@ -672,6 +672,9 @@ components:
         reviewNote:
           type: string
           nullable: true
+        isExemplary:
+          type: boolean
+          description: 是否为模范作业
 
     SubmissionDetail:
       allOf:
@@ -2208,6 +2211,50 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SubmissionDetail'
+        '403':
+          description: 权限不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tasks/{taskId}/submissions/{submissionId}/exemplary:
+    parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: submissionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      tags: [Submissions]
+      summary: 切换模范作业标记
+      description: |
+        仅 OWNER 和 ADMIN 可操作。Toggle 模式：已标记则取消，未标记则设置。
+        标记为模范作业时要求：
+        - 提交必须已评分（score 非 null）
+        - 评语（reviewNote）不少于 30 个字符
+      security:
+        - userAuth: []
+      responses:
+        '200':
+          description: 成功，返回更新后的提交详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionDetail'
+        '400':
+          description: 不满足模范作业条件（未评分或评语不足 30 字符）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '403':
           description: 权限不足
           content:

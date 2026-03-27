@@ -519,7 +519,10 @@
     "toast": {
       "failedLoadSubmissions": "提出一覧の読み込みに失敗しました",
       "csvExported": "CSVをエクスポートしました",
-      "failedExportCsv": "CSVエクスポートに失敗しました"
+      "failedExportCsv": "CSVエクスポートに失敗しました",
+      "markedExemplary": "模範提出に設定しました",
+      "unmarkedExemplary": "模範提出を解除しました",
+      "failedToggleExemplary": "模範提出の切り替えに失敗しました"
     },
     "notFound": "課題またはクラスが見つかりません。",
     "backToClass": "クラスへ戻る",
@@ -543,12 +546,15 @@
       "action": "操作",
       "pending": "保留",
       "view": "表示",
-      "noMembers": "このクラスにメンバーがいません。"
+      "noMembers": "このクラスにメンバーがいません。",
+      "markExemplary": "模範に設定",
+      "unmarkExemplary": "模範を解除"
     },
     "status": {
       "graded": "採点済み",
       "submitted": "提出済み",
-      "notSubmitted": "未提出"
+      "notSubmitted": "未提出",
+      "exemplary": "模範"
     }
   },
   "submissionDetailPage": {
@@ -556,7 +562,10 @@
       "failedLoadSubmission": "提出の読み込みに失敗しました",
       "gradeSaved": "採点を保存しました",
       "failedSaveGrade": "採点の保存に失敗しました",
-      "failedDownloadFile": "ファイルのダウンロードに失敗しました"
+      "failedDownloadFile": "ファイルのダウンロードに失敗しました",
+      "markedExemplary": "模範提出に設定しました",
+      "unmarkedExemplary": "模範提出を解除しました",
+      "failedToggleExemplary": "模範提出の切り替えに失敗しました"
     },
     "notFound": "提出が見つかりません。",
     "student": "学生",
@@ -576,7 +585,11 @@
     "reviewNote": "レビューコメント",
     "reviewNotePlaceholder": "学生向けの任意フィードバック...",
     "saving": "保存中...",
-    "saveGrade": "採点を保存"
+    "saveGrade": "採点を保存",
+    "exemplary": {
+      "mark": "模範提出",
+      "unmark": "模範を解除"
+    }
   },
   "batchDownloadDialog": {
     "title": "提出をダウンロード",

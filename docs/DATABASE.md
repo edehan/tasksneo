@@ -229,6 +229,7 @@ One row per (task, user). Updated in place on re-submission. No version history.
 | reviewerId | UUID? FK → users | SET NULL on reviewer delete |
 | reviewedAt | DateTime? | |
 | reviewNote | String? | free-text feedback |
+| isExemplary | Boolean | default false; requires score + reviewNote ≥ 30 chars to set true |
 
 **Constraints**: `@@unique([taskId, userId])`.
 

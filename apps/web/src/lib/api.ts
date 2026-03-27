@@ -141,6 +141,7 @@ export interface SubmissionSummary {
   reviewerId: string | null;
   reviewedAt: string | null;
   reviewNote: string | null;
+  isExemplary: boolean;
 }
 
 export interface SubmissionDetail extends SubmissionSummary {
@@ -840,6 +841,18 @@ export async function gradeSubmission(
   return apiRequest<SubmissionDetail>(
     `/tasks/${taskId}/submissions/${submissionId}/grade`,
     { method: "PATCH", body: JSON.stringify(input) },
+    token,
+  );
+}
+
+export async function toggleExemplary(
+  token: string,
+  taskId: string,
+  submissionId: string,
+): Promise<SubmissionDetail> {
+  return apiRequest<SubmissionDetail>(
+    `/tasks/${taskId}/submissions/${submissionId}/exemplary`,
+    { method: "PATCH" },
     token,
   );
 }

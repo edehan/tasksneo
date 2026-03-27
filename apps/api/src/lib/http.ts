@@ -168,6 +168,7 @@ interface SubmissionSource {
 	reviewerId: string | null;
 	reviewedAt: Date | null;
 	reviewNote: string | null;
+	isExemplary: boolean;
 }
 
 export function toSubmission(submission: SubmissionSource) {
@@ -185,5 +186,6 @@ export function toSubmission(submission: SubmissionSource) {
 		reviewerId: submission.reviewerId,
 		reviewedAt: submission.reviewedAt?.toISOString() ?? null,
 		reviewNote: submission.reviewNote,
+		isExemplary: submission.isExemplary,
 	};
 }

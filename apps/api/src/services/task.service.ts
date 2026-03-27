@@ -1197,6 +1197,65 @@ export async function exportTaskSubmissionsCsv(taskId: string, userId: string) {
 		.join("\n");
 }
 
+export async function toggleExemplary(
+	taskId: string,
+	submissionId: string,
+	userId: string,
+) {
+	const { classMembership } = await assertTaskAccess(taskId, userId);
+
+	if (!classMembership) {
+		throw new AppError(
+			403,
+			"FORBIDDEN",
+			"Only class admin can toggle exemplary status",
+		);
+	}
+
+	requireOwnerOrAdmin(classMembership);
+
+	const submission = await prisma.submission.findUnique({
+		where: { id: submissionId },
+		include: { attachments: true },
+	});
+
+	if (!submission || submission.taskId !== taskId) {
+		throw new AppError(404, "SUBMISSION_NOT_FOUND", "Submission not found");
+	}
+
+	const newValue = !submission.isExemplary;
+
+	// Marking as exemplary requires score and reviewNote >= 30 chars
+	if (newValue) {
+		if (submission.score === null || submission.score === undefined) {
+			throw new AppError(
+				400,
+				"EXEMPLARY_REQUIRES_SCORE",
+				"Submission must be graded before marking as exemplary",
+			);
+		}
+
+		if (!submission.reviewNote || submission.reviewNote.length < 30) {
+			throw new AppError(
+				400,
+				"EXEMPLARY_REQUIRES_REVIEW_NOTE",
+				"Review note must be at least 30 characters",
+			);
+		}
+	}
+
+	const updated = await prisma.submission.update({
+		where: { id: submissionId },
+		data: { isExemplary: newValue },
+		include: { attachments: true },
+	});
+
+	return {
+		...toSubmission(updated),
+		attachments: updated.attachments.map(toAttachmentMeta),
+	};
+}
+
 export async function renameTaskSubmissionAttachments(
 	taskId: string,
 	userId: string,

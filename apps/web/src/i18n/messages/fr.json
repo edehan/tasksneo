@@ -519,7 +519,10 @@
     "toast": {
       "failedLoadSubmissions": "Impossible de charger les rendus",
       "csvExported": "CSV exporte avec succes",
-      "failedExportCsv": "Echec de l'export CSV"
+      "failedExportCsv": "Echec de l'export CSV",
+      "markedExemplary": "Marque comme travail exemplaire",
+      "unmarkedExemplary": "Marquage exemplaire retire",
+      "failedToggleExemplary": "Echec du changement de statut exemplaire"
     },
     "notFound": "Tache ou classe introuvable.",
     "backToClass": "Retour a la classe",
@@ -543,12 +546,15 @@
       "action": "Action",
       "pending": "En attente",
       "view": "Voir",
-      "noMembers": "Aucun membre trouve dans cette classe."
+      "noMembers": "Aucun membre trouve dans cette classe.",
+      "markExemplary": "Marquer comme exemplaire",
+      "unmarkExemplary": "Retirer le marquage exemplaire"
     },
     "status": {
       "graded": "Evalue",
       "submitted": "Rendu",
-      "notSubmitted": "Non rendu"
+      "notSubmitted": "Non rendu",
+      "exemplary": "Exemplaire"
     }
   },
   "submissionDetailPage": {
@@ -556,7 +562,10 @@
       "failedLoadSubmission": "Impossible de charger le rendu",
       "gradeSaved": "Note enregistree",
       "failedSaveGrade": "Echec de l'enregistrement de la note",
-      "failedDownloadFile": "Echec du telechargement du fichier"
+      "failedDownloadFile": "Echec du telechargement du fichier",
+      "markedExemplary": "Marque comme travail exemplaire",
+      "unmarkedExemplary": "Marquage exemplaire retire",
+      "failedToggleExemplary": "Echec du changement de statut exemplaire"
     },
     "notFound": "Rendu introuvable.",
     "student": "Etudiant",
@@ -576,7 +585,11 @@
     "reviewNote": "Commentaire",
     "reviewNotePlaceholder": "Feedback optionnel pour l'etudiant...",
     "saving": "Enregistrement...",
-    "saveGrade": "Enregistrer la note"
+    "saveGrade": "Enregistrer la note",
+    "exemplary": {
+      "mark": "Exemplaire",
+      "unmark": "Retirer exemplaire"
+    }
   },
   "batchDownloadDialog": {
     "title": "Telecharger les rendus",

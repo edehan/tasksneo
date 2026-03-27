@@ -519,7 +519,10 @@
     "toast": {
       "failedLoadSubmissions": "加载提交列表失败",
       "csvExported": "CSV 导出成功",
-      "failedExportCsv": "CSV 导出失败"
+      "failedExportCsv": "CSV 导出失败",
+      "markedExemplary": "已标记为模范作业",
+      "unmarkedExemplary": "已取消模范标记",
+      "failedToggleExemplary": "切换模范作业状态失败"
     },
     "notFound": "未找到任务或班级。",
     "backToClass": "返回班级",
@@ -543,12 +546,15 @@
       "action": "操作",
       "pending": "待评分",
       "view": "查看",
-      "noMembers": "该班级暂无成员。"
+      "noMembers": "该班级暂无成员。",
+      "markExemplary": "标记为模范",
+      "unmarkExemplary": "取消模范标记"
     },
     "status": {
       "graded": "已评分",
       "submitted": "已提交",
-      "notSubmitted": "未提交"
+      "notSubmitted": "未提交",
+      "exemplary": "模范"
     }
   },
   "submissionDetailPage": {
@@ -556,7 +562,10 @@
       "failedLoadSubmission": "加载提交失败",
       "gradeSaved": "评分已保存",
       "failedSaveGrade": "保存评分失败",
-      "failedDownloadFile": "下载文件失败"
+      "failedDownloadFile": "下载文件失败",
+      "markedExemplary": "已标记为模范作业",
+      "unmarkedExemplary": "已取消模范标记",
+      "failedToggleExemplary": "切换模范作业状态失败"
     },
     "notFound": "未找到该提交。",
     "student": "学生",
@@ -576,7 +585,11 @@
     "reviewNote": "评语",
     "reviewNotePlaceholder": "给学生的可选反馈...",
     "saving": "保存中...",
-    "saveGrade": "保存评分"
+    "saveGrade": "保存评分",
+    "exemplary": {
+      "mark": "模范作业",
+      "unmark": "取消模范"
+    }
   },
   "batchDownloadDialog": {
     "title": "下载提交内容",
