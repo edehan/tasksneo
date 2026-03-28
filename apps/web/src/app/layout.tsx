@@ -11,8 +11,8 @@ import { type AppLocale, toHtmlLang } from "@/i18n/locale";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TaskFlow",
-  description: "TaskFlow frontend",
+  title: "TaskNeo",
+  description: "TaskNeo frontend",
 };
 
 export default async function RootLayout({

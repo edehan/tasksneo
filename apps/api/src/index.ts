@@ -13,7 +13,7 @@ serve(
 	},
 	(info) => {
 		console.log(
-			`TaskFlow API listening on http://${info.address}:${info.port}`,
+			`TaskNeo API listening on http://${info.address}:${info.port}`,
 		);
 	},
 );

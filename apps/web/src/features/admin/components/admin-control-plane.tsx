@@ -67,7 +67,7 @@ import { cn } from "@/lib/utils";
 const ADMIN_TOKEN_STORAGE_KEY = "taskflow_admin_token";
 
 const CONFIG_DEFAULTS = {
-  "app.title": "",
+  "app.title": "TaskNeo",
   "app.base_url": "",
   "auth.registration_open": "true",
   "notif.before_due_hours": "",
@@ -76,6 +76,7 @@ const CONFIG_DEFAULTS = {
   "smtp.user": "",
   "smtp.password": "",
   "smtp.from": "",
+  "smtp.from_name": "TaskNeo",
   "llm.provider": "",
   "llm.base_url": "",
   "llm.api_key": "",
@@ -103,7 +104,7 @@ const CONFIG_GROUPS: Array<{ title: string; fields: ConfigField[] }> = [
   {
     title: "App",
     fields: [
-      { key: "app.title", label: "Site Title", placeholder: "TaskFlow" },
+      { key: "app.title", label: "Site Title", placeholder: "TaskNeo" },
       {
         key: "app.base_url",
         label: "Base URL",
@@ -136,6 +137,11 @@ const CONFIG_GROUPS: Array<{ title: string; fields: ConfigField[] }> = [
         key: "smtp.from",
         label: "SMTP From",
         placeholder: "noreply@example.com",
+      },
+      {
+        key: "smtp.from_name",
+        label: "SMTP From Name",
+        placeholder: "TaskNeo",
       },
     ],
   },

@@ -5,7 +5,11 @@ import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
 import { sendEmail } from "../lib/mailer.js";
 import { createSchool, deleteSchool, listSchools } from "./school.service.js";
-import { getConfigMap, updateConfig } from "./system-config.service.js";
+import {
+	getConfigMap,
+	getConfigValue,
+	updateConfig,
+} from "./system-config.service.js";
 import { adminDeleteUser } from "./user.service.js";
 
 const SALT_ROUNDS = 10;
@@ -114,11 +118,12 @@ export async function deleteAdminSchool(schoolId: string) {
 export async function sendAdminTestEmail(to: string) {
 	const sentAt = new Date().toISOString();
 	const instanceId = process.env.HOSTNAME ?? "unknown";
+	const appTitle = (await getConfigValue("app.title"))?.trim() || "TaskNeo";
 
 	await sendEmail(
 		to,
-		"[TaskFlow] SMTP Test Email",
-		`This is a test email from TaskFlow admin control plane.\n\nSent at (UTC): ${sentAt}\nInstance: ${instanceId}`,
+		`[${appTitle}] SMTP 测试邮件`,
+		`这是一封来自 ${appTitle} 管理后台的 SMTP 测试邮件。\n\n发送时间（UTC）：${sentAt}\n实例：${instanceId}`,
 	);
 }
 

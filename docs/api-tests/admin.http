@@ -13,7 +13,7 @@ Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
-  "app.title": "TaskFlow",
+  "app.title": "TaskNeo",
   "auth.registration_open": "true"
 }
 

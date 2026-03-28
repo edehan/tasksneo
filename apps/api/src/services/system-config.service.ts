@@ -8,10 +8,11 @@ import {
 } from "../lib/system-config.js";
 
 const DEFAULT_CONFIG: Record<string, string> = {
-	"app.title": "TaskFlow",
+	"app.title": "TaskNeo",
 	"app.base_url": "http://localhost:3000",
 	"auth.registration_open": "true",
 	"notif.before_due_hours": "24,2",
+	"smtp.from_name": "TaskNeo",
 	"llm.prompt_task_parse_structured":
 		"Extract task fields into JSON schema {title,startAt,dueAt,description}.",
 	"llm.prompt_task_parse_markdown":
@@ -28,6 +29,7 @@ const ALLOWED_CONFIG_KEYS = new Set([
 	"smtp.user",
 	"smtp.password",
 	"smtp.from",
+	"smtp.from_name",
 	"llm.provider",
 	"llm.base_url",
 	"llm.api_key",
