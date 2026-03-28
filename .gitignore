@@ -1,11 +1,10 @@
 node_modules/
 .env
-.env.preview
 .env.test
 .env.local
+.env.prod
 dist/
 .next/
 *.log
-.preview/
 .DS_Store
 .VSCodeCounter

@@ -4,7 +4,8 @@
     "tabs": {
       "profile": "プロフィール",
       "notifications": "通知",
-      "account": "アカウント"
+      "account": "アカウント",
+      "mcpKeys": "MCPキー"
     }
   },
   "settingsVerifyEmail": {
@@ -148,13 +149,15 @@
     "langEn": "English",
     "langZhCN": "中文",
     "langFr": "Français",
-    "langJa": "日本語"
+    "langJa": "日本語",
+    "mcpKeys": "MCPキー"
   },
   "notificationBell": {
     "notifications": "通知",
     "markAllAsRead": "すべて既読にする",
     "noNotificationsYet": "通知はありません",
     "viewAllNotifications": "すべての通知を見る",
+    "systemAnnouncement": "システムアナウンス",
     "time": {
       "justNow": "たった今",
       "minutesAgo": "{count}分前",
@@ -190,7 +193,38 @@
     "typeToConfirmPrefix": "確認のため",
     "typeToConfirmSuffix": "と入力してください",
     "cancel": "キャンセル",
-    "deleteAccount": "アカウントを削除"
+    "deleteAccount": "アカウントを削除",
+    "dataExport": {
+      "title": "データをエクスポート",
+      "description": "提出物、管理クラスのタスク、アバター、メタデータを含むZIPアーカイブをダウンロードします。",
+      "exportButton": "データをエクスポート"
+    }
+  },
+  "dataExportDialog": {
+    "title": "データをエクスポート",
+    "description": "すべての個人データをZIPファイルとしてダウンロードします。",
+    "summary": {
+      "gathering": "データを分析中...",
+      "ready": "下のボタンをクリックしてエクスポートを開始します。",
+      "classes": "{count, plural, =0 {クラスなし} other {# クラス}}",
+      "submissions": "{count, plural, =0 {提出物なし} other {# 件の提出物}}",
+      "tasks": "{count, plural, =0 {管理タスクなし} other {# 件の管理タスク}}",
+      "files": "{count, plural, other {# ファイル}}"
+    },
+    "progress": {
+      "gathering": "データを取得中...",
+      "downloading": "{completed} / {total} ファイルをダウンロード中...",
+      "generatingZip": "ZIPアーカイブを生成中..."
+    },
+    "actions": {
+      "startExport": "エクスポート開始",
+      "processing": "処理中..."
+    },
+    "toast": {
+      "exportComplete": "データのエクスポートが完了しました",
+      "skippedFiles": "{count, plural, other {# ファイル}}のダウンロードに失敗し、スキップされました",
+      "exportFailed": "データのエクスポートに失敗しました"
+    }
   },
   "settingsProfile": {
     "profileUpdated": "プロフィールを更新しました",
@@ -487,7 +521,10 @@
     "toast": {
       "failedLoadSubmissions": "提出一覧の読み込みに失敗しました",
       "csvExported": "CSVをエクスポートしました",
-      "failedExportCsv": "CSVエクスポートに失敗しました"
+      "failedExportCsv": "CSVエクスポートに失敗しました",
+      "markedExemplary": "模範提出に設定しました",
+      "unmarkedExemplary": "模範提出を解除しました",
+      "failedToggleExemplary": "模範提出の切り替えに失敗しました"
     },
     "notFound": "課題またはクラスが見つかりません。",
     "backToClass": "クラスへ戻る",
@@ -511,12 +548,15 @@
       "action": "操作",
       "pending": "保留",
       "view": "表示",
-      "noMembers": "このクラスにメンバーがいません。"
+      "noMembers": "このクラスにメンバーがいません。",
+      "markExemplary": "模範に設定",
+      "unmarkExemplary": "模範を解除"
     },
     "status": {
       "graded": "採点済み",
       "submitted": "提出済み",
-      "notSubmitted": "未提出"
+      "notSubmitted": "未提出",
+      "exemplary": "模範"
     }
   },
   "submissionDetailPage": {
@@ -524,7 +564,10 @@
       "failedLoadSubmission": "提出の読み込みに失敗しました",
       "gradeSaved": "採点を保存しました",
       "failedSaveGrade": "採点の保存に失敗しました",
-      "failedDownloadFile": "ファイルのダウンロードに失敗しました"
+      "failedDownloadFile": "ファイルのダウンロードに失敗しました",
+      "markedExemplary": "模範提出に設定しました",
+      "unmarkedExemplary": "模範提出を解除しました",
+      "failedToggleExemplary": "模範提出の切り替えに失敗しました"
     },
     "notFound": "提出が見つかりません。",
     "student": "学生",
@@ -544,7 +587,43 @@
     "reviewNote": "レビューコメント",
     "reviewNotePlaceholder": "学生向けの任意フィードバック...",
     "saving": "保存中...",
-    "saveGrade": "採点を保存"
+    "saveGrade": "採点を保存",
+    "exemplary": {
+      "mark": "模範提出",
+      "unmark": "模範を解除"
+    }
+  },
+  "settingsMcpKeys": {
+    "title": "MCPキー",
+    "description": "Claude CodeやCursorなどの外部AIツールをTaskFlowアカウントに接続します。",
+    "createNew": "新規キー",
+    "keyName": "キー名",
+    "keyNamePlaceholder": "例：MacBookのClaude Code",
+    "create": "作成",
+    "secretKey": "シークレットキー",
+    "keyWontShowAgain": "このキーは再表示されません。今すぐコピーしてください。",
+    "configSnippet": "クイックセットアップ（Claude Code）",
+    "copy": "コピー",
+    "done": "完了",
+    "revokeTitle": "キーを無効化",
+    "revokeDescription": "「{name}」を無効化しますか？このキーを使用しているAIツールは直ちにアクセスできなくなります。",
+    "cancel": "キャンセル",
+    "revoke": "無効化",
+    "revoked": "キーを無効化しました",
+    "failedLoad": "キーの読み込みに失敗しました",
+    "failedCreate": "キーの作成に失敗しました",
+    "failedRevoke": "キーの無効化に失敗しました",
+    "noKeys": "キーがまだありません。AIツールを接続するにはキーを作成してください。",
+    "revokedKeys": "無効化されたキー",
+    "created": "作成日",
+    "lastUsed": "最終使用",
+    "justNow": "たった今",
+    "minutesAgo": "{count}分前",
+    "hoursAgo": "{count}時間前",
+    "daysAgo": "{count}日前",
+    "keyCreated": "キーが作成されました",
+    "keyCreatedHint": "下のキーをコピーしてください。再度表示することはできません。",
+    "createDescription": "後で識別できるようにキーに名前を付けてください。"
   },
   "batchDownloadDialog": {
     "title": "提出をダウンロード",

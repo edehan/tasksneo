@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
@@ -87,9 +87,7 @@ function computeTimelineRange(
     const taskStart = task.startAt
       ? startOfDay(new Date(task.startAt))
       : startOfDay(new Date(task.createdAt));
-    const taskEnd = task.dueAt
-      ? startOfDay(new Date(task.dueAt))
-      : taskStart;
+    const taskEnd = task.dueAt ? startOfDay(new Date(task.dueAt)) : taskStart;
 
     if (taskStart < earliest) earliest = new Date(taskStart);
     if (taskEnd > latest) latest = new Date(taskEnd);
@@ -123,7 +121,10 @@ function computeMarkers(
 
   while (cursor <= end) {
     const offset = diffDays(start, cursor);
-    markers.push({ label: formatMarkerDate(cursor, locale), dayOffset: offset });
+    markers.push({
+      label: formatMarkerDate(cursor, locale),
+      dayOffset: offset,
+    });
     cursor.setDate(cursor.getDate() + interval);
   }
 
@@ -192,7 +193,7 @@ export function TaskGanttView({
     });
 
     return () => cancelAnimationFrame(frame);
-  }, [ganttRange, dayWidth, todayOffset, getViewport]);
+  }, [dayWidth, todayOffset, getViewport]);
 
   if (tasks.length === 0) {
     return (
@@ -211,10 +212,7 @@ export function TaskGanttView({
           style={{ width: LABEL_WIDTH }}
         >
           {/* Header spacer */}
-          <div
-            className="border-b"
-            style={{ height: HEADER_HEIGHT }}
-          />
+          <div className="border-b" style={{ height: HEADER_HEIGHT }} />
           {/* Task rows */}
           {sortedTasks.map((task) => {
             const submitted = isSubmitted(task);
@@ -249,10 +247,7 @@ export function TaskGanttView({
       <ScrollArea className="min-w-0 flex-1" ref={scrollRef}>
         <div style={{ width: totalWidth, minWidth: "100%" }}>
           {/* Header with date markers */}
-          <div
-            className="relative border-b"
-            style={{ height: HEADER_HEIGHT }}
-          >
+          <div className="relative border-b" style={{ height: HEADER_HEIGHT }}>
             {markers.map((m) => (
               <div
                 key={m.dayOffset}

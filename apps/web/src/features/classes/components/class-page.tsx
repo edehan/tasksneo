@@ -2,28 +2,30 @@
 
 import { Plus, Settings, Users } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { FilterBar } from "@/features/dashboard/components/filter-bar";
 import { StatCards } from "@/features/dashboard/components/stat-cards";
+import { PostTaskDialog } from "@/features/tasks/components/post-task-dialog";
+import { TaskDetailOverlay } from "@/features/tasks/components/task-detail-overlay";
 import { TaskGanttView } from "@/features/tasks/components/task-gantt-view";
 import { TaskListView } from "@/features/tasks/components/task-list-view";
-import { PostTaskDialog } from "@/features/tasks/components/post-task-dialog";
 import {
-  ViewSwitcher,
   type ViewMode,
+  ViewSwitcher,
 } from "@/features/tasks/components/view-switcher";
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
-import { TaskDetailOverlay } from "@/features/tasks/components/task-detail-overlay";
-import type { ClassSummary, ClassMember } from "@/lib/api";
+import type { ClassSummary } from "@/lib/api";
 import { getClass, listClassTasks, listMembers } from "@/lib/api";
 
 type GanttRange = "week" | "month" | "2month";
 
-function deriveDisplayStatus(task: TaskWithClass): "submitted" | "overdue" | "in-progress" | "not-started" {
+function deriveDisplayStatus(
+  task: TaskWithClass,
+): "submitted" | "overdue" | "in-progress" | "not-started" {
   if (task.userState?.submittedAt) return "submitted";
   const now = Date.now();
   const dueAt = task.dueAt ? new Date(task.dueAt).getTime() : null;
@@ -65,11 +67,14 @@ export function ClassPage() {
       ]);
       setCls(classData);
       setTasks(
-        classTasks.map((t) => ({
-          ...t,
-          className: classData.name,
-          classColor: classData.color || "#8B7355",
-        } as TaskWithClass)),
+        classTasks.map(
+          (t) =>
+            ({
+              ...t,
+              className: classData.name,
+              classColor: classData.color || "#8B7355",
+            }) as TaskWithClass,
+        ),
       );
       // Find current user's role
       const me = members.find((m) => m.userId === user?.id);
@@ -91,9 +96,16 @@ export function ClassPage() {
     return tasks.filter((task) => {
       const status = deriveDisplayStatus(task);
       if (status === "submitted" && !filters.showSubmitted) return false;
-      const hasActiveFilter = filters.unfinished || filters.notSubmitted || filters.overdue;
+      const hasActiveFilter =
+        filters.unfinished || filters.notSubmitted || filters.overdue;
       if (!hasActiveFilter) return true;
-      if (filters.unfinished && (status === "in-progress" || status === "not-started" || status === "overdue")) return true;
+      if (
+        filters.unfinished &&
+        (status === "in-progress" ||
+          status === "not-started" ||
+          status === "overdue")
+      )
+        return true;
       if (filters.notSubmitted && status !== "submitted") return true;
       if (filters.overdue && status === "overdue") return true;
       return false;
@@ -202,7 +214,9 @@ export function ClassPage() {
 
       {/* Section heading + range toggle */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-heading-md">{t("classTasks", { className: cls.name })}</h2>
+        <h2 className="text-heading-md">
+          {t("classTasks", { className: cls.name })}
+        </h2>
         {viewMode === "gantt" && (
           <div className="flex items-center gap-1">
             {(["week", "month", "2month"] as const).map((r) => (
@@ -232,10 +246,7 @@ export function ClassPage() {
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <p className="text-muted-foreground mb-2">{t("empty.noTasks")}</p>
           {isAdmin && (
-            <Button
-              variant="outline"
-              onClick={() => setPostTaskOpen(true)}
-            >
+            <Button variant="outline" onClick={() => setPostTaskOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               {t("empty.postFirstTask")}
             </Button>
@@ -244,9 +255,17 @@ export function ClassPage() {
       ) : (
         <div className="rounded-lg border border-border bg-card overflow-hidden">
           {viewMode === "gantt" ? (
-            <TaskGanttView tasks={filteredTasks} ganttRange={ganttRange} onTaskClick={setSelectedTask} />
+            <TaskGanttView
+              tasks={filteredTasks}
+              ganttRange={ganttRange}
+              onTaskClick={setSelectedTask}
+            />
           ) : (
-            <TaskListView tasks={filteredTasks} showClass={false} onTaskClick={setSelectedTask} />
+            <TaskListView
+              tasks={filteredTasks}
+              showClass={false}
+              onTaskClick={setSelectedTask}
+            />
           )}
         </div>
       )}

@@ -27,6 +27,7 @@ export interface UserProfile {
   studentId: string | null;
   timezone: string;
   isActive: boolean;
+  avatarFileKey: string | null;
   createdAt: string;
 }
 
@@ -140,6 +141,7 @@ export interface SubmissionSummary {
   reviewerId: string | null;
   reviewedAt: string | null;
   reviewNote: string | null;
+  isExemplary: boolean;
 }
 
 export interface SubmissionDetail extends SubmissionSummary {
@@ -168,11 +170,13 @@ export interface NotificationPref {
 
 export interface NotificationItem {
   id: string;
-  type: "TASK_PUBLISHED" | "TASK_DUE_REMINDER";
+  type: "TASK_PUBLISHED" | "TASK_DUE_REMINDER" | "SITE_ANNOUNCEMENT";
   taskId: string | null;
   classId: string | null;
   taskTitle: string;
   className: string;
+  title: string | null;
+  content: string | null;
   readAt: string | null;
   createdAt: string;
 }
@@ -183,11 +187,36 @@ export interface NotificationListResponse {
   unreadCount: number;
 }
 
+export interface McpKeyInfo {
+  id: string;
+  name: string;
+  keyPrefix: string;
+  lastUsedAt: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+  revokedAt: string | null;
+}
+
+export interface McpKeyCreated extends McpKeyInfo {
+  key: string;
+}
+
 // ─── Admin Types (kept for admin panel) ──────────────────────────────────────
 
 export interface AdminSchool {
   id: string;
   name: string;
+}
+
+export interface AdminAnnouncement {
+  id: string;
+  title: string;
+  content: string;
+  status: "SCHEDULED" | "PUBLISHED" | "CANCELLED";
+  scheduledAt: string;
+  publishedAt: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
 }
 
 export interface AdminUpdateUserInput {
@@ -423,9 +452,7 @@ export async function markNotificationRead(
   );
 }
 
-export async function markAllNotificationsRead(
-  token: string,
-): Promise<void> {
+export async function markAllNotificationsRead(token: string): Promise<void> {
   return apiRequest<void>(
     "/users/me/notifications/read-all",
     { method: "POST" },
@@ -442,6 +469,36 @@ export async function getUnreadNotificationCount(
     token,
   );
 }
+
+// ── MCP keys ───────────────────────────────────────────────────────────────
+
+export async function listMcpKeys(token: string): Promise<McpKeyInfo[]> {
+  return apiRequest<McpKeyInfo[]>("/users/me/mcp-keys", {}, token);
+}
+
+export async function createMcpKey(
+  token: string,
+  name: string,
+): Promise<McpKeyCreated> {
+  return apiRequest<McpKeyCreated>(
+    "/users/me/mcp-keys",
+    { method: "POST", body: JSON.stringify({ name }) },
+    token,
+  );
+}
+
+export async function revokeMcpKey(
+  token: string,
+  keyId: string,
+): Promise<McpKeyInfo> {
+  return apiRequest<McpKeyInfo>(
+    `/users/me/mcp-keys/${keyId}`,
+    { method: "DELETE" },
+    token,
+  );
+}
+
+// ── Account ────────────────────────────────────────────────────────────────
 
 export async function deleteAccount(token: string): Promise<void> {
   return apiRequest<void>("/users/me/delete", { method: "POST" }, token);
@@ -609,9 +666,7 @@ export interface MyTaskSummary extends TaskSummary {
   classColor: string | null;
 }
 
-export async function listMyTasks(
-  token: string,
-): Promise<MyTaskSummary[]> {
+export async function listMyTasks(token: string): Promise<MyTaskSummary[]> {
   return apiRequest<MyTaskSummary[]>("/tasks/mine", {}, token);
 }
 
@@ -834,6 +889,18 @@ export async function gradeSubmission(
   );
 }
 
+export async function toggleExemplary(
+  token: string,
+  taskId: string,
+  submissionId: string,
+): Promise<SubmissionDetail> {
+  return apiRequest<SubmissionDetail>(
+    `/tasks/${taskId}/submissions/${submissionId}/exemplary`,
+    { method: "PATCH" },
+    token,
+  );
+}
+
 export async function exportSubmissionsCsv(
   token: string,
   taskId: string,
@@ -899,6 +966,18 @@ export function getFileUrl(fileKey: string): string {
   return `${getApiBaseUrl()}/files/${fileKey}`;
 }
 
+export async function getPresignedFileUrl(
+  token: string,
+  fileKey: string,
+): Promise<string> {
+  const res = await apiRequest<{ url: string }>(
+    `/files/${fileKey}/url`,
+    {},
+    token,
+  );
+  return res.url;
+}
+
 export async function downloadFile(
   token: string,
   fileKey: string,
@@ -909,7 +988,11 @@ export async function downloadFile(
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) {
-    throw new ApiError("Failed to download file", "DOWNLOAD_FAILED", res.status);
+    throw new ApiError(
+      "Failed to download file",
+      "DOWNLOAD_FAILED",
+      res.status,
+    );
   }
   const blob = await res.blob();
   return URL.createObjectURL(blob);
@@ -923,7 +1006,11 @@ export async function downloadFileBlob(
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) {
-    throw new ApiError("Failed to download file", "DOWNLOAD_FAILED", res.status);
+    throw new ApiError(
+      "Failed to download file",
+      "DOWNLOAD_FAILED",
+      res.status,
+    );
   }
   return res.blob();
 }
@@ -940,6 +1027,21 @@ export async function deleteAttachment(
 }
 
 // ─── Admin (kept for admin panel) ────────────────────────────────────────────
+
+export interface StorageStatus {
+  endpoint: string;
+  bucket: string;
+  useSSL: boolean;
+  region: string;
+  connected: boolean;
+  error?: string;
+}
+
+export async function getAdminStorageStatus(
+  token: string,
+): Promise<StorageStatus> {
+  return apiRequest<StorageStatus>("/admin/storage-status", {}, token);
+}
 
 export async function getAdminConfig(
   token: string,
@@ -1021,6 +1123,36 @@ export async function deleteAdminSchool(
     {
       method: "DELETE",
     },
+    token,
+  );
+}
+
+// ── Admin Announcements ──────────────────────────────────────────────────────
+
+export async function listAdminAnnouncements(
+  token: string,
+): Promise<AdminAnnouncement[]> {
+  return apiRequest<AdminAnnouncement[]>("/admin/announcements", {}, token);
+}
+
+export async function createAdminAnnouncement(
+  token: string,
+  input: { title: string; content: string },
+): Promise<AdminAnnouncement> {
+  return apiRequest<AdminAnnouncement>(
+    "/admin/announcements",
+    { method: "POST", body: JSON.stringify(input) },
+    token,
+  );
+}
+
+export async function cancelAdminAnnouncement(
+  token: string,
+  announcementId: string,
+): Promise<AdminAnnouncement> {
+  return apiRequest<AdminAnnouncement>(
+    `/admin/announcements/${announcementId}/cancel`,
+    { method: "POST" },
     token,
   );
 }

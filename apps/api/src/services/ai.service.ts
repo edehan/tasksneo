@@ -1,319 +1,346 @@
-import { z } from 'zod';
+import { z } from "zod";
 
-import { AppError } from '../lib/errors.js';
-import { getConfigValue } from './system-config.service.js';
+import { AppError } from "../lib/errors.js";
+import { getConfigValue } from "./system-config.service.js";
 
-const ISO_8601_WITH_TZ_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/;
+const ISO_8601_WITH_TZ_PATTERN =
+	/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/;
 const MAX_AI_ATTACHMENTS = 6;
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const MAX_INLINE_TEXT_ATTACHMENT_CHARS = 8_000;
 
 const timeOptionSchema = z.object({
-  startAt: z.string().nullable(),
-  dueAt: z.string().nullable(),
+	startAt: z.string().nullable(),
+	dueAt: z.string().nullable(),
 });
 
 const parseResultSchema = z.object({
-  title: z.string().nullable(),
-  timeOptions: z.array(timeOptionSchema).min(1).max(3),
-  allowLateSubmission: z.boolean().nullable(),
-  description: z.string().nullable(),
+	title: z.string().nullable(),
+	timeOptions: z.array(timeOptionSchema).min(1).max(3),
+	allowLateSubmission: z.boolean().nullable(),
+	description: z.string().nullable(),
 });
 
 export interface ParseTimeOption {
-  startAt: string | null;
-  dueAt: string | null;
+	startAt: string | null;
+	dueAt: string | null;
 }
 
 interface ParseTaskResult {
-  title: string | null;
-  timeOptions: ParseTimeOption[];
-  allowLateSubmission: boolean | null;
-  description: string | null;
+	title: string | null;
+	timeOptions: ParseTimeOption[];
+	allowLateSubmission: boolean | null;
+	description: string | null;
 }
 
 type GatewayAttachmentPart =
-  | {
-      type: 'image_url';
-      image_url: {
-        url: string;
-        detail: 'auto';
-      };
-    }
-  | {
-      type: 'file';
-      file: {
-        data: string;
-        media_type: 'application/pdf';
-        filename: string;
-      };
-    };
+	| {
+			type: "image_url";
+			image_url: {
+				url: string;
+				detail: "auto";
+			};
+	  }
+	| {
+			type: "file";
+			file: {
+				data: string;
+				media_type: "application/pdf";
+				filename: string;
+			};
+	  };
 
 export interface ParseAttachmentInput {
-  originalName: string;
-  mimeType: string | null;
-  bytes: Buffer;
+	originalName: string;
+	mimeType: string | null;
+	bytes?: Buffer;
+	presignedUrl?: string;
+	sizeBytes?: number;
 }
 
 export interface ParseTaskContext {
-  userTimezone: string;
-  localNowWithWeekday: string;
+	userTimezone: string;
+	localNowWithWeekday: string;
 }
 
 export interface ParseTaskArtifacts {
-  structured: ParseTaskResult;
-  markdown: string | null;
+	structured: ParseTaskResult;
+	markdown: string | null;
 }
 
 function fallbackParse(text: string): ParseTaskResult {
-  const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
+	const lines = text
+		.split("\n")
+		.map((line) => line.trim())
+		.filter(Boolean);
 
-  return {
-    title: lines[0] ?? null,
-    timeOptions: [{ startAt: null, dueAt: null }],
-    allowLateSubmission: null,
-    description: text || null,
-  };
+	return {
+		title: lines[0] ?? null,
+		timeOptions: [{ startAt: null, dueAt: null }],
+		allowLateSubmission: null,
+		description: text || null,
+	};
 }
 
 function fallbackMarkdown(text: string): string {
-  if (!text.trim()) {
-    return '# Task Draft\n\n(Empty draft)';
-  }
+	if (!text.trim()) {
+		return "# Task Draft\n\n(Empty draft)";
+	}
 
-  return `# Task Draft\n\n${text.trim()}`;
+	return `# Task Draft\n\n${text.trim()}`;
 }
 
 function normalizeTimezone(input: string | null | undefined): string {
-  if (!input) {
-    return 'UTC';
-  }
+	if (!input) {
+		return "UTC";
+	}
 
-  try {
-    Intl.DateTimeFormat('en-US', { timeZone: input }).format(new Date());
-    return input;
-  } catch {
-    return 'UTC';
-  }
+	try {
+		Intl.DateTimeFormat("en-US", { timeZone: input }).format(new Date());
+		return input;
+	} catch {
+		return "UTC";
+	}
 }
 
 function formatLocalNowWithWeekday(timeZone: string): string {
-  const parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone,
-    weekday: 'long',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-    timeZoneName: 'shortOffset',
-  }).formatToParts(new Date());
+	const parts = new Intl.DateTimeFormat("en-GB", {
+		timeZone,
+		weekday: "long",
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+		hour: "2-digit",
+		minute: "2-digit",
+		second: "2-digit",
+		hour12: false,
+		timeZoneName: "shortOffset",
+	}).formatToParts(new Date());
 
-  const partMap = new Map(parts.map((part) => [part.type, part.value]));
+	const partMap = new Map(parts.map((part) => [part.type, part.value]));
 
-  return `${partMap.get('year') ?? '0000'}-${partMap.get('month') ?? '01'}-${partMap.get('day') ?? '01'} ${partMap.get('hour') ?? '00'}:${partMap.get('minute') ?? '00'}:${partMap.get('second') ?? '00'} (${partMap.get('weekday') ?? 'Unknown'}, ${partMap.get('timeZoneName') ?? 'UTC'})`;
+	return `${partMap.get("year") ?? "0000"}-${partMap.get("month") ?? "01"}-${partMap.get("day") ?? "01"} ${partMap.get("hour") ?? "00"}:${partMap.get("minute") ?? "00"}:${partMap.get("second") ?? "00"} (${partMap.get("weekday") ?? "Unknown"}, ${partMap.get("timeZoneName") ?? "UTC"})`;
 }
 
-export function buildParseTaskContext(userTimezone: string | null | undefined): ParseTaskContext {
-  const normalized = normalizeTimezone(userTimezone);
-  return {
-    userTimezone: normalized,
-    localNowWithWeekday: formatLocalNowWithWeekday(normalized),
-  };
+export function buildParseTaskContext(
+	userTimezone: string | null | undefined,
+): ParseTaskContext {
+	const normalized = normalizeTimezone(userTimezone);
+	return {
+		userTimezone: normalized,
+		localNowWithWeekday: formatLocalNowWithWeekday(normalized),
+	};
 }
 
 function normalizeParsedDatetime(value: string | null): string | null {
-  if (!value) {
-    return null;
-  }
+	if (!value) {
+		return null;
+	}
 
-  const trimmed = value.trim();
+	const trimmed = value.trim();
 
-  if (!ISO_8601_WITH_TZ_PATTERN.test(trimmed)) {
-    return null;
-  }
+	if (!ISO_8601_WITH_TZ_PATTERN.test(trimmed)) {
+		return null;
+	}
 
-  const parsed = new Date(trimmed);
+	const parsed = new Date(trimmed);
 
-  if (Number.isNaN(parsed.getTime())) {
-    return null;
-  }
+	if (Number.isNaN(parsed.getTime())) {
+		return null;
+	}
 
-  return trimmed;
+	return trimmed;
 }
 
 function normalizeAttachmentMime(mimeType: string | null): string {
-  return (mimeType ?? '').trim().toLowerCase();
+	return (mimeType ?? "").trim().toLowerCase();
 }
 
 function isTextLikeMime(mimeType: string): boolean {
-  return mimeType.startsWith('text/')
-    || mimeType === 'application/json'
-    || mimeType === 'application/xml'
-    || mimeType === 'text/markdown';
+	return (
+		mimeType.startsWith("text/") ||
+		mimeType === "application/json" ||
+		mimeType === "application/xml" ||
+		mimeType === "text/markdown"
+	);
 }
 
-function extractInlineAttachmentText(attachment: ParseAttachmentInput): string | null {
-  const mimeType = normalizeAttachmentMime(attachment.mimeType);
+function extractInlineAttachmentText(
+	attachment: ParseAttachmentInput,
+): string | null {
+	const mimeType = normalizeAttachmentMime(attachment.mimeType);
 
-  if (!isTextLikeMime(mimeType)) {
-    return null;
-  }
+	if (!isTextLikeMime(mimeType) || !attachment.bytes) {
+		return null;
+	}
 
-  try {
-    const text = attachment.bytes.toString('utf8').trim();
+	try {
+		const text = attachment.bytes.toString("utf8").trim();
 
-    if (!text) {
-      return null;
-    }
+		if (!text) {
+			return null;
+		}
 
-    if (text.length <= MAX_INLINE_TEXT_ATTACHMENT_CHARS) {
-      return text;
-    }
+		if (text.length <= MAX_INLINE_TEXT_ATTACHMENT_CHARS) {
+			return text;
+		}
 
-    return `${text.slice(0, MAX_INLINE_TEXT_ATTACHMENT_CHARS)}\n...(truncated)...`;
-  } catch {
-    return null;
-  }
+		return `${text.slice(0, MAX_INLINE_TEXT_ATTACHMENT_CHARS)}\n...(truncated)...`;
+	} catch {
+		return null;
+	}
 }
 
-function toGatewayAttachmentPart(attachment: ParseAttachmentInput): GatewayAttachmentPart | null {
-  const mimeType = normalizeAttachmentMime(attachment.mimeType);
+function toGatewayAttachmentPart(
+	attachment: ParseAttachmentInput,
+): GatewayAttachmentPart | null {
+	const mimeType = normalizeAttachmentMime(attachment.mimeType);
 
-  if (!mimeType) {
-    return null;
-  }
+	if (!mimeType) {
+		return null;
+	}
 
-  if (attachment.bytes.byteLength > MAX_ATTACHMENT_BYTES) {
-    return null;
-  }
+	// Skip oversized attachments (only check when bytes are available; URL-only
+	// attachments were already validated at upload time)
+	if (attachment.bytes && attachment.bytes.byteLength > MAX_ATTACHMENT_BYTES) {
+		return null;
+	}
 
-  if (mimeType.startsWith('image/')) {
-    return {
-      type: 'image_url',
-      image_url: {
-        url: `data:${mimeType};base64,${attachment.bytes.toString('base64')}`,
-        detail: 'auto',
-      },
-    };
-  }
+	if (mimeType.startsWith("image/")) {
+		const url =
+			attachment.presignedUrl ??
+			(attachment.bytes
+				? `data:${mimeType};base64,${attachment.bytes.toString("base64")}`
+				: null);
 
-  if (mimeType === 'application/pdf') {
-    return {
-      type: 'file',
-      file: {
-        data: attachment.bytes.toString('base64'),
-        media_type: 'application/pdf',
-        filename: attachment.originalName,
-      },
-    };
-  }
+		if (!url) return null;
 
-  return null;
+		return {
+			type: "image_url",
+			image_url: { url, detail: "auto" },
+		};
+	}
+
+	if (mimeType === "application/pdf" && attachment.bytes) {
+		return {
+			type: "file",
+			file: {
+				data: attachment.bytes.toString("base64"),
+				media_type: "application/pdf",
+				filename: attachment.originalName,
+			},
+		};
+	}
+
+	return null;
 }
 
-function buildAttachmentContextBlock(attachments: ParseAttachmentInput[]): string {
-  if (attachments.length === 0) {
-    return '';
-  }
+function buildAttachmentContextBlock(
+	attachments: ParseAttachmentInput[],
+): string {
+	if (attachments.length === 0) {
+		return "";
+	}
 
-  const lines = ['', 'Attachment context:'];
+	const lines = ["", "Attachment context:"];
 
-  for (const attachment of attachments.slice(0, MAX_AI_ATTACHMENTS)) {
-    const mimeType = normalizeAttachmentMime(attachment.mimeType) || 'unknown';
-    const inlineText = extractInlineAttachmentText(attachment);
+	for (const attachment of attachments.slice(0, MAX_AI_ATTACHMENTS)) {
+		const mimeType = normalizeAttachmentMime(attachment.mimeType) || "unknown";
+		const inlineText = extractInlineAttachmentText(attachment);
 
-    lines.push(`- ${attachment.originalName} (${mimeType}, ${attachment.bytes.byteLength} bytes)`);
+		const size = attachment.bytes?.byteLength ?? attachment.sizeBytes ?? 0;
+		lines.push(`- ${attachment.originalName} (${mimeType}, ${size} bytes)`);
 
-    if (inlineText) {
-      lines.push(`  content:\n${inlineText}`);
-    }
-  }
+		if (inlineText) {
+			lines.push(`  content:\n${inlineText}`);
+		}
+	}
 
-  lines.push(
-    '',
-    'If binary office files cannot be parsed from content, use filenames and user text context conservatively.',
-  );
+	lines.push(
+		"",
+		"If binary office files cannot be parsed from content, use filenames and user text context conservatively.",
+	);
 
-  return lines.join('\n');
+	return lines.join("\n");
 }
 
 function buildAttachmentFallbackNote(parts: GatewayAttachmentPart[]): string {
-  if (parts.length === 0) {
-    return '';
-  }
+	if (parts.length === 0) {
+		return "";
+	}
 
-  const lines = parts.map((part) => {
-    if (part.type === 'image_url') {
-      return '- image attachment';
-    }
+	const lines = parts.map((part) => {
+		if (part.type === "image_url") {
+			return "- image attachment";
+		}
 
-    return `- pdf attachment: ${part.file.filename}`;
-  });
+		return `- pdf attachment: ${part.file.filename}`;
+	});
 
-  return [
-    '',
-    'Attachment metadata (content may be unavailable with current provider route):',
-    ...lines,
-  ].join('\n');
+	return [
+		"",
+		"Attachment metadata (content may be unavailable with current provider route):",
+		...lines,
+	].join("\n");
 }
 
 function extractMessageText(content: unknown): string | null {
-  if (typeof content === 'string') {
-    return content;
-  }
+	if (typeof content === "string") {
+		return content;
+	}
 
-  if (!Array.isArray(content)) {
-    return null;
-  }
+	if (!Array.isArray(content)) {
+		return null;
+	}
 
-  const texts = content
-    .map((item) => {
-      if (typeof item !== 'object' || item === null) {
-        return null;
-      }
+	const texts = content
+		.map((item) => {
+			if (typeof item !== "object" || item === null) {
+				return null;
+			}
 
-      const maybeText = (item as { text?: unknown }).text;
-      return typeof maybeText === 'string' ? maybeText : null;
-    })
-    .filter((value): value is string => Boolean(value));
+			const maybeText = (item as { text?: unknown }).text;
+			return typeof maybeText === "string" ? maybeText : null;
+		})
+		.filter((value): value is string => Boolean(value));
 
-  if (texts.length === 0) {
-    return null;
-  }
+	if (texts.length === 0) {
+		return null;
+	}
 
-  return texts.join('\n');
+	return texts.join("\n");
 }
 
 async function callChatCompletions(args: {
-  baseUrl: string;
-  apiKey: string;
-  body: Record<string, unknown>;
+	baseUrl: string;
+	apiKey: string;
+	body: Record<string, unknown>;
 }) {
-  const response = await fetch(`${args.baseUrl.replace(/\/$/, '')}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${args.apiKey}`,
-    },
-    body: JSON.stringify(args.body),
-  });
+	const response = await fetch(
+		`${args.baseUrl.replace(/\/$/, "")}/chat/completions`,
+		{
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${args.apiKey}`,
+			},
+			body: JSON.stringify(args.body),
+		},
+	);
 
-  if (!response.ok) {
-    return null;
-  }
+	if (!response.ok) {
+		return null;
+	}
 
-  const json = (await response.json()) as {
-    choices?: Array<{ message?: { content?: unknown } }>;
-  };
+	const json = (await response.json()) as {
+		choices?: Array<{ message?: { content?: unknown } }>;
+	};
 
-  return extractMessageText(json.choices?.[0]?.message?.content);
+	return extractMessageText(json.choices?.[0]?.message?.content);
 }
 
 function getStructuredPrompt(basePrompt: string): string {
-  return `${basePrompt}
+	return `${basePrompt}
 
 Requirements:
 - Output strict JSON only.
@@ -328,7 +355,7 @@ Requirements:
 }
 
 function getMarkdownPrompt(basePrompt: string): string {
-  return `${basePrompt}
+	return `${basePrompt}
 
 Requirements:
 - Output only markdown.
@@ -340,209 +367,238 @@ Requirements:
 }
 
 export async function parseTaskContent(input: {
-  text: string;
-  context: ParseTaskContext;
-  attachments?: ParseAttachmentInput[];
+	text: string;
+	context: ParseTaskContext;
+	attachments?: ParseAttachmentInput[];
 }): Promise<ParseTaskArtifacts> {
-  const provider = await getConfigValue('llm.provider');
-  const baseUrl = await getConfigValue('llm.base_url');
-  const apiKey = await getConfigValue('llm.api_key');
-  const model = await getConfigValue('llm.model');
-  const configuredStructuredPrompt = await getConfigValue('llm.prompt_task_parse_structured');
-  const configuredMarkdownPrompt = await getConfigValue('llm.prompt_task_parse_markdown');
+	const provider = await getConfigValue("llm.provider");
+	const baseUrl = await getConfigValue("llm.base_url");
+	const apiKey = await getConfigValue("llm.api_key");
+	const model = await getConfigValue("llm.model");
+	const configuredStructuredPrompt = await getConfigValue(
+		"llm.prompt_task_parse_structured",
+	);
+	const configuredMarkdownPrompt = await getConfigValue(
+		"llm.prompt_task_parse_markdown",
+	);
 
-  if (!provider || !baseUrl || !apiKey || !model) {
-    return {
-      structured: fallbackParse(input.text),
-      markdown: fallbackMarkdown(input.text),
-    };
-  }
+	if (!provider || !baseUrl || !apiKey || !model) {
+		return {
+			structured: fallbackParse(input.text),
+			markdown: fallbackMarkdown(input.text),
+		};
+	}
 
-  try {
-    const structuredPrompt = getStructuredPrompt(
-      configuredStructuredPrompt?.trim()
-        ? configuredStructuredPrompt
-        : 'Extract task fields into JSON schema {title,startAt,dueAt,description}.',
-    );
-    const markdownPrompt = getMarkdownPrompt(
-      configuredMarkdownPrompt?.trim()
-        ? configuredMarkdownPrompt
-        : 'Generate a markdown task brief from the provided text and files.',
-    );
+	try {
+		const structuredPrompt = getStructuredPrompt(
+			configuredStructuredPrompt?.trim()
+				? configuredStructuredPrompt
+				: "Extract task fields into JSON schema {title,startAt,dueAt,description}.",
+		);
+		const markdownPrompt = getMarkdownPrompt(
+			configuredMarkdownPrompt?.trim()
+				? configuredMarkdownPrompt
+				: "Generate a markdown task brief from the provided text and files.",
+		);
 
-    const limitedAttachments = (input.attachments ?? []).slice(0, MAX_AI_ATTACHMENTS);
-    const attachmentParts = limitedAttachments
-      .map(toGatewayAttachmentPart)
-      .filter((item): item is NonNullable<typeof item> => Boolean(item));
-    const attachmentContextText = buildAttachmentContextBlock(limitedAttachments);
+		const limitedAttachments = (input.attachments ?? []).slice(
+			0,
+			MAX_AI_ATTACHMENTS,
+		);
+		const attachmentParts = limitedAttachments
+			.map(toGatewayAttachmentPart)
+			.filter((item): item is NonNullable<typeof item> => Boolean(item));
+		const attachmentContextText =
+			buildAttachmentContextBlock(limitedAttachments);
 
-    const userPromptText = [
-      `User timezone setting: ${input.context.userTimezone}`,
-      `Current local datetime (with weekday): ${input.context.localNowWithWeekday}`,
-      '',
-      'Task natural language input:',
-      input.text,
-      attachmentContextText,
-    ].filter(Boolean).join('\n');
+		const userPromptText = [
+			`User timezone setting: ${input.context.userTimezone}`,
+			`Current local datetime (with weekday): ${input.context.localNowWithWeekday}`,
+			"",
+			"Task natural language input:",
+			input.text,
+			attachmentContextText,
+		]
+			.filter(Boolean)
+			.join("\n");
 
-    const textOnlyPrompt = `${userPromptText}${buildAttachmentFallbackNote(attachmentParts)}`;
+		const textOnlyPrompt = `${userPromptText}${buildAttachmentFallbackNote(attachmentParts)}`;
 
-    const multimodalContent = [
-      ...attachmentParts,
-      {
-        type: 'text',
-        text: userPromptText,
-      },
-    ];
-    const textOnlyContent = [
-      {
-        type: 'text',
-        text: textOnlyPrompt,
-      },
-    ];
-    const firstPassContent = attachmentParts.length > 0 ? multimodalContent : textOnlyContent;
+		const multimodalContent = [
+			...attachmentParts,
+			{
+				type: "text",
+				text: userPromptText,
+			},
+		];
+		const textOnlyContent = [
+			{
+				type: "text",
+				text: textOnlyPrompt,
+			},
+		];
+		const firstPassContent =
+			attachmentParts.length > 0 ? multimodalContent : textOnlyContent;
 
-    const runStructured = (content: unknown) => callChatCompletions({
-        baseUrl,
-        apiKey,
-        body: {
-          model,
-          temperature: 0,
-          messages: [
-            {
-              role: 'system',
-              content: structuredPrompt,
-            },
-            {
-              role: 'user',
-              content,
-            },
-          ],
-          response_format: {
-            type: 'json_schema',
-            json_schema: {
-              name: 'task_parse_output',
-              strict: true,
-              schema: {
-                type: 'object',
-                additionalProperties: false,
-                properties: {
-                  title: { type: ['string', 'null'] },
-                  timeOptions: {
-                    type: 'array',
-                    items: {
-                      type: 'object',
-                      additionalProperties: false,
-                      properties: {
-                        startAt: { type: ['string', 'null'] },
-                        dueAt: { type: ['string', 'null'] },
-                      },
-                      required: ['startAt', 'dueAt'],
-                    },
-                  },
-                  allowLateSubmission: { type: ['boolean', 'null'] },
-                  description: { type: ['string', 'null'] },
-                },
-                required: ['title', 'timeOptions', 'allowLateSubmission', 'description'],
-              },
-            },
-          },
-        },
-      });
+		const runStructured = (content: unknown) =>
+			callChatCompletions({
+				baseUrl,
+				apiKey,
+				body: {
+					model,
+					temperature: 0,
+					messages: [
+						{
+							role: "system",
+							content: structuredPrompt,
+						},
+						{
+							role: "user",
+							content,
+						},
+					],
+					response_format: {
+						type: "json_schema",
+						json_schema: {
+							name: "task_parse_output",
+							strict: true,
+							schema: {
+								type: "object",
+								additionalProperties: false,
+								properties: {
+									title: { type: ["string", "null"] },
+									timeOptions: {
+										type: "array",
+										items: {
+											type: "object",
+											additionalProperties: false,
+											properties: {
+												startAt: { type: ["string", "null"] },
+												dueAt: { type: ["string", "null"] },
+											},
+											required: ["startAt", "dueAt"],
+										},
+									},
+									allowLateSubmission: { type: ["boolean", "null"] },
+									description: { type: ["string", "null"] },
+								},
+								required: [
+									"title",
+									"timeOptions",
+									"allowLateSubmission",
+									"description",
+								],
+							},
+						},
+					},
+				},
+			});
 
-    const runMarkdown = (content: unknown) => callChatCompletions({
-        baseUrl,
-        apiKey,
-        body: {
-          model,
-          temperature: 0.2,
-          messages: [
-            {
-              role: 'system',
-              content: markdownPrompt,
-            },
-            {
-              role: 'user',
-              content,
-            },
-          ],
-        },
-      });
+		const runMarkdown = (content: unknown) =>
+			callChatCompletions({
+				baseUrl,
+				apiKey,
+				body: {
+					model,
+					temperature: 0.2,
+					messages: [
+						{
+							role: "system",
+							content: markdownPrompt,
+						},
+						{
+							role: "user",
+							content,
+						},
+					],
+				},
+			});
 
-    let [structuredRaw, markdownRaw] = await Promise.all([
-      runStructured(firstPassContent),
-      runMarkdown(firstPassContent),
-    ]);
+		let [structuredRaw, markdownRaw] = await Promise.all([
+			runStructured(firstPassContent),
+			runMarkdown(firstPassContent),
+		]);
 
-    if (attachmentParts.length > 0 && !structuredRaw) {
-      structuredRaw = await runStructured(textOnlyContent);
-    }
+		if (attachmentParts.length > 0 && !structuredRaw) {
+			structuredRaw = await runStructured(textOnlyContent);
+		}
 
-    if (attachmentParts.length > 0 && !markdownRaw) {
-      markdownRaw = await runMarkdown(textOnlyContent);
-    }
+		if (attachmentParts.length > 0 && !markdownRaw) {
+			markdownRaw = await runMarkdown(textOnlyContent);
+		}
 
-    const fallback = fallbackParse(input.text);
+		const fallback = fallbackParse(input.text);
 
-    if (!structuredRaw) {
-      return {
-        structured: fallback,
-        markdown: markdownRaw?.trim() ? markdownRaw.trim() : fallbackMarkdown(input.text),
-      };
-    }
+		if (!structuredRaw) {
+			return {
+				structured: fallback,
+				markdown: markdownRaw?.trim()
+					? markdownRaw.trim()
+					: fallbackMarkdown(input.text),
+			};
+		}
 
-    const parsed = parseResultSchema.safeParse(JSON.parse(structuredRaw));
+		const parsed = parseResultSchema.safeParse(JSON.parse(structuredRaw));
 
-    if (!parsed.success) {
-      return {
-        structured: fallback,
-        markdown: markdownRaw?.trim() ? markdownRaw.trim() : fallbackMarkdown(input.text),
-      };
-    }
+		if (!parsed.success) {
+			return {
+				structured: fallback,
+				markdown: markdownRaw?.trim()
+					? markdownRaw.trim()
+					: fallbackMarkdown(input.text),
+			};
+		}
 
-    const normalizedTimeOptions: ParseTimeOption[] = parsed.data.timeOptions.map((opt) => ({
-      startAt: normalizeParsedDatetime(opt.startAt),
-      dueAt: normalizeParsedDatetime(opt.dueAt),
-    }));
+		const normalizedTimeOptions: ParseTimeOption[] =
+			parsed.data.timeOptions.map((opt) => ({
+				startAt: normalizeParsedDatetime(opt.startAt),
+				dueAt: normalizeParsedDatetime(opt.dueAt),
+			}));
 
-    const normalized: ParseTaskResult = {
-      title: parsed.data.title?.trim() || null,
-      timeOptions: normalizedTimeOptions.length > 0
-        ? normalizedTimeOptions
-        : [{ startAt: null, dueAt: null }],
-      allowLateSubmission: parsed.data.allowLateSubmission,
-      description: parsed.data.description?.trim() || null,
-    };
+		const normalized: ParseTaskResult = {
+			title: parsed.data.title?.trim() || null,
+			timeOptions:
+				normalizedTimeOptions.length > 0
+					? normalizedTimeOptions
+					: [{ startAt: null, dueAt: null }],
+			allowLateSubmission: parsed.data.allowLateSubmission,
+			description: parsed.data.description?.trim() || null,
+		};
 
-    return {
-      structured: {
-        title: normalized.title ?? fallback.title,
-        timeOptions: normalized.timeOptions,
-        allowLateSubmission: normalized.allowLateSubmission,
-        description: normalized.description ?? fallback.description,
-      },
-      markdown: markdownRaw?.trim() ? markdownRaw.trim() : fallbackMarkdown(input.text),
-    };
-  } catch {
-    return {
-      structured: fallbackParse(input.text),
-      markdown: fallbackMarkdown(input.text),
-    };
-  }
+		return {
+			structured: {
+				title: normalized.title ?? fallback.title,
+				timeOptions: normalized.timeOptions,
+				allowLateSubmission: normalized.allowLateSubmission,
+				description: normalized.description ?? fallback.description,
+			},
+			markdown: markdownRaw?.trim()
+				? markdownRaw.trim()
+				: fallbackMarkdown(input.text),
+		};
+	} catch {
+		return {
+			structured: fallbackParse(input.text),
+			markdown: fallbackMarkdown(input.text),
+		};
+	}
 }
 
-export async function parseTaskDescription(text: string, context?: ParseTaskContext): Promise<ParseTaskResult> {
-  const result = await parseTaskContent({
-    text,
-    context: context ?? buildParseTaskContext('UTC'),
-    attachments: [],
-  });
+export async function parseTaskDescription(
+	text: string,
+	context?: ParseTaskContext,
+): Promise<ParseTaskResult> {
+	const result = await parseTaskContent({
+		text,
+		context: context ?? buildParseTaskContext("UTC"),
+		attachments: [],
+	});
 
-  return result.structured;
+	return result.structured;
 }
 
 export function assertParseInput(text: string) {
-  if (!text.trim()) {
-    throw new AppError(400, 'INVALID_PARSE_INPUT', 'text is required');
-  }
+	if (!text.trim()) {
+		throw new AppError(400, "INVALID_PARSE_INPUT", "text is required");
+	}
 }

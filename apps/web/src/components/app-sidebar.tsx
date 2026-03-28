@@ -4,6 +4,7 @@ import {
   BookOpen,
   Globe,
   Home,
+  KeyRound,
   LogOut,
   Monitor,
   Moon,
@@ -14,10 +15,12 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useState } from "react";
-
 import { useAuth } from "@/components/auth-provider";
+import { CreateClassDialog } from "@/components/create-class-dialog";
+import { useAppLocale } from "@/components/locale-provider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -44,11 +47,8 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CreateClassDialog } from "@/components/create-class-dialog";
 import { JoinClassDialog } from "@/features/classes/components/join-class-dialog";
-import { useTranslations } from "next-intl";
-import { useAppLocale } from "@/components/locale-provider";
-import { SUPPORTED_LOCALES, type AppLocale } from "@/i18n/locale";
+import { type AppLocale, SUPPORTED_LOCALES } from "@/i18n/locale";
 import type { ClassSummary } from "@/lib/api";
 import { listClasses } from "@/lib/api";
 
@@ -144,21 +144,27 @@ export function AppSidebar() {
                           <Sun className="mr-2 h-4 w-4" />
                           {t("light")}
                           {theme === "light" && (
-                            <span className="ml-auto text-xs text-muted-foreground">&#10003;</span>
+                            <span className="ml-auto text-xs text-muted-foreground">
+                              &#10003;
+                            </span>
                           )}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setTheme("dark")}>
                           <Moon className="mr-2 h-4 w-4" />
                           {t("dark")}
                           {theme === "dark" && (
-                            <span className="ml-auto text-xs text-muted-foreground">&#10003;</span>
+                            <span className="ml-auto text-xs text-muted-foreground">
+                              &#10003;
+                            </span>
                           )}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setTheme("system")}>
                           <Monitor className="mr-2 h-4 w-4" />
                           {t("system")}
                           {theme === "system" && (
-                            <span className="ml-auto text-xs text-muted-foreground">&#10003;</span>
+                            <span className="ml-auto text-xs text-muted-foreground">
+                              &#10003;
+                            </span>
                           )}
                         </DropdownMenuItem>
                       </DropdownMenuSubContent>
@@ -172,11 +178,12 @@ export function AppSidebar() {
                     <DropdownMenuPortal>
                       <DropdownMenuSubContent>
                         {SUPPORTED_LOCALES.map((loc) => {
-                          const labelKey = `lang${loc === "zh-CN" ? "ZhCN" : loc.charAt(0).toUpperCase() + loc.slice(1)}` as
-                            | "langEn"
-                            | "langZhCN"
-                            | "langFr"
-                            | "langJa";
+                          const labelKey =
+                            `lang${loc === "zh-CN" ? "ZhCN" : loc.charAt(0).toUpperCase() + loc.slice(1)}` as
+                              | "langEn"
+                              | "langZhCN"
+                              | "langFr"
+                              | "langJa";
                           return (
                             <DropdownMenuItem
                               key={loc}
@@ -194,6 +201,12 @@ export function AppSidebar() {
                       </DropdownMenuSubContent>
                     </DropdownMenuPortal>
                   </DropdownMenuSub>
+                  <DropdownMenuItem
+                    onClick={() => router.push("/settings/mcp-keys")}
+                  >
+                    <KeyRound className="mr-2 h-4 w-4" />
+                    {t("mcpKeys")}
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout}>
                     <LogOut className="mr-2 h-4 w-4" />
@@ -205,11 +218,7 @@ export function AppSidebar() {
               <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
-                title={
-                  theme === "dark"
-                    ? t("lightMode")
-                    : t("darkMode")
-                }
+                title={theme === "dark" ? t("lightMode") : t("darkMode")}
               >
                 {theme === "dark" ? (
                   <Sun className="h-4 w-4" />
@@ -249,25 +258,23 @@ export function AppSidebar() {
 
         {/* Personal Space */}
         {personalClass && (
-          <>
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={pathname === `/classes/${personalClass.id}`}
-                    >
-                      <Link href={`/classes/${personalClass.id}`}>
-                        <BookOpen className="h-4 w-4" />
-                        <span>{t("personalSpace")}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </>
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === `/classes/${personalClass.id}`}
+                  >
+                    <Link href={`/classes/${personalClass.id}`}>
+                      <BookOpen className="h-4 w-4" />
+                      <span>{t("personalSpace")}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
         )}
 
         <SidebarSeparator />
@@ -321,11 +328,9 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {loading ? (
-                  <>
-                    <SidebarMenuItem>
-                      <Skeleton className="h-8 w-full" />
-                    </SidebarMenuItem>
-                  </>
+                  <SidebarMenuItem>
+                    <Skeleton className="h-8 w-full" />
+                  </SidebarMenuItem>
                 ) : (
                   joinedClasses.map((cls) => (
                     <SidebarMenuItem key={cls.id}>
@@ -350,19 +355,22 @@ export function AppSidebar() {
         )}
 
         {/* Empty state */}
-        {!loading && managedClasses.length === 0 && joinedClasses.length === 0 && !personalClass && (
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                    {t("noClassesYet")}
-                  </div>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+        {!loading &&
+          managedClasses.length === 0 &&
+          joinedClasses.length === 0 &&
+          !personalClass && (
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                      {t("noClassesYet")}
+                    </div>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          )}
       </SidebarContent>
 
       {/* Bottom buttons: Join Class + Create */}

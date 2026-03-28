@@ -1,10 +1,10 @@
+import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { Components } from "react-markdown";
-import { Loader2 } from "lucide-react";
+import { getFileUrl, getPresignedFileUrl } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { downloadFile, getFileUrl } from "@/lib/api";
 
 interface MarkdownPreviewProps {
   content: string;
@@ -15,32 +15,30 @@ interface MarkdownPreviewProps {
 
 // ─── Authenticated image loader ───────────────────────────────────────────
 
-function AuthImage({ src, alt, token }: { src: string; alt: string; token: string }) {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+function AuthImage({
+  src,
+  alt,
+  token,
+}: {
+  src: string;
+  alt: string;
+  token: string;
+}) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    let revoke: string | null = null;
-
     // Extract fileKey from the API URL pattern: .../files/{fileKey}
     const apiBase = getFileUrl("");
     if (!src.startsWith(apiBase)) {
-      // Not an API file URL — shouldn't reach here, but handle gracefully
-      setBlobUrl(src);
+      setImageUrl(src);
       return;
     }
     const fileKey = src.slice(apiBase.length);
 
-    downloadFile(token, fileKey)
-      .then((url) => {
-        revoke = url;
-        setBlobUrl(url);
-      })
+    getPresignedFileUrl(token, fileKey)
+      .then((url) => setImageUrl(url))
       .catch(() => setError(true));
-
-    return () => {
-      if (revoke) URL.revokeObjectURL(revoke);
-    };
   }, [src, token]);
 
   if (error) {
@@ -51,7 +49,7 @@ function AuthImage({ src, alt, token }: { src: string; alt: string; token: strin
     );
   }
 
-  if (!blobUrl) {
+  if (!imageUrl) {
     return (
       <span className="my-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
         <Loader2 size={14} className="animate-spin" />
@@ -60,7 +58,9 @@ function AuthImage({ src, alt, token }: { src: string; alt: string; token: strin
     );
   }
 
-  return <img src={blobUrl} alt={alt} className="my-3 max-w-full rounded-lg" />;
+  return (
+    <img src={imageUrl} alt={alt} className="my-3 max-w-full rounded-lg" />
+  );
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -104,18 +104,14 @@ export function MarkdownPreview({
         {children}
       </h6>
     ),
-    p: ({ children }) => (
-      <p className="mb-3 last:mb-0">{children}</p>
-    ),
+    p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
     ul: ({ children }) => (
       <ul className="mb-3 list-disc pl-6 last:mb-0">{children}</ul>
     ),
     ol: ({ children }) => (
       <ol className="mb-3 list-decimal pl-6 last:mb-0">{children}</ol>
     ),
-    li: ({ children }) => (
-      <li className="mb-1">{children}</li>
-    ),
+    li: ({ children }) => <li className="mb-1">{children}</li>,
     blockquote: ({ children }) => (
       <blockquote
         className="my-3 rounded-r-md py-2 pl-4 pr-3 italic text-muted-foreground"
@@ -163,12 +159,8 @@ export function MarkdownPreview({
         <table className="w-full border-collapse text-sm">{children}</table>
       </div>
     ),
-    thead: ({ children }) => (
-      <thead>{children}</thead>
-    ),
-    tbody: ({ children }) => (
-      <tbody>{children}</tbody>
-    ),
+    thead: ({ children }) => <thead>{children}</thead>,
+    tbody: ({ children }) => <tbody>{children}</tbody>,
     tr: ({ children }) => (
       <tr className="border-b border-border">{children}</tr>
     ),
@@ -180,9 +172,7 @@ export function MarkdownPreview({
     td: ({ children }) => (
       <td className="px-3 py-2 text-muted-foreground">{children}</td>
     ),
-    hr: () => (
-      <hr className="my-5 border-border" />
-    ),
+    hr: () => <hr className="my-5 border-border" />,
     img: ({ src, alt }) => {
       const srcStr = typeof src === "string" ? src : undefined;
       const apiBase = getFileUrl("");
@@ -200,18 +190,11 @@ export function MarkdownPreview({
     strong: ({ children }) => (
       <strong className="font-semibold text-foreground">{children}</strong>
     ),
-    em: ({ children }) => (
-      <em>{children}</em>
-    ),
+    em: ({ children }) => <em>{children}</em>,
   };
 
   return (
-    <div
-      className={cn(
-        "text-sm leading-relaxed text-foreground",
-        className,
-      )}
-    >
+    <div className={cn("text-sm leading-relaxed text-foreground", className)}>
       <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
         {content}
       </ReactMarkdown>

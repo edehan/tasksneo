@@ -1,14 +1,8 @@
 "use client";
 
-import {
-  useCallback,
-  useMemo,
-  useRef,
-  useState,
-  type DragEvent,
-} from "react";
 import { Download, GripVertical, Package } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { type DragEvent, useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-provider";
@@ -26,17 +20,17 @@ import type { ClassSummary, SubmissionListRow, TaskDetail } from "@/lib/api";
 import {
   buildNameFromTags,
   buildZip,
+  type DownloadTask,
   deduplicateFolderNames,
   downloadAllWithConcurrency,
   FOLDER_TAGS,
   formatFileSize,
   loadFolderTagOrder,
   loadZipTagOrder,
+  type NameTag,
   saveFolderTagOrder,
   saveZipTagOrder,
   ZIP_TAGS,
-  type DownloadTask,
-  type NameTag,
   type ZipEntry,
 } from "../lib/batch-download";
 
@@ -100,7 +94,10 @@ function TagComposer({
       if (overZone === ZONE_ACTIVE) {
         // Insert into active at overIdx position
         const newOrder = order.filter((x) => x !== id);
-        const insertAt = overIdx !== null ? Math.min(overIdx, newOrder.length) : newOrder.length;
+        const insertAt =
+          overIdx !== null
+            ? Math.min(overIdx, newOrder.length)
+            : newOrder.length;
         newOrder.splice(insertAt, 0, id);
         onReorder(newOrder);
       } else if (overZone === ZONE_POOL && source === ZONE_ACTIVE) {
@@ -210,13 +207,13 @@ function TagComposer({
           }
         }}
       >
-        {poolIds.length > 0
-          ? poolIds.map((id) => renderTag(id, ZONE_POOL))
-          : (
-            <span className="text-[11px] text-muted-foreground/50">
-              {t("tagComposer.dragHereToRemove")}
-            </span>
-          )}
+        {poolIds.length > 0 ? (
+          poolIds.map((id) => renderTag(id, ZONE_POOL))
+        ) : (
+          <span className="text-[11px] text-muted-foreground/50">
+            {t("tagComposer.dragHereToRemove")}
+          </span>
+        )}
       </div>
 
       {/* Preview */}
@@ -307,7 +304,7 @@ export function BatchDownloadDialog({
       MM: String(now.getMonth() + 1).padStart(2, "0"),
       DD: String(now.getDate()).padStart(2, "0"),
     }),
-    [now.getFullYear(), now.getMonth(), now.getDate()],
+    [now.getDate, now.getFullYear, now.getMonth],
   );
 
   const sampleRow = eligibleRows[0];
@@ -323,16 +320,15 @@ export function BatchDownloadDialog({
       )
     : t("folderPreviewFallback");
 
-  const zipPreview =
-    buildNameFromTags(
-      zipOrder,
-      {
-        taskTitle: task.title,
-        className: cls.name,
-        ...dateVars,
-      },
-      "_",
-    ) + ".zip";
+  const zipPreview = `${buildNameFromTags(
+    zipOrder,
+    {
+      taskTitle: task.title,
+      className: cls.name,
+      ...dateVars,
+    },
+    "_",
+  )}.zip`;
 
   // ── Download handler ──────────────────────────────────────────────────
 
@@ -404,19 +400,16 @@ export function BatchDownloadDialog({
       // Count errors
       const errors = results.filter((r) => r.error);
       if (errors.length > 0) {
-        toast.warning(
-          t("toast.skippedFiles", { count: errors.length }),
-        );
+        toast.warning(t("toast.skippedFiles", { count: errors.length }));
       }
 
       // Build and trigger download
       const zipBlob = await buildZip(entries);
-      const zipName =
-        buildNameFromTags(
-          zipOrder,
-          { taskTitle: task.title, className: cls.name, ...dateVars },
-          "-",
-        ) + ".zip";
+      const zipName = `${buildNameFromTags(
+        zipOrder,
+        { taskTitle: task.title, className: cls.name, ...dateVars },
+        "-",
+      )}.zip`;
 
       const url = URL.createObjectURL(zipBlob);
       const link = document.createElement("a");
@@ -486,9 +479,7 @@ export function BatchDownloadDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="font-serif">
-            {t("title")}
-          </DialogTitle>
+          <DialogTitle className="font-serif">{t("title")}</DialogTitle>
           <DialogDescription>
             {t("description", { count: eligibleRows.length })}
           </DialogDescription>
@@ -553,7 +544,9 @@ export function BatchDownloadDialog({
           </p>
 
           <div className="space-y-1">
-            <p className="text-[12px] text-muted-foreground">{t("folderName")}</p>
+            <p className="text-[12px] text-muted-foreground">
+              {t("folderName")}
+            </p>
             <TagComposer
               tags={FOLDER_TAGS}
               order={folderOrder}
@@ -565,7 +558,9 @@ export function BatchDownloadDialog({
           </div>
 
           <div className="space-y-1">
-            <p className="text-[12px] text-muted-foreground">{t("zipFileName")}</p>
+            <p className="text-[12px] text-muted-foreground">
+              {t("zipFileName")}
+            </p>
             <TagComposer
               tags={ZIP_TAGS}
               order={zipOrder}

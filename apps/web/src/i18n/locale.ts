@@ -8,7 +8,9 @@ function normalizeTag(tag: string): string {
   return tag.trim().toLowerCase().replace(/_/g, "-");
 }
 
-export function matchLocaleTag(tag: string | null | undefined): AppLocale | null {
+export function matchLocaleTag(
+  tag: string | null | undefined,
+): AppLocale | null {
   if (!tag) return null;
 
   const normalized = normalizeTag(tag);
@@ -30,7 +32,9 @@ export function matchLocaleTag(tag: string | null | undefined): AppLocale | null
   return null;
 }
 
-export function parseAcceptLanguage(headerValue: string | null | undefined): string[] {
+export function parseAcceptLanguage(
+  headerValue: string | null | undefined,
+): string[] {
   if (!headerValue) return [];
 
   return headerValue
@@ -53,7 +57,10 @@ export function parseAcceptLanguage(headerValue: string | null | undefined): str
 
       return { tag, q, index };
     })
-    .filter((item): item is { tag: string; q: number; index: number } => item !== null)
+    .filter(
+      (item): item is { tag: string; q: number; index: number } =>
+        item !== null,
+    )
     .sort((a, b) => b.q - a.q || a.index - b.index)
     .map((item) => item.tag);
 }

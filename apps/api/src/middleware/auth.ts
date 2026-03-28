@@ -1,32 +1,32 @@
-import { prisma } from '@taskflow/db';
+import { prisma } from "@taskflow/db";
+import type { MiddlewareHandler } from "hono";
+import { getJwtSecret } from "../lib/env.js";
+import { AppError } from "../lib/errors.js";
+import { verifyUserJwt } from "../lib/jwt.js";
+import type { AppVariables } from "../types/context.js";
 
-import { getJwtSecret } from '../lib/env.js';
-import { verifyUserJwt } from '../lib/jwt.js';
-import { AppError } from '../lib/errors.js';
+export const authMiddleware: MiddlewareHandler<{
+	Variables: AppVariables;
+}> = async (c, next) => {
+	const authHeader = c.req.header("authorization");
 
-import type { MiddlewareHandler } from 'hono';
-import type { AppVariables } from '../types/context.js';
+	if (!authHeader?.startsWith("Bearer ")) {
+		throw new AppError(401, "UNAUTHORIZED", "Missing bearer token");
+	}
 
-export const authMiddleware: MiddlewareHandler<{ Variables: AppVariables }> = async (c, next) => {
-  const authHeader = c.req.header('authorization');
+	const token = authHeader.slice("Bearer ".length).trim();
+	const payload = verifyUserJwt(token, getJwtSecret());
 
-  if (!authHeader?.startsWith('Bearer ')) {
-    throw new AppError(401, 'UNAUTHORIZED', 'Missing bearer token');
-  }
+	const user = await prisma.user.findUnique({ where: { id: payload.sub } });
 
-  const token = authHeader.slice('Bearer '.length).trim();
-  const payload = verifyUserJwt(token, getJwtSecret());
+	if (!user) {
+		throw new AppError(401, "UNAUTHORIZED", "User not found");
+	}
 
-  const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+	if (!user.isActive) {
+		throw new AppError(403, "USER_INACTIVE", "Account is disabled");
+	}
 
-  if (!user) {
-    throw new AppError(401, 'UNAUTHORIZED', 'User not found');
-  }
-
-  if (!user.isActive) {
-    throw new AppError(403, 'USER_INACTIVE', 'Account is disabled');
-  }
-
-  c.set('authUser', { userId: user.id, email: user.email });
-  await next();
+	c.set("authUser", { userId: user.id, email: user.email });
+	await next();
 };

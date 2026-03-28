@@ -1,6 +1,7 @@
 "use client";
 
 import { Globe } from "lucide-react";
+import { useAppLocale } from "@/components/locale-provider";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,8 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAppLocale } from "@/components/locale-provider";
-import { SUPPORTED_LOCALES, type AppLocale } from "@/i18n/locale";
+import { type AppLocale, SUPPORTED_LOCALES } from "@/i18n/locale";
 
 const LOCALE_LABELS: Record<AppLocale, string> = {
   en: "English",
@@ -35,10 +35,7 @@ export function LocaleSwitcher() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {SUPPORTED_LOCALES.map((loc) => (
-          <DropdownMenuItem
-            key={loc}
-            onClick={() => setLocale(loc)}
-          >
+          <DropdownMenuItem key={loc} onClick={() => setLocale(loc)}>
             {LOCALE_LABELS[loc]}
             {locale === loc && (
               <span className="ml-auto text-xs text-muted-foreground">

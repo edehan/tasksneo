@@ -4,7 +4,8 @@
     "tabs": {
       "profile": "Profil",
       "notifications": "Notifications",
-      "account": "Compte"
+      "account": "Compte",
+      "mcpKeys": "Clés MCP"
     }
   },
   "settingsVerifyEmail": {
@@ -148,13 +149,15 @@
     "langEn": "English",
     "langZhCN": "中文",
     "langFr": "Français",
-    "langJa": "日本語"
+    "langJa": "日本語",
+    "mcpKeys": "Clés MCP"
   },
   "notificationBell": {
     "notifications": "Notifications",
     "markAllAsRead": "Tout marquer comme lu",
     "noNotificationsYet": "Aucune notification",
     "viewAllNotifications": "Voir toutes les notifications",
+    "systemAnnouncement": "Annonce système",
     "time": {
       "justNow": "a l'instant",
       "minutesAgo": "il y a {count} min",
@@ -190,7 +193,38 @@
     "typeToConfirmPrefix": "Tapez",
     "typeToConfirmSuffix": "pour confirmer",
     "cancel": "Annuler",
-    "deleteAccount": "Supprimer le compte"
+    "deleteAccount": "Supprimer le compte",
+    "dataExport": {
+      "title": "Exporter mes donnees",
+      "description": "Telechargez une archive ZIP contenant vos rendus, les taches de vos classes gerees, votre avatar et les metadonnees.",
+      "exportButton": "Exporter les donnees"
+    }
+  },
+  "dataExportDialog": {
+    "title": "Exporter mes donnees",
+    "description": "Telechargez toutes vos donnees personnelles sous forme de fichier ZIP.",
+    "summary": {
+      "gathering": "Analyse de vos donnees...",
+      "ready": "Cliquez ci-dessous pour commencer l'exportation.",
+      "classes": "{count, plural, =0 {Aucune classe} =1 {1 classe} other {# classes}}",
+      "submissions": "{count, plural, =0 {Aucun rendu} =1 {1 rendu} other {# rendus}}",
+      "tasks": "{count, plural, =0 {Aucune tache geree} =1 {1 tache geree} other {# taches gerees}}",
+      "files": "{count, plural, =1 {1 fichier} other {# fichiers}}"
+    },
+    "progress": {
+      "gathering": "Recuperation de vos donnees...",
+      "downloading": "Telechargement {completed} / {total} fichiers...",
+      "generatingZip": "Generation de l'archive ZIP..."
+    },
+    "actions": {
+      "startExport": "Lancer l'exportation",
+      "processing": "Traitement en cours..."
+    },
+    "toast": {
+      "exportComplete": "Exportation terminee",
+      "skippedFiles": "{count, plural, =1 {1 fichier} other {# fichiers}} n'ont pas pu etre telecharges",
+      "exportFailed": "Echec de l'exportation"
+    }
   },
   "settingsProfile": {
     "profileUpdated": "Profil mis a jour",
@@ -487,7 +521,10 @@
     "toast": {
       "failedLoadSubmissions": "Impossible de charger les rendus",
       "csvExported": "CSV exporte avec succes",
-      "failedExportCsv": "Echec de l'export CSV"
+      "failedExportCsv": "Echec de l'export CSV",
+      "markedExemplary": "Marque comme travail exemplaire",
+      "unmarkedExemplary": "Marquage exemplaire retire",
+      "failedToggleExemplary": "Echec du changement de statut exemplaire"
     },
     "notFound": "Tache ou classe introuvable.",
     "backToClass": "Retour a la classe",
@@ -511,12 +548,15 @@
       "action": "Action",
       "pending": "En attente",
       "view": "Voir",
-      "noMembers": "Aucun membre trouve dans cette classe."
+      "noMembers": "Aucun membre trouve dans cette classe.",
+      "markExemplary": "Marquer comme exemplaire",
+      "unmarkExemplary": "Retirer le marquage exemplaire"
     },
     "status": {
       "graded": "Evalue",
       "submitted": "Rendu",
-      "notSubmitted": "Non rendu"
+      "notSubmitted": "Non rendu",
+      "exemplary": "Exemplaire"
     }
   },
   "submissionDetailPage": {
@@ -524,7 +564,10 @@
       "failedLoadSubmission": "Impossible de charger le rendu",
       "gradeSaved": "Note enregistree",
       "failedSaveGrade": "Echec de l'enregistrement de la note",
-      "failedDownloadFile": "Echec du telechargement du fichier"
+      "failedDownloadFile": "Echec du telechargement du fichier",
+      "markedExemplary": "Marque comme travail exemplaire",
+      "unmarkedExemplary": "Marquage exemplaire retire",
+      "failedToggleExemplary": "Echec du changement de statut exemplaire"
     },
     "notFound": "Rendu introuvable.",
     "student": "Etudiant",
@@ -544,7 +587,43 @@
     "reviewNote": "Commentaire",
     "reviewNotePlaceholder": "Feedback optionnel pour l'etudiant...",
     "saving": "Enregistrement...",
-    "saveGrade": "Enregistrer la note"
+    "saveGrade": "Enregistrer la note",
+    "exemplary": {
+      "mark": "Exemplaire",
+      "unmark": "Retirer exemplaire"
+    }
+  },
+  "settingsMcpKeys": {
+    "title": "Clés MCP",
+    "description": "Connectez des outils IA externes comme Claude Code ou Cursor à votre compte TaskFlow.",
+    "createNew": "Nouvelle clé",
+    "keyName": "Nom de la clé",
+    "keyNamePlaceholder": "ex. Claude Code sur MacBook",
+    "create": "Créer",
+    "secretKey": "Clé secrète",
+    "keyWontShowAgain": "Cette clé ne sera plus affichée. Copiez-la maintenant.",
+    "configSnippet": "Configuration rapide (Claude Code)",
+    "copy": "Copier",
+    "done": "Terminé",
+    "revokeTitle": "Révoquer la clé",
+    "revokeDescription": "Révoquer « {name} » ? Tout outil IA utilisant cette clé perdra immédiatement l'accès.",
+    "cancel": "Annuler",
+    "revoke": "Révoquer",
+    "revoked": "Clé révoquée",
+    "failedLoad": "Échec du chargement des clés",
+    "failedCreate": "Échec de la création de la clé",
+    "failedRevoke": "Échec de la révocation de la clé",
+    "noKeys": "Aucune clé pour l'instant. Créez-en une pour connecter un outil IA.",
+    "revokedKeys": "Clés révoquées",
+    "created": "Créée",
+    "lastUsed": "Dernière utilisation",
+    "justNow": "à l'instant",
+    "minutesAgo": "il y a {count} min",
+    "hoursAgo": "il y a {count} h",
+    "daysAgo": "il y a {count} j",
+    "keyCreated": "Clé créée",
+    "keyCreatedHint": "Copiez la clé ci-dessous — vous ne pourrez plus la voir.",
+    "createDescription": "Donnez un nom à votre clé pour l'identifier plus tard."
   },
   "batchDownloadDialog": {
     "title": "Telecharger les rendus",

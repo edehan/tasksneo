@@ -65,8 +65,17 @@ export async function downloadAllWithConcurrency(
 
 // ─── Zip builder ────────────────────────────────────────────────────────────
 
-export async function buildZip(entries: ZipEntry[]): Promise<Blob> {
+export async function buildZip(
+  entries: ZipEntry[],
+  rootFiles?: Array<{ name: string; content: Blob | string }>,
+): Promise<Blob> {
   const zip = new JSZip();
+
+  if (rootFiles) {
+    for (const file of rootFiles) {
+      zip.file(file.name, file.content);
+    }
+  }
 
   for (const entry of entries) {
     const folder = zip.folder(entry.folderName);
@@ -152,9 +161,7 @@ export function buildNameFromTags(
   vars: Record<string, string>,
   separator: string,
 ): string {
-  const parts = tagIds
-    .map((id) => vars[id] ?? "")
-    .filter((v) => v.length > 0);
+  const parts = tagIds.map((id) => vars[id] ?? "").filter((v) => v.length > 0);
   return parts.join(separator) || "download";
 }
 

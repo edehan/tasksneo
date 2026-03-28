@@ -672,6 +672,9 @@ components:
         reviewNote:
           type: string
           nullable: true
+        isExemplary:
+          type: boolean
+          description: 是否为模范作业
 
     SubmissionDetail:
       allOf:
@@ -2215,6 +2218,50 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /tasks/{taskId}/submissions/{submissionId}/exemplary:
+    parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: submissionId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      tags: [Submissions]
+      summary: 切换模范作业标记
+      description: |
+        仅 OWNER 和 ADMIN 可操作。Toggle 模式：已标记则取消，未标记则设置。
+        标记为模范作业时要求：
+        - 提交必须已评分（score 非 null）
+        - 评语（reviewNote）不少于 30 个字符
+      security:
+        - userAuth: []
+      responses:
+        '200':
+          description: 成功，返回更新后的提交详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionDetail'
+        '400':
+          description: 不满足模范作业条件（未评分或评语不足 30 字符）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 权限不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /tasks/{taskId}/submissions/export:
     parameters:
       - name: taskId
@@ -2365,8 +2412,9 @@ paths:
       tags: [Attachments]
       summary: 访问文件
       description: |
-        后端验证权限后，重定向到 MinIO 预签名 URL（短效，TTL 5 分钟）。
-        客户端不会获得长效凭证。
+        后端验证权限后，重定向到 S3 预签名 URL（短效，TTL 5 分钟）。
+        客户端不会获得长效凭证。适用于编程式下载（如 ZIP 打包）。
+        若只需获取 URL（如 `<img src>`），推荐使用 `/files/{fileKey}/url`。
       security:
         - userAuth: []
       responses:
@@ -2376,6 +2424,52 @@ paths:
             Location:
               schema:
                 type: string
+        '403':
+          description: 无权访问此文件
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 文件不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /files/{fileKey}/url:
+    parameters:
+      - name: fileKey
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [Attachments]
+      summary: 获取文件预签名 URL
+      description: |
+        验证权限后，返回 S3 预签名 URL（JSON 格式，TTL 5 分钟）。
+        前端可直接用于 `<img src>` 等场景，无需通过 API 中转文件内容。
+      security:
+        - userAuth: []
+      responses:
+        '200':
+          description: 预签名 URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    description: S3 预签名 URL
+                  expiresIn:
+                    type: integer
+                    description: URL 有效期（秒）
+                    example: 300
+                required:
+                  - url
+                  - expiresIn
         '403':
           description: 无权访问此文件
           content:
@@ -2608,6 +2702,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+
+  /admin/storage-status:
+    get:
+      tags: [Admin]
+      summary: 获取 S3 存储状态
+      description: |
+        返回当前 S3 存储后端的连接信息和健康状态。
+        用于管理面板展示存储配置和连通性。
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: 存储状态
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  endpoint:
+                    type: string
+                    example: "<account-id>.r2.cloudflarestorage.com"
+                  bucket:
+                    type: string
+                    example: "taskflow-files"
+                  useSSL:
+                    type: boolean
+                  region:
+                    type: string
+                    example: "auto"
+                  connected:
+                    type: boolean
+                  error:
+                    type: string
+                    description: 连接失败时的错误信息
+                required:
+                  - endpoint
+                  - bucket
+                  - useSSL
+                  - region
+                  - connected
 
   /admin/schools/{schoolId}:
     parameters:

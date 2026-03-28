@@ -1,9 +1,9 @@
 "use client";
 
 import { Camera, Globe, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-
 import { useAuth } from "@/components/auth-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -30,14 +30,13 @@ import {
 import type { School } from "@/lib/api";
 import {
   ApiError,
+  getMe,
+  getPresignedFileUrl,
   listSchools,
   requestEmailChange,
   updateProfile,
   uploadAvatar,
-  getMe,
-  getFileUrl,
 } from "@/lib/api";
-import { useTranslations } from "next-intl";
 
 function getBrowserTimezone(): string {
   try {
@@ -69,10 +68,19 @@ function getSupportedTimezones(): string[] {
     // Fallback for older browsers
     return [
       "UTC",
-      "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
-      "Europe/London", "Europe/Paris", "Europe/Berlin",
-      "Asia/Tokyo", "Asia/Shanghai", "Asia/Singapore", "Asia/Kolkata",
-      "Australia/Sydney", "Pacific/Auckland",
+      "America/New_York",
+      "America/Chicago",
+      "America/Denver",
+      "America/Los_Angeles",
+      "Europe/London",
+      "Europe/Paris",
+      "Europe/Berlin",
+      "Asia/Tokyo",
+      "Asia/Shanghai",
+      "Asia/Singapore",
+      "Asia/Kolkata",
+      "Australia/Sydney",
+      "Pacific/Auckland",
     ];
   }
 }
@@ -106,7 +114,10 @@ export default function ProfilePage() {
 
   const browserTimezone = useMemo(() => getBrowserTimezone(), []);
   const allTimezones = useMemo(() => getSupportedTimezones(), []);
-  const groupedTimezones = useMemo(() => groupTimezones(allTimezones), [allTimezones]);
+  const groupedTimezones = useMemo(
+    () => groupTimezones(allTimezones),
+    [allTimezones],
+  );
 
   const loadData = useCallback(async () => {
     try {
@@ -173,7 +184,8 @@ export default function ProfilePage() {
     setUploading(true);
     try {
       const attachment = await uploadAvatar(token, file);
-      setAvatarUrl(getFileUrl(attachment.fileKey));
+      const presigned = await getPresignedFileUrl(token, attachment.fileKey);
+      setAvatarUrl(presigned);
       // Reload user data to get updated profile
       const updated = await getMe(token);
       updateUser(updated);
@@ -211,9 +223,7 @@ export default function ProfilePage() {
             disabled={uploading}
           >
             <Avatar className="h-20 w-20">
-              {avatarUrl && (
-                <AvatarImage src={avatarUrl} alt={displayName} />
-              )}
+              {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
               <AvatarFallback className="text-lg font-medium">
                 {initials}
               </AvatarFallback>
@@ -275,9 +285,7 @@ export default function ProfilePage() {
         ) : (
           <Select
             value={schoolId ?? "none"}
-            onValueChange={(val) =>
-              setSchoolId(val === "none" ? null : val)
-            }
+            onValueChange={(val) => setSchoolId(val === "none" ? null : val)}
             disabled={saving}
           >
             <SelectTrigger>
@@ -340,9 +348,7 @@ export default function ProfilePage() {
             ))}
           </SelectContent>
         </Select>
-        <p className="text-xs text-muted-foreground">
-          {t("timezoneHint")}
-        </p>
+        <p className="text-xs text-muted-foreground">{t("timezoneHint")}</p>
       </div>
 
       {/* Save */}
@@ -379,9 +385,7 @@ function ChangeEmailDialog({ token }: { token: string | null }) {
       setSent(true);
     } catch (err) {
       const message =
-        err instanceof ApiError
-          ? err.message
-          : t("failedSendVerification");
+        err instanceof ApiError ? err.message : t("failedSendVerification");
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -403,8 +407,7 @@ function ChangeEmailDialog({ token }: { token: string | null }) {
                 {t("checkYourEmail")}
               </DialogTitle>
               <DialogDescription>
-                {t("sentVerificationPrefix")}{" "}
-                <strong>{newEmail}</strong>。
+                {t("sentVerificationPrefix")} <strong>{newEmail}</strong>。
                 {t("sentVerificationSuffix")}
               </DialogDescription>
             </DialogHeader>
@@ -417,9 +420,7 @@ function ChangeEmailDialog({ token }: { token: string | null }) {
         ) : (
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle className="font-serif">
-                {t("title")}
-              </DialogTitle>
+              <DialogTitle className="font-serif">{t("title")}</DialogTitle>
               <DialogDescription>{t("description")}</DialogDescription>
             </DialogHeader>
             <div className="py-4">

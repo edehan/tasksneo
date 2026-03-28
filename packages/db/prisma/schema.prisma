@@ -51,6 +51,7 @@ model User {
   uploadedAttachments Attachment[]         @relation("AttachmentUploader")
   avatarAttachment   Attachment[]         @relation("UserAvatar")
   notificationJobs   NotificationJob[]
+  mcpKeys            McpKey[]
 
   @@map("users")
 }
@@ -215,6 +216,9 @@ model Submission {
   reviewedAt   DateTime? @map("reviewed_at") @db.Timestamptz
   reviewNote   String?   @map("review_note")
 
+  // 模范作业标记，仅管理员可设置，需已评分且评语 ≥ 30 字符
+  isExemplary  Boolean   @default(false) @map("is_exemplary")
+
   taskId String @map("task_id")
   userId String @map("user_id")
   // task 故意不加 onDelete Cascade：任务软删后提交记录需要保留
@@ -308,6 +312,38 @@ enum EmailTokenPurpose {
   EMAIL_CHANGE
 
   @@map("email_token_purpose")
+}
+
+// ─── Site Announcements ─────────────────────────────────────────────────
+
+model SiteAnnouncement {
+  id          String    @id @default(uuid())
+  title       String
+  content     String
+  scheduledAt DateTime  @map("scheduled_at") @db.Timestamptz
+  publishedAt DateTime? @map("published_at") @db.Timestamptz
+  cancelledAt DateTime? @map("cancelled_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("site_announcements")
+}
+
+// ─── MCP Keys ───────────────────────────────────────────────────────────────
+
+model McpKey {
+  id         String    @id @default(uuid())
+  name       String
+  keyHash    String    @map("key_hash")
+  keyPrefix  String    @map("key_prefix")
+  lastUsedAt DateTime? @map("last_used_at") @db.Timestamptz
+  expiresAt  DateTime? @map("expires_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("mcp_keys")
 }
 
 // ─── System Config ───────────────────────────────────────────────────────────

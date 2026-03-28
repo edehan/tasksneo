@@ -1,17 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  Award,
   ChevronLeft,
   ChevronRight,
+  Clock,
   Download,
   FileText,
   Save,
-  Clock,
 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-provider";
@@ -22,13 +23,14 @@ import type {
   SubmissionListRow,
 } from "@/lib/api";
 import {
+  ApiError,
+  downloadFile,
   getClass,
   getSubmissionById,
   getTask,
   gradeSubmission,
   listSubmissions,
-  downloadFile,
-  ApiError,
+  toggleExemplary,
 } from "@/lib/api";
 
 // ─── File size formatting ────────────────────────────────────────────────────
@@ -56,13 +58,14 @@ export function SubmissionDetailPage() {
   const [allRows, setAllRows] = useState<SubmissionListRow[]>([]);
   const [taskTitle, setTaskTitle] = useState<string>("");
   const [taskId, setTaskId] = useState<string | null>(null);
-  const [classId, setClassId] = useState<string | null>(null);
+  const [_classId, setClassId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Grading form state
   const [score, setScore] = useState("");
   const [reviewNote, setReviewNote] = useState("");
   const [saving, setSaving] = useState(false);
+  const [togglingExemplary, setTogglingExemplary] = useState(false);
 
   const dateFormatter = new Intl.DateTimeFormat(locale, {
     month: "short",
@@ -141,9 +144,7 @@ export function SubmissionDetailPage() {
 
   function navigateTo(row: SubmissionListRow) {
     if (!row.submission) return;
-    router.push(
-      `/submissions/${row.submission.id}`,
-    );
+    router.push(`/submissions/${row.submission.id}`);
   }
 
   // ─── Save grade ─────────────────────────────────────────────────────────────
@@ -162,6 +163,30 @@ export function SubmissionDetailPage() {
       toast.error(t("toast.failedSaveGrade"));
     } finally {
       setSaving(false);
+    }
+  }
+
+  // ─── Toggle exemplary ───────────────────────────────────────────────────────
+
+  async function handleToggleExemplary() {
+    if (!token || !taskId || !submissionId) return;
+    setTogglingExemplary(true);
+    try {
+      const updated = await toggleExemplary(token, taskId, submissionId);
+      setSubmission(updated);
+      toast.success(
+        updated.isExemplary
+          ? t("toast.markedExemplary")
+          : t("toast.unmarkedExemplary"),
+      );
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : t("toast.failedToggleExemplary");
+      toast.error(message);
+    } finally {
+      setTogglingExemplary(false);
     }
   }
 
@@ -232,9 +257,7 @@ export function SubmissionDetailPage() {
       <div className="mb-6 flex items-center justify-between">
         <button
           type="button"
-          onClick={() =>
-            router.push(`/tasks/${taskId}/submissions`)
-          }
+          onClick={() => router.push(`/tasks/${taskId}/submissions`)}
           className="flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors duration-100 hover:text-foreground"
         >
           <ArrowLeft size={14} strokeWidth={2} />
@@ -426,8 +449,23 @@ export function SubmissionDetailPage() {
           />
         </div>
 
-        {/* Save button */}
-        <div className="mt-5 flex items-center justify-end">
+        {/* Save + Exemplary buttons */}
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={handleToggleExemplary}
+            disabled={togglingExemplary}
+            className={`flex items-center gap-2 rounded-[10px] border px-4 py-2.5 text-[13px] font-medium transition-colors duration-100 disabled:opacity-50 ${
+              submission.isExemplary
+                ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                : "border-border bg-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
+            }`}
+          >
+            <Award size={14} strokeWidth={2} />
+            {submission.isExemplary
+              ? t("exemplary.unmark")
+              : t("exemplary.mark")}
+          </button>
           <button
             type="button"
             onClick={handleSaveGrade}

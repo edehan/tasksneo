@@ -2,17 +2,17 @@
 
 import { Loader2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
 import { EditorPage } from "@/features/editor/components/editor-page";
 import {
   ApiError,
+  type ClassSummary,
   getClass,
   getTask,
   getTaskDraftMarkdown,
-  type ClassSummary,
   type TaskDetail,
 } from "@/lib/api";
 

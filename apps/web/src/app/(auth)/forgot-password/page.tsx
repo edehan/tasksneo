@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
 import { Mail } from "lucide-react";
+import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { useState } from "react";
 import { toast } from "sonner";
-
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useTranslations } from "next-intl";
 import { ApiError, requestPasswordReset } from "@/lib/api";
 
 export default function ForgotPasswordPage() {
@@ -49,9 +48,7 @@ export default function ForgotPasswordPage() {
       toast.success(t("resetEmailResent"));
     } catch (err) {
       const message =
-        err instanceof ApiError
-          ? err.message
-          : t("failedResendEmail");
+        err instanceof ApiError ? err.message : t("failedResendEmail");
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -69,8 +66,7 @@ export default function ForgotPasswordPage() {
             {t("checkYourEmail")}
           </CardTitle>
           <CardDescription>
-            {t("accountExistsPrefix")}{" "}
-            <strong>{email}</strong>
+            {t("accountExistsPrefix")} <strong>{email}</strong>
             {t("accountExistsSuffix")}
           </CardDescription>
         </CardHeader>

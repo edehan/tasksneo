@@ -4,7 +4,8 @@
     "tabs": {
       "profile": "Profile",
       "notifications": "Notifications",
-      "account": "Account"
+      "account": "Account",
+      "mcpKeys": "MCP Keys"
     }
   },
   "settingsVerifyEmail": {
@@ -148,13 +149,15 @@
     "langEn": "English",
     "langZhCN": "中文",
     "langFr": "Français",
-    "langJa": "日本語"
+    "langJa": "日本語",
+    "mcpKeys": "MCP Keys"
   },
   "notificationBell": {
     "notifications": "Notifications",
     "markAllAsRead": "Mark all as read",
     "noNotificationsYet": "No notifications yet",
     "viewAllNotifications": "View all notifications",
+    "systemAnnouncement": "System Announcement",
     "time": {
       "justNow": "just now",
       "minutesAgo": "{count}m ago",
@@ -190,7 +193,38 @@
     "typeToConfirmPrefix": "Type",
     "typeToConfirmSuffix": "to confirm",
     "cancel": "Cancel",
-    "deleteAccount": "Delete Account"
+    "deleteAccount": "Delete Account",
+    "dataExport": {
+      "title": "Export My Data",
+      "description": "Download a ZIP archive containing all your submissions, managed class tasks, avatar, and metadata.",
+      "exportButton": "Export Data"
+    }
+  },
+  "dataExportDialog": {
+    "title": "Export My Data",
+    "description": "Download all your personal data as a ZIP file for portability.",
+    "summary": {
+      "gathering": "Analyzing your data...",
+      "ready": "Click below to start exporting your data.",
+      "classes": "{count, plural, =0 {No classes} =1 {1 class} other {# classes}}",
+      "submissions": "{count, plural, =0 {No submissions} =1 {1 submission} other {# submissions}}",
+      "tasks": "{count, plural, =0 {No managed tasks} =1 {1 managed task} other {# managed tasks}}",
+      "files": "{count, plural, =1 {1 file} other {# files}}"
+    },
+    "progress": {
+      "gathering": "Fetching your data...",
+      "downloading": "Downloading {completed} / {total} files...",
+      "generatingZip": "Generating ZIP archive..."
+    },
+    "actions": {
+      "startExport": "Start Export",
+      "processing": "Processing..."
+    },
+    "toast": {
+      "exportComplete": "Data export complete",
+      "skippedFiles": "{count, plural, =1 {1 file} other {# files}} failed to download and were skipped",
+      "exportFailed": "Failed to export data"
+    }
   },
   "settingsProfile": {
     "profileUpdated": "Profile updated",
@@ -487,7 +521,10 @@
     "toast": {
       "failedLoadSubmissions": "Failed to load submissions",
       "csvExported": "CSV exported successfully",
-      "failedExportCsv": "Failed to export CSV"
+      "failedExportCsv": "Failed to export CSV",
+      "markedExemplary": "Marked as exemplary submission",
+      "unmarkedExemplary": "Removed exemplary mark",
+      "failedToggleExemplary": "Failed to toggle exemplary status"
     },
     "notFound": "Task or class not found.",
     "backToClass": "Back to class",
@@ -511,12 +548,15 @@
       "action": "Action",
       "pending": "Pending",
       "view": "View",
-      "noMembers": "No members found in this class."
+      "noMembers": "No members found in this class.",
+      "markExemplary": "Mark as exemplary",
+      "unmarkExemplary": "Remove exemplary mark"
     },
     "status": {
       "graded": "Graded",
       "submitted": "Submitted",
-      "notSubmitted": "Not Submitted"
+      "notSubmitted": "Not Submitted",
+      "exemplary": "Exemplary"
     }
   },
   "submissionDetailPage": {
@@ -524,7 +564,10 @@
       "failedLoadSubmission": "Failed to load submission",
       "gradeSaved": "Grade saved successfully",
       "failedSaveGrade": "Failed to save grade",
-      "failedDownloadFile": "Failed to download file"
+      "failedDownloadFile": "Failed to download file",
+      "markedExemplary": "Marked as exemplary submission",
+      "unmarkedExemplary": "Removed exemplary mark",
+      "failedToggleExemplary": "Failed to toggle exemplary status"
     },
     "notFound": "Submission not found.",
     "student": "Student",
@@ -544,7 +587,43 @@
     "reviewNote": "Review Note",
     "reviewNotePlaceholder": "Optional feedback for the student...",
     "saving": "Saving...",
-    "saveGrade": "Save Grade"
+    "saveGrade": "Save Grade",
+    "exemplary": {
+      "mark": "Exemplary",
+      "unmark": "Unmark Exemplary"
+    }
+  },
+  "settingsMcpKeys": {
+    "title": "MCP Keys",
+    "description": "Connect external AI tools like Claude Code or Cursor to your TaskFlow account.",
+    "createNew": "New Key",
+    "keyName": "Key Name",
+    "keyNamePlaceholder": "e.g. Claude Code on MacBook",
+    "create": "Create",
+    "secretKey": "Secret Key",
+    "keyWontShowAgain": "This key won't be shown again. Copy it now.",
+    "configSnippet": "Quick Setup (Claude Code)",
+    "copy": "Copy",
+    "done": "Done",
+    "revokeTitle": "Revoke Key",
+    "revokeDescription": "Revoke \"{name}\"? Any AI tool using this key will lose access immediately.",
+    "cancel": "Cancel",
+    "revoke": "Revoke",
+    "revoked": "Key revoked",
+    "failedLoad": "Failed to load keys",
+    "failedCreate": "Failed to create key",
+    "failedRevoke": "Failed to revoke key",
+    "noKeys": "No keys yet. Create one to connect an AI tool.",
+    "revokedKeys": "Revoked Keys",
+    "created": "Created",
+    "lastUsed": "Last used",
+    "justNow": "just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago",
+    "keyCreated": "Key Created",
+    "keyCreatedHint": "Copy the key below — you won't be able to see it again.",
+    "createDescription": "Give your key a name so you can identify it later."
   },
   "batchDownloadDialog": {
     "title": "Download Submissions",

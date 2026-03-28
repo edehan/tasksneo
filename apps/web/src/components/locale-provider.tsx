@@ -1,8 +1,8 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo } from "react";
 import { useLocale } from "next-intl";
-import { SUPPORTED_LOCALES, type AppLocale } from "@/i18n/locale";
+import { createContext, useCallback, useContext, useMemo } from "react";
+import { type AppLocale, SUPPORTED_LOCALES } from "@/i18n/locale";
 
 const LOCALE_COOKIE = "taskflow_locale";
 const LOCALE_STORAGE_KEY = "taskflow_locale";

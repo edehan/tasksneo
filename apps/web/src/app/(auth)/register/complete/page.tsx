@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useTranslations } from "next-intl";
 import type { School } from "@/lib/api";
 import {
   ApiError,
@@ -170,8 +169,7 @@ function CompleteRegistrationInner() {
           {t("completeAccount")}
         </CardTitle>
         <CardDescription>
-          {t("setupProfileFor")}{" "}
-          <strong>{verifiedEmail}</strong>
+          {t("setupProfileFor")} <strong>{verifiedEmail}</strong>
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
@@ -208,9 +206,7 @@ function CompleteRegistrationInner() {
           <div className="space-y-2">
             <Label htmlFor="comp-nickname">
               {t("nickname")}{" "}
-              <span className="text-muted-foreground">
-                {t("optional")}
-              </span>
+              <span className="text-muted-foreground">{t("optional")}</span>
             </Label>
             <Input
               id="comp-nickname"
@@ -224,9 +220,7 @@ function CompleteRegistrationInner() {
               <div className="space-y-2">
                 <Label>
                   {t("school")}{" "}
-                  <span className="text-muted-foreground">
-                    {t("optional")}
-                  </span>
+                  <span className="text-muted-foreground">{t("optional")}</span>
                 </Label>
                 <Select
                   value={schoolId ?? "none"}
@@ -250,9 +244,7 @@ function CompleteRegistrationInner() {
               </div>
               {schoolId && (
                 <div className="space-y-2">
-                  <Label htmlFor="comp-studentId">
-                    {t("studentId")}
-                  </Label>
+                  <Label htmlFor="comp-studentId">{t("studentId")}</Label>
                   <Input
                     id="comp-studentId"
                     value={studentId}

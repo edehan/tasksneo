@@ -1,16 +1,19 @@
 "use client";
 
-import { ArrowLeft, Loader2, Shield, ShieldCheck, Crown, LogOut } from "lucide-react";
+import {
+  ArrowLeft,
+  Crown,
+  Loader2,
+  LogOut,
+  Shield,
+  ShieldCheck,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-provider";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +25,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +36,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -45,14 +52,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { ClassSummary, ClassMember } from "@/lib/api";
+import type { ClassMember, ClassSummary } from "@/lib/api";
 import {
   ApiError,
   getClass,
   listMembers,
-  updateMemberRole,
   removeMember,
   transferOwnership,
+  updateMemberRole,
 } from "@/lib/api";
 
 function getRoleBadge(role: ClassMember["role"]) {
@@ -189,9 +196,7 @@ export function MembersPage() {
       await loadData();
     } catch (err) {
       const message =
-        err instanceof ApiError
-          ? err.message
-          : "Failed to transfer ownership";
+        err instanceof ApiError ? err.message : "Failed to transfer ownership";
       toast.error(message);
     } finally {
       setTransferring(false);
@@ -393,57 +398,55 @@ export function MembersPage() {
                       )}
 
                       {/* Owner or Admin viewing a MEMBER */}
-                      {!isMe &&
-                        isAdmin &&
-                        member.role === "MEMBER" && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                handleRoleChange(member.userId, "ADMIN")
-                              }
-                              disabled={isMemberLoading}
-                            >
-                              Promote
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-destructive hover:text-destructive"
-                                  disabled={isMemberLoading}
+                      {!isMe && isAdmin && member.role === "MEMBER" && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              handleRoleChange(member.userId, "ADMIN")
+                            }
+                            disabled={isMemberLoading}
+                          >
+                            Promote
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                                disabled={isMemberLoading}
+                              >
+                                Remove
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Remove {displayName}?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This person will lose access to the class
+                                  immediately. They can rejoin with an invite
+                                  code.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() =>
+                                    handleRemove(member.userId, displayName)
+                                  }
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 >
                                   Remove
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>
-                                    Remove {displayName}?
-                                  </AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This person will lose access to the class
-                                    immediately. They can rejoin with an invite
-                                    code.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() =>
-                                      handleRemove(member.userId, displayName)
-                                    }
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                    Remove
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </>
-                        )}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -457,12 +460,10 @@ export function MembersPage() {
       <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-serif">
-              Transfer Ownership
-            </DialogTitle>
+            <DialogTitle className="font-serif">Transfer Ownership</DialogTitle>
             <DialogDescription>
-              Select a member to transfer ownership of &quot;{cls.name}&quot; to.
-              You will be demoted to Admin after the transfer.
+              Select a member to transfer ownership of &quot;{cls.name}&quot;
+              to. You will be demoted to Admin after the transfer.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">

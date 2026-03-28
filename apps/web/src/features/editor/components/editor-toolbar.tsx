@@ -110,10 +110,7 @@ export function EditorToolbar({ onInsert, onImageUpload }: EditorToolbarProps) {
       {TOOLBAR_ITEMS.map((item, i) => {
         if (item.type === "separator") {
           return (
-            <div
-              key={`sep-${i}`}
-              className="mx-1.5 h-[18px] w-px bg-border"
-            />
+            <div key={`sep-${i}`} className="mx-1.5 h-[18px] w-px bg-border" />
           );
         }
 

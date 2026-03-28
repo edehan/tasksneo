@@ -12,7 +12,6 @@ export async function getMessagesForLocale(
       return (await import("@/i18n/messages/fr.json")).default;
     case "ja":
       return (await import("@/i18n/messages/ja.json")).default;
-    case "en":
     default:
       return (await import("@/i18n/messages/en.json")).default;
   }

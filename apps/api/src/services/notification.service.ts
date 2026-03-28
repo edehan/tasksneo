@@ -1,188 +1,251 @@
-import { NotifChannel, NotifStatus, prisma } from '@taskflow/db';
-
-import { enqueueNotificationJob, processNotificationQueue } from '../lib/queue.js';
-import { sendEmail } from '../lib/mailer.js';
-import { getConfigValue } from './system-config.service.js';
+import { NotifChannel, NotifStatus, prisma } from "@taskflow/db";
+import { sendEmail } from "../lib/mailer.js";
+import {
+	enqueueNotificationJob,
+	processNotificationQueue,
+} from "../lib/queue.js";
+import { getConfigValue } from "./system-config.service.js";
 
 interface TaskNotificationPayload {
-  userId: string;
-  taskId: string;
-  classId: string;
-  className: string;
-  classColor: string;
-  taskTitle: string;
-  dueAt: string | null;
-  type: 'TASK_PUBLISHED' | 'TASK_DUE_REMINDER';
+	userId: string;
+	taskId: string;
+	classId: string;
+	className: string;
+	classColor: string;
+	taskTitle: string;
+	dueAt: string | null;
+	type: "TASK_PUBLISHED" | "TASK_DUE_REMINDER";
 }
 
-function parseBeforeDueHours(value: string | null): number[] {
-  if (!value) {
-    return [];
-  }
+interface AnnouncementNotificationPayload {
+	userId: string;
+	type: "SITE_ANNOUNCEMENT";
+	announcementId: string;
+	title: string;
+	content: string;
+}
 
-  return value
-    .split(',')
-    .map((part) => Number(part.trim()))
-    .filter((part) => !Number.isNaN(part) && part > 0);
+type NotificationPayload =
+	| TaskNotificationPayload
+	| AnnouncementNotificationPayload;
+
+function parseBeforeDueHours(value: string | null): number[] {
+	if (!value) {
+		return [];
+	}
+
+	return value
+		.split(",")
+		.map((part) => Number(part.trim()))
+		.filter((part) => !Number.isNaN(part) && part > 0);
 }
 
 function formatDueAt(isoString: string | null, timezone: string): string {
-  if (!isoString) {
-    return '未设置';
-  }
+	if (!isoString) {
+		return "未设置";
+	}
 
-  try {
-    const date = new Date(isoString);
+	try {
+		const date = new Date(isoString);
 
-    return (
-      new Intl.DateTimeFormat('zh-CN', {
-        timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      }).format(date) + ` (${timezone})`
-    );
-  } catch {
-    return isoString;
-  }
+		return `${new Intl.DateTimeFormat("zh-CN", {
+			timeZone: timezone,
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+			hour: "2-digit",
+			minute: "2-digit",
+			hour12: false,
+		}).format(date)} (${timezone})`;
+	} catch {
+		return isoString;
+	}
 }
 
 async function createNotificationJob(
-  payload: TaskNotificationPayload,
-  scheduledAt: Date,
-  channel: NotifChannel,
+	payload: TaskNotificationPayload,
+	scheduledAt: Date,
+	channel: NotifChannel,
 ) {
-  const job = await prisma.notificationJob.create({
-    data: {
-      channel,
-      payload: payload as unknown as object,
-      scheduledAt,
-      status: NotifStatus.PENDING,
-      userId: payload.userId,
-      taskId: payload.taskId,
-    },
-  });
+	const job = await prisma.notificationJob.create({
+		data: {
+			channel,
+			payload: payload as unknown as object,
+			scheduledAt,
+			status: NotifStatus.PENDING,
+			userId: payload.userId,
+			taskId: payload.taskId,
+		},
+	});
 
-  try {
-    await enqueueNotificationJob(job.id, scheduledAt);
-  } catch {
-    // Keep PENDING row for recovery even if queue enqueue fails.
-  }
+	try {
+		await enqueueNotificationJob(job.id, scheduledAt);
+	} catch {
+		// Keep PENDING row for recovery even if queue enqueue fails.
+	}
 }
 
 async function getEnabledChannels(userId: string): Promise<NotifChannel[]> {
-  const prefs = await prisma.userNotificationPref.findMany({
-    where: { userId, isEnabled: true },
-    select: { channel: true },
-  });
+	const prefs = await prisma.userNotificationPref.findMany({
+		where: { userId, isEnabled: true },
+		select: { channel: true },
+	});
 
-  if (prefs.length === 0) {
-    // Default to EMAIL if user has no preferences set
-    return [NotifChannel.EMAIL];
-  }
+	if (prefs.length === 0) {
+		// Default to EMAIL if user has no preferences set
+		return [NotifChannel.EMAIL];
+	}
 
-  return prefs.map((p) => p.channel);
+	return prefs.map((p) => p.channel);
 }
 
 export async function enqueueTaskPublishedNotifications(params: {
-  taskId: string;
-  classId: string;
-  className: string;
-  classColor: string;
-  taskTitle: string;
-  dueAt: Date | null;
-  memberUserIds: string[];
+	taskId: string;
+	classId: string;
+	className: string;
+	classColor: string;
+	taskTitle: string;
+	dueAt: Date | null;
+	memberUserIds: string[];
 }) {
-  const now = new Date();
+	const now = new Date();
 
-  for (const userId of params.memberUserIds) {
-    const channels = await getEnabledChannels(userId);
-    const payload: TaskNotificationPayload = {
-      userId,
-      taskId: params.taskId,
-      classId: params.classId,
-      className: params.className,
-      classColor: params.classColor,
-      taskTitle: params.taskTitle,
-      dueAt: params.dueAt?.toISOString() ?? null,
-      type: 'TASK_PUBLISHED',
-    };
+	for (const userId of params.memberUserIds) {
+		const channels = await getEnabledChannels(userId);
+		const payload: TaskNotificationPayload = {
+			userId,
+			taskId: params.taskId,
+			classId: params.classId,
+			className: params.className,
+			classColor: params.classColor,
+			taskTitle: params.taskTitle,
+			dueAt: params.dueAt?.toISOString() ?? null,
+			type: "TASK_PUBLISHED",
+		};
 
-    for (const channel of channels) {
-      await createNotificationJob(payload, now, channel);
-    }
-  }
+		for (const channel of channels) {
+			await createNotificationJob(payload, now, channel);
+		}
+	}
 
-  if (!params.dueAt) {
-    return;
-  }
+	if (!params.dueAt) {
+		return;
+	}
 
-  const beforeDueHours = parseBeforeDueHours(await getConfigValue('notif.before_due_hours'));
+	const beforeDueHours = parseBeforeDueHours(
+		await getConfigValue("notif.before_due_hours"),
+	);
 
-  for (const hour of beforeDueHours) {
-    const scheduledAt = new Date(params.dueAt.getTime() - hour * 60 * 60 * 1000);
+	for (const hour of beforeDueHours) {
+		const scheduledAt = new Date(
+			params.dueAt.getTime() - hour * 60 * 60 * 1000,
+		);
 
-    if (scheduledAt.getTime() <= Date.now()) {
-      continue;
-    }
+		if (scheduledAt.getTime() <= Date.now()) {
+			continue;
+		}
 
-    for (const userId of params.memberUserIds) {
-      const channels = await getEnabledChannels(userId);
-      const payload: TaskNotificationPayload = {
-        userId,
-        taskId: params.taskId,
-        classId: params.classId,
-        className: params.className,
-        classColor: params.classColor,
-        taskTitle: params.taskTitle,
-        dueAt: params.dueAt.toISOString(),
-        type: 'TASK_DUE_REMINDER',
-      };
+		for (const userId of params.memberUserIds) {
+			const channels = await getEnabledChannels(userId);
+			const payload: TaskNotificationPayload = {
+				userId,
+				taskId: params.taskId,
+				classId: params.classId,
+				className: params.className,
+				classColor: params.classColor,
+				taskTitle: params.taskTitle,
+				dueAt: params.dueAt.toISOString(),
+				type: "TASK_DUE_REMINDER",
+			};
 
-      for (const channel of channels) {
-        await createNotificationJob(payload, scheduledAt, channel);
-      }
-    }
-  }
+			for (const channel of channels) {
+				await createNotificationJob(payload, scheduledAt, channel);
+			}
+		}
+	}
 }
 
-function buildSubject(payload: TaskNotificationPayload) {
-  if (payload.type === 'TASK_PUBLISHED') {
-    return `[TaskFlow] 新任务：${payload.taskTitle}`;
-  }
+function buildSubject(payload: NotificationPayload) {
+	if (payload.type === "SITE_ANNOUNCEMENT") {
+		return `[TaskFlow] 系统公告：${payload.title}`;
+	}
+	if (payload.type === "TASK_PUBLISHED") {
+		return `[TaskFlow] 新任务：${payload.taskTitle}`;
+	}
 
-  return `[TaskFlow] 任务截止提醒：${payload.taskTitle}`;
+	return `[TaskFlow] 任务截止提醒：${payload.taskTitle}`;
 }
 
-function buildText(payload: TaskNotificationPayload, timezone: string) {
-  const dueText = formatDueAt(payload.dueAt, timezone);
+function buildText(payload: NotificationPayload, timezone: string) {
+	if (payload.type === "SITE_ANNOUNCEMENT") {
+		return `系统公告\n\n${payload.title}\n\n${payload.content}`;
+	}
 
-  if (payload.type === 'TASK_PUBLISHED') {
-    return `班级 ${payload.className} 发布了新任务。\n\n任务名称：${payload.taskTitle}\n截止时间：${dueText}`;
-  }
+	const dueText = formatDueAt(payload.dueAt, timezone);
 
-  return `你在班级 ${payload.className} 中有一个任务即将到期。\n\n任务名称：${payload.taskTitle}\n截止时间：${dueText}`;
+	if (payload.type === "TASK_PUBLISHED") {
+		return `班级 ${payload.className} 发布了新任务。\n\n任务名称：${payload.taskTitle}\n截止时间：${dueText}`;
+	}
+
+	return `你在班级 ${payload.className} 中有一个任务即将到期。\n\n任务名称：${payload.taskTitle}\n截止时间：${dueText}`;
+}
+
+function buildAnnouncementHtml(
+	payload: AnnouncementNotificationPayload,
+	baseUrl: string,
+) {
+	const accentColor = "#C4785B";
+	const unsubscribeUrl = `${baseUrl}/settings/notifications`;
+	const contentHtml = escapeHtml(payload.content).replace(/\n/g, "<br>");
+
+	return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#faf7f2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#faf7f2;">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background-color:#fffdf8;border-radius:8px;overflow:hidden;border:1px solid #e8e2d8;">
+        <tr><td style="height:4px;background-color:${accentColor};"></td></tr>
+        <tr><td style="padding:24px 32px 16px;">
+          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#8a8078;">TaskFlow · 系统公告</p>
+        </td></tr>
+        <tr><td style="padding:0 32px 24px;">
+          <p style="margin:0 0 16px;font-size:18px;font-weight:600;line-height:1.4;color:#2c2825;">${escapeHtml(payload.title)}</p>
+          <p style="margin:0;font-size:15px;line-height:1.6;color:#2c2825;">${contentHtml}</p>
+        </td></tr>
+        <tr><td style="padding:16px 32px;border-top:1px solid #e8e2d8;">
+          <p style="margin:0;font-size:12px;color:#c0b8ad;text-align:center;">
+            此邮件由 TaskFlow 自动发送 &middot;
+            <a href="${unsubscribeUrl}" style="color:#8a8078;text-decoration:underline;">退订通知</a>
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
 }
 
 function buildHtml(
-  payload: TaskNotificationPayload,
-  timezone: string,
-  baseUrl: string,
+	payload: NotificationPayload,
+	timezone: string,
+	baseUrl: string,
 ) {
-  const dueText = formatDueAt(payload.dueAt, timezone);
-  const accentColor = payload.classColor || '#7B6CB0';
-  const taskUrl = `${baseUrl}/dashboard`;
-  const unsubscribeUrl = `${baseUrl}/settings/notifications`;
+	if (payload.type === "SITE_ANNOUNCEMENT") {
+		return buildAnnouncementHtml(payload, baseUrl);
+	}
 
-  const heading =
-    payload.type === 'TASK_PUBLISHED'
-      ? `班级 <strong>${escapeHtml(payload.className)}</strong> 发布了新任务`
-      : `你在班级 <strong>${escapeHtml(payload.className)}</strong> 中有一个任务即将到期`;
+	const dueText = formatDueAt(payload.dueAt, timezone);
+	const accentColor = payload.classColor || "#7B6CB0";
+	const taskUrl = `${baseUrl}/dashboard`;
+	const unsubscribeUrl = `${baseUrl}/settings/notifications`;
 
-  return `<!DOCTYPE html>
+	const heading =
+		payload.type === "TASK_PUBLISHED"
+			? `班级 <strong>${escapeHtml(payload.className)}</strong> 发布了新任务`
+			: `你在班级 <strong>${escapeHtml(payload.className)}</strong> 中有一个任务即将到期`;
+
+	return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background-color:#faf7f2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
@@ -226,254 +289,281 @@ function buildHtml(
 }
 
 function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+	return str
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;");
 }
 
-async function sendWebhook(webhookUrl: string, payload: TaskNotificationPayload, timezone: string, baseUrl: string) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10_000);
+async function sendWebhook(
+	webhookUrl: string,
+	payload: NotificationPayload,
+	timezone: string,
+	baseUrl: string,
+) {
+	const controller = new AbortController();
+	const timeout = setTimeout(() => controller.abort(), 10_000);
 
-  try {
-    const res = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: payload.type,
-        taskId: payload.taskId,
-        taskTitle: payload.taskTitle,
-        className: payload.className,
-        dueAt: formatDueAt(payload.dueAt, timezone),
-        url: `${baseUrl}/dashboard`,
-      }),
-      signal: controller.signal,
-    });
+	try {
+		const body =
+			payload.type === "SITE_ANNOUNCEMENT"
+				? {
+						type: payload.type,
+						title: payload.title,
+						content: payload.content,
+					}
+				: {
+						type: payload.type,
+						taskId: payload.taskId,
+						taskTitle: payload.taskTitle,
+						className: payload.className,
+						dueAt: formatDueAt(payload.dueAt, timezone),
+						url: `${baseUrl}/dashboard`,
+					};
 
-    if (!res.ok) {
-      throw new Error(`Webhook returned ${res.status}`);
-    }
-  } finally {
-    clearTimeout(timeout);
-  }
+		const res = await fetch(webhookUrl, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(body),
+			signal: controller.signal,
+		});
+
+		if (!res.ok) {
+			throw new Error(`Webhook returned ${res.status}`);
+		}
+	} finally {
+		clearTimeout(timeout);
+	}
 }
 
 export async function processNotificationJob(notificationJobId: string) {
-  const job = await prisma.notificationJob.findUnique({ where: { id: notificationJobId } });
+	const job = await prisma.notificationJob.findUnique({
+		where: { id: notificationJobId },
+	});
 
-  if (!job || job.status === NotifStatus.SENT) {
-    return;
-  }
+	if (!job || job.status === NotifStatus.SENT) {
+		return;
+	}
 
-  await prisma.notificationJob.update({
-    where: { id: notificationJobId },
-    data: {
-      status: NotifStatus.SENDING,
-      error: null,
-    },
-  });
+	await prisma.notificationJob.update({
+		where: { id: notificationJobId },
+		data: {
+			status: NotifStatus.SENDING,
+			error: null,
+		},
+	});
 
-  try {
-    const payload = job.payload as unknown as TaskNotificationPayload;
-    const channel = job.channel;
+	try {
+		const payload = job.payload as unknown as NotificationPayload;
+		const channel = job.channel;
 
-    const pref = await prisma.userNotificationPref.findUnique({
-      where: {
-        userId_channel: {
-          userId: payload.userId,
-          channel,
-        },
-      },
-    });
+		const pref = await prisma.userNotificationPref.findUnique({
+			where: {
+				userId_channel: {
+					userId: payload.userId,
+					channel,
+				},
+			},
+		});
 
-    if (pref && pref.isEnabled === false) {
-      await prisma.notificationJob.update({
-        where: { id: notificationJobId },
-        data: {
-          status: NotifStatus.SENT,
-          sentAt: new Date(),
-          error: null,
-        },
-      });
+		if (pref && pref.isEnabled === false) {
+			await prisma.notificationJob.update({
+				where: { id: notificationJobId },
+				data: {
+					status: NotifStatus.SENT,
+					sentAt: new Date(),
+					error: null,
+				},
+			});
 
-      return;
-    }
+			return;
+		}
 
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
-      select: { email: true, timezone: true },
-    });
+		const user = await prisma.user.findUnique({
+			where: { id: payload.userId },
+			select: { email: true, timezone: true },
+		});
 
-    if (!user) {
-      throw new Error('User not found');
-    }
+		if (!user) {
+			throw new Error("User not found");
+		}
 
-    const timezone = user.timezone || 'UTC';
-    const baseUrl = (await getConfigValue('app.base_url')) || 'http://localhost:3000';
+		const timezone = user.timezone || "UTC";
+		const baseUrl =
+			(await getConfigValue("app.base_url")) || "http://localhost:3000";
 
-    if (channel === NotifChannel.EMAIL) {
-      const targetEmail = user.email;
+		if (channel === NotifChannel.EMAIL) {
+			const targetEmail = user.email;
 
-      await sendEmail(
-        targetEmail,
-        buildSubject(payload),
-        buildText(payload, timezone),
-        buildHtml(payload, timezone, baseUrl),
-      );
-    } else if (channel === NotifChannel.WEBHOOK) {
-      const webhookUrl = pref?.address;
+			await sendEmail(
+				targetEmail,
+				buildSubject(payload),
+				buildText(payload, timezone),
+				buildHtml(payload, timezone, baseUrl),
+			);
+		} else if (channel === NotifChannel.WEBHOOK) {
+			const webhookUrl = pref?.address;
 
-      if (!webhookUrl) {
-        throw new Error('Webhook URL not configured');
-      }
+			if (!webhookUrl) {
+				throw new Error("Webhook URL not configured");
+			}
 
-      await sendWebhook(webhookUrl, payload, timezone, baseUrl);
-    }
+			await sendWebhook(webhookUrl, payload, timezone, baseUrl);
+		}
 
-    await prisma.notificationJob.update({
-      where: { id: notificationJobId },
-      data: {
-        status: NotifStatus.SENT,
-        sentAt: new Date(),
-        error: null,
-      },
-    });
-  } catch (error) {
-    await prisma.notificationJob.update({
-      where: { id: notificationJobId },
-      data: {
-        status: NotifStatus.FAILED,
-        error: error instanceof Error ? error.message : String(error),
-      },
-    });
+		await prisma.notificationJob.update({
+			where: { id: notificationJobId },
+			data: {
+				status: NotifStatus.SENT,
+				sentAt: new Date(),
+				error: null,
+			},
+		});
+	} catch (error) {
+		await prisma.notificationJob.update({
+			where: { id: notificationJobId },
+			data: {
+				status: NotifStatus.FAILED,
+				error: error instanceof Error ? error.message : String(error),
+			},
+		});
 
-    throw error;
-  }
+		throw error;
+	}
 }
 
 export function startNotificationWorker() {
-  processNotificationQueue(async (payload) => {
-    const notificationJobId = payload.notificationJobId;
+	processNotificationQueue(async (payload) => {
+		const notificationJobId = payload.notificationJobId;
 
-    if (!notificationJobId) {
-      return;
-    }
+		if (!notificationJobId) {
+			return;
+		}
 
-    await processNotificationJob(notificationJobId);
-  });
+		await processNotificationJob(notificationJobId);
+	});
 }
 
 // ── Inbox queries ──────────────────────────────────────────────────────────
 
 export interface NotificationItemResult {
-  id: string;
-  type: string;
-  taskId: string | null;
-  classId: string | null;
-  taskTitle: string;
-  className: string;
-  readAt: Date | null;
-  createdAt: Date;
+	id: string;
+	type: string;
+	taskId: string | null;
+	classId: string | null;
+	taskTitle: string;
+	className: string;
+	title: string | null;
+	content: string | null;
+	readAt: Date | null;
+	createdAt: Date;
 }
 
-function toNotificationItem(
-  job: { id: string; payload: unknown; taskId: string | null; readAt: Date | null; createdAt: Date },
-): NotificationItemResult {
-  const p = job.payload as Record<string, unknown> | null;
+function toNotificationItem(job: {
+	id: string;
+	payload: unknown;
+	taskId: string | null;
+	readAt: Date | null;
+	createdAt: Date;
+}): NotificationItemResult {
+	const p = job.payload as Record<string, unknown> | null;
+	const type = (p?.type as string) ?? "TASK_PUBLISHED";
 
-  return {
-    id: job.id,
-    type: (p?.type as string) ?? 'TASK_PUBLISHED',
-    taskId: job.taskId,
-    classId: (p?.classId as string) ?? null,
-    taskTitle: (p?.taskTitle as string) ?? '',
-    className: (p?.className as string) ?? '',
-    readAt: job.readAt,
-    createdAt: job.createdAt,
-  };
+	return {
+		id: job.id,
+		type,
+		taskId: job.taskId,
+		classId: (p?.classId as string) ?? null,
+		taskTitle: (p?.taskTitle as string) ?? "",
+		className: (p?.className as string) ?? "",
+		title: (p?.title as string) ?? null,
+		content: (p?.content as string) ?? null,
+		readAt: job.readAt,
+		createdAt: job.createdAt,
+	};
 }
 
 export async function listMyNotifications(
-  userId: string,
-  options: { limit: number; cursor?: string; unreadOnly: boolean },
+	userId: string,
+	options: { limit: number; cursor?: string; unreadOnly: boolean },
 ) {
-  const where = {
-    userId,
-    status: NotifStatus.SENT,
-    ...(options.unreadOnly ? { readAt: null } : {}),
-  };
+	const where = {
+		userId,
+		status: NotifStatus.SENT,
+		...(options.unreadOnly ? { readAt: null } : {}),
+	};
 
-  const [items, unreadCount] = await Promise.all([
-    prisma.notificationJob.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: options.limit + 1,
-      ...(options.cursor
-        ? { cursor: { id: options.cursor }, skip: 1 }
-        : {}),
-      select: {
-        id: true,
-        payload: true,
-        taskId: true,
-        readAt: true,
-        createdAt: true,
-      },
-    }),
-    prisma.notificationJob.count({
-      where: { userId, status: NotifStatus.SENT, readAt: null },
-    }),
-  ]);
+	const [items, unreadCount] = await Promise.all([
+		prisma.notificationJob.findMany({
+			where,
+			orderBy: { createdAt: "desc" },
+			take: options.limit + 1,
+			...(options.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
+			select: {
+				id: true,
+				payload: true,
+				taskId: true,
+				readAt: true,
+				createdAt: true,
+			},
+		}),
+		prisma.notificationJob.count({
+			where: { userId, status: NotifStatus.SENT, readAt: null },
+		}),
+	]);
 
-  const hasMore = items.length > options.limit;
+	const hasMore = items.length > options.limit;
 
-  if (hasMore) {
-    items.pop();
-  }
+	if (hasMore) {
+		items.pop();
+	}
 
-  return {
-    items: items.map(toNotificationItem),
-    nextCursor: hasMore && items.length > 0 ? items[items.length - 1].id : null,
-    unreadCount,
-  };
+	return {
+		items: items.map(toNotificationItem),
+		nextCursor: hasMore && items.length > 0 ? items[items.length - 1].id : null,
+		unreadCount,
+	};
 }
 
-export async function markNotificationRead(notificationId: string, userId: string) {
-  const job = await prisma.notificationJob.findUnique({
-    where: { id: notificationId },
-    select: { userId: true, readAt: true },
-  });
+export async function markNotificationRead(
+	notificationId: string,
+	userId: string,
+) {
+	const job = await prisma.notificationJob.findUnique({
+		where: { id: notificationId },
+		select: { userId: true, readAt: true },
+	});
 
-  if (!job || job.userId !== userId) {
-    return null;
-  }
+	if (!job || job.userId !== userId) {
+		return null;
+	}
 
-  if (job.readAt) {
-    return { id: notificationId };
-  }
+	if (job.readAt) {
+		return { id: notificationId };
+	}
 
-  await prisma.notificationJob.update({
-    where: { id: notificationId },
-    data: { readAt: new Date() },
-  });
+	await prisma.notificationJob.update({
+		where: { id: notificationId },
+		data: { readAt: new Date() },
+	});
 
-  return { id: notificationId };
+	return { id: notificationId };
 }
 
 export async function markAllNotificationsRead(userId: string) {
-  const result = await prisma.notificationJob.updateMany({
-    where: { userId, readAt: null, status: NotifStatus.SENT },
-    data: { readAt: new Date() },
-  });
+	const result = await prisma.notificationJob.updateMany({
+		where: { userId, readAt: null, status: NotifStatus.SENT },
+		data: { readAt: new Date() },
+	});
 
-  return { updated: result.count };
+	return { updated: result.count };
 }
 
 export async function getUnreadNotificationCount(userId: string) {
-  const count = await prisma.notificationJob.count({
-    where: { userId, status: NotifStatus.SENT, readAt: null },
-  });
+	const count = await prisma.notificationJob.count({
+		where: { userId, status: NotifStatus.SENT, readAt: null },
+	});
 
-  return { unreadCount: count };
+	return { unreadCount: count };
 }

@@ -1,17 +1,20 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useTranslations } from "next-intl";
 import type { NotificationPref } from "@/lib/api";
-import { ApiError, getNotificationPrefs, upsertNotificationPref } from "@/lib/api";
+import {
+  ApiError,
+  getNotificationPrefs,
+  upsertNotificationPref,
+} from "@/lib/api";
 
 export default function NotificationsPage() {
   const { token, user } = useAuth();
@@ -89,9 +92,7 @@ export default function NotificationsPage() {
       toast.success(t("prefsSaved"));
     } catch (err) {
       const message =
-        err instanceof ApiError
-          ? err.message
-          : t("failedSavePrefs");
+        err instanceof ApiError ? err.message : t("failedSavePrefs");
       toast.error(message);
     } finally {
       setSaving(false);
@@ -137,11 +138,15 @@ export default function NotificationsPage() {
       {/* Webhook Notifications */}
       <section className="space-y-5">
         <h2 className="text-heading-md">{t("webhookNotifications")}</h2>
-        <p className="text-sm text-muted-foreground">{t("webhookDescription")}</p>
+        <p className="text-sm text-muted-foreground">
+          {t("webhookDescription")}
+        </p>
         <div className="flex items-center justify-between rounded-lg border border-border p-4">
           <div>
             <p className="text-sm font-medium">{t("enableWebhook")}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{t("webhookHint")}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {t("webhookHint")}
+            </p>
           </div>
           <Switch
             checked={webhookEnabled}
@@ -160,7 +165,9 @@ export default function NotificationsPage() {
               placeholder="https://example.com/webhook"
               disabled={saving}
             />
-            <p className="text-xs text-muted-foreground">{t("webhookPostHint")}</p>
+            <p className="text-xs text-muted-foreground">
+              {t("webhookPostHint")}
+            </p>
           </div>
         )}
       </section>

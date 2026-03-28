@@ -1,34 +1,31 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  Award,
+  BarChart3,
+  CheckCircle2,
+  ClipboardCheck,
   Download,
   Eye,
   FileSpreadsheet,
   Users,
-  CheckCircle2,
-  ClipboardCheck,
-  BarChart3,
 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-
-import { BatchDownloadDialog } from "./batch-download-dialog";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-
 import { useAuth } from "@/components/auth-provider";
-import type {
-  ClassSummary,
-  SubmissionListRow,
-  TaskDetail,
-} from "@/lib/api";
+import type { ClassSummary, SubmissionListRow, TaskDetail } from "@/lib/api";
 import {
+  ApiError,
+  exportSubmissionsCsv,
   getClass,
   getTask,
   listSubmissions,
-  exportSubmissionsCsv,
+  toggleExemplary,
 } from "@/lib/api";
+import { BatchDownloadDialog } from "./batch-download-dialog";
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -95,7 +92,8 @@ export function SubmissionsListPage() {
     ).length;
     const scores = rows
       .filter(
-        (r) => r.submission?.score !== null && r.submission?.score !== undefined,
+        (r) =>
+          r.submission?.score !== null && r.submission?.score !== undefined,
       )
       .map((r) => parseFloat(r.submission!.score!));
     const avg =
@@ -130,6 +128,43 @@ export function SubmissionsListPage() {
     }
   }
 
+  // ─── Toggle exemplary ──────────────────────────────────────────────────────
+
+  async function handleToggleExemplary(
+    submissionId: string,
+    e: React.MouseEvent,
+  ) {
+    e.stopPropagation();
+    if (!token || !taskId) return;
+    try {
+      const updated = await toggleExemplary(token, taskId, submissionId);
+      setRows((prev) =>
+        prev.map((row) =>
+          row.submission?.id === submissionId
+            ? {
+                ...row,
+                submission: {
+                  ...row.submission,
+                  isExemplary: updated.isExemplary,
+                },
+              }
+            : row,
+        ),
+      );
+      toast.success(
+        updated.isExemplary
+          ? t("toast.markedExemplary")
+          : t("toast.unmarkedExemplary"),
+      );
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : t("toast.failedToggleExemplary");
+      toast.error(message);
+    }
+  }
+
   // ─── Loading state ─────────────────────────────────────────────────────────
 
   if (loading) {
@@ -142,20 +177,14 @@ export function SubmissionsListPage() {
         {/* Stats bar skeleton */}
         <div className="mb-8 grid grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-20 animate-pulse rounded-lg bg-muted"
-            />
+            <div key={i} className="h-20 animate-pulse rounded-lg bg-muted" />
           ))}
         </div>
         {/* Table skeleton */}
         <div className="space-y-2">
           <div className="h-10 animate-pulse rounded bg-muted" />
           {Array.from({ length: 5 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-12 animate-pulse rounded bg-muted"
-            />
+            <div key={i} className="h-12 animate-pulse rounded bg-muted" />
           ))}
         </div>
       </div>
@@ -165,9 +194,7 @@ export function SubmissionsListPage() {
   if (!task || !cls) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="text-sm text-muted-foreground">
-          {t("notFound")}
-        </p>
+        <p className="text-sm text-muted-foreground">{t("notFound")}</p>
       </div>
     );
   }
@@ -309,7 +336,7 @@ export function SubmissionsListPage() {
                   {/* Submitted date */}
                   <td className="px-4 py-3 text-[13px] text-muted-foreground">
                     {hasSubmission
-                      ? formatDate(row.submission!.firstSubmittedAt)
+                      ? formatDate(row.submission?.firstSubmittedAt)
                       : "\u2014"}
                   </td>
 
@@ -320,7 +347,7 @@ export function SubmissionsListPage() {
                         className="font-serif text-[15px] font-semibold"
                         style={{ color: accentColor }}
                       >
-                        {row.submission!.score}
+                        {row.submission?.score}
                       </span>
                     ) : (
                       <span className="text-[13px] text-text-muted-soft">
@@ -331,55 +358,89 @@ export function SubmissionsListPage() {
 
                   {/* Status badge */}
                   <td className="px-4 py-3">
-                    {isGraded ? (
-                      <span
-                        className="inline-block rounded-md px-2.5 py-0.5 text-[11px] font-semibold"
-                        style={{
-                          backgroundColor: "#7B6CB018",
-                          color: "#7B6CB0",
-                        }}
-                      >
-                        {t("status.graded")}
-                      </span>
-                    ) : hasSubmission ? (
-                      <span
-                        className="inline-block rounded-md px-2.5 py-0.5 text-[11px] font-semibold"
-                        style={{
-                          backgroundColor: "#5B8C6A18",
-                          color: "#5B8C6A",
-                        }}
-                      >
-                        {t("status.submitted")}
-                      </span>
-                    ) : (
-                      <span className="inline-block rounded-md bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
-                        {t("status.notSubmitted")}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      {isGraded ? (
+                        <span
+                          className="inline-block rounded-md px-2.5 py-0.5 text-[11px] font-semibold"
+                          style={{
+                            backgroundColor: "#7B6CB018",
+                            color: "#7B6CB0",
+                          }}
+                        >
+                          {t("status.graded")}
+                        </span>
+                      ) : hasSubmission ? (
+                        <span
+                          className="inline-block rounded-md px-2.5 py-0.5 text-[11px] font-semibold"
+                          style={{
+                            backgroundColor: "#5B8C6A18",
+                            color: "#5B8C6A",
+                          }}
+                        >
+                          {t("status.submitted")}
+                        </span>
+                      ) : (
+                        <span className="inline-block rounded-md bg-muted px-2.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                          {t("status.notSubmitted")}
+                        </span>
+                      )}
+                      {row.submission?.isExemplary && (
+                        <span
+                          className="inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[11px] font-semibold"
+                          style={{
+                            backgroundColor: "#d97706" + "18",
+                            color: "#d97706",
+                          }}
+                          title={t("status.exemplary")}
+                        >
+                          <Award size={10} strokeWidth={2.5} />
+                        </span>
+                      )}
+                    </div>
                   </td>
 
-                  {/* View action */}
+                  {/* View + Exemplary actions */}
                   <td className="px-4 py-3 text-right">
-                    {hasSubmission ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          router.push(
-                            `/submissions/${row.submission!.id}`,
-                          )
-                        }
-                        className="inline-flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[12px] font-medium text-white transition-colors duration-100"
-                        style={{ backgroundColor: accentColor }}
-                      >
-                        <Eye size={12} strokeWidth={2} />
-                        {t("table.view")}
-                      </button>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 rounded-[8px] bg-muted px-3 py-1.5 text-[12px] font-medium text-text-muted-soft">
-                        <Eye size={12} strokeWidth={2} />
-                        {t("table.view")}
-                      </span>
-                    )}
+                    <div className="flex items-center justify-end gap-1.5">
+                      {hasSubmission && isGraded && (
+                        <button
+                          type="button"
+                          onClick={(e) =>
+                            handleToggleExemplary(row.submission!.id, e)
+                          }
+                          className={`inline-flex h-7 w-7 items-center justify-center rounded-[8px] transition-colors duration-100 ${
+                            row.submission?.isExemplary
+                              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                              : "bg-secondary text-muted-foreground hover:text-foreground"
+                          }`}
+                          title={
+                            row.submission?.isExemplary
+                              ? t("table.unmarkExemplary")
+                              : t("table.markExemplary")
+                          }
+                        >
+                          <Award size={13} strokeWidth={2} />
+                        </button>
+                      )}
+                      {hasSubmission ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            router.push(`/submissions/${row.submission?.id}`)
+                          }
+                          className="inline-flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[12px] font-medium text-white transition-colors duration-100"
+                          style={{ backgroundColor: accentColor }}
+                        >
+                          <Eye size={12} strokeWidth={2} />
+                          {t("table.view")}
+                        </button>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 rounded-[8px] bg-muted px-3 py-1.5 text-[12px] font-medium text-text-muted-soft">
+                          <Eye size={12} strokeWidth={2} />
+                          {t("table.view")}
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );

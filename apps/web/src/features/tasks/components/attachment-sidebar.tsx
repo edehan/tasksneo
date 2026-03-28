@@ -1,9 +1,9 @@
 "use client";
 
 import { Download, FileText, Loader2, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useTranslations } from "next-intl";
 
 import { useAuth } from "@/components/auth-provider";
 import type { AttachmentMeta } from "@/lib/api";
@@ -168,7 +168,11 @@ export function AttachmentSidebar({
                   aria-label={`Download ${att.originalName}`}
                 >
                   {isDownloading ? (
-                    <Loader2 size={14} strokeWidth={2} className="animate-spin" />
+                    <Loader2
+                      size={14}
+                      strokeWidth={2}
+                      className="animate-spin"
+                    />
                   ) : (
                     <Download size={14} strokeWidth={2} />
                   )}

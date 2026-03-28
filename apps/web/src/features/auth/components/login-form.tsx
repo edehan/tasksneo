@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
-
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useTranslations } from "next-intl";
 import { ApiError } from "@/lib/api";
 
 export function LoginForm() {
@@ -50,9 +49,7 @@ export function LoginForm() {
         <CardTitle className="text-2xl font-serif">
           {t("welcomeBack")}
         </CardTitle>
-        <CardDescription>
-          {t("signInToAccount")}
-        </CardDescription>
+        <CardDescription>{t("signInToAccount")}</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
