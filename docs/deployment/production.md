@@ -81,7 +81,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.prod.yml ps
 
 # Run database migrations
-docker compose -f docker-compose.prod.yml exec api npx prisma migrate deploy
+docker compose -f docker-compose.prod.yml exec api sh -lc "cd /app/packages/db && ./node_modules/.bin/prisma migrate deploy"
 ```
 
 Verify:
@@ -259,7 +259,7 @@ cd infra
 docker compose -f docker-compose.prod.yml up -d --build
 
 # Apply any new migrations
-docker compose -f docker-compose.prod.yml exec api npx prisma migrate deploy
+docker compose -f docker-compose.prod.yml exec api sh -lc "cd /app/packages/db && ./node_modules/.bin/prisma migrate deploy"
 ```
 
 For the frontend, push to the connected Git branch — Vercel / Cloudflare Pages will auto-deploy.

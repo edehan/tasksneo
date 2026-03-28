@@ -270,12 +270,12 @@ export function PostTaskDialog({
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
     if (!files || files.length === 0 || !token) return;
+    const fileArray = Array.from(files);
     e.target.value = "";
 
     setUploading(true);
     try {
       const taskId = await ensureDraft();
-      const fileArray = Array.from(files);
 
       const results = await Promise.all(
         fileArray.map((f) => uploadTaskAttachment(token, taskId, f)),

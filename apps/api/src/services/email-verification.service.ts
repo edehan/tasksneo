@@ -19,6 +19,12 @@ const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
 const RATE_LIMIT_MAX = 5;
 const TOKEN_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 const SALT_ROUNDS = 10;
+const DEFAULT_APP_TITLE = "TaskNeo";
+
+async function getAppTitle() {
+	const title = await getConfigValue("app.title");
+	return title?.trim() || DEFAULT_APP_TITLE;
+}
 
 // ── Token CRUD ──────────────────────────────────────────────────────────────
 
@@ -85,15 +91,19 @@ async function consumeToken(
 // ── Email templates ─────────────────────────────────────────────────────────
 
 function buildVerificationHtml(
+	appTitle: string,
 	heading: string,
 	bodyText: string,
 	ctaLabel: string,
 	ctaUrl: string,
 ) {
-	const accentColor = "#7B6CB0";
+	const accentColor = "#2C6E91";
+	const safeTitle = escapeHtml(appTitle);
+	const safeLabel = escapeHtml(ctaLabel);
+	const safeUrl = escapeHtml(ctaUrl);
 
 	return `<!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background-color:#faf7f2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#faf7f2;">
@@ -101,18 +111,22 @@ function buildVerificationHtml(
       <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background-color:#fffdf8;border-radius:8px;overflow:hidden;border:1px solid #e8e2d8;">
         <tr><td style="height:4px;background-color:${accentColor};"></td></tr>
         <tr><td style="padding:24px 32px 16px;">
-          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#8a8078;">TaskFlow</p>
+          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#8a8078;">${safeTitle}</p>
         </td></tr>
         <tr><td style="padding:0 32px 24px;">
-          <h2 style="margin:0 0 12px;font-size:18px;font-weight:600;color:#2c2825;">${heading}</h2>
+          <h2 style="margin:0 0 12px;font-size:18px;font-weight:600;color:#2c2825;">${escapeHtml(heading)}</h2>
           <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#2c2825;">${bodyText}</p>
         </td></tr>
         <tr><td style="padding:0 32px 32px;" align="center">
-          <a href="${ctaUrl}" style="display:inline-block;padding:10px 28px;background-color:${accentColor};color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px;">${ctaLabel}</a>
+          <a href="${safeUrl}" style="display:inline-block;padding:10px 28px;background-color:${accentColor};color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px;">${safeLabel}</a>
+        </td></tr>
+        <tr><td style="padding:0 32px 24px;">
+          <p style="margin:0 0 8px;font-size:12px;line-height:1.6;color:#6b625c;">如果按钮无法点击，请复制下面的链接到浏览器打开：</p>
+          <p style="margin:0;font-size:12px;line-height:1.6;word-break:break-all;"><a href="${safeUrl}" style="color:#2C6E91;text-decoration:underline;">${safeUrl}</a></p>
         </td></tr>
         <tr><td style="padding:16px 32px;border-top:1px solid #e8e2d8;">
           <p style="margin:0;font-size:12px;color:#c0b8ad;text-align:center;">
-            This link expires in 1 hour. If you didn't request this, you can safely ignore this email.
+            你收到这封邮件是因为 ${safeTitle} 账户触发了安全操作请求。链接将在 1 小时后失效；如果不是你本人操作，可忽略本邮件。
           </p>
         </td></tr>
       </table>
@@ -136,14 +150,16 @@ export async function sendRegistrationEmail(email: string) {
 	);
 	const baseUrl =
 		(await getConfigValue("app.base_url")) || "http://localhost:3000";
+	const appTitle = await getAppTitle();
 	const verifyUrl = `${baseUrl}/register/complete?token=${token}`;
 
-	const subject = "[TaskFlow] Verify your email";
-	const text = `Click the following link to verify your email and complete registration:\n\n${verifyUrl}\n\nThis link expires in 1 hour.`;
+	const subject = `[${appTitle}] 请验证你的邮箱`;
+	const text = `你收到这封邮件，是因为有人使用此邮箱发起了 ${appTitle} 注册。\n\n请打开以下链接完成邮箱验证：\n${verifyUrl}\n\n出于安全考虑，该链接 1 小时内有效。若非本人操作，可忽略本邮件。`;
 	const html = buildVerificationHtml(
-		"Verify your email",
-		"Click the button below to verify your email and complete your TaskFlow registration.",
-		"Verify Email",
+		appTitle,
+		"验证你的邮箱",
+		`我们收到了使用此邮箱注册 ${escapeHtml(appTitle)} 账户的请求。请点击下方按钮继续。`,
+		"立即验证邮箱",
 		verifyUrl,
 	);
 
@@ -197,14 +213,16 @@ export async function sendPasswordResetEmail(email: string) {
 	);
 	const baseUrl =
 		(await getConfigValue("app.base_url")) || "http://localhost:3000";
+	const appTitle = await getAppTitle();
 	const resetUrl = `${baseUrl}/reset-password?token=${token}`;
 
-	const subject = "[TaskFlow] Reset your password";
-	const text = `Click the following link to reset your password:\n\n${resetUrl}\n\nThis link expires in 1 hour.`;
+	const subject = `[${appTitle}] 重置你的密码`;
+	const text = `你收到这封邮件，是因为你的 ${appTitle} 账户发起了密码重置请求。\n\n请打开以下链接设置新密码：\n${resetUrl}\n\n出于安全考虑，该链接 1 小时内有效。若非本人操作，可忽略本邮件。`;
 	const html = buildVerificationHtml(
-		"Reset your password",
-		"Click the button below to set a new password for your TaskFlow account.",
-		"Reset Password",
+		appTitle,
+		"重置密码",
+		`我们收到了你的 ${escapeHtml(appTitle)} 账户密码重置请求。请点击下方按钮设置新密码。`,
+		"设置新密码",
 		resetUrl,
 	);
 
@@ -265,14 +283,16 @@ export async function sendEmailChangeVerification(
 	);
 	const baseUrl =
 		(await getConfigValue("app.base_url")) || "http://localhost:3000";
+	const appTitle = await getAppTitle();
 	const confirmUrl = `${baseUrl}/settings/verify-email?token=${token}`;
 
-	const subject = "[TaskFlow] Confirm your new email";
-	const text = `Click the following link to confirm changing your email to ${newEmail}:\n\n${confirmUrl}\n\nThis link expires in 1 hour.`;
+	const subject = `[${appTitle}] 确认你的新邮箱`;
+	const text = `你收到这封邮件，是因为 ${appTitle} 账户发起了邮箱修改请求。\n\n请确认将邮箱更改为 ${newEmail}：\n${confirmUrl}\n\n出于安全考虑，该链接 1 小时内有效。若非本人操作，可忽略本邮件。`;
 	const html = buildVerificationHtml(
-		"Confirm your new email",
-		`Click the button below to confirm changing your TaskFlow email to <strong>${escapeHtml(newEmail)}</strong>.`,
-		"Confirm Email Change",
+		appTitle,
+		"确认新邮箱",
+		`请点击下方按钮，确认将 ${escapeHtml(appTitle)} 账户邮箱修改为 <strong>${escapeHtml(newEmail)}</strong>。`,
+		"确认邮箱修改",
 		confirmUrl,
 	);
 

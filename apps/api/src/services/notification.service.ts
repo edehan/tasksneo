@@ -29,6 +29,8 @@ type NotificationPayload =
 	| TaskNotificationPayload
 	| AnnouncementNotificationPayload;
 
+const DEFAULT_APP_TITLE = "TaskNeo";
+
 function parseBeforeDueHours(value: string | null): number[] {
 	if (!value) {
 		return [];
@@ -165,15 +167,15 @@ export async function enqueueTaskPublishedNotifications(params: {
 	}
 }
 
-function buildSubject(payload: NotificationPayload) {
+function buildSubject(payload: NotificationPayload, appTitle: string) {
 	if (payload.type === "SITE_ANNOUNCEMENT") {
-		return `[TaskFlow] 系统公告：${payload.title}`;
+		return `[${appTitle}] 系统公告：${payload.title}`;
 	}
 	if (payload.type === "TASK_PUBLISHED") {
-		return `[TaskFlow] 新任务：${payload.taskTitle}`;
+		return `[${appTitle}] 新任务：${payload.taskTitle}`;
 	}
 
-	return `[TaskFlow] 任务截止提醒：${payload.taskTitle}`;
+	return `[${appTitle}] 任务截止提醒：${payload.taskTitle}`;
 }
 
 function buildText(payload: NotificationPayload, timezone: string) {
@@ -193,10 +195,12 @@ function buildText(payload: NotificationPayload, timezone: string) {
 function buildAnnouncementHtml(
 	payload: AnnouncementNotificationPayload,
 	baseUrl: string,
+	appTitle: string,
 ) {
 	const accentColor = "#C4785B";
 	const unsubscribeUrl = `${baseUrl}/settings/notifications`;
 	const contentHtml = escapeHtml(payload.content).replace(/\n/g, "<br>");
+	const safeTitle = escapeHtml(appTitle);
 
 	return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -207,7 +211,7 @@ function buildAnnouncementHtml(
       <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background-color:#fffdf8;border-radius:8px;overflow:hidden;border:1px solid #e8e2d8;">
         <tr><td style="height:4px;background-color:${accentColor};"></td></tr>
         <tr><td style="padding:24px 32px 16px;">
-          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#8a8078;">TaskFlow · 系统公告</p>
+          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#8a8078;">${safeTitle} · 系统公告</p>
         </td></tr>
         <tr><td style="padding:0 32px 24px;">
           <p style="margin:0 0 16px;font-size:18px;font-weight:600;line-height:1.4;color:#2c2825;">${escapeHtml(payload.title)}</p>
@@ -215,7 +219,7 @@ function buildAnnouncementHtml(
         </td></tr>
         <tr><td style="padding:16px 32px;border-top:1px solid #e8e2d8;">
           <p style="margin:0;font-size:12px;color:#c0b8ad;text-align:center;">
-            此邮件由 TaskFlow 自动发送 &middot;
+            此邮件由 ${safeTitle} 自动发送 &middot;
             <a href="${unsubscribeUrl}" style="color:#8a8078;text-decoration:underline;">退订通知</a>
           </p>
         </td></tr>
@@ -230,15 +234,17 @@ function buildHtml(
 	payload: NotificationPayload,
 	timezone: string,
 	baseUrl: string,
+	appTitle: string,
 ) {
 	if (payload.type === "SITE_ANNOUNCEMENT") {
-		return buildAnnouncementHtml(payload, baseUrl);
+		return buildAnnouncementHtml(payload, baseUrl, appTitle);
 	}
 
 	const dueText = formatDueAt(payload.dueAt, timezone);
 	const accentColor = payload.classColor || "#7B6CB0";
 	const taskUrl = `${baseUrl}/dashboard`;
 	const unsubscribeUrl = `${baseUrl}/settings/notifications`;
+	const safeTitle = escapeHtml(appTitle);
 
 	const heading =
 		payload.type === "TASK_PUBLISHED"
@@ -256,7 +262,7 @@ function buildHtml(
         <tr><td style="height:4px;background-color:${accentColor};"></td></tr>
         <!-- Header -->
         <tr><td style="padding:24px 32px 16px;">
-          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#8a8078;">TaskFlow</p>
+          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#8a8078;">${safeTitle}</p>
         </td></tr>
         <!-- Body -->
         <tr><td style="padding:0 32px 24px;">
@@ -277,7 +283,7 @@ function buildHtml(
         <!-- Footer -->
         <tr><td style="padding:16px 32px;border-top:1px solid #e8e2d8;">
           <p style="margin:0;font-size:12px;color:#c0b8ad;text-align:center;">
-            此邮件由 TaskFlow 自动发送 &middot;
+            此邮件由 ${safeTitle} 自动发送 &middot;
             <a href="${unsubscribeUrl}" style="color:#8a8078;text-decoration:underline;">退订通知</a>
           </p>
         </td></tr>
@@ -392,15 +398,17 @@ export async function processNotificationJob(notificationJobId: string) {
 		const timezone = user.timezone || "UTC";
 		const baseUrl =
 			(await getConfigValue("app.base_url")) || "http://localhost:3000";
+		const appTitle =
+			(await getConfigValue("app.title"))?.trim() || DEFAULT_APP_TITLE;
 
 		if (channel === NotifChannel.EMAIL) {
 			const targetEmail = user.email;
 
 			await sendEmail(
 				targetEmail,
-				buildSubject(payload),
+				buildSubject(payload, appTitle),
 				buildText(payload, timezone),
-				buildHtml(payload, timezone, baseUrl),
+				buildHtml(payload, timezone, baseUrl, appTitle),
 			);
 		} else if (channel === NotifChannel.WEBHOOK) {
 			const webhookUrl = pref?.address;

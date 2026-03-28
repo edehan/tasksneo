@@ -8,7 +8,11 @@ interface SmtpConfig {
 	user: string;
 	password: string;
 	from: string;
+	fromName: string;
+	appTitle: string;
 }
+
+const DEFAULT_APP_TITLE = "TaskNeo";
 
 async function loadSmtpConfig(): Promise<SmtpConfig> {
 	const host = await getConfigValue("smtp.host");
@@ -16,6 +20,8 @@ async function loadSmtpConfig(): Promise<SmtpConfig> {
 	const user = await getConfigValue("smtp.user");
 	const password = await getConfigValue("smtp.password");
 	const from = await getConfigValue("smtp.from");
+	const fromName = await getConfigValue("smtp.from_name");
+	const appTitle = await getConfigValue("app.title");
 
 	if (!host || !portRaw || !user || !password || !from) {
 		throw new AppError(400, "SMTP_NOT_CONFIGURED", "SMTP config is incomplete");
@@ -27,7 +33,35 @@ async function loadSmtpConfig(): Promise<SmtpConfig> {
 		throw new AppError(400, "SMTP_NOT_CONFIGURED", "SMTP port is invalid");
 	}
 
-	return { host, port, user, password, from };
+	return {
+		host,
+		port,
+		user,
+		password,
+		from,
+		fromName: fromName?.trim() ?? "",
+		appTitle: appTitle?.trim() ?? "",
+	};
+}
+
+function escapeDisplayName(value: string): string {
+	return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+function hasDisplayName(from: string): boolean {
+	return /<[^>]+>/.test(from);
+}
+
+function buildFromHeader(config: SmtpConfig): string {
+	const from = config.from.trim();
+
+	if (hasDisplayName(from)) {
+		return from;
+	}
+
+	const displayName =
+		config.fromName || config.appTitle || DEFAULT_APP_TITLE;
+	return `"${escapeDisplayName(displayName)}" <${from}>`;
 }
 
 export async function sendEmail(
@@ -50,7 +84,7 @@ export async function sendEmail(
 
 	try {
 		await transporter.sendMail({
-			from: config.from,
+			from: buildFromHeader(config),
 			to,
 			subject,
 			text,

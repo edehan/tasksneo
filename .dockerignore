@@ -1,5 +1,12 @@
 .git
 *.log
 .env
-.env.local
-.env.test
+.env.*
+!.env.example
+node_modules
+**/node_modules
+**/dist
+apps/web
+docs
+.turbo
+.next
