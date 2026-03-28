@@ -4,11 +4,11 @@
 	"type": "module",
 	"main": "./src/index.ts",
 	"dependencies": {
-		"@prisma/client": "6"
+		"@prisma/client": "7"
 	},
 	"devDependencies": {
 		"@types/node": "^25.5.0",
-		"prisma": "6",
-		"typescript": "^5.9.3"
+		"prisma": "7",
+		"typescript": "^6.0.2"
 	}
 }

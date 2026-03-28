@@ -25,11 +25,11 @@
 	},
 	"devDependencies": {
 		"@types/jsonwebtoken": "^9.0.10",
-		"@types/node": "^20.19.37",
+		"@types/node": "^25.5.0",
 		"@types/nodemailer": "^7.0.11",
 		"dotenv": "^17.3.1",
 		"tsx": "^4.21.0",
-		"typescript": "^5.9.3",
+		"typescript": "^6.0.2",
 		"vitest": "^4.1.0"
 	}
 }
