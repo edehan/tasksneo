@@ -103,16 +103,42 @@ curl https://api.yourdomain.com/health
    - `NEXT_PUBLIC_API_BASE_URL` = `https://api.yourdomain.com`
 7. Deploy
 
-### Option B: Cloudflare Pages
+### Option B: Cloudflare Workers
 
-1. Connect the GitHub repository in Cloudflare Pages
-2. Build command: `pnpm install && pnpm --filter web build`
-3. Build output directory: `apps/web/.next`
-4. Root directory: `/` (monorepo root)
-5. Environment variables:
-   - `NEXT_PUBLIC_API_BASE_URL` = `https://api.yourdomain.com`
-   - `NODE_VERSION` = `22`
-6. Deploy
+Next.js apps deploy to Cloudflare Workers via the [OpenNext adapter](https://opennext.js.org/cloudflare). The adapter transforms `next build` output into a Worker that runs on Cloudflare's edge network. Next.js 14–16 are all supported.
+
+#### Workers Builds (recommended — git-connected CI)
+
+1. In Cloudflare dashboard → Workers & Pages → Create → Import a Git repository
+2. Select the GitHub repo, then configure:
+
+| Setting | Value |
+|---------|-------|
+| Build command | `pnpm install && cd apps/web && pnpm run deploy` |
+| Root directory | `/` (monorepo root) |
+
+3. Add **Build variables and secrets**:
+
+| Variable | Value |
+|----------|-------|
+| `NEXT_PUBLIC_API_BASE_URL` | `https://api.yourdomain.com` |
+| `NODE_VERSION` | `22` |
+
+> The `deploy` script in `apps/web/package.json` runs `opennextjs-cloudflare build && opennextjs-cloudflare deploy`, which builds Next.js, transforms the output, and deploys via wrangler — all from the correct directory.
+
+#### Manual deploy from CLI
+
+```bash
+cd apps/web
+NEXT_PUBLIC_API_BASE_URL=https://api.yourdomain.com pnpm run deploy
+```
+
+#### Local preview (runs in workerd runtime)
+
+```bash
+cd apps/web
+pnpm run preview
+```
 
 > **Note**: `NEXT_PUBLIC_API_BASE_URL` is baked into the frontend at build time. If you change the API domain, redeploy the frontend.
 

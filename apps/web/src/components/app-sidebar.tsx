@@ -98,7 +98,10 @@ export function AppSidebar() {
             <div className="flex items-center gap-3 px-2 py-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-3 flex-1 min-w-0 rounded-lg hover:bg-sidebar-accent p-1 -m-1 transition-colors">
+                  <button
+                    type="button"
+                    className="flex items-center gap-3 flex-1 min-w-0 rounded-lg hover:bg-sidebar-accent p-1 -m-1 transition-colors"
+                  >
                     <Avatar className="h-8 w-8 shrink-0">
                       <AvatarFallback className="text-xs font-medium">
                         {initials}
@@ -216,6 +219,7 @@ export function AppSidebar() {
               </DropdownMenu>
               {/* Quick theme toggle: light ↔ dark */}
               <button
+                type="button"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
                 title={theme === "dark" ? t("lightMode") : t("darkMode")}

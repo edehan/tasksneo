@@ -510,6 +510,7 @@ export function PostTaskDialog({
               <div className="flex flex-col gap-2">
                 {pendingTimeOptions.map((opt, i) => (
                   <button
+                    // biome-ignore lint/suspicious/noArrayIndexKey: time option list from AI parsing
                     key={i}
                     type="button"
                     onClick={() => {
@@ -634,6 +635,7 @@ export function PostTaskDialog({
               </div>
 
               {/* Allow late */}
+              {/* biome-ignore lint/a11y/noLabelWithoutControl: wraps custom checkbox div */}
               <label className="mb-4 flex cursor-pointer items-center gap-2">
                 <div
                   className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] transition-all duration-150"

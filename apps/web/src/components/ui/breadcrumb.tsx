@@ -61,6 +61,8 @@ const BreadcrumbPage = React.forwardRef<
   HTMLSpanElement,
   React.ComponentPropsWithoutRef<"span">
 >(({ className, ...props }, ref) => (
+  // biome-ignore lint/a11y/useFocusableInteractive: shadcn/ui breadcrumb component
+  // biome-ignore lint/a11y/useSemanticElements: shadcn/ui breadcrumb component
   <span
     ref={ref}
     role="link"

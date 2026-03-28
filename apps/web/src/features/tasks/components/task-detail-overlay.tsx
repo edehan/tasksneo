@@ -121,6 +121,7 @@ export function TaskDetailOverlay({
 
     async function load() {
       try {
+        // biome-ignore lint/style/noNonNullAssertion: token checked before effect runs
         const detail = await getTask(token!, task.id);
         if (!cancelled) {
           setTaskDetail(detail);
@@ -188,6 +189,7 @@ export function TaskDetailOverlay({
   const bodyContent = taskDetail?.description ?? "";
 
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: overlay dismiss handled by Escape key in useEffect
     <div
       ref={overlayRef}
       className="fixed inset-0 z-50 flex items-center justify-center p-4"

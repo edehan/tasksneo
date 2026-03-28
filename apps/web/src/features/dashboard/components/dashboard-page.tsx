@@ -140,11 +140,13 @@ export function DashboardPage() {
         <div className="h-4 w-80 bg-muted animate-pulse rounded mb-8" />
         <div className="grid grid-cols-4 gap-4 mb-8">
           {Array.from({ length: 4 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholder
             <div key={i} className="h-24 bg-muted animate-pulse rounded-lg" />
           ))}
         </div>
         <div className="space-y-3">
           {Array.from({ length: 6 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholder
             <div key={i} className="h-12 bg-muted animate-pulse rounded" />
           ))}
         </div>

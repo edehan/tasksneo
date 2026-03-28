@@ -217,6 +217,8 @@ export function TaskGanttView({
           {sortedTasks.map((task) => {
             const submitted = isSubmitted(task);
             return (
+              // biome-ignore lint/a11y/noStaticElementInteractions: clickable gantt row
+              // biome-ignore lint/a11y/useKeyWithClickEvents: keyboard nav not applicable for gantt chart
               <div
                 key={task.id}
                 className="group flex cursor-pointer items-center gap-2 border-b px-3 transition-colors duration-150 hover:bg-surface-subtle"
@@ -340,6 +342,8 @@ export function TaskGanttView({
               const labelColor = submitted ? "#c0b8ad" : task.classColor;
 
               return (
+                // biome-ignore lint/a11y/useKeyWithClickEvents: keyboard nav not applicable for gantt chart
+                // biome-ignore lint/a11y/noStaticElementInteractions: clickable gantt bar
                 <div
                   key={task.id}
                   className="group relative cursor-pointer border-b transition-colors duration-150 hover:bg-surface-subtle"

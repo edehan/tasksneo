@@ -160,6 +160,7 @@ export function InboxCard({ onTaskClick }: InboxCardProps) {
             <div className="space-y-1 p-2">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div
+                  // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholder
                   key={i}
                   className="h-12 animate-pulse rounded-md bg-muted"
                 />

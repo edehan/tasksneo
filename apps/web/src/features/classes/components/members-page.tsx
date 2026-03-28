@@ -209,6 +209,7 @@ export function MembersPage() {
         <div className="h-8 w-32 bg-muted animate-pulse rounded mb-8" />
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholder
             <div key={i} className="h-14 bg-muted animate-pulse rounded" />
           ))}
         </div>
