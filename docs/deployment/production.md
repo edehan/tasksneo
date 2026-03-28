@@ -172,6 +172,54 @@ curl https://api.yourdomain.com/health
 | `llm.*` | AI provider configuration |
 | `auth.registration_open` | Allow new registrations |
 
+## 9. MCP Server Package
+
+The MCP server lets users connect AI tools (Claude Code, Cursor, etc.) to their TaskFlow account. It is distributed as a tarball hosted on the API server.
+
+### Build the package
+
+```bash
+cd apps/mcp
+pnpm pack
+# Output: taskflow-mcp-<version>.tgz
+```
+
+### Host on your API server
+
+Serve the tarball as a static file from your API domain. The frontend config snippet generates a URL like:
+
+```
+https://api.yourdomain.com/mcp/taskflow-mcp-latest.tgz
+```
+
+Option A — Nginx (if running a reverse proxy on the VPS):
+```nginx
+location /mcp/ {
+    alias /opt/taskflow/packages/mcp-dist/;
+}
+```
+
+Option B — Cloudflare R2 / any static host:
+Upload the `.tgz` and make it publicly accessible at the URL above.
+
+### Update workflow
+
+When the MCP server code changes:
+```bash
+cd apps/mcp
+pnpm pack
+cp taskflow-mcp-*.tgz /opt/taskflow/packages/mcp-dist/taskflow-mcp-latest.tgz
+```
+
+Users run the snippet from the MCP Keys settings page. `npx` downloads the tarball, installs dependencies, and runs the MCP server — no npm registry needed.
+
+### Environment variables (set by the user's AI tool, not on the server)
+
+| Variable | Description |
+|----------|-------------|
+| `TASKFLOW_API_URL` | API base URL (e.g. `https://api.yourdomain.com`) |
+| `TASKFLOW_MCP_KEY` | MCP key generated from the web UI |
+
 ## Updates
 
 To deploy a new version:

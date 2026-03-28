@@ -63,7 +63,7 @@ export function registerSubmissionTools(
 ): void {
 	server.registerTool("list_submissions", {
 		description:
-			"List all student submissions for a task. Supports filtering by status. Returns student info alongside submission data.",
+			"List all student submissions for a task. Supports filtering by status. Returns student info alongside submission data.\n\nFor auto-grading: first call with filter='exemplary' to get the reference submission (score + reviewNote). If no exemplary submission exists, the user must set one manually in the web UI before batch grading can proceed. Then call with filter='ungraded' to get submissions needing grades.",
 		inputSchema: {
 			taskId: z.string().uuid().describe("Task ID"),
 			filter: z
@@ -131,7 +131,7 @@ export function registerSubmissionTools(
 
 	server.registerTool("grade_submission", {
 		description:
-			"Set a score and/or review note on a student submission. Both fields are optional so you can set them independently.",
+			"Set a score and/or review note on a student submission. Both fields are optional so you can set them independently.\n\nAuto-grading workflow: Before batch-grading, at least one exemplary submission must exist for this task. Use list_submissions with filter='exemplary' to check. If none exist, tell the user to visit the submission list in the web UI and manually grade + mark one submission as exemplary first. Then use the exemplary submission's score and reviewNote as the reference standard for grading the rest.",
 		inputSchema: {
 			taskId: z.string().uuid().describe("Task ID"),
 			submissionId: z.string().uuid().describe("Submission ID"),

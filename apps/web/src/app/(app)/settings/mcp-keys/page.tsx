@@ -135,12 +135,13 @@ export default function McpKeysPage() {
 
 	function getConfigSnippet(): string {
 		if (!createdKey) return "";
-		const apiUrl = typeof window !== "undefined" ? window.location.origin.replace(/:\d+$/, ":3001") : "http://localhost:3001";
+		const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
+		const mcpPkgUrl = `${apiUrl}/mcp/taskflow-mcp-latest.tgz`;
 		return [
 			"claude mcp add taskflow \\",
 			`  -e TASKFLOW_API_URL=${apiUrl} \\`,
 			`  -e TASKFLOW_MCP_KEY=${createdKey.key} \\`,
-			"  -- npx -y @taskflow/mcp@latest",
+			`  -- npx -y ${mcpPkgUrl}`,
 		].join("\n");
 	}
 

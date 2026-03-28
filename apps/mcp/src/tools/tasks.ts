@@ -63,7 +63,7 @@ export function registerTaskTools(
 
 	server.registerTool("create_task", {
 		description:
-			"Create a new draft task in a class. The task starts unpublished. Use publish_task to make it visible to students.",
+			"Create a new draft task in a class. The task starts unpublished — use publish_task separately to make it visible.\n\nIMPORTANT: Before calling publish_task, you MUST present the full task details (title, description, dates) to the user and get their explicit confirmation. Publishing notifies all students immediately and cannot be undone.",
 		inputSchema: {
 			classId: z.string().uuid().describe("Class ID to create the task in"),
 			title: z.string().optional().describe("Task title (defaults to 'Untitled Draft')"),
@@ -115,7 +115,7 @@ export function registerTaskTools(
 
 	server.registerTool("publish_task", {
 		description:
-			"Publish a draft task, making it visible to all class members. Students will be notified.",
+			"Publish a draft task, making it visible to all class members. Students will be notified immediately.\n\nIMPORTANT: You MUST confirm with the user before calling this. Show them the task title, description, start/due dates and ask for explicit approval. Verify that startAt (if set) is before dueAt. This action cannot be undone.",
 		inputSchema: {
 			taskId: z.string().uuid().describe("Task ID of the draft to publish"),
 			title: z.string().optional().describe("Override title at publish time"),
