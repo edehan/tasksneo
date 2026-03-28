@@ -151,6 +151,7 @@ export function NotificationBell() {
             <div className="space-y-1 p-2">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div
+                  // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholder
                   key={i}
                   className="h-14 animate-pulse rounded-md bg-muted"
                 />

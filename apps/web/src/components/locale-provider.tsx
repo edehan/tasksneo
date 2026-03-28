@@ -26,6 +26,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(LOCALE_STORAGE_KEY, newLocale);
 
       // Set cookie for server-side reading (1 year expiry)
+      // biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API has insufficient browser support
       document.cookie = `${LOCALE_COOKIE}=${newLocale};path=/;max-age=${365 * 24 * 60 * 60};samesite=lax`;
 
       // Reload to re-render with the new locale on the server

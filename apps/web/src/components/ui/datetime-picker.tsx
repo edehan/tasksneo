@@ -99,6 +99,8 @@ export function DateTimePicker({
             {value ? formatDateTime(value) : placeholder}
           </span>
           {value && !disabled && (
+            // biome-ignore lint/a11y/useKeyWithClickEvents: clear button with role=button
+            // biome-ignore lint/a11y/useSemanticElements: clear button with role=button
             <span
               role="button"
               tabIndex={-1}
@@ -127,6 +129,7 @@ export function DateTimePicker({
             className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           >
             {Array.from({ length: 24 }, (_, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: static time option list
               <option key={i} value={i}>
                 {pad(i)}
               </option>
@@ -139,6 +142,7 @@ export function DateTimePicker({
             className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           >
             {Array.from({ length: 60 }, (_, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: static time option list
               <option key={i} value={i}>
                 {pad(i)}
               </option>

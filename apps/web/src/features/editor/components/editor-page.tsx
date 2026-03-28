@@ -390,6 +390,7 @@ export function EditorPage({
         <div className="w-[260px] shrink-0 border-l border-border">
           <div className="flex h-full flex-col">
             {/* Drag-drop zone */}
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: drag-drop zone for file uploads */}
             <div
               className={`border-b border-border p-4 ${
                 dragOver ? "bg-surface-subtle" : ""

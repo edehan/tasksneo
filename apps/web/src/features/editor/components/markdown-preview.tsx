@@ -59,6 +59,7 @@ function AuthImage({
   }
 
   return (
+    // biome-ignore lint/performance/noImgElement: user-generated markdown content with dynamic URLs
     <img src={imageUrl} alt={alt} className="my-3 max-w-full rounded-lg" />
   );
 }
@@ -180,6 +181,7 @@ export function MarkdownPreview({
         return <AuthImage src={srcStr} alt={alt ?? ""} token={authToken} />;
       }
       return (
+        // biome-ignore lint/performance/noImgElement: user-generated markdown content with dynamic URLs
         <img
           src={srcStr}
           alt={alt ?? ""}

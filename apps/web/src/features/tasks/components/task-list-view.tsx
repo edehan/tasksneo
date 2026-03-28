@@ -104,6 +104,7 @@ export function TaskListView({
         const isOverdue = status === "overdue";
 
         return (
+          // biome-ignore lint/a11y/useSemanticElements: grid row acts as clickable card
           <div
             key={task.id}
             className="grid h-12 cursor-pointer items-center border-b border-border px-4 transition-colors duration-150 hover:bg-surface-subtle"

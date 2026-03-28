@@ -118,6 +118,7 @@ function TagComposer({
     if (!tag) return null;
     const isDragging = dragging === id;
     return (
+      // biome-ignore lint/a11y/noStaticElementInteractions: drag-and-drop tag element
       <div
         key={id}
         draggable={!disabled}
@@ -141,6 +142,7 @@ function TagComposer({
   return (
     <div className="space-y-1.5">
       {/* Active zone */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: drag-and-drop zone */}
       <div
         className={`flex min-h-[34px] flex-wrap items-center gap-1.5 rounded-md border border-dashed px-2 py-1.5 transition-colors ${
           overZone === ZONE_ACTIVE && dragging
@@ -176,6 +178,7 @@ function TagComposer({
           </span>
         )}
         {order.map((id, idx) => (
+          // biome-ignore lint/a11y/noStaticElementInteractions: drag-and-drop reorder target
           <div
             key={id}
             onDragOver={(e) => {
@@ -191,6 +194,7 @@ function TagComposer({
       </div>
 
       {/* Pool zone — always visible as a drop target */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: drag-and-drop zone */}
       <div
         className={`flex min-h-[34px] flex-wrap items-center gap-1.5 rounded-md border border-dashed px-2 py-1.5 transition-colors ${
           overZone === ZONE_POOL && dragging
@@ -391,6 +395,7 @@ export function BatchDownloadDialog({
           folderName,
           files: folderResults.map((r) => ({
             name: r.task.fileName,
+            // biome-ignore lint/style/noNonNullAssertion: blob guaranteed by successful fetch
             blob: r.blob!,
           })),
           contentMd: row.submission?.content ?? null,
@@ -509,6 +514,7 @@ export function BatchDownloadDialog({
           <ScrollArea className="max-h-[240px]">
             <div className="space-y-1 pr-3">
               {eligibleRows.map((row) => (
+                // biome-ignore lint/a11y/noLabelWithoutControl: label wraps Checkbox component
                 <label
                   key={row.userId}
                   className="flex cursor-pointer items-center gap-2 rounded-md px-1 py-1.5 transition-colors hover:bg-secondary"

@@ -163,6 +163,7 @@ export function ClassSettingsPage() {
         <div className="h-8 w-48 bg-muted animate-pulse rounded mb-8" />
         <div className="space-y-6">
           {Array.from({ length: 4 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholder
             <div key={i} className="h-20 bg-muted animate-pulse rounded-lg" />
           ))}
         </div>

@@ -95,6 +95,7 @@ export function SubmissionsListPage() {
         (r) =>
           r.submission?.score !== null && r.submission?.score !== undefined,
       )
+      // biome-ignore lint/style/noNonNullAssertion: filtered above to ensure non-null
       .map((r) => parseFloat(r.submission!.score!));
     const avg =
       scores.length > 0
@@ -177,6 +178,7 @@ export function SubmissionsListPage() {
         {/* Stats bar skeleton */}
         <div className="mb-8 grid grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholder
             <div key={i} className="h-20 animate-pulse rounded-lg bg-muted" />
           ))}
         </div>
@@ -184,6 +186,7 @@ export function SubmissionsListPage() {
         <div className="space-y-2">
           <div className="h-10 animate-pulse rounded bg-muted" />
           {Array.from({ length: 5 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholder
             <div key={i} className="h-12 animate-pulse rounded bg-muted" />
           ))}
         </div>
@@ -406,6 +409,7 @@ export function SubmissionsListPage() {
                         <button
                           type="button"
                           onClick={(e) =>
+                            // biome-ignore lint/style/noNonNullAssertion: guarded by hasSubmission && isGraded
                             handleToggleExemplary(row.submission!.id, e)
                           }
                           className={`inline-flex h-7 w-7 items-center justify-center rounded-[8px] transition-colors duration-100 ${
