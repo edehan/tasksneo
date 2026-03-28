@@ -5,14 +5,12 @@ services:
     env_file: .env.prod
     environment:
       POSTGRES_DB: taskflow
-      POSTGRES_USER: ${POSTGRES_USER:-taskflow}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
       - taskflow_prod_pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-taskflow} -d taskflow"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-taskflow} -d $${POSTGRES_DB:-taskflow}"]
       interval: 5s
       timeout: 5s
       retries: 20
