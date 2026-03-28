@@ -51,6 +51,7 @@ model User {
   uploadedAttachments Attachment[]         @relation("AttachmentUploader")
   avatarAttachment   Attachment[]         @relation("UserAvatar")
   notificationJobs   NotificationJob[]
+  mcpKeys            McpKey[]
 
   @@map("users")
 }
@@ -325,6 +326,24 @@ model SiteAnnouncement {
   createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
   @@map("site_announcements")
+}
+
+// ─── MCP Keys ───────────────────────────────────────────────────────────────
+
+model McpKey {
+  id         String    @id @default(uuid())
+  name       String
+  keyHash    String    @map("key_hash")
+  keyPrefix  String    @map("key_prefix")
+  lastUsedAt DateTime? @map("last_used_at") @db.Timestamptz
+  expiresAt  DateTime? @map("expires_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("mcp_keys")
 }
 
 // ─── System Config ───────────────────────────────────────────────────────────

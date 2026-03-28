@@ -4,7 +4,8 @@
     "tabs": {
       "profile": "プロフィール",
       "notifications": "通知",
-      "account": "アカウント"
+      "account": "アカウント",
+      "mcpKeys": "MCPキー"
     }
   },
   "settingsVerifyEmail": {
@@ -148,7 +149,8 @@
     "langEn": "English",
     "langZhCN": "中文",
     "langFr": "Français",
-    "langJa": "日本語"
+    "langJa": "日本語",
+    "mcpKeys": "MCPキー"
   },
   "notificationBell": {
     "notifications": "通知",
@@ -590,6 +592,38 @@
       "mark": "模範提出",
       "unmark": "模範を解除"
     }
+  },
+  "settingsMcpKeys": {
+    "title": "MCPキー",
+    "description": "Claude CodeやCursorなどの外部AIツールをTaskFlowアカウントに接続します。",
+    "createNew": "新規キー",
+    "keyName": "キー名",
+    "keyNamePlaceholder": "例：MacBookのClaude Code",
+    "create": "作成",
+    "secretKey": "シークレットキー",
+    "keyWontShowAgain": "このキーは再表示されません。今すぐコピーしてください。",
+    "configSnippet": "クイックセットアップ（Claude Code）",
+    "copy": "コピー",
+    "done": "完了",
+    "revokeTitle": "キーを無効化",
+    "revokeDescription": "「{name}」を無効化しますか？このキーを使用しているAIツールは直ちにアクセスできなくなります。",
+    "cancel": "キャンセル",
+    "revoke": "無効化",
+    "revoked": "キーを無効化しました",
+    "failedLoad": "キーの読み込みに失敗しました",
+    "failedCreate": "キーの作成に失敗しました",
+    "failedRevoke": "キーの無効化に失敗しました",
+    "noKeys": "キーがまだありません。AIツールを接続するにはキーを作成してください。",
+    "revokedKeys": "無効化されたキー",
+    "created": "作成日",
+    "lastUsed": "最終使用",
+    "justNow": "たった今",
+    "minutesAgo": "{count}分前",
+    "hoursAgo": "{count}時間前",
+    "daysAgo": "{count}日前",
+    "keyCreated": "キーが作成されました",
+    "keyCreatedHint": "下のキーをコピーしてください。再度表示することはできません。",
+    "createDescription": "後で識別できるようにキーに名前を付けてください。"
   },
   "batchDownloadDialog": {
     "title": "提出をダウンロード",

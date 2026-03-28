@@ -4,7 +4,8 @@
     "tabs": {
       "profile": "Profile",
       "notifications": "Notifications",
-      "account": "Account"
+      "account": "Account",
+      "mcpKeys": "MCP Keys"
     }
   },
   "settingsVerifyEmail": {
@@ -148,7 +149,8 @@
     "langEn": "English",
     "langZhCN": "中文",
     "langFr": "Français",
-    "langJa": "日本語"
+    "langJa": "日本語",
+    "mcpKeys": "MCP Keys"
   },
   "notificationBell": {
     "notifications": "Notifications",
@@ -590,6 +592,38 @@
       "mark": "Exemplary",
       "unmark": "Unmark Exemplary"
     }
+  },
+  "settingsMcpKeys": {
+    "title": "MCP Keys",
+    "description": "Connect external AI tools like Claude Code or Cursor to your TaskFlow account.",
+    "createNew": "New Key",
+    "keyName": "Key Name",
+    "keyNamePlaceholder": "e.g. Claude Code on MacBook",
+    "create": "Create",
+    "secretKey": "Secret Key",
+    "keyWontShowAgain": "This key won't be shown again. Copy it now.",
+    "configSnippet": "Quick Setup (Claude Code)",
+    "copy": "Copy",
+    "done": "Done",
+    "revokeTitle": "Revoke Key",
+    "revokeDescription": "Revoke \"{name}\"? Any AI tool using this key will lose access immediately.",
+    "cancel": "Cancel",
+    "revoke": "Revoke",
+    "revoked": "Key revoked",
+    "failedLoad": "Failed to load keys",
+    "failedCreate": "Failed to create key",
+    "failedRevoke": "Failed to revoke key",
+    "noKeys": "No keys yet. Create one to connect an AI tool.",
+    "revokedKeys": "Revoked Keys",
+    "created": "Created",
+    "lastUsed": "Last used",
+    "justNow": "just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago",
+    "keyCreated": "Key Created",
+    "keyCreatedHint": "Copy the key below — you won't be able to see it again.",
+    "createDescription": "Give your key a name so you can identify it later."
   },
   "batchDownloadDialog": {
     "title": "Download Submissions",

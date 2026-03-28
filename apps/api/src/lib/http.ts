@@ -1,4 +1,4 @@
-import type { ClassRole, User } from "@taskflow/db";
+import type { ClassRole, McpKey, User } from "@taskflow/db";
 
 export function toUserProfile(
 	user: User & { school: { name: string } | null },
@@ -154,6 +154,18 @@ export function toAttachmentMeta(attachment: AttachmentSource) {
 		mimeType: attachment.mimeType,
 		sizeBytes: attachment.sizeBytes ? Number(attachment.sizeBytes) : null,
 		createdAt: attachment.createdAt.toISOString(),
+	};
+}
+
+export function toMcpKey(key: McpKey) {
+	return {
+		id: key.id,
+		name: key.name,
+		keyPrefix: key.keyPrefix,
+		lastUsedAt: key.lastUsedAt?.toISOString() ?? null,
+		expiresAt: key.expiresAt?.toISOString() ?? null,
+		createdAt: key.createdAt.toISOString(),
+		revokedAt: key.revokedAt?.toISOString() ?? null,
 	};
 }
 

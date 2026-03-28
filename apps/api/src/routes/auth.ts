@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 
 import { login } from "../services/auth.service.js";
+import { exchangeMcpKey } from "../services/mcp-key.service.js";
 import {
 	completeRegistration,
 	resetPassword,
@@ -36,6 +37,10 @@ const forgotPasswordSchema = z.object({
 const resetPasswordSchema = z.object({
 	token: z.string().min(1),
 	password: z.string().min(8),
+});
+
+const mcpKeySchema = z.object({
+	key: z.string().min(1),
 });
 
 const verifyTokenSchema = z.object({
@@ -84,6 +89,12 @@ authRouter.post("/forgot-password", async (c) => {
 authRouter.post("/reset-password", async (c) => {
 	const body = resetPasswordSchema.parse(await c.req.json());
 	const result = await resetPassword(body.token, body.password);
+	return c.json(result, 200);
+});
+
+authRouter.post("/mcp", async (c) => {
+	const body = mcpKeySchema.parse(await c.req.json());
+	const result = await exchangeMcpKey(body.key);
 	return c.json(result, 200);
 });
 

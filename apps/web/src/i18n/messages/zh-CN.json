@@ -4,7 +4,8 @@
     "tabs": {
       "profile": "个人资料",
       "notifications": "通知",
-      "account": "账户"
+      "account": "账户",
+      "mcpKeys": "MCP 密钥"
     }
   },
   "settingsVerifyEmail": {
@@ -148,7 +149,8 @@
     "langEn": "English",
     "langZhCN": "中文",
     "langFr": "Français",
-    "langJa": "日本語"
+    "langJa": "日本語",
+    "mcpKeys": "MCP 密钥"
   },
   "notificationBell": {
     "notifications": "通知",
@@ -590,6 +592,38 @@
       "mark": "模范作业",
       "unmark": "取消模范"
     }
+  },
+  "settingsMcpKeys": {
+    "title": "MCP 密钥",
+    "description": "将 Claude Code、Cursor 等外部 AI 工具连接到你的 TaskFlow 账户。",
+    "createNew": "新建密钥",
+    "keyName": "密钥名称",
+    "keyNamePlaceholder": "例如：MacBook 上的 Claude Code",
+    "create": "创建",
+    "secretKey": "密钥",
+    "keyWontShowAgain": "此密钥不会再次显示，请立即复制。",
+    "configSnippet": "快速配置（Claude Code）",
+    "copy": "复制",
+    "done": "完成",
+    "revokeTitle": "吊销密钥",
+    "revokeDescription": "确定吊销「{name}」？使用此密钥的 AI 工具将立即失去访问权限。",
+    "cancel": "取消",
+    "revoke": "吊销",
+    "revoked": "密钥已吊销",
+    "failedLoad": "加载密钥失败",
+    "failedCreate": "创建密钥失败",
+    "failedRevoke": "吊销密钥失败",
+    "noKeys": "暂无密钥。创建一个来连接 AI 工具。",
+    "revokedKeys": "已吊销的密钥",
+    "created": "创建于",
+    "lastUsed": "上次使用",
+    "justNow": "刚刚",
+    "minutesAgo": "{count} 分钟前",
+    "hoursAgo": "{count} 小时前",
+    "daysAgo": "{count} 天前",
+    "keyCreated": "密钥已创建",
+    "keyCreatedHint": "请复制下方密钥——之后将无法再次查看。",
+    "createDescription": "为密钥命名，以便日后识别。"
   },
   "batchDownloadDialog": {
     "title": "下载提交内容",

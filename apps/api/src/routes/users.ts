@@ -16,6 +16,11 @@ import {
 	markNotificationRead,
 } from "../services/notification.service.js";
 import {
+	createMcpKey,
+	listMcpKeys,
+	revokeMcpKey,
+} from "../services/mcp-key.service.js";
+import {
 	deleteMyAccount,
 	getMyProfile,
 	listMyNotificationPrefs,
@@ -166,6 +171,38 @@ usersRouter.post("/me/delete", async (c) => {
 	await deleteMyAccount(authUser.userId);
 	return c.body(null, 204);
 });
+
+// ── MCP keys ───────────────────────────────────────────────────────────────
+
+const createMcpKeySchema = z.object({
+	name: z.string().trim().min(1).max(100),
+});
+
+const mcpKeyIdParamSchema = z.object({
+	keyId: z.string().uuid(),
+});
+
+usersRouter.post("/me/mcp-keys", async (c) => {
+	const authUser = requireAuthUser(c);
+	const body = createMcpKeySchema.parse(await c.req.json());
+	const key = await createMcpKey(authUser.userId, body.name);
+	return c.json(key, 201);
+});
+
+usersRouter.get("/me/mcp-keys", async (c) => {
+	const authUser = requireAuthUser(c);
+	const keys = await listMcpKeys(authUser.userId);
+	return c.json(keys, 200);
+});
+
+usersRouter.delete("/me/mcp-keys/:keyId", async (c) => {
+	const authUser = requireAuthUser(c);
+	const params = mcpKeyIdParamSchema.parse(c.req.param());
+	const key = await revokeMcpKey(authUser.userId, params.keyId);
+	return c.json(key, 200);
+});
+
+// ── Avatar ─────────────────────────────────────────────────────────────────
 
 usersRouter.post("/me/avatar", async (c) => {
 	const authUser = requireAuthUser(c);

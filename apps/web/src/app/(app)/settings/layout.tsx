@@ -17,6 +17,7 @@ export default function SettingsLayout({
     { label: t("tabs.profile"), href: "/settings/profile" },
     { label: t("tabs.notifications"), href: "/settings/notifications" },
     { label: t("tabs.account"), href: "/settings/account" },
+    { label: t("tabs.mcpKeys"), href: "/settings/mcp-keys" },
   ];
 
   return (

@@ -187,6 +187,20 @@ export interface NotificationListResponse {
   unreadCount: number;
 }
 
+export interface McpKeyInfo {
+  id: string;
+  name: string;
+  keyPrefix: string;
+  lastUsedAt: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+  revokedAt: string | null;
+}
+
+export interface McpKeyCreated extends McpKeyInfo {
+  key: string;
+}
+
 // ─── Admin Types (kept for admin panel) ──────────────────────────────────────
 
 export interface AdminSchool {
@@ -455,6 +469,36 @@ export async function getUnreadNotificationCount(
     token,
   );
 }
+
+// ── MCP keys ───────────────────────────────────────────────────────────────
+
+export async function listMcpKeys(token: string): Promise<McpKeyInfo[]> {
+  return apiRequest<McpKeyInfo[]>("/users/me/mcp-keys", {}, token);
+}
+
+export async function createMcpKey(
+  token: string,
+  name: string,
+): Promise<McpKeyCreated> {
+  return apiRequest<McpKeyCreated>(
+    "/users/me/mcp-keys",
+    { method: "POST", body: JSON.stringify({ name }) },
+    token,
+  );
+}
+
+export async function revokeMcpKey(
+  token: string,
+  keyId: string,
+): Promise<McpKeyInfo> {
+  return apiRequest<McpKeyInfo>(
+    `/users/me/mcp-keys/${keyId}`,
+    { method: "DELETE" },
+    token,
+  );
+}
+
+// ── Account ────────────────────────────────────────────────────────────────
 
 export async function deleteAccount(token: string): Promise<void> {
   return apiRequest<void>("/users/me/delete", { method: "POST" }, token);

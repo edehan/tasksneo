@@ -4,6 +4,7 @@ import {
   BookOpen,
   Globe,
   Home,
+  KeyRound,
   LogOut,
   Monitor,
   Moon,
@@ -200,6 +201,12 @@ export function AppSidebar() {
                       </DropdownMenuSubContent>
                     </DropdownMenuPortal>
                   </DropdownMenuSub>
+                  <DropdownMenuItem
+                    onClick={() => router.push("/settings/mcp-keys")}
+                  >
+                    <KeyRound className="mr-2 h-4 w-4" />
+                    {t("mcpKeys")}
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout}>
                     <LogOut className="mr-2 h-4 w-4" />
