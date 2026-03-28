@@ -71,12 +71,16 @@ export function CreateClassDialog({
       });
   }, [restrictSchool]);
 
-  // When restriction is toggled on, default to user's school
+  // After schools load, default to user's own school
+  // Must wait until schools are loaded so that the Select's value and its
+  // matching SelectItem are always rendered together — setting value before
+  // items exist causes Radix UI to enter an inconsistent internal state that
+  // triggers an infinite update loop.
   useEffect(() => {
-    if (restrictSchool && !selectedSchoolId && user?.schoolId) {
+    if (restrictSchool && schools.length > 0 && !selectedSchoolId && user?.schoolId) {
       setSelectedSchoolId(user.schoolId);
     }
-  }, [restrictSchool, selectedSchoolId, user?.schoolId]);
+  }, [restrictSchool, schools.length, selectedSchoolId, user?.schoolId]);
 
   function resetForm() {
     setName("");
