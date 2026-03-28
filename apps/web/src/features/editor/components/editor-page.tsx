@@ -51,7 +51,7 @@ interface EditorPageProps {
 
 export function EditorPage({
   mode,
-  classId,
+  classId: _classId,
   taskId,
   className: clsName,
   taskTitle,

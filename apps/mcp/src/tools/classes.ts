@@ -19,29 +19,39 @@ export function registerClassTools(
 	server: McpServer,
 	client: TaskFlowClient,
 ): void {
-	server.registerTool("list_my_classes", {
-		description:
-			"List classes where you are OWNER or ADMIN (teacher-managed classes). Personal classes are excluded.",
-		annotations: {
-			readOnlyHint: true,
-			destructiveHint: false,
-			idempotentHint: true,
-			openWorldHint: false,
+	server.registerTool(
+		"list_my_classes",
+		{
+			description:
+				"List classes where you are OWNER or ADMIN (teacher-managed classes). Personal classes are excluded.",
+			annotations: {
+				readOnlyHint: true,
+				destructiveHint: false,
+				idempotentHint: true,
+				openWorldHint: false,
+			},
 		},
-	}, async () => {
-		try {
-			const classes = await client.request<ClassSummary[]>("GET", "/classes");
-			const managed = classes.filter(
-				(c) => c.myRole !== "MEMBER" && !c.isPersonal,
-			);
-			return {
-				content: [{ type: "text" as const, text: JSON.stringify(managed, null, 2) }],
-			};
-		} catch (err) {
-			const message = err instanceof TaskFlowApiError
-				? `Error: ${err.code} — ${err.message}`
-				: `Error: ${err instanceof Error ? err.message : String(err)}`;
-			return { content: [{ type: "text" as const, text: message }], isError: true };
-		}
-	});
+		async () => {
+			try {
+				const classes = await client.request<ClassSummary[]>("GET", "/classes");
+				const managed = classes.filter(
+					(c) => c.myRole !== "MEMBER" && !c.isPersonal,
+				);
+				return {
+					content: [
+						{ type: "text" as const, text: JSON.stringify(managed, null, 2) },
+					],
+				};
+			} catch (err) {
+				const message =
+					err instanceof TaskFlowApiError
+						? `Error: ${err.code} — ${err.message}`
+						: `Error: ${err instanceof Error ? err.message : String(err)}`;
+				return {
+					content: [{ type: "text" as const, text: message }],
+					isError: true,
+				};
+			}
+		},
+	);
 }

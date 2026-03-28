@@ -10,16 +10,16 @@ import {
 	sendEmailChangeVerification,
 } from "../services/email-verification.service.js";
 import {
+	createMcpKey,
+	listMcpKeys,
+	revokeMcpKey,
+} from "../services/mcp-key.service.js";
+import {
 	getUnreadNotificationCount,
 	listMyNotifications,
 	markAllNotificationsRead,
 	markNotificationRead,
 } from "../services/notification.service.js";
-import {
-	createMcpKey,
-	listMcpKeys,
-	revokeMcpKey,
-} from "../services/mcp-key.service.js";
 import {
 	deleteMyAccount,
 	getMyProfile,

@@ -2,7 +2,6 @@ import { Hono } from "hono";
 import { z } from "zod";
 
 import { login } from "../services/auth.service.js";
-import { exchangeMcpKey } from "../services/mcp-key.service.js";
 import {
 	completeRegistration,
 	resetPassword,
@@ -11,6 +10,7 @@ import {
 	verifyPasswordResetToken,
 	verifyRegistrationToken,
 } from "../services/email-verification.service.js";
+import { exchangeMcpKey } from "../services/mcp-key.service.js";
 
 const registerStep1Schema = z.object({
 	email: z.string().email(),

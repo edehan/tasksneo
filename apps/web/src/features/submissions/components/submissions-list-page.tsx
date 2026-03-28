@@ -141,7 +141,13 @@ export function SubmissionsListPage() {
       setRows((prev) =>
         prev.map((row) =>
           row.submission?.id === submissionId
-            ? { ...row, submission: { ...row.submission, isExemplary: updated.isExemplary } }
+            ? {
+                ...row,
+                submission: {
+                  ...row.submission,
+                  isExemplary: updated.isExemplary,
+                },
+              }
             : row,
         ),
       );
@@ -152,7 +158,9 @@ export function SubmissionsListPage() {
       );
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : t("toast.failedToggleExemplary");
+        err instanceof ApiError
+          ? err.message
+          : t("toast.failedToggleExemplary");
       toast.error(message);
     }
   }

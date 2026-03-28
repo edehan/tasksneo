@@ -497,19 +497,16 @@ tasksRouter.post("/:taskId/submissions/me/attachments", async (c) => {
 	return c.json(attachments, 201);
 });
 
-tasksRouter.patch(
-	"/:taskId/submissions/:submissionId/exemplary",
-	async (c) => {
-		const authUser = requireAuthUser(c);
-		const params = gradeParamSchema.parse(c.req.param());
-		const submission = await toggleExemplary(
-			params.taskId,
-			params.submissionId,
-			authUser.userId,
-		);
-		return c.json(submission, 200);
-	},
-);
+tasksRouter.patch("/:taskId/submissions/:submissionId/exemplary", async (c) => {
+	const authUser = requireAuthUser(c);
+	const params = gradeParamSchema.parse(c.req.param());
+	const submission = await toggleExemplary(
+		params.taskId,
+		params.submissionId,
+		authUser.userId,
+	);
+	return c.json(submission, 200);
+});
 
 tasksRouter.post("/:taskId/submissions/rename", async (c) => {
 	const authUser = requireAuthUser(c);

@@ -181,7 +181,9 @@ export function SubmissionDetailPage() {
       );
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : t("toast.failedToggleExemplary");
+        err instanceof ApiError
+          ? err.message
+          : t("toast.failedToggleExemplary");
       toast.error(message);
     } finally {
       setTogglingExemplary(false);
@@ -460,7 +462,9 @@ export function SubmissionDetailPage() {
             }`}
           >
             <Award size={14} strokeWidth={2} />
-            {submission.isExemplary ? t("exemplary.unmark") : t("exemplary.mark")}
+            {submission.isExemplary
+              ? t("exemplary.unmark")
+              : t("exemplary.mark")}
           </button>
           <button
             type="button"

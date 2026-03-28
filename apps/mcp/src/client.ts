@@ -132,7 +132,7 @@ export class TaskFlowClient {
 				headers,
 				body: body !== undefined ? JSON.stringify(body) : undefined,
 			});
-		} catch (err) {
+		} catch {
 			throw new TaskFlowApiError(
 				0,
 				"CONNECTION_ERROR",
