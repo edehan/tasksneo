@@ -2,7 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -58,16 +58,18 @@ export function CreateClassDialog({
   const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null);
   const [schools, setSchools] = useState<School[]>([]);
 
+  const schoolsLoadedRef = useRef(false);
+
   // Load schools when school restriction is toggled on
   useEffect(() => {
-    if (!restrictSchool) return;
-    if (schools.length > 0) return;
+    if (!restrictSchool || schoolsLoadedRef.current) return;
+    schoolsLoadedRef.current = true;
     listSchools()
       .then(setSchools)
       .catch(() => {
-        // Silently fail — user can still create without restriction
+        schoolsLoadedRef.current = false;
       });
-  }, [restrictSchool, schools.length]);
+  }, [restrictSchool]);
 
   // When restriction is toggled on, default to user's school
   useEffect(() => {

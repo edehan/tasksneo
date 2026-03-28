@@ -19,8 +19,7 @@
 - [] (推迟)任务的前置任务关联功能
 - [] (推迟)docx等文件解析 https://awslabs.github.io/mcp/servers/document-loader-mcp-server
 - [x] 文件下载器
-- [] 自动批改功能
-- [] MCP和skills
+- [x] MCP
 - [x] 完善通知系统 
 - [x] s3储存和上传逻辑
 - [x] 电子邮件验证，密码重置与验证码
