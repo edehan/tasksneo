@@ -347,6 +347,47 @@
       "postFirstTask": "发布第一个任务"
     }
   },
+  "classSettings": {
+    "failedLoadClassSettings": "加载班级设置失败",
+    "classNotFound": "未找到该班级。",
+    "backToClass": "返回 {name}",
+    "title": "班级设置",
+    "subtitle": "管理 {name} 的设置。",
+    "basicInfo": "基本信息",
+    "className": "班级名称",
+    "classNamePlaceholder": "例如：高等数学",
+    "description": "描述",
+    "descriptionPlaceholder": "可选描述...",
+    "themeColor": "主题色",
+    "saveChanges": "保存更改",
+    "classSettingsSaved": "班级设置已保存",
+    "failedSaveSettings": "保存设置失败",
+    "schoolRestriction": "学校限制",
+    "schoolRestrictionHint": "将该班级限制为指定学校成员可加入。",
+    "selectSchool": "选择学校",
+    "none": "无",
+    "schoolRestrictionUpdated": "学校限制已更新",
+    "failedUpdateSchoolRestriction": "更新学校限制失败",
+    "inviteCode": "邀请码",
+    "inviteCodeHint": "将此邀请码分享给学生以加入班级。",
+    "copyInviteCodeTitle": "复制邀请码",
+    "inviteCodeCopied": "邀请码已复制",
+    "failedCopy": "复制失败",
+    "refreshInviteCodeTitle": "刷新邀请码",
+    "inviteCodeRefreshed": "邀请码已刷新",
+    "failedRefreshInviteCode": "刷新邀请码失败",
+    "refreshInviteCodeDialogTitle": "刷新邀请码？",
+    "refreshInviteCodeDialogDescription": "当前邀请码将失效。已持有旧码的成员需要新邀请码才能加入，且此操作无法撤销。",
+    "cancel": "取消",
+    "refreshCode": "刷新邀请码",
+    "dangerZone": "危险区域",
+    "dangerDescription": "永久删除此班级及其所有任务、提交和成员数据。此操作无法撤销。",
+    "deleteClass": "删除班级",
+    "classDeleted": "班级已删除",
+    "failedDeleteClass": "删除班级失败",
+    "deleteDialogTitle": "删除“{name}”？",
+    "deleteDialogDescription": "将永久删除该班级及其所有任务、提交和成员数据。此操作无法撤销。"
+  },
   "dashboardInbox": {
     "inbox": "收件箱",
     "markAllAsRead": "全部标记为已读",
@@ -466,7 +507,8 @@
     "attachmentsCount": "附件（{count}）",
     "unknownFile": "未知文件",
     "noFilesAttached": "还没有附件",
-    "downloadAll": "全部下载"
+    "showAll": "查看全部（{count}）",
+    "showLess": "收起"
   },
   "postTaskDialog": {
     "errors": {
@@ -663,5 +705,22 @@
       "downloadComplete": "下载完成",
       "failedCreateDownload": "创建下载失败"
     }
+  },
+  "commentSection": {
+    "title": "讨论",
+    "placeholder": "写下评论...",
+    "send": "发送",
+    "reply": "回复",
+    "replyingTo": "回复 {name}",
+    "cancelReply": "取消",
+    "noComments": "还没有评论，来开启讨论吧！",
+    "failedToLoad": "加载评论失败",
+    "failedToSend": "发送评论失败",
+    "deletedUser": "已删除用户",
+    "justNow": "刚刚"
+  },
+  "taskSidebar": {
+    "attachmentsTab": "附件（{count}）",
+    "discussionTab": "讨论"
   }
 }

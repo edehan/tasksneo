@@ -2,6 +2,7 @@
 
 import { ArrowLeft, Copy, Loader2, RefreshCw } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -54,6 +55,7 @@ const PRESET_COLORS = [
 ];
 
 export function ClassSettingsPage() {
+  const t = useTranslations("classSettings");
   const params = useParams();
   const router = useRouter();
   const { token } = useAuth();
@@ -88,11 +90,11 @@ export function ClassSettingsPage() {
       setSchoolId(classData.schoolId);
       setInviteCode(classData.inviteCode ?? "");
     } catch {
-      toast.error("Failed to load class settings");
+      toast.error(t("failedLoadClassSettings"));
     } finally {
       setLoading(false);
     }
-  }, [token, classId]);
+  }, [token, classId, t]);
 
   useEffect(() => {
     void loadData();
@@ -108,10 +110,10 @@ export function ClassSettingsPage() {
         color,
       });
       setCls(updated);
-      toast.success("Class settings saved");
+      toast.success(t("classSettingsSaved"));
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to save settings";
+        err instanceof ApiError ? err.message : t("failedSaveSettings");
       toast.error(message);
     } finally {
       setSaving(false);
@@ -124,10 +126,10 @@ export function ClassSettingsPage() {
     try {
       const result = await refreshInviteCode(token, classId);
       setInviteCode(result.inviteCode);
-      toast.success("Invite code refreshed");
+      toast.success(t("inviteCodeRefreshed"));
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to refresh invite code";
+        err instanceof ApiError ? err.message : t("failedRefreshInviteCode");
       toast.error(message);
     } finally {
       setRefreshing(false);
@@ -139,11 +141,11 @@ export function ClassSettingsPage() {
     setDeleting(true);
     try {
       await deleteClass(token, classId);
-      toast.success("Class deleted");
+      toast.success(t("classDeleted"));
       router.push("/dashboard");
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to delete class";
+        err instanceof ApiError ? err.message : t("failedDeleteClass");
       toast.error(message);
       setDeleting(false);
     }
@@ -152,8 +154,8 @@ export function ClassSettingsPage() {
   function handleCopyInviteCode() {
     if (!inviteCode) return;
     navigator.clipboard.writeText(inviteCode).then(
-      () => toast.success("Invite code copied"),
-      () => toast.error("Failed to copy"),
+      () => toast.success(t("inviteCodeCopied")),
+      () => toast.error(t("failedCopy")),
     );
   }
 
@@ -174,7 +176,7 @@ export function ClassSettingsPage() {
   if (!cls) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-muted-foreground">Class not found.</p>
+        <p className="text-muted-foreground">{t("classNotFound")}</p>
       </div>
     );
   }
@@ -189,38 +191,40 @@ export function ClassSettingsPage() {
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground mb-3"
         >
           <ArrowLeft size={14} strokeWidth={2} />
-          Back to {cls.name}
+          {t("backToClass", { name: cls.name })}
         </Link>
-        <h1 className="text-display mb-1">Class Settings</h1>
-        <p className="text-muted-foreground">Manage settings for {cls.name}.</p>
+        <h1 className="text-display mb-1">{t("title")}</h1>
+        <p className="text-muted-foreground">
+          {t("subtitle", { name: cls.name })}
+        </p>
       </div>
 
       {/* Basic Info */}
       <section className="space-y-5 mb-8">
-        <h2 className="text-heading-md">Basic Info</h2>
+        <h2 className="text-heading-md">{t("basicInfo")}</h2>
         <div className="space-y-2">
-          <Label htmlFor="class-name">Class Name</Label>
+          <Label htmlFor="class-name">{t("className")}</Label>
           <Input
             id="class-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Advanced Mathematics"
+            placeholder={t("classNamePlaceholder")}
             disabled={saving}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="class-description">Description</Label>
+          <Label htmlFor="class-description">{t("description")}</Label>
           <Textarea
             id="class-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Optional description..."
+            placeholder={t("descriptionPlaceholder")}
             rows={3}
             disabled={saving}
           />
         </div>
         <div className="space-y-2">
-          <Label>Theme Color</Label>
+          <Label>{t("themeColor")}</Label>
           <div className="flex flex-wrap gap-2.5">
             {PRESET_COLORS.map((c) => (
               <button
@@ -247,7 +251,7 @@ export function ClassSettingsPage() {
           className="text-white hover:opacity-90"
         >
           {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Save Changes
+          {t("saveChanges")}
         </Button>
       </section>
 
@@ -255,9 +259,9 @@ export function ClassSettingsPage() {
 
       {/* School Restriction */}
       <section className="space-y-4 mb-8">
-        <h2 className="text-heading-md">School Restriction</h2>
+        <h2 className="text-heading-md">{t("schoolRestriction")}</h2>
         <p className="text-sm text-muted-foreground">
-          Restrict this class to members of a specific school.
+          {t("schoolRestrictionHint")}
         </p>
         <Select
           value={schoolId ?? "none"}
@@ -270,18 +274,18 @@ export function ClassSettingsPage() {
                 description: description.trim() || null,
                 color,
               })
-                .then(() => toast.success("School restriction updated"))
+                .then(() => toast.success(t("schoolRestrictionUpdated")))
                 .catch(() =>
-                  toast.error("Failed to update school restriction"),
+                  toast.error(t("failedUpdateSchoolRestriction")),
                 );
             }
           }}
         >
           <SelectTrigger className="w-full max-w-xs">
-            <SelectValue placeholder="Select a school" />
+            <SelectValue placeholder={t("selectSchool")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">None</SelectItem>
+            <SelectItem value="none">{t("none")}</SelectItem>
             {schools.map((school) => (
               <SelectItem key={school.id} value={school.id}>
                 {school.name}
@@ -295,9 +299,9 @@ export function ClassSettingsPage() {
 
       {/* Invite Code */}
       <section className="space-y-4 mb-8">
-        <h2 className="text-heading-md">Invite Code</h2>
+        <h2 className="text-heading-md">{t("inviteCode")}</h2>
         <p className="text-sm text-muted-foreground">
-          Share this code with students so they can join the class.
+          {t("inviteCodeHint")}
         </p>
         <div className="flex items-center gap-3">
           <code className="flex-1 rounded-md border border-border bg-surface-subtle px-4 py-2.5 font-mono text-lg tracking-widest">
@@ -308,7 +312,7 @@ export function ClassSettingsPage() {
             size="icon"
             onClick={handleCopyInviteCode}
             disabled={!inviteCode}
-            title="Copy invite code"
+            title={t("copyInviteCodeTitle")}
           >
             <Copy className="h-4 w-4" />
           </Button>
@@ -318,7 +322,7 @@ export function ClassSettingsPage() {
                 variant="ghost"
                 size="icon"
                 disabled={refreshing}
-                title="Refresh invite code"
+                title={t("refreshInviteCodeTitle")}
               >
                 {refreshing ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -329,16 +333,17 @@ export function ClassSettingsPage() {
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Refresh Invite Code?</AlertDialogTitle>
+                <AlertDialogTitle>
+                  {t("refreshInviteCodeDialogTitle")}
+                </AlertDialogTitle>
                 <AlertDialogDescription>
-                  The current invite code will stop working. Anyone who has it
-                  will need the new code to join. This cannot be undone.
+                  {t("refreshInviteCodeDialogDescription")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
                 <AlertDialogAction onClick={handleRefreshInviteCode}>
-                  Refresh Code
+                  {t("refreshCode")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -352,11 +357,10 @@ export function ClassSettingsPage() {
           <Separator className="my-8" />
           <section className="rounded-lg border-2 border-destructive/30 p-6">
             <h2 className="text-heading-md text-destructive mb-2">
-              Danger Zone
+              {t("dangerZone")}
             </h2>
             <p className="text-sm text-muted-foreground mb-4">
-              Permanently delete this class and all its tasks, submissions, and
-              member data. This action cannot be undone.
+              {t("dangerDescription")}
             </p>
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -364,26 +368,25 @@ export function ClassSettingsPage() {
                   {deleting && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  Delete Class
+                  {t("deleteClass")}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>
-                    Delete &quot;{cls.name}&quot;?
+                    {t("deleteDialogTitle", { name: cls.name })}
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will permanently delete the class, including all tasks,
-                    submissions, and member data. This action cannot be undone.
+                    {t("deleteDialogDescription")}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleDelete}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
-                    Delete Class
+                    {t("deleteClass")}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
