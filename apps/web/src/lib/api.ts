@@ -816,6 +816,50 @@ export async function updateTaskState(
   );
 }
 
+// ─── Comments ───────────────────────────────────────────────────────────────
+
+export interface CommentAuthor {
+  id: string;
+  nickname: string | null;
+  avatarFileKey: string | null;
+}
+
+export interface TaskComment {
+  id: string;
+  content: string;
+  createdAt: string;
+  author: CommentAuthor | null;
+  replyTo: { id: string; nickname: string | null } | null;
+}
+
+export async function listTaskComments(
+  token: string,
+  taskId: string,
+): Promise<TaskComment[]> {
+  const res = await apiRequest<{ comments: TaskComment[] }>(
+    `/tasks/${taskId}/comments`,
+    {},
+    token,
+  );
+  return res.comments;
+}
+
+export async function createTaskComment(
+  token: string,
+  taskId: string,
+  content: string,
+  replyToId?: string | null,
+): Promise<TaskComment> {
+  return apiRequest<TaskComment>(
+    `/tasks/${taskId}/comments`,
+    {
+      method: "POST",
+      body: JSON.stringify({ content, replyToId: replyToId ?? null }),
+    },
+    token,
+  );
+}
+
 // ─── Submissions ─────────────────────────────────────────────────────────────
 
 export async function listSubmissions(

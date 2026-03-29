@@ -35,6 +35,10 @@ import {
 	upsertMySubmissionContent,
 } from "../services/task.service.js";
 import {
+	createComment,
+	listTaskComments,
+} from "../services/comment.service.js";
+import {
 	deleteTaskDraftMarkdown,
 	getTaskDraftMarkdown,
 	setTaskDraftMarkdown,
@@ -513,4 +517,31 @@ tasksRouter.post("/:taskId/submissions/rename", async (c) => {
 	const params = taskIdParamSchema.parse(c.req.param());
 	await renameTaskSubmissionAttachments(params.taskId, authUser.userId);
 	return c.body(null, 204);
+});
+
+// ── Comments ──────────────────────────────────────────────────────────────
+
+const createCommentSchema = z.object({
+	content: z.string().trim().min(1).max(2000),
+	replyToId: z.string().uuid().nullable().optional(),
+});
+
+tasksRouter.get("/:taskId/comments", async (c) => {
+	const authUser = requireAuthUser(c);
+	const params = taskIdParamSchema.parse(c.req.param());
+	const comments = await listTaskComments(params.taskId, authUser.userId);
+	return c.json({ comments });
+});
+
+tasksRouter.post("/:taskId/comments", async (c) => {
+	const authUser = requireAuthUser(c);
+	const params = taskIdParamSchema.parse(c.req.param());
+	const body = createCommentSchema.parse(await c.req.json());
+	const comment = await createComment(
+		params.taskId,
+		authUser.userId,
+		body.content,
+		body.replyToId,
+	);
+	return c.json(comment, 201);
 });

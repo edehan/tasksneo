@@ -347,6 +347,47 @@
       "postFirstTask": "最初のタスクを投稿"
     }
   },
+  "classSettings": {
+    "failedLoadClassSettings": "クラス設定の読み込みに失敗しました",
+    "classNotFound": "クラスが見つかりません。",
+    "backToClass": "{name} に戻る",
+    "title": "クラス設定",
+    "subtitle": "{name} の設定を管理します。",
+    "basicInfo": "基本情報",
+    "className": "クラス名",
+    "classNamePlaceholder": "例: 応用数学",
+    "description": "説明",
+    "descriptionPlaceholder": "説明（任意）...",
+    "themeColor": "テーマカラー",
+    "saveChanges": "変更を保存",
+    "classSettingsSaved": "クラス設定を保存しました",
+    "failedSaveSettings": "設定の保存に失敗しました",
+    "schoolRestriction": "学校制限",
+    "schoolRestrictionHint": "このクラスを特定の学校のメンバーのみに制限します。",
+    "selectSchool": "学校を選択",
+    "none": "なし",
+    "schoolRestrictionUpdated": "学校制限を更新しました",
+    "failedUpdateSchoolRestriction": "学校制限の更新に失敗しました",
+    "inviteCode": "招待コード",
+    "inviteCodeHint": "このコードを学生に共有するとクラスに参加できます。",
+    "copyInviteCodeTitle": "招待コードをコピー",
+    "inviteCodeCopied": "招待コードをコピーしました",
+    "failedCopy": "コピーに失敗しました",
+    "refreshInviteCodeTitle": "招待コードを更新",
+    "inviteCodeRefreshed": "招待コードを更新しました",
+    "failedRefreshInviteCode": "招待コードの更新に失敗しました",
+    "refreshInviteCodeDialogTitle": "招待コードを更新しますか？",
+    "refreshInviteCodeDialogDescription": "現在の招待コードは無効になります。既存コードを持つユーザーは新しいコードが必要です。この操作は取り消せません。",
+    "cancel": "キャンセル",
+    "refreshCode": "コードを更新",
+    "dangerZone": "危険ゾーン",
+    "dangerDescription": "このクラスとすべての課題・提出・メンバーデータを完全に削除します。この操作は元に戻せません。",
+    "deleteClass": "クラスを削除",
+    "classDeleted": "クラスを削除しました",
+    "failedDeleteClass": "クラスの削除に失敗しました",
+    "deleteDialogTitle": "「{name}」を削除しますか？",
+    "deleteDialogDescription": "クラス、すべての課題、提出、メンバーデータを完全に削除します。この操作は元に戻せません。"
+  },
   "dashboardInbox": {
     "inbox": "受信トレイ",
     "markAllAsRead": "すべて既読にする",
@@ -466,7 +507,8 @@
     "attachmentsCount": "添付ファイル（{count}）",
     "unknownFile": "不明なファイル",
     "noFilesAttached": "添付ファイルはまだありません",
-    "downloadAll": "すべてダウンロード"
+    "showAll": "すべて表示（{count}）",
+    "showLess": "折りたたむ"
   },
   "postTaskDialog": {
     "errors": {
@@ -663,5 +705,22 @@
       "downloadComplete": "ダウンロードが完了しました",
       "failedCreateDownload": "ダウンロード作成に失敗しました"
     }
+  },
+  "commentSection": {
+    "title": "ディスカッション",
+    "placeholder": "コメントを書く...",
+    "send": "送信",
+    "reply": "返信",
+    "replyingTo": "{name} に返信中",
+    "cancelReply": "キャンセル",
+    "noComments": "まだコメントはありません。最初のコメントを投稿しましょう。",
+    "failedToLoad": "コメントの読み込みに失敗しました",
+    "failedToSend": "コメントの送信に失敗しました",
+    "deletedUser": "削除されたユーザー",
+    "justNow": "たった今"
+  },
+  "taskSidebar": {
+    "attachmentsTab": "添付ファイル（{count}）",
+    "discussionTab": "ディスカッション"
   }
 }

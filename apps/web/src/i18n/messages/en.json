@@ -347,6 +347,47 @@
       "postFirstTask": "Post first task"
     }
   },
+  "classSettings": {
+    "failedLoadClassSettings": "Failed to load class settings",
+    "classNotFound": "Class not found.",
+    "backToClass": "Back to {name}",
+    "title": "Class Settings",
+    "subtitle": "Manage settings for {name}.",
+    "basicInfo": "Basic Info",
+    "className": "Class Name",
+    "classNamePlaceholder": "e.g. Advanced Mathematics",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional description...",
+    "themeColor": "Theme Color",
+    "saveChanges": "Save Changes",
+    "classSettingsSaved": "Class settings saved",
+    "failedSaveSettings": "Failed to save settings",
+    "schoolRestriction": "School Restriction",
+    "schoolRestrictionHint": "Restrict this class to members of a specific school.",
+    "selectSchool": "Select a school",
+    "none": "None",
+    "schoolRestrictionUpdated": "School restriction updated",
+    "failedUpdateSchoolRestriction": "Failed to update school restriction",
+    "inviteCode": "Invite Code",
+    "inviteCodeHint": "Share this code with students so they can join the class.",
+    "copyInviteCodeTitle": "Copy invite code",
+    "inviteCodeCopied": "Invite code copied",
+    "failedCopy": "Failed to copy",
+    "refreshInviteCodeTitle": "Refresh invite code",
+    "inviteCodeRefreshed": "Invite code refreshed",
+    "failedRefreshInviteCode": "Failed to refresh invite code",
+    "refreshInviteCodeDialogTitle": "Refresh Invite Code?",
+    "refreshInviteCodeDialogDescription": "The current invite code will stop working. Anyone who has it will need the new code to join. This cannot be undone.",
+    "cancel": "Cancel",
+    "refreshCode": "Refresh Code",
+    "dangerZone": "Danger Zone",
+    "dangerDescription": "Permanently delete this class and all its tasks, submissions, and member data. This action cannot be undone.",
+    "deleteClass": "Delete Class",
+    "classDeleted": "Class deleted",
+    "failedDeleteClass": "Failed to delete class",
+    "deleteDialogTitle": "Delete \"{name}\"?",
+    "deleteDialogDescription": "This will permanently delete the class, including all tasks, submissions, and member data. This action cannot be undone."
+  },
   "dashboardInbox": {
     "inbox": "Inbox",
     "markAllAsRead": "Mark all as read",
@@ -466,7 +507,8 @@
     "attachmentsCount": "Attachments ({count})",
     "unknownFile": "Unknown file",
     "noFilesAttached": "No files attached yet",
-    "downloadAll": "Download All"
+    "showAll": "Show all ({count})",
+    "showLess": "Show less"
   },
   "postTaskDialog": {
     "errors": {
@@ -663,5 +705,22 @@
       "downloadComplete": "Download complete",
       "failedCreateDownload": "Failed to create download"
     }
+  },
+  "commentSection": {
+    "title": "Discussion",
+    "placeholder": "Write a comment...",
+    "send": "Send",
+    "reply": "Reply",
+    "replyingTo": "Replying to {name}",
+    "cancelReply": "Cancel",
+    "noComments": "No comments yet. Start the discussion!",
+    "failedToLoad": "Failed to load comments",
+    "failedToSend": "Failed to send comment",
+    "deletedUser": "Deleted User",
+    "justNow": "just now"
+  },
+  "taskSidebar": {
+    "attachmentsTab": "Attachments ({count})",
+    "discussionTab": "Discussion"
   }
 }

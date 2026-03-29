@@ -347,6 +347,47 @@
       "postFirstTask": "Publier la premiere tache"
     }
   },
+  "classSettings": {
+    "failedLoadClassSettings": "Echec du chargement des parametres de la classe",
+    "classNotFound": "Classe introuvable.",
+    "backToClass": "Retour a {name}",
+    "title": "Parametres de la classe",
+    "subtitle": "Gerer les parametres de {name}.",
+    "basicInfo": "Informations generales",
+    "className": "Nom de la classe",
+    "classNamePlaceholder": "ex. Mathematiques avancees",
+    "description": "Description",
+    "descriptionPlaceholder": "Description optionnelle...",
+    "themeColor": "Couleur du theme",
+    "saveChanges": "Enregistrer les modifications",
+    "classSettingsSaved": "Parametres de la classe enregistres",
+    "failedSaveSettings": "Echec de l'enregistrement des parametres",
+    "schoolRestriction": "Restriction par ecole",
+    "schoolRestrictionHint": "Limiter cette classe aux membres d'une ecole specifique.",
+    "selectSchool": "Selectionner une ecole",
+    "none": "Aucune",
+    "schoolRestrictionUpdated": "Restriction d'ecole mise a jour",
+    "failedUpdateSchoolRestriction": "Echec de mise a jour de la restriction d'ecole",
+    "inviteCode": "Code d'invitation",
+    "inviteCodeHint": "Partagez ce code avec les etudiants pour rejoindre la classe.",
+    "copyInviteCodeTitle": "Copier le code d'invitation",
+    "inviteCodeCopied": "Code d'invitation copie",
+    "failedCopy": "Echec de la copie",
+    "refreshInviteCodeTitle": "Regenerer le code d'invitation",
+    "inviteCodeRefreshed": "Code d'invitation regenere",
+    "failedRefreshInviteCode": "Echec du rafraichissement du code d'invitation",
+    "refreshInviteCodeDialogTitle": "Regenerer le code d'invitation ?",
+    "refreshInviteCodeDialogDescription": "Le code actuel cessera de fonctionner. Toute personne qui le possede devra utiliser le nouveau code pour rejoindre la classe. Cette action est irreversible.",
+    "cancel": "Annuler",
+    "refreshCode": "Regenerer le code",
+    "dangerZone": "Zone dangereuse",
+    "dangerDescription": "Supprime definitivement cette classe et toutes ses taches, soumissions et donnees membres. Action irreversible.",
+    "deleteClass": "Supprimer la classe",
+    "classDeleted": "Classe supprimee",
+    "failedDeleteClass": "Echec de la suppression de la classe",
+    "deleteDialogTitle": "Supprimer « {name} » ?",
+    "deleteDialogDescription": "Cette action supprimera definitivement la classe, y compris toutes les taches, soumissions et donnees membres. Action irreversible."
+  },
   "dashboardInbox": {
     "inbox": "Boite de reception",
     "markAllAsRead": "Tout marquer comme lu",
@@ -466,7 +507,8 @@
     "attachmentsCount": "Pieces jointes ({count})",
     "unknownFile": "Fichier inconnu",
     "noFilesAttached": "Aucun fichier joint",
-    "downloadAll": "Tout telecharger"
+    "showAll": "Tout afficher ({count})",
+    "showLess": "Afficher moins"
   },
   "postTaskDialog": {
     "errors": {
@@ -663,5 +705,22 @@
       "downloadComplete": "Telechargement termine",
       "failedCreateDownload": "Echec de creation du telechargement"
     }
+  },
+  "commentSection": {
+    "title": "Discussion",
+    "placeholder": "Ecrire un commentaire...",
+    "send": "Envoyer",
+    "reply": "Repondre",
+    "replyingTo": "Reponse a {name}",
+    "cancelReply": "Annuler",
+    "noComments": "Aucun commentaire pour l'instant. Lancez la discussion !",
+    "failedToLoad": "Echec du chargement des commentaires",
+    "failedToSend": "Echec de l'envoi du commentaire",
+    "deletedUser": "Utilisateur supprime",
+    "justNow": "a l'instant"
+  },
+  "taskSidebar": {
+    "attachmentsTab": "Pieces jointes ({count})",
+    "discussionTab": "Discussion"
   }
 }

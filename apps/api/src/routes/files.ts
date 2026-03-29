@@ -32,7 +32,19 @@ filesRouter.get("/:fileKey{.+}/url", async (c) => {
 
 filesRouter.get("/:fileKey{.+}", async (c) => {
 	const authUser = requireAuthUser(c);
-	const params = fileParamSchema.parse(c.req.param());
+	const fileKey = c.req.param("fileKey");
+
+	// NOTE: Hono currently matches "/:fileKey{.+}" before
+	// "/:fileKey{.+}/url" for multi-segment keys, so we provide a
+	// compatibility fallback here to keep "/files/{fileKey}/url" working.
+	if (fileKey.endsWith("/url")) {
+		const normalizedKey = fileKey.slice(0, -"/url".length);
+		const params = fileParamSchema.parse({ fileKey: normalizedKey });
+		const url = await getAuthorizedFileUrl(params.fileKey, authUser.userId);
+		return c.json({ url, expiresIn: 300 });
+	}
+
+	const params = fileParamSchema.parse({ fileKey });
 	const url = await getAuthorizedFileUrl(params.fileKey, authUser.userId);
 	return c.redirect(url, 302);
 });

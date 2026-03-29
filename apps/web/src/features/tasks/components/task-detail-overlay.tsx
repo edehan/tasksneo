@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { MarkdownPreview } from "@/features/editor/components/markdown-preview";
-import { AttachmentSidebar } from "@/features/tasks/components/attachment-sidebar";
+import { TaskSidebar } from "@/features/tasks/components/task-sidebar";
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
 import type { TaskDetail } from "@/lib/api";
 import { deleteTask, getTask, markTaskViewed } from "@/lib/api";
@@ -185,7 +185,6 @@ export function TaskDetailOverlay({
   }, []);
 
   const attachments = taskDetail?.attachments ?? [];
-  const hasAttachments = attachments.length > 0;
   const bodyContent = taskDetail?.description ?? "";
 
   return (
@@ -205,183 +204,185 @@ export function TaskDetailOverlay({
     >
       <div
         ref={modalRef}
-        className="flex w-full max-w-[960px] flex-col overflow-hidden rounded-[18px] border border-border bg-card shadow-lg"
+        className="relative flex w-full max-w-[960px] flex-col overflow-hidden rounded-[18px] border border-border bg-card shadow-lg"
         style={{
           height: "85vh",
           maxHeight: "720px",
           animation: "custom-modal-enter 0.2s ease",
         }}
       >
-        {/* ── Header ──────────────────────────────────────────────────────── */}
-        <div className="relative shrink-0 border-b border-border p-6">
-          {/* Row 1: Class + Status */}
-          <div className="flex items-center gap-2">
-            <span
-              className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
-              style={{ backgroundColor: task.classColor }}
-            />
-            <span
-              className="text-[12px] font-semibold"
-              style={{ color: task.classColor }}
-            >
-              {task.className}
-            </span>
-            <span
-              className="ml-1 inline-block rounded-md px-2.5 py-0.5 text-[11px] font-semibold"
-              style={{ backgroundColor: badge.bg, color: badge.text }}
-            >
-              {badge.label}
-            </span>
-          </div>
+        {/* Close button — absolute top-right corner of modal */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground transition-colors duration-100 hover:bg-accent hover:text-foreground"
+          aria-label={t("close")}
+        >
+          <X size={16} strokeWidth={2} />
+        </button>
 
-          {/* Row 2: Title */}
-          <h2 className="mt-2 font-serif text-2xl font-bold text-foreground">
-            {task.title}
-          </h2>
-
-          {/* Row 3: Dates */}
-          <div className="mt-2 flex items-center gap-4 text-[12.5px] text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <Calendar size={12.5} strokeWidth={1.8} />
-              {t("date.start")}: {formatDate(task.startAt)}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Calendar size={12.5} strokeWidth={1.8} />
-              {t("date.due")}: {formatDate(task.dueAt)}
-            </span>
-          </div>
-
-          {/* Close button */}
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-muted-foreground transition-colors duration-100 hover:bg-accent hover:text-foreground"
-            aria-label={t("close")}
-          >
-            <X size={16} strokeWidth={2} />
-          </button>
-        </div>
-
-        {/* ── Body ────────────────────────────────────────────────────────── */}
+        {/* ── Main area: header+content left, sidebar right ────────────── */}
         <div className="flex flex-1 overflow-hidden max-[700px]:flex-col">
-          {/* Content area */}
-          <div className="flex-1 overflow-y-auto p-6">
-            {loading ? (
-              <div className="flex h-32 items-center justify-center">
-                <span className="text-sm text-muted-foreground">
-                  {t("loading")}
+          {/* Left column: header + content */}
+          <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+            {/* Header */}
+            <div className="shrink-0 border-b border-border p-6 pr-14">
+              {/* Row 1: Class + Status */}
+              <div className="flex items-center gap-2">
+                <span
+                  className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm"
+                  style={{ backgroundColor: task.classColor }}
+                />
+                <span
+                  className="text-[12px] font-semibold"
+                  style={{ color: task.classColor }}
+                >
+                  {task.className}
+                </span>
+                <span
+                  className="ml-1 inline-block rounded-md px-2.5 py-0.5 text-[11px] font-semibold"
+                  style={{ backgroundColor: badge.bg, color: badge.text }}
+                >
+                  {badge.label}
                 </span>
               </div>
-            ) : bodyContent ? (
-              <MarkdownPreview
-                content={bodyContent}
-                accentColor={task.classColor}
-                authToken={token ?? undefined}
-              />
-            ) : (
-              <p className="text-sm italic text-text-muted-soft">
-                {t("noDescription")}
-              </p>
-            )}
+
+              {/* Row 2: Title */}
+              <h2 className="mt-2 font-serif text-2xl font-bold text-foreground">
+                {task.title}
+              </h2>
+
+              {/* Row 3: Dates + status + actions */}
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <div className="flex items-center gap-4 text-[12.5px] text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <Calendar size={12.5} strokeWidth={1.8} />
+                    {t("date.start")}: {formatDate(task.startAt)}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Calendar size={12.5} strokeWidth={1.8} />
+                    {t("date.due")}: {formatDate(task.dueAt)}
+                  </span>
+                </div>
+
+                {/* Status text */}
+                <span
+                  className={`text-[12.5px] ${
+                    status === "overdue"
+                      ? "font-semibold text-[#c45c5c]"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {getFooterText(status, task.dueAt, t, formatDate)}
+                </span>
+
+                {/* Spacer to push actions right */}
+                <div className="flex-1" />
+
+                {/* Action buttons */}
+                <div className="flex items-center gap-2">
+                  {isAdmin ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          router.push(`/tasks/${task.id}/edit`);
+                        }}
+                        className="rounded-lg border border-border bg-transparent px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors duration-100 hover:bg-secondary hover:text-foreground"
+                      >
+                        {t("actions.editTask")}
+                      </button>
+                      {taskDetail?.stats?.submittedCount === 0 && (
+                        <button
+                          type="button"
+                          disabled={deleting}
+                          onClick={async () => {
+                            if (!token) return;
+                            if (!confirm(t("confirmDelete"))) return;
+                            setDeleting(true);
+                            try {
+                              await deleteTask(token, task.id);
+                              onClose();
+                            } catch {
+                              setDeleting(false);
+                            }
+                          }}
+                          className="rounded-lg border border-border bg-transparent px-3 py-1.5 text-[12px] font-medium text-destructive transition-colors duration-100 hover:bg-destructive/10 disabled:opacity-50"
+                        >
+                          {deleting
+                            ? t("actions.deleting")
+                            : t("actions.deleteTask")}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          router.push(`/tasks/${task.id}/submissions`);
+                        }}
+                        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium text-white shadow-sm transition-colors duration-100"
+                        style={{ backgroundColor: task.classColor }}
+                      >
+                        {t("actions.viewSubmissions")}
+                        <ArrowRight size={12} strokeWidth={2} />
+                      </button>
+                    </>
+                  ) : isSubmitted ? (
+                    <span className="text-[12px] font-medium text-muted-foreground">
+                      {t("actions.submitted")}
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (onSubmit) {
+                          onSubmit(task);
+                        } else {
+                          onClose();
+                          router.push(`/tasks/${task.id}/submit`);
+                        }
+                      }}
+                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium text-white shadow-sm transition-colors duration-100"
+                      style={{ backgroundColor: task.classColor }}
+                    >
+                      {t("actions.submitAssignment")}
+                      <ArrowRight size={12} strokeWidth={2} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {loading ? (
+                <div className="flex h-32 items-center justify-center">
+                  <span className="text-sm text-muted-foreground">
+                    {t("loading")}
+                  </span>
+                </div>
+              ) : bodyContent ? (
+                <MarkdownPreview
+                  content={bodyContent}
+                  accentColor={task.classColor}
+                  authToken={token ?? undefined}
+                />
+              ) : (
+                <p className="text-sm italic text-text-muted-soft">
+                  {t("noDescription")}
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* Attachment sidebar */}
-          {hasAttachments && (
-            <div className="w-[260px] shrink-0 border-l border-border max-[700px]:w-full max-[700px]:border-l-0 max-[700px]:border-t">
-              <AttachmentSidebar
-                attachments={attachments}
-                accentColor={task.classColor}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* ── Footer ──────────────────────────────────────────────────────── */}
-        <div className="flex shrink-0 items-center justify-between border-t border-border px-6 py-4">
-          {/* Left: status text */}
-          <span
-            className={`text-[13px] ${
-              status === "overdue"
-                ? "font-semibold text-[#c45c5c]"
-                : "text-muted-foreground"
-            }`}
-          >
-            {getFooterText(status, task.dueAt, t, formatDate)}
-          </span>
-
-          {/* Right: action buttons */}
-          <div className="flex items-center gap-2">
-            {isAdmin ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    router.push(`/tasks/${task.id}/edit`);
-                  }}
-                  className="rounded-[10px] border border-border bg-transparent px-4 py-2 text-[13px] font-medium text-muted-foreground transition-colors duration-100 hover:bg-secondary hover:text-foreground"
-                >
-                  {t("actions.editTask")}
-                </button>
-                {taskDetail?.stats?.submittedCount === 0 && (
-                  <button
-                    type="button"
-                    disabled={deleting}
-                    onClick={async () => {
-                      if (!token) return;
-                      if (!confirm(t("confirmDelete"))) return;
-                      setDeleting(true);
-                      try {
-                        await deleteTask(token, task.id);
-                        onClose();
-                      } catch {
-                        setDeleting(false);
-                      }
-                    }}
-                    className="rounded-[10px] border border-border bg-transparent px-4 py-2 text-[13px] font-medium text-destructive transition-colors duration-100 hover:bg-destructive/10 disabled:opacity-50"
-                  >
-                    {deleting ? t("actions.deleting") : t("actions.deleteTask")}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    router.push(`/tasks/${task.id}/submissions`);
-                  }}
-                  className="flex items-center gap-2 rounded-[10px] px-4 py-2 text-[13px] font-medium text-white shadow-sm transition-colors duration-100"
-                  style={{ backgroundColor: task.classColor }}
-                >
-                  {t("actions.viewSubmissions")}
-                  <ArrowRight size={14} strokeWidth={2} />
-                </button>
-              </>
-            ) : isSubmitted ? (
-              <button
-                type="button"
-                disabled
-                className="flex cursor-not-allowed items-center gap-2 rounded-[10px] bg-secondary px-5 py-2.5 text-[13px] font-medium text-muted-foreground"
-              >
-                {t("actions.submitted")}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  if (onSubmit) {
-                    onSubmit(task);
-                  } else {
-                    onClose();
-                    router.push(`/tasks/${task.id}/submit`);
-                  }
-                }}
-                className="flex items-center gap-2 rounded-[10px] px-5 py-2.5 text-[13px] font-medium text-white shadow-sm transition-colors duration-100"
-                style={{ backgroundColor: task.classColor }}
-              >
-                {t("actions.submitAssignment")}
-                <ArrowRight size={14} strokeWidth={2} />
-              </button>
-            )}
+          {/* Sidebar: attachments + comments — spans full height */}
+          <div className="w-[280px] shrink-0 border-l border-border max-[700px]:w-full max-[700px]:border-l-0 max-[700px]:border-t">
+            <TaskSidebar
+              attachments={attachments}
+              taskId={task.id}
+              accentColor={task.classColor}
+            />
           </div>
         </div>
       </div>

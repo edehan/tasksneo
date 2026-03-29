@@ -52,6 +52,8 @@ model User {
   avatarAttachment   Attachment[]         @relation("UserAvatar")
   notificationJobs   NotificationJob[]
   mcpKeys            McpKey[]
+  comments           Comment[]            @relation("CommentAuthor")
+  commentReplies     Comment[]            @relation("CommentReplyTarget")
 
   @@map("users")
 }
@@ -182,6 +184,7 @@ model Task {
   submissions      Submission[]
   attachments      Attachment[]    @relation("TaskAttachment")
   notificationJobs NotificationJob[]
+  comments         Comment[]
 
   @@map("tasks")
 }
@@ -230,6 +233,25 @@ model Submission {
 
   @@unique([taskId, userId])
   @@map("submissions")
+}
+
+// ─── Comments ────────────────────────────────────────────────────────────
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  taskId    String  @map("task_id")
+  authorId  String? @map("author_id")
+  replyToId String? @map("reply_to_id")
+
+  task    Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author  User? @relation("CommentAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  replyTo User? @relation("CommentReplyTarget", fields: [replyToId], references: [id], onDelete: SetNull)
+
+  @@index([taskId, createdAt])
+  @@map("comments")
 }
 
 // ─── Attachments ─────────────────────────────────────────────────────────────
