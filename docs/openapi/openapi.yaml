@@ -47,6 +47,44 @@ components:
 
   schemas:
 
+    Comment:
+      type: object
+      required: [id, content, createdAt, author, replyTo]
+      properties:
+        id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        author:
+          nullable: true
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            nickname:
+              type: string
+              nullable: true
+            avatarFileKey:
+              type: string
+              nullable: true
+          required: [id, nickname, avatarFileKey]
+        replyTo:
+          nullable: true
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            nickname:
+              type: string
+              nullable: true
+          required: [id, nickname]
+
     Error:
       type: object
       required: [error, code]
@@ -2504,6 +2542,92 @@ paths:
       responses:
         '204':
           description: 成功
+
+  # ── Comments ──────────────────────────────────────────
+
+  /tasks/{taskId}/comments:
+    parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Tasks]
+      summary: 获取任务评论列表
+      description: |
+        返回指定任务的所有评论，按时间正序排列。
+        需要拥有该任务所在班级的成员权限。
+      security:
+        - userAuth: []
+      responses:
+        '200':
+          description: 评论列表
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  comments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+                required:
+                  - comments
+        '403':
+          description: 无权访问此任务
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 任务不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      tags: [Tasks]
+      summary: 发表评论
+      description: |
+        在指定任务下发表纯文本评论。
+        需要班级成员权限，且任务必须已发布。
+        评论会触发邮件通知：直接评论通知班级管理员，回复通知被回复的用户。
+      security:
+        - userAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  minLength: 1
+                  maxLength: 2000
+                  description: 评论内容（纯文本）
+                replyToId:
+                  type: string
+                  format: uuid
+                  nullable: true
+                  description: 被回复用户的 ID（可选）
+              required:
+                - content
+      responses:
+        '201':
+          description: 评论创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          description: 任务未发布或内容无效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   # ══════════════════════════════════════════════════════
   # ADMIN

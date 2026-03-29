@@ -169,6 +169,42 @@ export function toMcpKey(key: McpKey) {
 	};
 }
 
+interface CommentSource {
+	id: string;
+	content: string;
+	createdAt: Date;
+	author: {
+		id: string;
+		nickname: string | null;
+		avatarAttachment: { fileKey: string }[];
+	} | null;
+	replyTo: {
+		id: string;
+		nickname: string | null;
+	} | null;
+}
+
+export function toComment(comment: CommentSource) {
+	return {
+		id: comment.id,
+		content: comment.content,
+		createdAt: comment.createdAt.toISOString(),
+		author: comment.author
+			? {
+					id: comment.author.id,
+					nickname: comment.author.nickname,
+					avatarFileKey: comment.author.avatarAttachment[0]?.fileKey ?? null,
+				}
+			: null,
+		replyTo: comment.replyTo
+			? {
+					id: comment.replyTo.id,
+					nickname: comment.replyTo.nickname,
+				}
+			: null,
+	};
+}
+
 interface SubmissionSource {
 	id: string;
 	taskId: string;

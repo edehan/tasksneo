@@ -69,7 +69,7 @@ function parseDate(value?: string | null): Date | null | undefined {
 	return date;
 }
 
-async function assertTaskAccess(taskId: string, userId: string) {
+export async function assertTaskAccess(taskId: string, userId: string) {
 	const task = await prisma.task.findUnique({
 		where: { id: taskId },
 		include: {

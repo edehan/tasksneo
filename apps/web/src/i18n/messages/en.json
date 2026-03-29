@@ -466,7 +466,8 @@
     "attachmentsCount": "Attachments ({count})",
     "unknownFile": "Unknown file",
     "noFilesAttached": "No files attached yet",
-    "downloadAll": "Download All"
+    "showAll": "Show all ({count})",
+    "showLess": "Show less"
   },
   "postTaskDialog": {
     "errors": {
@@ -663,5 +664,22 @@
       "downloadComplete": "Download complete",
       "failedCreateDownload": "Failed to create download"
     }
+  },
+  "commentSection": {
+    "title": "Discussion",
+    "placeholder": "Write a comment...",
+    "send": "Send",
+    "reply": "Reply",
+    "replyingTo": "Replying to {name}",
+    "cancelReply": "Cancel",
+    "noComments": "No comments yet. Start the discussion!",
+    "failedToLoad": "Failed to load comments",
+    "failedToSend": "Failed to send comment",
+    "deletedUser": "Deleted User",
+    "justNow": "just now"
+  },
+  "taskSidebar": {
+    "attachmentsTab": "Attachments ({count})",
+    "discussionTab": "Discussion"
   }
 }

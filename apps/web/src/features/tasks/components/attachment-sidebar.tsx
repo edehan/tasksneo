@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, FileText, Loader2, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Download, FileText, Loader2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -14,6 +14,8 @@ interface AttachmentSidebarProps {
   accentColor?: string;
   onRemove?: (att: AttachmentMeta) => void;
 }
+
+const COLLAPSE_THRESHOLD = 3;
 
 // ─── File extension icon colors ──────────────────────────────────────────────
 
@@ -81,6 +83,14 @@ export function AttachmentSidebar({
   const { token } = useAuth();
   const accent = accentColor ?? "var(--class-accent)";
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(
+    attachments.length > COLLAPSE_THRESHOLD,
+  );
+
+  const canCollapse = attachments.length > COLLAPSE_THRESHOLD;
+  const visibleAttachments = collapsed
+    ? attachments.slice(0, COLLAPSE_THRESHOLD)
+    : attachments;
 
   async function handleDownload(att: AttachmentMeta) {
     if (!token) return;
@@ -105,15 +115,15 @@ export function AttachmentSidebar({
   }
 
   return (
-    <div className="flex h-full flex-col bg-surface-subtle/60 p-4">
+    <div className="flex flex-col bg-surface-subtle/60 p-4">
       {/* Header */}
       <span className="text-label-upper mb-3">
         {t("attachmentsCount", { count: attachments.length })}
       </span>
 
       {/* File list */}
-      <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto">
-        {attachments.map((att) => {
+      <div className="flex flex-col gap-1.5">
+        {visibleAttachments.map((att) => {
           const iconColor = getExtColor(att.originalName);
           const isDownloading = downloading === att.id;
           return (
@@ -204,19 +214,24 @@ export function AttachmentSidebar({
         )}
       </div>
 
-      {/* Download all */}
-      {attachments.length > 1 && (
+      {/* Collapse toggle */}
+      {canCollapse && (
         <button
           type="button"
-          onClick={() => {
-            for (const att of attachments) {
-              void handleDownload(att);
-            }
-          }}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-transparent px-3 py-2 text-[12.5px] font-medium text-muted-foreground transition-colors duration-100 hover:bg-secondary hover:text-foreground"
+          onClick={() => setCollapsed(!collapsed)}
+          className="mt-2 flex w-full items-center justify-center gap-1 rounded-lg py-1.5 text-[11.5px] font-medium text-muted-foreground transition-colors duration-100 hover:bg-secondary hover:text-foreground"
         >
-          <Download size={14} strokeWidth={2} />
-          {t("downloadAll")}
+          {collapsed ? (
+            <>
+              {t("showAll", { count: attachments.length })}
+              <ChevronDown size={13} strokeWidth={2} />
+            </>
+          ) : (
+            <>
+              {t("showLess")}
+              <ChevronUp size={13} strokeWidth={2} />
+            </>
+          )}
         </button>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { NotifChannel, NotifStatus, prisma } from "@taskflow/db";
+import { ClassRole, NotifChannel, NotifStatus, prisma } from "@taskflow/db";
 import { sendEmail } from "../lib/mailer.js";
 import {
 	enqueueNotificationJob,
@@ -25,9 +25,22 @@ interface AnnouncementNotificationPayload {
 	content: string;
 }
 
+interface CommentNotificationPayload {
+	userId: string;
+	taskId: string;
+	type: "TASK_COMMENT";
+	className: string;
+	classColor: string;
+	taskTitle: string;
+	commentAuthorName: string;
+	commentContent: string;
+	isReply: boolean;
+}
+
 type NotificationPayload =
 	| TaskNotificationPayload
-	| AnnouncementNotificationPayload;
+	| AnnouncementNotificationPayload
+	| CommentNotificationPayload;
 
 const DEFAULT_APP_TITLE = "TaskNeo";
 
@@ -167,9 +180,90 @@ export async function enqueueTaskPublishedNotifications(params: {
 	}
 }
 
+export async function enqueueCommentNotifications(params: {
+	taskId: string;
+	classId: string;
+	className: string;
+	taskTitle: string;
+	commentAuthorId: string;
+	commentContent: string;
+	replyToUserId: string | null;
+}) {
+	const now = new Date();
+
+	// Get comment author name
+	const author = await prisma.user.findUnique({
+		where: { id: params.commentAuthorId },
+		select: { nickname: true, email: true },
+	});
+	const authorName = author?.nickname ?? author?.email ?? "Someone";
+
+	// Get class color
+	const cls = await prisma.class.findUnique({
+		where: { id: params.classId },
+		select: { color: true },
+	});
+	const classColor = cls?.color ?? "#7B6CB0";
+
+	// Truncate content for email preview
+	const contentPreview =
+		params.commentContent.length > 500
+			? `${params.commentContent.slice(0, 500)}...`
+			: params.commentContent;
+
+	let recipientUserIds: string[];
+
+	if (params.replyToUserId) {
+		// Reply → notify only the replied-to user (if not the commenter)
+		if (params.replyToUserId === params.commentAuthorId) {
+			return;
+		}
+		recipientUserIds = [params.replyToUserId];
+	} else {
+		// Direct comment → notify all OWNER + ADMIN members except the commenter
+		const admins = await prisma.classMember.findMany({
+			where: {
+				classId: params.classId,
+				role: { in: [ClassRole.OWNER, ClassRole.ADMIN] },
+				userId: { not: params.commentAuthorId },
+			},
+			select: { userId: true },
+		});
+		recipientUserIds = admins.map((m) => m.userId);
+	}
+
+	for (const userId of recipientUserIds) {
+		const channels = await getEnabledChannels(userId);
+		const payload: CommentNotificationPayload = {
+			userId,
+			taskId: params.taskId,
+			type: "TASK_COMMENT",
+			className: params.className,
+			classColor,
+			taskTitle: params.taskTitle,
+			commentAuthorName: authorName,
+			commentContent: contentPreview,
+			isReply: params.replyToUserId !== null,
+		};
+
+		for (const channel of channels) {
+			await createNotificationJob(
+				payload as unknown as TaskNotificationPayload,
+				now,
+				channel,
+			);
+		}
+	}
+}
+
 function buildSubject(payload: NotificationPayload, appTitle: string) {
 	if (payload.type === "SITE_ANNOUNCEMENT") {
 		return `[${appTitle}] 系统公告：${payload.title}`;
+	}
+	if (payload.type === "TASK_COMMENT") {
+		return payload.isReply
+			? `[${appTitle}] ${payload.commentAuthorName} replied to you on "${payload.taskTitle}"`
+			: `[${appTitle}] New comment on "${payload.taskTitle}"`;
 	}
 	if (payload.type === "TASK_PUBLISHED") {
 		return `[${appTitle}] 新任务：${payload.taskTitle}`;
@@ -181,6 +275,13 @@ function buildSubject(payload: NotificationPayload, appTitle: string) {
 function buildText(payload: NotificationPayload, timezone: string) {
 	if (payload.type === "SITE_ANNOUNCEMENT") {
 		return `系统公告\n\n${payload.title}\n\n${payload.content}`;
+	}
+
+	if (payload.type === "TASK_COMMENT") {
+		const action = payload.isReply
+			? `${payload.commentAuthorName} replied to you`
+			: `${payload.commentAuthorName} commented`;
+		return `${action} on "${payload.taskTitle}" in ${payload.className}:\n\n${payload.commentContent}`;
 	}
 
 	const dueText = formatDueAt(payload.dueAt, timezone);
@@ -230,6 +331,57 @@ function buildAnnouncementHtml(
 </html>`;
 }
 
+function buildCommentHtml(
+	payload: CommentNotificationPayload,
+	baseUrl: string,
+	appTitle: string,
+) {
+	const accentColor = payload.classColor || "#7B6CB0";
+	const taskUrl = `${baseUrl}/dashboard`;
+	const unsubscribeUrl = `${baseUrl}/settings/notifications`;
+	const safeTitle = escapeHtml(appTitle);
+	const contentHtml = escapeHtml(payload.commentContent).replace(/\n/g, "<br>");
+
+	const heading = payload.isReply
+		? `<strong>${escapeHtml(payload.commentAuthorName)}</strong> replied to you on a task in <strong>${escapeHtml(payload.className)}</strong>`
+		: `<strong>${escapeHtml(payload.commentAuthorName)}</strong> commented on a task in <strong>${escapeHtml(payload.className)}</strong>`;
+
+	return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#faf7f2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#faf7f2;">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background-color:#fffdf8;border-radius:8px;overflow:hidden;border:1px solid #e8e2d8;">
+        <tr><td style="height:4px;background-color:${accentColor};"></td></tr>
+        <tr><td style="padding:24px 32px 16px;">
+          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#8a8078;">${safeTitle}</p>
+        </td></tr>
+        <tr><td style="padding:0 32px 24px;">
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#2c2825;">${heading}</p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9f6f0;border-radius:6px;">
+            <tr><td style="padding:16px 20px;">
+              <p style="margin:0 0 8px;font-size:14px;color:#8a8078;">${escapeHtml(payload.taskTitle)}</p>
+              <p style="margin:0;font-size:15px;line-height:1.6;color:#2c2825;">${contentHtml}</p>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:0 32px 32px;" align="center">
+          <a href="${taskUrl}" style="display:inline-block;padding:10px 28px;background-color:${accentColor};color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px;">View Task</a>
+        </td></tr>
+        <tr><td style="padding:16px 32px;border-top:1px solid #e8e2d8;">
+          <p style="margin:0;font-size:12px;color:#c0b8ad;text-align:center;">
+            Sent by ${safeTitle} &middot;
+            <a href="${unsubscribeUrl}" style="color:#8a8078;text-decoration:underline;">Unsubscribe</a>
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
 function buildHtml(
 	payload: NotificationPayload,
 	timezone: string,
@@ -238,6 +390,10 @@ function buildHtml(
 ) {
 	if (payload.type === "SITE_ANNOUNCEMENT") {
 		return buildAnnouncementHtml(payload, baseUrl, appTitle);
+	}
+
+	if (payload.type === "TASK_COMMENT") {
+		return buildCommentHtml(payload, baseUrl, appTitle);
 	}
 
 	const dueText = formatDueAt(payload.dueAt, timezone);
@@ -312,21 +468,34 @@ async function sendWebhook(
 	const timeout = setTimeout(() => controller.abort(), 10_000);
 
 	try {
-		const body =
-			payload.type === "SITE_ANNOUNCEMENT"
-				? {
-						type: payload.type,
-						title: payload.title,
-						content: payload.content,
-					}
-				: {
-						type: payload.type,
-						taskId: payload.taskId,
-						taskTitle: payload.taskTitle,
-						className: payload.className,
-						dueAt: formatDueAt(payload.dueAt, timezone),
-						url: `${baseUrl}/dashboard`,
-					};
+		let body: Record<string, unknown>;
+		if (payload.type === "SITE_ANNOUNCEMENT") {
+			body = {
+				type: payload.type,
+				title: payload.title,
+				content: payload.content,
+			};
+		} else if (payload.type === "TASK_COMMENT") {
+			body = {
+				type: payload.type,
+				taskId: payload.taskId,
+				taskTitle: payload.taskTitle,
+				className: payload.className,
+				commentAuthorName: payload.commentAuthorName,
+				commentContent: payload.commentContent,
+				isReply: payload.isReply,
+				url: `${baseUrl}/dashboard`,
+			};
+		} else {
+			body = {
+				type: payload.type,
+				taskId: payload.taskId,
+				taskTitle: payload.taskTitle,
+				className: payload.className,
+				dueAt: formatDueAt(payload.dueAt, timezone),
+				url: `${baseUrl}/dashboard`,
+			};
+		}
 
 		const res = await fetch(webhookUrl, {
 			method: "POST",
