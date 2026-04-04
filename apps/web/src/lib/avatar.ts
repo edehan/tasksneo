@@ -26,12 +26,8 @@ async function sha256Hex(input: string): Promise<string> {
  * Build a WeAvatar URL from a pre-computed SHA-256 hash (synchronous).
  * Use this when the backend already provides `avatarHash`.
  */
-export function buildAvatarUrlFromHash(
-  hash: string,
-  size = 80,
-  fallback: "identicon" | "mp" | "retro" | "robohash" | "color" = "color",
-): string {
-  return `${WEAVATAR_BASE}/${hash}?s=${size}&d=${fallback}`;
+export function buildAvatarUrlFromHash(hash: string, size = 80): string {
+  return `${WEAVATAR_BASE}/${hash}?s=${size}&d=404`;
 }
 
 /**
@@ -41,8 +37,7 @@ export function buildAvatarUrlFromHash(
 export async function getAvatarUrl(
   identifier: string,
   size = 80,
-  fallback: "identicon" | "mp" | "retro" | "robohash" | "color" = "color",
 ): Promise<string> {
   const hash = await sha256Hex(identifier.trim().toLowerCase());
-  return buildAvatarUrlFromHash(hash, size, fallback);
+  return buildAvatarUrlFromHash(hash, size);
 }

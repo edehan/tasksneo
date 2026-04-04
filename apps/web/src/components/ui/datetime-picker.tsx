@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarIcon, X } from "lucide-react";
+import { CalendarIcon, ChevronDown, ChevronUp, X } from "lucide-react";
 import * as React from "react";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -8,7 +8,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 interface DateTimePickerProps {
@@ -27,6 +26,110 @@ function formatDateTime(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+// ── Scroll column for hours or minutes ──────────────────────────────────────
+
+const ITEM_H = 36;
+const VISIBLE = 5;
+
+interface ScrollColumnProps {
+  count: number;
+  selected: number;
+  onSelect: (value: number) => void;
+  step?: number;
+}
+
+function ScrollColumn({
+  count,
+  selected,
+  onSelect,
+  step = 1,
+}: ScrollColumnProps) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const items = Array.from(
+    { length: Math.ceil(count / step) },
+    (_, i) => i * step,
+  );
+  const selectedIndex = items.indexOf(selected);
+
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container || selectedIndex < 0) return;
+    const targetTop =
+      selectedIndex * ITEM_H - Math.floor(VISIBLE / 2) * ITEM_H;
+    container.scrollTop = Math.max(0, targetTop);
+  }, [selectedIndex]);
+
+  function handleWheel(e: React.WheelEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const direction = e.deltaY > 0 ? 1 : -1;
+    const currentIdx = selectedIndex >= 0 ? selectedIndex : 0;
+    const nextIdx = Math.max(
+      0,
+      Math.min(items.length - 1, currentIdx + direction),
+    );
+    onSelect(items[nextIdx]);
+  }
+
+  function nudge(direction: 1 | -1) {
+    const currentIdx = selectedIndex >= 0 ? selectedIndex : 0;
+    const nextIdx = Math.max(
+      0,
+      Math.min(items.length - 1, currentIdx + direction),
+    );
+    onSelect(items[nextIdx]);
+  }
+
+  return (
+    <div className="flex flex-col items-center">
+      <button
+        type="button"
+        onClick={() => nudge(-1)}
+        className="flex h-7 w-full items-center justify-center rounded text-muted-foreground/60 transition-colors hover:text-foreground"
+      >
+        <ChevronUp size={14} strokeWidth={2} />
+      </button>
+      <div
+        ref={containerRef}
+        onWheel={handleWheel}
+        className="overflow-hidden"
+        style={{ height: VISIBLE * ITEM_H, width: 56 }}
+      >
+        <div className="flex flex-col">
+          {items.map((val) => {
+            const isSelected = val === selected;
+            return (
+              <button
+                key={val}
+                type="button"
+                onClick={() => onSelect(val)}
+                className={cn(
+                  "flex shrink-0 items-center justify-center rounded-lg text-sm font-medium transition-colors",
+                  isSelected
+                    ? "bg-foreground text-background"
+                    : "text-foreground/50 hover:text-foreground",
+                )}
+                style={{ height: ITEM_H }}
+              >
+                {pad(val)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => nudge(1)}
+        className="flex h-7 w-full items-center justify-center rounded text-muted-foreground/60 transition-colors hover:text-foreground"
+      >
+        <ChevronDown size={14} strokeWidth={2} />
+      </button>
+    </div>
+  );
+}
+
+// ── DateTimePicker ──────────────────────────────────────────────────────────
+
 export function DateTimePicker({
   value,
   onChange,
@@ -35,34 +138,16 @@ export function DateTimePicker({
   className,
 }: DateTimePickerProps) {
   const [open, setOpen] = React.useState(false);
-  const timeScrollRef = React.useRef<HTMLDivElement>(null);
 
   const hours = value ? value.getHours() : 0;
   const minutes = value ? value.getMinutes() : 0;
-
-  // Scroll to the selected time slot when popover opens
-  React.useEffect(() => {
-    if (open && value && timeScrollRef.current) {
-      const slotIndex = hours * 4 + Math.floor(minutes / 15);
-      const scrollContainer = timeScrollRef.current.querySelector(
-        "[data-radix-scroll-area-viewport]",
-      );
-      if (scrollContainer) {
-        // Each slot is ~32px high + 4px gap
-        const scrollTop = Math.max(0, slotIndex * 36 - 72);
-        setTimeout(() => {
-          scrollContainer.scrollTop = scrollTop;
-        }, 50);
-      }
-    }
-  }, [open, value, hours, minutes]);
+  const roundedMinutes = (Math.round(minutes / 5) * 5) % 60;
 
   function handleDateSelect(day: Date | undefined) {
     if (!day) {
       onChange(undefined);
       return;
     }
-
     const next = new Date(day);
     if (value) {
       next.setHours(value.getHours(), value.getMinutes(), 0, 0);
@@ -72,11 +157,18 @@ export function DateTimePicker({
     onChange(next);
   }
 
-  function handleTimeSelect(hour: number, minute: number) {
+  function handleHourSelect(h: number) {
     const next = value ? new Date(value) : new Date();
-    next.setHours(hour, minute, 0, 0);
+    if (!value) next.setMinutes(0, 0, 0);
+    next.setHours(h);
     onChange(next);
-    setOpen(false);
+  }
+
+  function handleMinuteSelect(m: number) {
+    const next = value ? new Date(value) : new Date();
+    if (!value) next.setHours(0, 0, 0);
+    next.setMinutes(m);
+    onChange(next);
   }
 
   function handleClear(e: React.MouseEvent) {
@@ -103,8 +195,8 @@ export function DateTimePicker({
             {value ? formatDateTime(value) : placeholder}
           </span>
           {value && !disabled && (
-            // biome-ignore lint/a11y/useKeyWithClickEvents: clear button with role=button
-            // biome-ignore lint/a11y/useSemanticElements: clear button with role=button
+            // biome-ignore lint/a11y/useKeyWithClickEvents: clear button
+            // biome-ignore lint/a11y/useSemanticElements: clear button
             <span
               role="button"
               tabIndex={-1}
@@ -116,44 +208,38 @@ export function DateTimePicker({
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="flex w-auto items-start p-0" align="start">
+      <PopoverContent className="flex w-auto items-stretch p-0" align="start">
         <Calendar
           mode="single"
           selected={value}
           onSelect={handleDateSelect}
           defaultMonth={value}
+          cellSize="1.8rem"
         />
-        <div ref={timeScrollRef} className="border-l border-border">
-          <ScrollArea className="h-[300px] w-[100px]">
-            <div className="flex flex-col gap-1 p-2">
-              {Array.from({ length: 96 }, (_, i) => {
-                const h = Math.floor(i / 4);
-                const m = (i % 4) * 15;
-                const timeStr = `${pad(h)}:${pad(m)}`;
-                const isSelected =
-                  value &&
-                  h === hours &&
-                  m <= minutes &&
-                  (m + 15 > minutes || m === 45);
-
-                return (
-                  <button
-                    key={timeStr}
-                    type="button"
-                    onClick={() => handleTimeSelect(h, m)}
-                    className={cn(
-                      "rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
-                      isSelected
-                        ? "bg-foreground text-background"
-                        : "text-muted-foreground hover:bg-secondary hover:text-foreground",
-                    )}
-                  >
-                    {timeStr}
-                  </button>
-                );
-              })}
+        {/* Time picker */}
+        <div className="flex flex-col border-l border-border">
+          <div className="px-4 pt-3 pb-1 text-center text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            Time
+          </div>
+          <div className="flex flex-1 items-start justify-center gap-1 px-3 pb-2">
+            <ScrollColumn
+              count={24}
+              selected={hours}
+              onSelect={handleHourSelect}
+            />
+            <div
+              className="flex items-center text-sm font-medium text-muted-foreground"
+              style={{ height: VISIBLE * ITEM_H }}
+            >
+              :
             </div>
-          </ScrollArea>
+            <ScrollColumn
+              count={60}
+              selected={roundedMinutes}
+              onSelect={handleMinuteSelect}
+              step={5}
+            />
+          </div>
         </div>
       </PopoverContent>
     </Popover>
