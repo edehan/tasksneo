@@ -8,6 +8,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 interface DateTimePickerProps {
@@ -34,9 +35,27 @@ export function DateTimePicker({
   className,
 }: DateTimePickerProps) {
   const [open, setOpen] = React.useState(false);
+  const timeScrollRef = React.useRef<HTMLDivElement>(null);
 
   const hours = value ? value.getHours() : 0;
   const minutes = value ? value.getMinutes() : 0;
+
+  // Scroll to the selected time slot when popover opens
+  React.useEffect(() => {
+    if (open && value && timeScrollRef.current) {
+      const slotIndex = hours * 4 + Math.floor(minutes / 15);
+      const scrollContainer = timeScrollRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]",
+      );
+      if (scrollContainer) {
+        // Each slot is ~32px high + 4px gap
+        const scrollTop = Math.max(0, slotIndex * 36 - 72);
+        setTimeout(() => {
+          scrollContainer.scrollTop = scrollTop;
+        }, 50);
+      }
+    }
+  }, [open, value, hours, minutes]);
 
   function handleDateSelect(day: Date | undefined) {
     if (!day) {
@@ -53,26 +72,11 @@ export function DateTimePicker({
     onChange(next);
   }
 
-  function handleHourChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const h = parseInt(e.target.value, 10);
+  function handleTimeSelect(hour: number, minute: number) {
     const next = value ? new Date(value) : new Date();
-    if (!value) {
-      next.setSeconds(0, 0);
-      next.setMinutes(0);
-    }
-    next.setHours(h);
+    next.setHours(hour, minute, 0, 0);
     onChange(next);
-  }
-
-  function handleMinuteChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const m = parseInt(e.target.value, 10);
-    const next = value ? new Date(value) : new Date();
-    if (!value) {
-      next.setSeconds(0, 0);
-      next.setHours(0);
-    }
-    next.setMinutes(m);
-    onChange(next);
+    setOpen(false);
   }
 
   function handleClear(e: React.MouseEvent) {
@@ -112,42 +116,44 @@ export function DateTimePicker({
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent className="flex w-auto items-start p-0" align="start">
         <Calendar
           mode="single"
           selected={value}
           onSelect={handleDateSelect}
           defaultMonth={value}
         />
-        <div className="flex items-center justify-center gap-2 border-t border-border px-4 py-3">
-          <span className="text-xs font-medium text-muted-foreground">
-            Time
-          </span>
-          <select
-            value={hours}
-            onChange={handleHourChange}
-            className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            {Array.from({ length: 24 }, (_, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: static time option list
-              <option key={i} value={i}>
-                {pad(i)}
-              </option>
-            ))}
-          </select>
-          <span className="text-sm text-muted-foreground">:</span>
-          <select
-            value={minutes}
-            onChange={handleMinuteChange}
-            className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            {Array.from({ length: 60 }, (_, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: static time option list
-              <option key={i} value={i}>
-                {pad(i)}
-              </option>
-            ))}
-          </select>
+        <div ref={timeScrollRef} className="border-l border-border">
+          <ScrollArea className="h-[300px] w-[100px]">
+            <div className="flex flex-col gap-1 p-2">
+              {Array.from({ length: 96 }, (_, i) => {
+                const h = Math.floor(i / 4);
+                const m = (i % 4) * 15;
+                const timeStr = `${pad(h)}:${pad(m)}`;
+                const isSelected =
+                  value &&
+                  h === hours &&
+                  m <= minutes &&
+                  (m + 15 > minutes || m === 45);
+
+                return (
+                  <button
+                    key={timeStr}
+                    type="button"
+                    onClick={() => handleTimeSelect(h, m)}
+                    className={cn(
+                      "rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
+                      isSelected
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+                    )}
+                  >
+                    {timeStr}
+                  </button>
+                );
+              })}
+            </div>
+          </ScrollArea>
         </div>
       </PopoverContent>
     </Popover>

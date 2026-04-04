@@ -441,17 +441,6 @@
     "deleteDialogTitle": "Delete \"{name}\"?",
     "deleteDialogDescription": "This will permanently delete the class, including all tasks, submissions, and member data. This action cannot be undone."
   },
-  "dashboardInbox": {
-    "inbox": "Inbox",
-    "markAllAsRead": "Mark all as read",
-    "time": {
-      "justNow": "just now",
-      "minutesAgo": "{count}m ago",
-      "hoursAgo": "{count}h ago",
-      "daysAgo": "{count}d ago",
-      "monthsAgo": "{count}mo ago"
-    }
-  },
   "taskListView": {
     "columns": {
       "task": "Task",
