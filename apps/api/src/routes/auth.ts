@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 
+import { verifyCaptcha } from "../lib/captcha.js";
 import { login } from "../services/auth.service.js";
 import {
 	completeRegistration,
@@ -14,6 +15,7 @@ import { exchangeMcpKey } from "../services/mcp-key.service.js";
 
 const registerStep1Schema = z.object({
 	email: z.string().email(),
+	captchaToken: z.string().optional(),
 });
 
 const registerCompleteSchema = z.object({
@@ -53,6 +55,7 @@ export const authRouter = new Hono();
 // Step 1: send verification email
 authRouter.post("/register", async (c) => {
 	const body = registerStep1Schema.parse(await c.req.json());
+	await verifyCaptcha(body.captchaToken);
 	await sendRegistrationEmail(body.email);
 	return c.json({ message: "Verification email sent" }, 200);
 });

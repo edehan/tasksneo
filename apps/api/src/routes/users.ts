@@ -2,6 +2,7 @@ import { NotifChannel } from "@taskflow/db";
 import type { MiddlewareHandler } from "hono";
 import { Hono } from "hono";
 import { z } from "zod";
+import { verifyCaptcha } from "../lib/captcha.js";
 import { requireAuthUser } from "../lib/context.js";
 import { uploadObject } from "../lib/storage.js";
 import { authMiddleware } from "../middleware/auth.js";
@@ -74,6 +75,7 @@ usersRouter.patch("/me", async (c) => {
 
 const changeEmailSchema = z.object({
 	email: z.string().email(),
+	captchaToken: z.string().optional(),
 });
 
 const confirmEmailSchema = z.object({
@@ -83,6 +85,7 @@ const confirmEmailSchema = z.object({
 usersRouter.post("/me/email/change", async (c) => {
 	const authUser = requireAuthUser(c);
 	const body = changeEmailSchema.parse(await c.req.json());
+	await verifyCaptcha(body.captchaToken);
 	await sendEmailChangeVerification(authUser.userId, body.email);
 	return c.json({ message: "Verification email sent" }, 200);
 });

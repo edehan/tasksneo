@@ -292,10 +292,16 @@ export async function login(
   });
 }
 
-export async function register(email: string): Promise<{ message: string }> {
+export async function register(
+  email: string,
+  captchaToken?: string | null,
+): Promise<{ message: string }> {
   return apiRequest<{ message: string }>("/auth/register", {
     method: "POST",
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({
+      email,
+      ...(captchaToken ? { captchaToken } : {}),
+    }),
   });
 }
 
@@ -344,10 +350,17 @@ export async function resetPassword(
 export async function requestEmailChange(
   authToken: string,
   newEmail: string,
+  captchaToken?: string | null,
 ): Promise<{ message: string }> {
   return apiRequest<{ message: string }>(
     "/users/me/email/change",
-    { method: "POST", body: JSON.stringify({ email: newEmail }) },
+    {
+      method: "POST",
+      body: JSON.stringify({
+        email: newEmail,
+        ...(captchaToken ? { captchaToken } : {}),
+      }),
+    },
     authToken,
   );
 }
