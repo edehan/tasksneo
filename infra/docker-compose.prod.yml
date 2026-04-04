@@ -31,6 +31,7 @@ services:
   cap:
     image: tiago2/cap:latest
     restart: unless-stopped
+    env_file: .env.prod
     depends_on:
       redis:
         condition: service_healthy
