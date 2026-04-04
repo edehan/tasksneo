@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth-provider";
+import { CaptchaWidget, isCaptchaEnabled } from "@/components/captcha-widget";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -313,12 +314,15 @@ function ChangeEmailDialog({ token }: { token: string | null }) {
   const [newEmail, setNewEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const resetCaptcha = useCallback(() => setCaptchaToken(null), []);
 
   function handleOpenChange(isOpen: boolean) {
     setOpen(isOpen);
     if (!isOpen) {
       setNewEmail("");
       setSent(false);
+      setCaptchaToken(null);
     }
   }
 
@@ -328,7 +332,7 @@ function ChangeEmailDialog({ token }: { token: string | null }) {
 
     setSubmitting(true);
     try {
-      await requestEmailChange(token, newEmail);
+      await requestEmailChange(token, newEmail, captchaToken);
       setSent(true);
     } catch (err) {
       const message =
@@ -383,6 +387,7 @@ function ChangeEmailDialog({ token }: { token: string | null }) {
                 className="mt-2"
               />
             </div>
+            <CaptchaWidget onSolve={setCaptchaToken} onReset={resetCaptcha} />
             <DialogFooter>
               <Button
                 type="button"
@@ -391,7 +396,14 @@ function ChangeEmailDialog({ token }: { token: string | null }) {
               >
                 {t("cancel")}
               </Button>
-              <Button type="submit" disabled={submitting || !newEmail}>
+              <Button
+                type="submit"
+                disabled={
+                  submitting ||
+                  !newEmail ||
+                  (isCaptchaEnabled() && !captchaToken)
+                }
+              >
                 {submitting ? t("sending") : t("sendVerification")}
               </Button>
             </DialogFooter>

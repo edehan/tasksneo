@@ -99,6 +99,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@cap.js/widget':
+        specifier: ^0.1.43
+        version: 0.1.43
       '@radix-ui/react-alert-dialog':
         specifier: ^1.1.15
         version: 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -559,6 +562,9 @@ packages:
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [win32]
+
+  '@cap.js/widget@0.1.43':
+    resolution: {integrity: sha512-VYfYIbsLH49UPhwKr4W2oW+Vu358gZJencWQ9PLlWzMw6/QlYi2GpVaSYndHOvb3Z7fK3OrQa9L65FrM4esdoA==}
 
   '@cloudflare/kv-asset-handler@0.4.2':
     resolution: {integrity: sha512-SIOD2DxrRRwQ+jgzlXCqoEFiKOFqaPjhnNTGKXSRLvp1HiOvapLaFG2kEr9dYQTYe8rKrd9uvDUzmAITeNyaHQ==}
@@ -5497,6 +5503,8 @@ snapshots:
 
   '@biomejs/cli-win32-x64@2.4.7':
     optional: true
+
+  '@cap.js/widget@0.1.43': {}
 
   '@cloudflare/kv-asset-handler@0.4.2': {}
 

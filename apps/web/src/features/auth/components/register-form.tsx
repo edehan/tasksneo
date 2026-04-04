@@ -3,8 +3,9 @@
 import { Mail } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
+import { CaptchaWidget, isCaptchaEnabled } from "@/components/captcha-widget";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,6 +26,8 @@ export function RegisterForm() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const resetCaptcha = useCallback(() => setCaptchaToken(null), []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -32,8 +35,9 @@ export function RegisterForm() {
 
     setSubmitting(true);
     try {
-      await register(email);
+      await register(email, captchaToken);
       setSent(true);
+      setCaptchaToken(null);
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("registrationFailed");
@@ -46,7 +50,8 @@ export function RegisterForm() {
   async function handleResend() {
     setSubmitting(true);
     try {
-      await register(email);
+      await register(email, captchaToken);
+      setCaptchaToken(null);
       toast.success(t("verificationEmailResent"));
     } catch (err) {
       const message =
@@ -75,12 +80,15 @@ export function RegisterForm() {
         <CardContent className="text-center text-sm text-muted-foreground">
           <p>{t("didNotReceive")}</p>
         </CardContent>
+        <CardContent>
+          <CaptchaWidget onSolve={setCaptchaToken} onReset={resetCaptcha} />
+        </CardContent>
         <CardFooter className="flex flex-col gap-3">
           <Button
             variant="outline"
             className="w-full"
             onClick={handleResend}
-            disabled={submitting}
+            disabled={submitting || (isCaptchaEnabled() && !captchaToken)}
           >
             {submitting ? t("sending") : t("resendEmail")}
           </Button>
@@ -151,12 +159,17 @@ export function RegisterForm() {
               </Link>
             </Label>
           </div>
+          <CaptchaWidget onSolve={setCaptchaToken} onReset={resetCaptcha} />
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
           <Button
             type="submit"
             className="w-full"
-            disabled={submitting || !agreedToTerms}
+            disabled={
+              submitting ||
+              !agreedToTerms ||
+              (isCaptchaEnabled() && !captchaToken)
+            }
           >
             {submitting ? t("sending") : t("continueWithEmail")}
           </Button>

@@ -28,6 +28,21 @@ services:
       timeout: 5s
       retries: 20
 
+  cap:
+    image: tiago2/cap:latest
+    restart: unless-stopped
+    env_file: .env.prod
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      ADMIN_KEY: "${CAP_ADMIN_KEY}"
+      REDIS_URL: "redis://redis:6379"
+      CORS_ORIGIN: "${CORS_ORIGINS}"
+      ENABLE_ASSETS_SERVER: "true"
+    ports:
+      - "127.0.0.1:3002:3000"
+
   api:
     build:
       context: ..

@@ -62,6 +62,7 @@ openssl rand -hex 32  # Use output for ADMIN_TOKEN
 openssl rand -hex 32  # Use output for SYSTEM_CONFIG_SECRET
 openssl rand -hex 32  # Use output for JWT_SECRET
 openssl rand -hex 16  # Use output for POSTGRES_PASSWORD
+openssl rand -hex 32  # Use output for CAP_ADMIN_KEY
 ```
 
 Edit `infra/.env.prod` with your actual values:
@@ -142,7 +143,82 @@ pnpm run preview
 
 > **Note**: `NEXT_PUBLIC_API_BASE_URL` is baked into the frontend at build time. If you change the API domain, redeploy the frontend.
 
-## 7. Admin Setup
+## 7. CAPTCHA Setup (Cap.js)
+
+Cap.js is a self-hosted, privacy-first proof-of-work CAPTCHA. It protects registration and email-change endpoints from spam bots. The Cap container runs alongside the API and shares the existing Redis instance.
+
+### 7.1 Create a site key
+
+After the containers are running, open the Cap dashboard:
+
+```bash
+# Via SSH tunnel (if Caddy is not yet configured)
+ssh -L 3002:127.0.0.1:3002 your-vps
+
+# Then visit http://localhost:3002 in your browser
+```
+
+1. Log in with your `CAP_ADMIN_KEY`
+2. Create a new site key (name it e.g. "TaskFlow")
+3. Note both the **site key** and the **secret key**
+
+Update `infra/.env.prod`:
+
+```bash
+CAP_URL=http://cap:3000/<site-key>    # internal Docker network URL
+CAP_SECRET=<site-secret-key>          # NOT the admin key
+```
+
+Restart the API to pick up the new env vars:
+
+```bash
+docker compose -f docker-compose.prod.yml restart api
+```
+
+### 7.2 Caddy reverse proxy
+
+Cap needs to be accessible from the browser at `https://api.yourdomain.com/cap/`. Caddy strips the `/cap` prefix and injects the site key before forwarding to the Cap container.
+
+Add to your Caddyfile for the API domain:
+
+```caddyfile
+api.yourdomain.com {
+    handle /cap/* {
+        uri strip_prefix /cap
+        uri path_prefix /<site-key>
+        reverse_proxy 127.0.0.1:3002
+    }
+
+    handle {
+        reverse_proxy 127.0.0.1:3001
+    }
+}
+```
+
+Replace `<site-key>` with the actual site key from step 7.1, then reload Caddy:
+
+```bash
+sudo systemctl reload caddy
+```
+
+Verify:
+
+```bash
+curl https://api.yourdomain.com/cap/<site-key>/cap/challenge
+# Should return a JSON challenge (or a 405 since it expects POST)
+```
+
+### 7.3 Frontend environment
+
+Add `NEXT_PUBLIC_CAP_ENABLED=true` to your frontend build environment (Vercel / Cloudflare dashboard). The widget endpoint is automatically derived from `NEXT_PUBLIC_API_BASE_URL` + `/cap/`.
+
+No additional URL configuration is needed unless Cap is hosted on a different domain (in which case, set `NEXT_PUBLIC_CAP_API_ENDPOINT`).
+
+### Dev / test environments
+
+CAPTCHA is **disabled by default**. When `CAP_ENABLED` is not `true` on the backend (or `NEXT_PUBLIC_CAP_ENABLED` is not `true` on the frontend), the widget is hidden and the backend skips verification. No Cap container is needed for development.
+
+## 8. Admin Setup
 
 1. Visit `https://taskflow.yourdomain.com/admin`
 2. Enter your `ADMIN_TOKEN`
@@ -153,15 +229,15 @@ pnpm run preview
    - **Auth**: Set `auth.registration_open` to `true` when ready
 4. Verify storage: The "Object Storage" card should show a green "Connected" status
 
-## 8. Post-Deploy Verification
+## 9. Post-Deploy Verification
 
-- [ ] Register a new account (triggers email verification flow)
+- [ ] Register a new account (CAPTCHA widget should appear, then triggers email verification flow)
 - [ ] Upload a file (avatar or task attachment)
 - [ ] Create a task with AI parsing (tests LLM + S3 integration)
 - [ ] Verify notification emails are delivered
 - [ ] Check `/admin` → Storage card shows "Connected"
 
-## Environment Variable Summary
+## 10. Environment Variable Summary
 
 ### Backend (VPS `infra/.env.prod`)
 
@@ -182,12 +258,17 @@ pnpm run preview
 | `S3_PATH_STYLE` | Path-style addressing (`true` for R2/MinIO) |
 | `CORS_ORIGINS` | Allowed frontend origins (comma-separated) |
 | `NOTIFICATION_WORKER_ENABLED` | Enable background notification processing |
+| `CAP_ENABLED` | Enable CAPTCHA verification (`true` / unset) |
+| `CAP_URL` | Cap internal URL with site key (e.g. `http://cap:3000/<key>`) |
+| `CAP_SECRET` | Cap site secret key (from dashboard) |
+| `CAP_ADMIN_KEY` | Cap dashboard admin password (min 32 chars) |
 
 ### Frontend (Vercel / Cloudflare Pages dashboard)
 
 | Variable | Description |
 |----------|-------------|
 | `NEXT_PUBLIC_API_BASE_URL` | API base URL (build-time only) |
+| `NEXT_PUBLIC_CAP_ENABLED` | Show CAPTCHA widget (`true` / unset, build-time only) |
 
 ### Runtime (Admin panel → `/admin`)
 
@@ -198,7 +279,7 @@ pnpm run preview
 | `llm.*` | AI provider configuration |
 | `auth.registration_open` | Allow new registrations |
 
-## 9. MCP Server Package
+## 11. MCP Server Package
 
 The MCP server lets users connect AI tools (Claude Code, Cursor, etc.) to their TaskFlow account. It is distributed as a tarball hosted on the API server.
 
@@ -246,7 +327,7 @@ Users run the snippet from the MCP Keys settings page. `npx` downloads the tarba
 | `TASKFLOW_API_URL` | API base URL (e.g. `https://api.yourdomain.com`) |
 | `TASKFLOW_MCP_KEY` | MCP key generated from the web UI |
 
-## Updates
+## 12. Updates
 
 To deploy a new version:
 
