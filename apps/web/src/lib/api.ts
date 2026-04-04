@@ -36,6 +36,8 @@ export interface AuthResponse {
   user: UserProfile;
 }
 
+export type CaptchaPurpose = "REGISTRATION" | "PASSWORD_RESET" | "EMAIL_CHANGE";
+
 export interface School {
   id: string;
   name: string;
@@ -292,10 +294,24 @@ export async function login(
   });
 }
 
-export async function register(email: string): Promise<{ message: string }> {
+export async function register(
+  email: string,
+  captchaProof?: string,
+): Promise<{ message: string }> {
   return apiRequest<{ message: string }>("/auth/register", {
     method: "POST",
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ email, captchaProof }),
+  });
+}
+
+export async function verifyCaptcha(input: {
+  email: string;
+  purpose: Exclude<CaptchaPurpose, "EMAIL_CHANGE">;
+  captchaToken: string;
+}): Promise<{ captchaProof: string }> {
+  return apiRequest<{ captchaProof: string }>("/auth/captcha/verify", {
+    method: "POST",
+    body: JSON.stringify(input),
   });
 }
 
@@ -324,10 +340,11 @@ export async function completeRegistration(input: {
 
 export async function requestPasswordReset(
   email: string,
+  captchaProof?: string,
 ): Promise<{ message: string }> {
   return apiRequest<{ message: string }>("/auth/forgot-password", {
     method: "POST",
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ email, captchaProof }),
   });
 }
 
@@ -344,10 +361,26 @@ export async function resetPassword(
 export async function requestEmailChange(
   authToken: string,
   newEmail: string,
+  captchaProof?: string,
 ): Promise<{ message: string }> {
   return apiRequest<{ message: string }>(
     "/users/me/email/change",
-    { method: "POST", body: JSON.stringify({ email: newEmail }) },
+    { method: "POST", body: JSON.stringify({ email: newEmail, captchaProof }) },
+    authToken,
+  );
+}
+
+export async function verifyEmailChangeCaptcha(
+  authToken: string,
+  email: string,
+  captchaToken: string,
+): Promise<{ captchaProof: string }> {
+  return apiRequest<{ captchaProof: string }>(
+    "/users/me/captcha/verify",
+    {
+      method: "POST",
+      body: JSON.stringify({ email, captchaToken }),
+    },
     authToken,
   );
 }

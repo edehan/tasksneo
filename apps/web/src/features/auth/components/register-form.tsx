@@ -3,8 +3,9 @@
 import { Mail } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { CapWidget, getCapApiEndpoint } from "@/components/cap-widget";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,7 +18,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ApiError, register } from "@/lib/api";
+import { ApiError, register, verifyCaptcha } from "@/lib/api";
 
 export function RegisterForm() {
   const t = useTranslations("authRegister");
@@ -25,15 +26,77 @@ export function RegisterForm() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaProof, setCaptchaProof] = useState<string | null>(null);
+  const [captchaVerifying, setCaptchaVerifying] = useState(false);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
+
+  const capApiEndpoint = getCapApiEndpoint();
+  const captchaEnabled = Boolean(capApiEndpoint);
+
+  const resetCaptcha = useCallback(() => {
+    setCaptchaToken(null);
+    setCaptchaProof(null);
+    setCaptchaResetKey((key) => key + 1);
+  }, []);
+
+  useEffect(() => {
+    if (!captchaEnabled) return;
+    resetCaptcha();
+  }, [captchaEnabled, email, resetCaptcha]);
+
+  useEffect(() => {
+    if (!captchaEnabled) return;
+    if (!captchaToken || !email) {
+      setCaptchaProof(null);
+      return;
+    }
+
+    let cancelled = false;
+    setCaptchaVerifying(true);
+    void verifyCaptcha({
+      email,
+      purpose: "REGISTRATION",
+      captchaToken,
+    })
+      .then((result) => {
+        if (cancelled) return;
+        setCaptchaProof(result.captchaProof);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        const message =
+          err instanceof ApiError ? err.message : "Captcha verification failed";
+        toast.error(message);
+        resetCaptcha();
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setCaptchaVerifying(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [captchaEnabled, captchaToken, email, resetCaptcha]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email || !agreedToTerms) return;
 
+    if (captchaEnabled && !captchaProof) {
+      toast.error("Please complete the captcha challenge.");
+      return;
+    }
+
     setSubmitting(true);
     try {
-      await register(email);
+      await register(email, captchaProof ?? undefined);
       setSent(true);
+      if (captchaEnabled) {
+        resetCaptcha();
+      }
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("registrationFailed");
@@ -44,10 +107,18 @@ export function RegisterForm() {
   }
 
   async function handleResend() {
+    if (captchaEnabled && !captchaProof) {
+      toast.error("Please complete the captcha challenge.");
+      return;
+    }
+
     setSubmitting(true);
     try {
-      await register(email);
+      await register(email, captchaProof ?? undefined);
       toast.success(t("verificationEmailResent"));
+      if (captchaEnabled) {
+        resetCaptcha();
+      }
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("failedResendEmail");
@@ -76,11 +147,20 @@ export function RegisterForm() {
           <p>{t("didNotReceive")}</p>
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
+          {captchaEnabled && (
+            <CapWidget
+              apiEndpoint={capApiEndpoint}
+              onTokenChange={setCaptchaToken}
+              resetKey={captchaResetKey}
+            />
+          )}
           <Button
             variant="outline"
             className="w-full"
             onClick={handleResend}
-            disabled={submitting}
+            disabled={
+              submitting || captchaVerifying || (captchaEnabled && !captchaProof)
+            }
           >
             {submitting ? t("sending") : t("resendEmail")}
           </Button>
@@ -123,6 +203,13 @@ export function RegisterForm() {
               autoFocus
             />
           </div>
+          {captchaEnabled && (
+            <CapWidget
+              apiEndpoint={capApiEndpoint}
+              onTokenChange={setCaptchaToken}
+              resetKey={captchaResetKey}
+            />
+          )}
           <div className="flex items-start gap-2">
             <Checkbox
               id="reg-terms"
@@ -133,7 +220,7 @@ export function RegisterForm() {
               htmlFor="reg-terms"
               className="text-sm leading-snug font-normal"
             >
-              {t("agreeTo")}{" "}
+              {t("agreeTo")} {" "}
               <Link
                 href="/terms"
                 className="text-primary underline-offset-4 hover:underline"
@@ -141,7 +228,7 @@ export function RegisterForm() {
               >
                 {t("termsOfService")}
               </Link>{" "}
-              {t("and")}{" "}
+              {t("and")} {" "}
               <Link
                 href="/privacy"
                 className="text-primary underline-offset-4 hover:underline"
@@ -156,12 +243,17 @@ export function RegisterForm() {
           <Button
             type="submit"
             className="w-full"
-            disabled={submitting || !agreedToTerms}
+            disabled={
+              submitting ||
+              !agreedToTerms ||
+              captchaVerifying ||
+              (captchaEnabled && !captchaProof)
+            }
           >
             {submitting ? t("sending") : t("continueWithEmail")}
           </Button>
           <p className="text-sm text-muted-foreground">
-            {t("alreadyHaveAccount")}{" "}
+            {t("alreadyHaveAccount")} {" "}
             <Link
               href="/login"
               className="text-primary underline-offset-4 hover:underline"

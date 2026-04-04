@@ -16,6 +16,11 @@ export interface AppEnv {
 	s3UseSSL: boolean;
 	s3Region: string;
 	s3PathStyle: boolean;
+	captchaEnabled: boolean;
+	captchaVerifyUrlOverride: string | null;
+	captchaSecret: string | null;
+	captchaProofTtlSeconds: number;
+	captchaProofSecret: string;
 }
 
 const DEFAULT_LISTEN_ADDR = "0.0.0.0:3001";
@@ -57,6 +62,10 @@ function requireEnvEither(primary: string, fallback: string): string {
 	return value;
 }
 
+function optionalEnv(primary: string, fallback?: string): string | undefined {
+	return process.env[primary] ?? (fallback ? process.env[fallback] : undefined);
+}
+
 function optionalEnvPort(
 	primary: string,
 	fallback: string,
@@ -79,6 +88,30 @@ export function loadEnv(): AppEnv {
 		s3UseSSLRaw != null
 			? s3UseSSLRaw === "true"
 			: s3Port == null || s3Port === 443;
+	const captchaEnabled = (process.env.CAPTCHA_ENABLED ?? "false") === "true";
+	const captchaVerifyUrlOverride = optionalEnv("CAPTCHA_VERIFY_URL") ?? null;
+	const captchaSecret = optionalEnv("CAPTCHA_SECRET") ?? null;
+	const captchaProofTtlRaw = process.env.CAPTCHA_PROOF_TTL_SECONDS ?? "300";
+	const captchaProofTtlSeconds = Number(captchaProofTtlRaw);
+
+	if (
+		!Number.isFinite(captchaProofTtlSeconds) ||
+		captchaProofTtlSeconds <= 0
+	) {
+		throw new AppError(
+			500,
+			"INVALID_CONFIG",
+			"CAPTCHA_PROOF_TTL_SECONDS must be a positive integer",
+		);
+	}
+
+	if (captchaEnabled && !captchaSecret) {
+		throw new AppError(
+			500,
+			"MISSING_CONFIG",
+			"CAPTCHA_ENABLED=true requires CAPTCHA_SECRET",
+		);
+	}
 
 	return {
 		listenHost: host,
@@ -94,8 +127,13 @@ export function loadEnv(): AppEnv {
 		s3SecretKey: requireEnvEither("S3_SECRET_KEY", "MINIO_SECRET_KEY"),
 		s3Bucket: requireEnvEither("S3_BUCKET", "MINIO_BUCKET"),
 		s3UseSSL,
-		s3Region: process.env.S3_REGION ?? "auto",
-		s3PathStyle: (process.env.S3_PATH_STYLE ?? "true") === "true",
+			s3Region: process.env.S3_REGION ?? "auto",
+			s3PathStyle: (process.env.S3_PATH_STYLE ?? "true") === "true",
+			captchaEnabled,
+			captchaVerifyUrlOverride,
+			captchaSecret,
+			captchaProofTtlSeconds: Math.floor(captchaProofTtlSeconds),
+			captchaProofSecret: process.env.CAPTCHA_PROOF_SECRET ?? requireEnv("JWT_SECRET"),
 	};
 }
 

@@ -30,6 +30,18 @@ services:
     volumes:
       - minio_data:/data
 
+  cap:
+    image: tiago2/cap:latest
+    restart: unless-stopped
+    environment:
+      ADMIN_KEY: taskflow-dev-admin
+      CORS_ORIGIN: http://localhost:3000
+    ports:
+      - "3002:3000"
+    volumes:
+      - cap_data:/usr/src/app/.data
+
 volumes:
   pg_data:
   minio_data:
+  cap_data:

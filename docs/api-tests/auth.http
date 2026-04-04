@@ -1,14 +1,39 @@
 @baseUrl = http://localhost:3001
 @email = demo-auth@example.com
 @password = Passw0rd!
-@token = REPLACE_WITH_TOKEN
+@verificationToken = REPLACE_WITH_EMAIL_TOKEN
+@captchaToken = REPLACE_WITH_CAPTCHA_WIDGET_TOKEN
+@captchaProof = REPLACE_WITH_CAPTCHA_PROOF
+@token = REPLACE_WITH_JWT
 
-### Register
+### Verify captcha for registration (Step 0)
+POST {{baseUrl}}/auth/captcha/verify
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "purpose": "REGISTRATION",
+  "captchaToken": "{{captchaToken}}"
+}
+
+### Register step 1: send verification email
 POST {{baseUrl}}/auth/register
 Content-Type: application/json
 
 {
   "email": "{{email}}",
+  "captchaProof": "{{captchaProof}}"
+}
+
+### Verify registration token from email link
+GET {{baseUrl}}/auth/verify-token?token={{verificationToken}}&purpose=REGISTRATION
+
+### Register step 2: complete registration
+POST {{baseUrl}}/auth/register/complete
+Content-Type: application/json
+
+{
+  "token": "{{verificationToken}}",
   "password": "{{password}}",
   "nickname": "Demo Auth"
 }

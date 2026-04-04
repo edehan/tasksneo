@@ -6,6 +6,13 @@ import { requireAuthUser } from "../lib/context.js";
 import { uploadObject } from "../lib/storage.js";
 import { authMiddleware } from "../middleware/auth.js";
 import {
+	assertAndConsumeCaptchaProof,
+	getRequestOrigin,
+	getRequestRemoteIp,
+	isCaptchaEnabled,
+	verifyCaptchaAndIssueProof,
+} from "../services/captcha.service.js";
+import {
 	confirmEmailChange,
 	sendEmailChangeVerification,
 } from "../services/email-verification.service.js";
@@ -74,17 +81,57 @@ usersRouter.patch("/me", async (c) => {
 
 const changeEmailSchema = z.object({
 	email: z.string().email(),
+	captchaProof: z.string().min(1).optional(),
 });
 
 const confirmEmailSchema = z.object({
 	token: z.string().min(1),
 });
 
+const verifyEmailChangeCaptchaSchema = z.object({
+	email: z.string().email(),
+	captchaToken: z.string().min(1),
+});
+
 usersRouter.post("/me/email/change", async (c) => {
 	const authUser = requireAuthUser(c);
 	const body = changeEmailSchema.parse(await c.req.json());
+	await assertAndConsumeCaptchaProof({
+		email: body.email,
+		purpose: "EMAIL_CHANGE",
+		captchaProof: body.captchaProof,
+		userId: authUser.userId,
+	});
 	await sendEmailChangeVerification(authUser.userId, body.email);
 	return c.json({ message: "Verification email sent" }, 200);
+});
+
+usersRouter.post("/me/captcha/verify", async (c) => {
+	if (!isCaptchaEnabled()) {
+		return c.json({ error: "Captcha is disabled", code: "CAPTCHA_DISABLED" }, 503);
+	}
+
+	const authUser = requireAuthUser(c);
+	const body = verifyEmailChangeCaptchaSchema.parse(await c.req.json());
+	const remoteIp = getRequestRemoteIp({
+		xForwardedFor: c.req.header("x-forwarded-for"),
+		xRealIp: c.req.header("x-real-ip"),
+		cfConnectingIp: c.req.header("cf-connecting-ip"),
+	});
+	const requestOrigin = getRequestOrigin({
+		xForwardedProto: c.req.header("x-forwarded-proto"),
+		xForwardedHost: c.req.header("x-forwarded-host"),
+		host: c.req.header("host"),
+	});
+	const result = await verifyCaptchaAndIssueProof({
+		email: body.email,
+		purpose: "EMAIL_CHANGE",
+		captchaToken: body.captchaToken,
+		userId: authUser.userId,
+		remoteIp,
+		requestOrigin,
+	});
+	return c.json(result, 200);
 });
 
 usersRouter.post("/me/email/confirm", async (c) => {

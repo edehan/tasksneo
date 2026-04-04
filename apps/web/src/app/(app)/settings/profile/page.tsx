@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth-provider";
+import { CapWidget, getCapApiEndpoint } from "@/components/cap-widget";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +35,7 @@ import {
   listSchools,
   requestEmailChange,
   updateProfile,
+  verifyEmailChangeCaptcha,
 } from "@/lib/api";
 
 function getBrowserTimezone(): string {
@@ -313,23 +315,80 @@ function ChangeEmailDialog({ token }: { token: string | null }) {
   const [newEmail, setNewEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaProof, setCaptchaProof] = useState<string | null>(null);
+  const [captchaVerifying, setCaptchaVerifying] = useState(false);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
+  const capApiEndpoint = getCapApiEndpoint();
+  const captchaEnabled = Boolean(capApiEndpoint);
+
+  const resetCaptcha = useCallback(() => {
+    setCaptchaToken(null);
+    setCaptchaProof(null);
+    setCaptchaResetKey((key) => key + 1);
+  }, []);
 
   function handleOpenChange(isOpen: boolean) {
     setOpen(isOpen);
     if (!isOpen) {
       setNewEmail("");
       setSent(false);
+      resetCaptcha();
     }
   }
+
+  useEffect(() => {
+    if (!captchaEnabled || !open) return;
+    resetCaptcha();
+  }, [captchaEnabled, newEmail, open, resetCaptcha]);
+
+  useEffect(() => {
+    if (!captchaEnabled || !open || !token) return;
+    if (!captchaToken || !newEmail) {
+      setCaptchaProof(null);
+      return;
+    }
+
+    let cancelled = false;
+    setCaptchaVerifying(true);
+    void verifyEmailChangeCaptcha(token, newEmail, captchaToken)
+      .then((result) => {
+        if (cancelled) return;
+        setCaptchaProof(result.captchaProof);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        const message =
+          err instanceof ApiError ? err.message : "Captcha verification failed";
+        toast.error(message);
+        resetCaptcha();
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setCaptchaVerifying(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [captchaEnabled, captchaToken, newEmail, open, resetCaptcha, token]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!token || !newEmail) return;
+    if (captchaEnabled && !captchaProof) {
+      toast.error("Please complete the captcha challenge.");
+      return;
+    }
 
     setSubmitting(true);
     try {
-      await requestEmailChange(token, newEmail);
+      await requestEmailChange(token, newEmail, captchaProof ?? undefined);
       setSent(true);
+      if (captchaEnabled) {
+        resetCaptcha();
+      }
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("failedSendVerification");
@@ -383,6 +442,13 @@ function ChangeEmailDialog({ token }: { token: string | null }) {
                 className="mt-2"
               />
             </div>
+            {captchaEnabled && (
+              <CapWidget
+                apiEndpoint={capApiEndpoint}
+                onTokenChange={setCaptchaToken}
+                resetKey={captchaResetKey}
+              />
+            )}
             <DialogFooter>
               <Button
                 type="button"
@@ -391,7 +457,15 @@ function ChangeEmailDialog({ token }: { token: string | null }) {
               >
                 {t("cancel")}
               </Button>
-              <Button type="submit" disabled={submitting || !newEmail}>
+              <Button
+                type="submit"
+                disabled={
+                  submitting ||
+                  !newEmail ||
+                  captchaVerifying ||
+                  (captchaEnabled && !captchaProof)
+                }
+              >
                 {submitting ? t("sending") : t("sendVerification")}
               </Button>
             </DialogFooter>

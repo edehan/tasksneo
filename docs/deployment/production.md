@@ -68,6 +68,7 @@ Edit `infra/.env.prod` with your actual values:
 - S3 credentials from step 1
 - `CORS_ORIGINS` = your frontend domain (e.g., `https://taskflow.yourdomain.com`)
 - `DATABASE_URL` password must match `POSTGRES_PASSWORD`
+- CAPTCHA values (`CAPTCHA_*`, `CAP_ADMIN_KEY`, `CAP_CORS_ORIGIN`)
 
 ## 5. Deploy Backend
 
@@ -88,6 +89,30 @@ Verify:
 ```bash
 curl https://api.yourdomain.com/health
 # Expected: {"status":"ok"}
+```
+
+Initialize CAP site key/secret once:
+```bash
+curl -X POST "http://127.0.0.1:3002/api/admin/sites" \
+  -H "x-admin-key: <CAP_ADMIN_KEY>" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"taskflow-production"}'
+```
+Store returned `siteKey` and `siteSecret` into:
+- `CAPTCHA_SECRET=<siteSecret>`
+- Caddy `/cap/*` rewrite target (see below, replace `<siteKey>`)
+
+Recommended Caddy path mapping (single public path on API domain):
+```caddyfile
+api.yourdomain.com {
+	handle_path /cap/* {
+		# Map /cap/... -> /<siteKey>/... on CAP
+		rewrite * /<siteKey>/{path}
+		reverse_proxy 127.0.0.1:3002
+	}
+
+	reverse_proxy 127.0.0.1:3001
+}
 ```
 
 ## 6. Deploy Frontend
@@ -130,7 +155,8 @@ Next.js apps deploy to Cloudflare Workers via the [OpenNext adapter](https://ope
 
 ```bash
 cd apps/web
-NEXT_PUBLIC_API_BASE_URL=https://api.yourdomain.com pnpm run deploy
+NEXT_PUBLIC_API_BASE_URL=https://api.yourdomain.com \
+pnpm run deploy
 ```
 
 #### Local preview (runs in workerd runtime)
@@ -156,6 +182,7 @@ pnpm run preview
 ## 8. Post-Deploy Verification
 
 - [ ] Register a new account (triggers email verification flow)
+- [ ] Captcha challenge appears on register / forgot-password / change-email and blocks submit when unsolved
 - [ ] Upload a file (avatar or task attachment)
 - [ ] Create a task with AI parsing (tests LLM + S3 integration)
 - [ ] Verify notification emails are delivered
@@ -182,12 +209,20 @@ pnpm run preview
 | `S3_PATH_STYLE` | Path-style addressing (`true` for R2/MinIO) |
 | `CORS_ORIGINS` | Allowed frontend origins (comma-separated) |
 | `NOTIFICATION_WORKER_ENABLED` | Enable background notification processing |
+| `CAPTCHA_ENABLED` | Enable captcha proof enforcement on email-sending flows |
+| `CAPTCHA_SECRET` | CAP site secret for siteverify |
+| `CAPTCHA_PROOF_TTL_SECONDS` | Captcha proof token lifetime in seconds |
+| `CAPTCHA_PROOF_SECRET` | Optional proof signing secret (defaults to `JWT_SECRET`) |
+| `CAPTCHA_VERIFY_URL` | Optional override for siteverify URL (default uses `https://<api-domain>/cap/siteverify`) |
+| `CAP_ADMIN_KEY` | CAP admin API key (used to manage sites) |
+| `CAP_CORS_ORIGIN` | Allowed browser origin for CAP widget API |
 
 ### Frontend (Vercel / Cloudflare Pages dashboard)
 
 | Variable | Description |
 |----------|-------------|
 | `NEXT_PUBLIC_API_BASE_URL` | API base URL (build-time only) |
+| `NEXT_PUBLIC_CAP_API_ENDPOINT` | Optional override; default is `${NEXT_PUBLIC_API_BASE_URL}/cap/` |
 
 ### Runtime (Admin panel → `/admin`)
 

@@ -10,10 +10,18 @@ import {
 	verifyPasswordResetToken,
 	verifyRegistrationToken,
 } from "../services/email-verification.service.js";
+import {
+	assertAndConsumeCaptchaProof,
+	getRequestOrigin,
+	getRequestRemoteIp,
+	isCaptchaEnabled,
+	verifyCaptchaAndIssueProof,
+} from "../services/captcha.service.js";
 import { exchangeMcpKey } from "../services/mcp-key.service.js";
 
 const registerStep1Schema = z.object({
 	email: z.string().email(),
+	captchaProof: z.string().min(1).optional(),
 });
 
 const registerCompleteSchema = z.object({
@@ -32,6 +40,7 @@ const loginBodySchema = z.object({
 
 const forgotPasswordSchema = z.object({
 	email: z.string().email(),
+	captchaProof: z.string().min(1).optional(),
 });
 
 const resetPasswordSchema = z.object({
@@ -48,11 +57,22 @@ const verifyTokenSchema = z.object({
 	purpose: z.enum(["REGISTRATION", "PASSWORD_RESET"]),
 });
 
+const captchaVerifySchema = z.object({
+	email: z.string().email(),
+	purpose: z.enum(["REGISTRATION", "PASSWORD_RESET"]),
+	captchaToken: z.string().min(1),
+});
+
 export const authRouter = new Hono();
 
 // Step 1: send verification email
 authRouter.post("/register", async (c) => {
 	const body = registerStep1Schema.parse(await c.req.json());
+	await assertAndConsumeCaptchaProof({
+		email: body.email,
+		purpose: "REGISTRATION",
+		captchaProof: body.captchaProof,
+	});
 	await sendRegistrationEmail(body.email);
 	return c.json({ message: "Verification email sent" }, 200);
 });
@@ -78,12 +98,43 @@ authRouter.post("/login", async (c) => {
 
 authRouter.post("/forgot-password", async (c) => {
 	const body = forgotPasswordSchema.parse(await c.req.json());
+	await assertAndConsumeCaptchaProof({
+		email: body.email,
+		purpose: "PASSWORD_RESET",
+		captchaProof: body.captchaProof,
+	});
 	await sendPasswordResetEmail(body.email);
 	// Always return success to prevent email enumeration
 	return c.json(
 		{ message: "If the email exists, a reset link has been sent" },
 		200,
 	);
+});
+
+authRouter.post("/captcha/verify", async (c) => {
+	if (!isCaptchaEnabled()) {
+		return c.json({ error: "Captcha is disabled", code: "CAPTCHA_DISABLED" }, 503);
+	}
+
+	const body = captchaVerifySchema.parse(await c.req.json());
+	const remoteIp = getRequestRemoteIp({
+		xForwardedFor: c.req.header("x-forwarded-for"),
+		xRealIp: c.req.header("x-real-ip"),
+		cfConnectingIp: c.req.header("cf-connecting-ip"),
+	});
+	const requestOrigin = getRequestOrigin({
+		xForwardedProto: c.req.header("x-forwarded-proto"),
+		xForwardedHost: c.req.header("x-forwarded-host"),
+		host: c.req.header("host"),
+	});
+	const result = await verifyCaptchaAndIssueProof({
+		email: body.email,
+		purpose: body.purpose,
+		captchaToken: body.captchaToken,
+		remoteIp,
+		requestOrigin,
+	});
+	return c.json(result, 200);
 });
 
 authRouter.post("/reset-password", async (c) => {

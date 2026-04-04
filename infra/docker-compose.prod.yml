@@ -28,6 +28,18 @@ services:
       timeout: 5s
       retries: 20
 
+  cap:
+    image: tiago2/cap:latest
+    restart: unless-stopped
+    env_file: .env.prod
+    environment:
+      ADMIN_KEY: ${CAP_ADMIN_KEY}
+      CORS_ORIGIN: ${CAP_CORS_ORIGIN}
+    ports:
+      - "127.0.0.1:3002:3000"
+    volumes:
+      - taskflow_prod_cap_data:/usr/src/app/.data
+
   api:
     build:
       context: ..
@@ -54,3 +66,4 @@ services:
 volumes:
   taskflow_prod_pg_data:
   taskflow_prod_redis_data:
+  taskflow_prod_cap_data:

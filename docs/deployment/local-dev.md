@@ -8,7 +8,7 @@ For this project, the standard local development experience is:
 
 - `Next.js dev` for instant frontend hot reload
 - `tsx watch` for API restart on backend changes
-- Docker only for local infrastructure (`postgres`, `redis`, `minio`)
+- Docker only for local infrastructure (`postgres`, `redis`, `minio`, `cap`)
 
 This is the practical equivalent of older static-site tools such as Live Server, but adapted for a full-stack Next.js + API project.
 
@@ -47,3 +47,4 @@ If you want `pnpm dev` to seed automatically, run:
 - `redis`: `6379`
 - `minio`: `9000`
 - `minio console`: `9001`
+- `cap`: `3002`
