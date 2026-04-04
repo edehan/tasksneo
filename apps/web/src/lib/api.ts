@@ -58,8 +58,8 @@ export interface ClassSummary {
 
 export interface ClassMember {
   userId: string;
-  email: string;
   nickname: string | null;
+  avatarHash: string;
   role: "OWNER" | "ADMIN" | "MEMBER";
   joinedAt: string;
 }
@@ -152,7 +152,7 @@ export interface SubmissionDetail extends SubmissionSummary {
 export interface SubmissionListRow {
   userId: string;
   nickname: string | null;
-  email: string;
+  avatarHash: string;
   schoolName: string | null;
   studentId: string | null;
   role: "OWNER" | "ADMIN" | "MEMBER";
@@ -821,7 +821,7 @@ export async function updateTaskState(
 export interface CommentAuthor {
   id: string;
   nickname: string | null;
-  avatarFileKey: string | null;
+  avatarHash: string | null;
 }
 
 export interface TaskComment {

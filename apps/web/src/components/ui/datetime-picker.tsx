@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarIcon, X } from "lucide-react";
+import { CalendarIcon, ChevronDown, ChevronUp, X } from "lucide-react";
 import * as React from "react";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -26,6 +26,110 @@ function formatDateTime(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+// ── Scroll column for hours or minutes ──────────────────────────────────────
+
+const ITEM_H = 36;
+const VISIBLE = 5;
+
+interface ScrollColumnProps {
+  count: number;
+  selected: number;
+  onSelect: (value: number) => void;
+  step?: number;
+}
+
+function ScrollColumn({
+  count,
+  selected,
+  onSelect,
+  step = 1,
+}: ScrollColumnProps) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const items = Array.from(
+    { length: Math.ceil(count / step) },
+    (_, i) => i * step,
+  );
+  const selectedIndex = items.indexOf(selected);
+
+  React.useEffect(() => {
+    const container = containerRef.current;
+    if (!container || selectedIndex < 0) return;
+    const targetTop =
+      selectedIndex * ITEM_H - Math.floor(VISIBLE / 2) * ITEM_H;
+    container.scrollTop = Math.max(0, targetTop);
+  }, [selectedIndex]);
+
+  function handleWheel(e: React.WheelEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const direction = e.deltaY > 0 ? 1 : -1;
+    const currentIdx = selectedIndex >= 0 ? selectedIndex : 0;
+    const nextIdx = Math.max(
+      0,
+      Math.min(items.length - 1, currentIdx + direction),
+    );
+    onSelect(items[nextIdx]);
+  }
+
+  function nudge(direction: 1 | -1) {
+    const currentIdx = selectedIndex >= 0 ? selectedIndex : 0;
+    const nextIdx = Math.max(
+      0,
+      Math.min(items.length - 1, currentIdx + direction),
+    );
+    onSelect(items[nextIdx]);
+  }
+
+  return (
+    <div className="flex flex-col items-center">
+      <button
+        type="button"
+        onClick={() => nudge(-1)}
+        className="flex h-7 w-full items-center justify-center rounded text-muted-foreground/60 transition-colors hover:text-foreground"
+      >
+        <ChevronUp size={14} strokeWidth={2} />
+      </button>
+      <div
+        ref={containerRef}
+        onWheel={handleWheel}
+        className="overflow-hidden"
+        style={{ height: VISIBLE * ITEM_H, width: 56 }}
+      >
+        <div className="flex flex-col">
+          {items.map((val) => {
+            const isSelected = val === selected;
+            return (
+              <button
+                key={val}
+                type="button"
+                onClick={() => onSelect(val)}
+                className={cn(
+                  "flex shrink-0 items-center justify-center rounded-lg text-sm font-medium transition-colors",
+                  isSelected
+                    ? "bg-foreground text-background"
+                    : "text-foreground/50 hover:text-foreground",
+                )}
+                style={{ height: ITEM_H }}
+              >
+                {pad(val)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={() => nudge(1)}
+        className="flex h-7 w-full items-center justify-center rounded text-muted-foreground/60 transition-colors hover:text-foreground"
+      >
+        <ChevronDown size={14} strokeWidth={2} />
+      </button>
+    </div>
+  );
+}
+
+// ── DateTimePicker ──────────────────────────────────────────────────────────
+
 export function DateTimePicker({
   value,
   onChange,
@@ -37,13 +141,13 @@ export function DateTimePicker({
 
   const hours = value ? value.getHours() : 0;
   const minutes = value ? value.getMinutes() : 0;
+  const roundedMinutes = (Math.round(minutes / 5) * 5) % 60;
 
   function handleDateSelect(day: Date | undefined) {
     if (!day) {
       onChange(undefined);
       return;
     }
-
     const next = new Date(day);
     if (value) {
       next.setHours(value.getHours(), value.getMinutes(), 0, 0);
@@ -53,24 +157,16 @@ export function DateTimePicker({
     onChange(next);
   }
 
-  function handleHourChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const h = parseInt(e.target.value, 10);
+  function handleHourSelect(h: number) {
     const next = value ? new Date(value) : new Date();
-    if (!value) {
-      next.setSeconds(0, 0);
-      next.setMinutes(0);
-    }
+    if (!value) next.setMinutes(0, 0, 0);
     next.setHours(h);
     onChange(next);
   }
 
-  function handleMinuteChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const m = parseInt(e.target.value, 10);
+  function handleMinuteSelect(m: number) {
     const next = value ? new Date(value) : new Date();
-    if (!value) {
-      next.setSeconds(0, 0);
-      next.setHours(0);
-    }
+    if (!value) next.setHours(0, 0, 0);
     next.setMinutes(m);
     onChange(next);
   }
@@ -99,8 +195,8 @@ export function DateTimePicker({
             {value ? formatDateTime(value) : placeholder}
           </span>
           {value && !disabled && (
-            // biome-ignore lint/a11y/useKeyWithClickEvents: clear button with role=button
-            // biome-ignore lint/a11y/useSemanticElements: clear button with role=button
+            // biome-ignore lint/a11y/useKeyWithClickEvents: clear button
+            // biome-ignore lint/a11y/useSemanticElements: clear button
             <span
               role="button"
               tabIndex={-1}
@@ -112,42 +208,38 @@ export function DateTimePicker({
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent className="flex w-auto items-stretch p-0" align="start">
         <Calendar
           mode="single"
           selected={value}
           onSelect={handleDateSelect}
           defaultMonth={value}
+          cellSize="1.8rem"
         />
-        <div className="flex items-center justify-center gap-2 border-t border-border px-4 py-3">
-          <span className="text-xs font-medium text-muted-foreground">
+        {/* Time picker */}
+        <div className="flex flex-col border-l border-border">
+          <div className="px-4 pt-3 pb-1 text-center text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
             Time
-          </span>
-          <select
-            value={hours}
-            onChange={handleHourChange}
-            className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            {Array.from({ length: 24 }, (_, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: static time option list
-              <option key={i} value={i}>
-                {pad(i)}
-              </option>
-            ))}
-          </select>
-          <span className="text-sm text-muted-foreground">:</span>
-          <select
-            value={minutes}
-            onChange={handleMinuteChange}
-            className="h-8 rounded-lg border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            {Array.from({ length: 60 }, (_, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: static time option list
-              <option key={i} value={i}>
-                {pad(i)}
-              </option>
-            ))}
-          </select>
+          </div>
+          <div className="flex flex-1 items-start justify-center gap-1 px-3 pb-2">
+            <ScrollColumn
+              count={24}
+              selected={hours}
+              onSelect={handleHourSelect}
+            />
+            <div
+              className="flex items-center text-sm font-medium text-muted-foreground"
+              style={{ height: VISIBLE * ITEM_H }}
+            >
+              :
+            </div>
+            <ScrollColumn
+              count={60}
+              selected={roundedMinutes}
+              onSelect={handleMinuteSelect}
+              step={5}
+            />
+          </div>
         </div>
       </PopoverContent>
     </Popover>

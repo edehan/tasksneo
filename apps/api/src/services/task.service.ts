@@ -2,6 +2,7 @@ import { ClassRole, prisma } from "@taskflow/db";
 
 import { AppError } from "../lib/errors.js";
 import {
+	emailToAvatarHash,
 	toAttachmentMeta,
 	toSubmission,
 	toTaskSummary,
@@ -352,7 +353,7 @@ export async function createClassTask(
 			title: input.title,
 			description: input.description ?? null,
 			sourceText: input.sourceText ?? null,
-			startAt: parseDate(input.startAt),
+			startAt: parseDate(input.startAt) ?? new Date(),
 			dueAt: parseDate(input.dueAt),
 			allowLateSubmission: input.allowLateSubmission ?? true,
 			blockedBy: input.blockedBy ?? [],
@@ -404,7 +405,7 @@ export async function createClassTaskDraft(
 			title,
 			description: input.description ?? null,
 			sourceText: input.sourceText ?? null,
-			startAt: parseDate(input.startAt),
+			startAt: parseDate(input.startAt) ?? new Date(),
 			dueAt: parseDate(input.dueAt),
 			allowLateSubmission: input.allowLateSubmission ?? true,
 			blockedBy: input.blockedBy ?? [],
@@ -741,7 +742,7 @@ export async function listTaskSubmissions(taskId: string, userId: string) {
 		return {
 			userId: row.userId,
 			nickname: row.user.nickname,
-			email: row.user.email,
+			avatarHash: emailToAvatarHash(row.user.email),
 			schoolName: row.user.school?.name ?? null,
 			studentId: row.user.studentId,
 			role: row.role,
@@ -1178,7 +1179,7 @@ export async function exportTaskSubmissionsCsv(taskId: string, userId: string) {
 			const submission = submissionMap.get(member.userId);
 
 			return [
-				member.user.nickname ?? member.user.email,
+				member.user.nickname ?? member.user.studentId ?? "Unknown",
 				member.user.school?.name ?? "",
 				member.user.studentId ?? "",
 				member.class.name,
@@ -1289,7 +1290,7 @@ export async function renameTaskSubmissionAttachments(
 		for (const attachment of submission.attachments) {
 			const displayName = [
 				submission.task.class?.name ?? "UnknownClass",
-				submission.user.nickname ?? submission.user.email,
+				submission.user.nickname ?? submission.user.studentId ?? "Unknown",
 				submission.user.studentId ?? "",
 				attachment.originalName,
 			]

@@ -31,6 +31,7 @@
     "resetYourPassword": "重置密码",
     "description": "输入您的邮箱地址，我们会发送重置密码的链接。",
     "email": "邮箱",
+    "emailPlaceholder": "you@example.com",
     "sendResetLink": "发送重置链接",
     "rememberPassword": "想起密码了？",
     "signIn": "登录"
@@ -91,6 +92,7 @@
     "enableWebhook": "开启 Webhook 通知",
     "webhookHint": "每个通知事件都会 POST 一条 JSON 数据",
     "webhookUrl": "Webhook URL",
+    "webhookUrlPlaceholder": "https://example.com/webhook",
     "webhookPostHint": "我们会将包含作业详情的 JSON 内容 POST 到该 URL。",
     "savePreferences": "保存偏好"
   },
@@ -99,6 +101,7 @@
     "welcomeBack": "欢迎回来",
     "signInToAccount": "登录你的 TaskFlow 账号",
     "email": "邮箱",
+    "emailPlaceholder": "you@example.com",
     "password": "密码",
     "forgotPassword": "忘记密码？",
     "signingIn": "登录中...",
@@ -120,6 +123,7 @@
     "createAccount": "创建账号",
     "getStarted": "开始使用 TaskFlow",
     "email": "邮箱",
+    "emailPlaceholder": "you@example.com",
     "agreeTo": "我同意",
     "termsOfService": "服务条款",
     "and": "及",
@@ -229,13 +233,9 @@
   "settingsProfile": {
     "profileUpdated": "资料已更新",
     "failedUpdateProfile": "更新资料失败",
-    "selectImageFile": "请选择图片文件",
-    "imageSmallerThan5mb": "图片大小需小于 5MB",
-    "avatarUpdated": "头像已更新",
-    "failedUploadAvatar": "上传头像失败",
     "avatar": "头像",
-    "clickUploadPhoto": "点击上传新头像。",
-    "acceptedImageTypes": "支持 JPG、PNG 或 GIF，最大 5MB。",
+    "avatarManagedByGravatar": "你的头像由 Gravatar 管理。",
+    "changeOnGravatar": "前往 Gravatar 修改",
     "nickname": "昵称",
     "nicknamePlaceholder": "希望我们怎么称呼你？",
     "email": "邮箱",
@@ -258,6 +258,7 @@
       "title": "修改邮箱地址",
       "description": "验证链接会发送到你的新邮箱。在你点击链接之前，邮箱不会变更。",
       "newEmailAddress": "新邮箱地址",
+      "newEmailPlaceholder": "new@example.com",
       "cancel": "取消",
       "sending": "发送中...",
       "sendVerification": "发送验证"
@@ -345,6 +346,63 @@
     "empty": {
       "noTasks": "该班级还没有任务。",
       "postFirstTask": "发布第一个任务"
+    }
+  },
+  "classMembers": {
+    "classNotFound": "未找到班级。",
+    "backToClass": "返回 {name}",
+    "title": "成员",
+    "subtitle": "{count, plural, =0 {{className} 中还没有成员} =1 {{className} 中有 1 位成员} other {{className} 中有 # 位成员}}",
+    "transferOwnership": "转移所有权",
+    "user": "用户",
+    "you": "你",
+    "roles": {
+      "owner": "所有者",
+      "admin": "管理员",
+      "member": "成员"
+    },
+    "table": {
+      "member": "成员",
+      "role": "角色",
+      "joined": "加入时间",
+      "actions": "操作"
+    },
+    "actions": {
+      "leave": "退出",
+      "demote": "降级",
+      "promote": "提升",
+      "remove": "移除"
+    },
+    "common": {
+      "cancel": "取消"
+    },
+    "dialogs": {
+      "leave": {
+        "title": "退出“{name}”？",
+        "description": "你将失去该班级及其任务的访问权限。稍后可使用邀请码重新加入。",
+        "confirm": "退出班级"
+      },
+      "remove": {
+        "title": "移除 {name}？",
+        "description": "此人将立即失去该班级访问权限。他们可以使用邀请码重新加入。"
+      }
+    },
+    "transferDialog": {
+      "title": "转移所有权",
+      "description": "选择一位成员接收“{name}”的所有权。转移后你将降级为管理员。",
+      "newOwner": "新所有者",
+      "selectMember": "选择成员"
+    },
+    "toast": {
+      "failedLoadMembers": "加载成员失败",
+      "roleUpdated": "角色已更新为 {role}",
+      "failedUpdateRole": "更新角色失败",
+      "memberRemoved": "已将 {name} 移出班级",
+      "failedRemoveMember": "移除成员失败",
+      "leftClass": "你已退出班级",
+      "failedLeaveClass": "退出班级失败",
+      "ownershipTransferred": "所有权已转移",
+      "failedTransferOwnership": "转移所有权失败"
     }
   },
   "classSettings": {
@@ -447,6 +505,10 @@
     "noTasks": "暂无可显示的任务。",
     "today": "今天",
     "submittedCount": "已提交 {count}"
+  },
+  "markdownPreview": {
+    "failedLoadImage": "图片加载失败",
+    "loadingImage": "图片加载中..."
   },
   "editorToolbar": {
     "bold": "加粗",

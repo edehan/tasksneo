@@ -248,7 +248,7 @@ export function SubmissionDetailPage() {
   }
 
   const accentColor = cls.color || "#7B6CB0";
-  const displayName = studentRow?.nickname || studentRow?.email || t("student");
+  const displayName = studentRow?.nickname || studentRow?.studentId || t("student");
   const attachments = submission.attachments ?? [];
 
   return (
@@ -308,9 +308,9 @@ export function SubmissionDetailPage() {
               </span>
             </div>
             <h1 className="text-display">{displayName}</h1>
-            {studentRow?.nickname && (
+            {studentRow?.studentId && (
               <p className="mt-0.5 text-[13px] text-muted-foreground">
-                {studentRow.email}
+                {studentRow.studentId}
               </p>
             )}
             {(studentRow?.schoolName || studentRow?.studentId) && (

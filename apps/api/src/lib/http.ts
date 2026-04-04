@@ -1,4 +1,9 @@
+import { createHash } from "node:crypto";
 import type { ClassRole, McpKey, User } from "@taskflow/db";
+
+export function emailToAvatarHash(email: string): string {
+	return createHash("sha256").update(email.trim().toLowerCase()).digest("hex");
+}
 
 export function toUserProfile(
 	user: User & { school: { name: string } | null },
@@ -65,8 +70,8 @@ interface ClassMemberSource {
 export function toClassMember(member: ClassMemberSource) {
 	return {
 		userId: member.userId,
-		email: member.user.email,
 		nickname: member.user.nickname,
+		avatarHash: emailToAvatarHash(member.user.email),
 		role: member.role,
 		joinedAt: member.joinedAt.toISOString(),
 	};
@@ -176,7 +181,7 @@ interface CommentSource {
 	author: {
 		id: string;
 		nickname: string | null;
-		avatarAttachment: { fileKey: string }[];
+		email: string;
 	} | null;
 	replyTo: {
 		id: string;
@@ -193,7 +198,7 @@ export function toComment(comment: CommentSource) {
 			? {
 					id: comment.author.id,
 					nickname: comment.author.nickname,
-					avatarFileKey: comment.author.avatarAttachment[0]?.fileKey ?? null,
+					avatarHash: emailToAvatarHash(comment.author.email),
 				}
 			: null,
 		replyTo: comment.replyTo

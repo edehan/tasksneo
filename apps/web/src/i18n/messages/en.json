@@ -31,6 +31,7 @@
     "resetYourPassword": "Reset your password",
     "description": "Enter your email address and we'll send you a link to reset your password.",
     "email": "Email",
+    "emailPlaceholder": "you@example.com",
     "sendResetLink": "Send reset link",
     "rememberPassword": "Remember your password?",
     "signIn": "Sign in"
@@ -91,6 +92,7 @@
     "enableWebhook": "Enable webhook notifications",
     "webhookHint": "POST a JSON payload for each notification event",
     "webhookUrl": "Webhook URL",
+    "webhookUrlPlaceholder": "https://example.com/webhook",
     "webhookPostHint": "We will POST a JSON body with task details to this URL.",
     "savePreferences": "Save Preferences"
   },
@@ -99,6 +101,7 @@
     "welcomeBack": "Welcome back",
     "signInToAccount": "Sign in to your TaskFlow account",
     "email": "Email",
+    "emailPlaceholder": "you@example.com",
     "password": "Password",
     "forgotPassword": "Forgot password?",
     "signingIn": "Signing in...",
@@ -120,6 +123,7 @@
     "createAccount": "Create an account",
     "getStarted": "Get started with TaskFlow",
     "email": "Email",
+    "emailPlaceholder": "you@example.com",
     "agreeTo": "I agree to the",
     "termsOfService": "Terms of Service",
     "and": "and",
@@ -196,7 +200,7 @@
     "deleteAccount": "Delete Account",
     "dataExport": {
       "title": "Export My Data",
-      "description": "Download a ZIP archive containing all your submissions, managed class tasks, avatar, and metadata.",
+      "description": "Download a ZIP archive containing all your submissions, managed class tasks, and metadata.",
       "exportButton": "Export Data"
     }
   },
@@ -229,13 +233,9 @@
   "settingsProfile": {
     "profileUpdated": "Profile updated",
     "failedUpdateProfile": "Failed to update profile",
-    "selectImageFile": "Please select an image file",
-    "imageSmallerThan5mb": "Image must be smaller than 5MB",
-    "avatarUpdated": "Avatar updated",
-    "failedUploadAvatar": "Failed to upload avatar",
     "avatar": "Avatar",
-    "clickUploadPhoto": "Click to upload a new photo.",
-    "acceptedImageTypes": "JPG, PNG or GIF. Max 5MB.",
+    "avatarManagedByGravatar": "Your avatar is managed by Gravatar.",
+    "changeOnGravatar": "Change on Gravatar",
     "nickname": "Nickname",
     "nicknamePlaceholder": "How should we call you?",
     "email": "Email",
@@ -258,6 +258,7 @@
       "title": "Change email address",
       "description": "A verification link will be sent to your new email address. Your email won't change until you click the link.",
       "newEmailAddress": "New email address",
+      "newEmailPlaceholder": "new@example.com",
       "cancel": "Cancel",
       "sending": "Sending...",
       "sendVerification": "Send verification"
@@ -347,6 +348,63 @@
       "postFirstTask": "Post first task"
     }
   },
+  "classMembers": {
+    "classNotFound": "Class not found.",
+    "backToClass": "Back to {name}",
+    "title": "Members",
+    "subtitle": "{count, plural, =0 {No members in {className}} =1 {1 member in {className}} other {# members in {className}}}",
+    "transferOwnership": "Transfer Ownership",
+    "user": "User",
+    "you": "you",
+    "roles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "member": "Member"
+    },
+    "table": {
+      "member": "Member",
+      "role": "Role",
+      "joined": "Joined",
+      "actions": "Actions"
+    },
+    "actions": {
+      "leave": "Leave",
+      "demote": "Demote",
+      "promote": "Promote",
+      "remove": "Remove"
+    },
+    "common": {
+      "cancel": "Cancel"
+    },
+    "dialogs": {
+      "leave": {
+        "title": "Leave \"{name}\"?",
+        "description": "You will lose access to this class and its tasks. You can rejoin later with an invite code.",
+        "confirm": "Leave Class"
+      },
+      "remove": {
+        "title": "Remove {name}?",
+        "description": "This person will lose access to the class immediately. They can rejoin with an invite code."
+      }
+    },
+    "transferDialog": {
+      "title": "Transfer Ownership",
+      "description": "Select a member to transfer ownership of \"{name}\" to. You will be demoted to Admin after the transfer.",
+      "newOwner": "New Owner",
+      "selectMember": "Select a member"
+    },
+    "toast": {
+      "failedLoadMembers": "Failed to load members",
+      "roleUpdated": "Role updated to {role}",
+      "failedUpdateRole": "Failed to update role",
+      "memberRemoved": "{name} removed from class",
+      "failedRemoveMember": "Failed to remove member",
+      "leftClass": "You left the class",
+      "failedLeaveClass": "Failed to leave class",
+      "ownershipTransferred": "Ownership transferred",
+      "failedTransferOwnership": "Failed to transfer ownership"
+    }
+  },
   "classSettings": {
     "failedLoadClassSettings": "Failed to load class settings",
     "classNotFound": "Class not found.",
@@ -387,17 +445,6 @@
     "failedDeleteClass": "Failed to delete class",
     "deleteDialogTitle": "Delete \"{name}\"?",
     "deleteDialogDescription": "This will permanently delete the class, including all tasks, submissions, and member data. This action cannot be undone."
-  },
-  "dashboardInbox": {
-    "inbox": "Inbox",
-    "markAllAsRead": "Mark all as read",
-    "time": {
-      "justNow": "just now",
-      "minutesAgo": "{count}m ago",
-      "hoursAgo": "{count}h ago",
-      "daysAgo": "{count}d ago",
-      "monthsAgo": "{count}mo ago"
-    }
   },
   "taskListView": {
     "columns": {
@@ -447,6 +494,10 @@
     "noTasks": "No tasks to display.",
     "today": "TODAY",
     "submittedCount": "{count} submitted"
+  },
+  "markdownPreview": {
+    "failedLoadImage": "Failed to load image",
+    "loadingImage": "Loading image..."
   },
   "editorToolbar": {
     "bold": "Bold",

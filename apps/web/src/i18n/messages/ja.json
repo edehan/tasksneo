@@ -31,6 +31,7 @@
     "resetYourPassword": "パスワードを再設定",
     "description": "メールアドレスを入力すると、再設定リンクを送信します。",
     "email": "メール",
+    "emailPlaceholder": "you@example.com",
     "sendResetLink": "再設定リンクを送信",
     "rememberPassword": "パスワードを思い出しましたか？",
     "signIn": "サインイン"
@@ -91,6 +92,7 @@
     "enableWebhook": "Webhook通知を有効化",
     "webhookHint": "各通知イベントごとにJSONをPOSTします",
     "webhookUrl": "Webhook URL",
+    "webhookUrlPlaceholder": "https://example.com/webhook",
     "webhookPostHint": "このURLに課題詳細を含むJSONをPOSTします。",
     "savePreferences": "設定を保存"
   },
@@ -99,6 +101,7 @@
     "welcomeBack": "おかえりなさい",
     "signInToAccount": "TaskFlowアカウントにサインイン",
     "email": "メール",
+    "emailPlaceholder": "you@example.com",
     "password": "パスワード",
     "forgotPassword": "パスワードをお忘れですか？",
     "signingIn": "サインイン中...",
@@ -120,6 +123,7 @@
     "createAccount": "アカウントを作成",
     "getStarted": "TaskFlowを始める",
     "email": "メール",
+    "emailPlaceholder": "you@example.com",
     "agreeTo": "私は次に同意します",
     "termsOfService": "利用規約",
     "and": "および",
@@ -229,13 +233,9 @@
   "settingsProfile": {
     "profileUpdated": "プロフィールを更新しました",
     "failedUpdateProfile": "プロフィール更新に失敗しました",
-    "selectImageFile": "画像ファイルを選択してください",
-    "imageSmallerThan5mb": "画像は5MB未満にしてください",
-    "avatarUpdated": "アバターを更新しました",
-    "failedUploadAvatar": "アバターのアップロードに失敗しました",
     "avatar": "アバター",
-    "clickUploadPhoto": "クリックして新しい写真をアップロード。",
-    "acceptedImageTypes": "JPG、PNG、GIF。最大5MB。",
+    "avatarManagedByGravatar": "アバターは Gravatar で管理されています。",
+    "changeOnGravatar": "Gravatar で変更",
     "nickname": "ニックネーム",
     "nicknamePlaceholder": "呼び方を入力してください",
     "email": "メール",
@@ -258,6 +258,7 @@
       "title": "メールアドレスを変更",
       "description": "新しいメールアドレスに確認リンクを送信します。リンクをクリックするまで変更は反映されません。",
       "newEmailAddress": "新しいメールアドレス",
+      "newEmailPlaceholder": "new@example.com",
       "cancel": "キャンセル",
       "sending": "送信中...",
       "sendVerification": "確認メールを送信"
@@ -345,6 +346,63 @@
     "empty": {
       "noTasks": "このクラスにはまだタスクがありません。",
       "postFirstTask": "最初のタスクを投稿"
+    }
+  },
+  "classMembers": {
+    "classNotFound": "クラスが見つかりません。",
+    "backToClass": "{name} に戻る",
+    "title": "メンバー",
+    "subtitle": "{count, plural, =0 {{className} のメンバーはいません} =1 {{className} に 1 人のメンバー} other {{className} に # 人のメンバー}}}",
+    "transferOwnership": "所有権を譲渡",
+    "user": "ユーザー",
+    "you": "あなた",
+    "roles": {
+      "owner": "所有者",
+      "admin": "管理者",
+      "member": "メンバー"
+    },
+    "table": {
+      "member": "メンバー",
+      "role": "役割",
+      "joined": "参加日",
+      "actions": "操作"
+    },
+    "actions": {
+      "leave": "退出",
+      "demote": "降格",
+      "promote": "昇格",
+      "remove": "削除"
+    },
+    "common": {
+      "cancel": "キャンセル"
+    },
+    "dialogs": {
+      "leave": {
+        "title": "「{name}」から退出しますか？",
+        "description": "このクラスと課題へのアクセスを失います。後で招待コードで再参加できます。",
+        "confirm": "クラスから退出"
+      },
+      "remove": {
+        "title": "{name} を削除しますか？",
+        "description": "このユーザーは直ちにクラスへアクセスできなくなります。招待コードで再参加できます。"
+      }
+    },
+    "transferDialog": {
+      "title": "所有権を譲渡",
+      "description": "「{name}」の所有権を譲渡するメンバーを選択してください。譲渡後、あなたは管理者に降格します。",
+      "newOwner": "新しい所有者",
+      "selectMember": "メンバーを選択"
+    },
+    "toast": {
+      "failedLoadMembers": "メンバーの読み込みに失敗しました",
+      "roleUpdated": "役割を {role} に更新しました",
+      "failedUpdateRole": "役割の更新に失敗しました",
+      "memberRemoved": "{name} をクラスから削除しました",
+      "failedRemoveMember": "メンバーの削除に失敗しました",
+      "leftClass": "クラスから退出しました",
+      "failedLeaveClass": "クラスからの退出に失敗しました",
+      "ownershipTransferred": "所有権を譲渡しました",
+      "failedTransferOwnership": "所有権の譲渡に失敗しました"
     }
   },
   "classSettings": {
@@ -447,6 +505,10 @@
     "noTasks": "表示するタスクがありません。",
     "today": "今日",
     "submittedCount": "{count}件提出済み"
+  },
+  "markdownPreview": {
+    "failedLoadImage": "画像の読み込みに失敗しました",
+    "loadingImage": "画像を読み込み中..."
   },
   "editorToolbar": {
     "bold": "太字",

@@ -6,18 +6,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-provider";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/user-avatar";
 import type { TaskComment } from "@/lib/api";
 import { createTaskComment, listTaskComments } from "@/lib/api";
 
 interface CommentSectionProps {
   taskId: string;
   accentColor?: string;
-}
-
-function getInitials(nickname: string | null): string {
-  if (!nickname) return "?";
-  return nickname.slice(0, 2).toUpperCase();
 }
 
 function formatRelativeTime(dateStr: string, justNowLabel: string): string {
@@ -231,19 +226,13 @@ function CommentCard({
     <div className="group rounded-lg px-2 py-2.5 transition-colors hover:bg-secondary/50">
       <div className="flex items-start gap-2.5">
         {/* Avatar */}
-        <Avatar className="h-6 w-6 shrink-0">
-          <AvatarFallback
-            className="text-[10px] font-medium"
-            style={{
-              backgroundColor: comment.author
-                ? `${accentColor}20`
-                : undefined,
-              color: comment.author ? accentColor : undefined,
-            }}
-          >
-            {getInitials(comment.author?.nickname ?? null)}
-          </AvatarFallback>
-        </Avatar>
+        <UserAvatar
+          avatarHash={comment.author?.avatarHash}
+          name={comment.author?.nickname}
+          className="h-6 w-6 shrink-0"
+          fallbackClassName="text-[10px]"
+          size={48}
+        />
 
         <div className="min-w-0 flex-1">
           {/* Name + time + reply button */}

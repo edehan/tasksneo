@@ -281,7 +281,7 @@ export function TaskDetailOverlay({
 
                 {/* Action buttons */}
                 <div className="flex items-center gap-2">
-                  {isAdmin ? (
+                  {isAdmin && (
                     <>
                       <button
                         type="button"
@@ -328,7 +328,8 @@ export function TaskDetailOverlay({
                         <ArrowRight size={12} strokeWidth={2} />
                       </button>
                     </>
-                  ) : isSubmitted ? (
+                  )}
+                  {isSubmitted ? (
                     <span className="text-[12px] font-medium text-muted-foreground">
                       {t("actions.submitted")}
                     </span>
