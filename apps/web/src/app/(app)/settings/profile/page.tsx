@@ -375,7 +375,7 @@ function ChangeEmailDialog({ token }: { token: string | null }) {
               <Input
                 id="new-email"
                 type="email"
-                placeholder="new@example.com"
+                placeholder={t("newEmailPlaceholder")}
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
                 required

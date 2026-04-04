@@ -31,6 +31,7 @@
     "resetYourPassword": "Reset your password",
     "description": "Enter your email address and we'll send you a link to reset your password.",
     "email": "Email",
+    "emailPlaceholder": "you@example.com",
     "sendResetLink": "Send reset link",
     "rememberPassword": "Remember your password?",
     "signIn": "Sign in"
@@ -91,6 +92,7 @@
     "enableWebhook": "Enable webhook notifications",
     "webhookHint": "POST a JSON payload for each notification event",
     "webhookUrl": "Webhook URL",
+    "webhookUrlPlaceholder": "https://example.com/webhook",
     "webhookPostHint": "We will POST a JSON body with task details to this URL.",
     "savePreferences": "Save Preferences"
   },
@@ -99,6 +101,7 @@
     "welcomeBack": "Welcome back",
     "signInToAccount": "Sign in to your TaskFlow account",
     "email": "Email",
+    "emailPlaceholder": "you@example.com",
     "password": "Password",
     "forgotPassword": "Forgot password?",
     "signingIn": "Signing in...",
@@ -120,6 +123,7 @@
     "createAccount": "Create an account",
     "getStarted": "Get started with TaskFlow",
     "email": "Email",
+    "emailPlaceholder": "you@example.com",
     "agreeTo": "I agree to the",
     "termsOfService": "Terms of Service",
     "and": "and",
@@ -254,6 +258,7 @@
       "title": "Change email address",
       "description": "A verification link will be sent to your new email address. Your email won't change until you click the link.",
       "newEmailAddress": "New email address",
+      "newEmailPlaceholder": "new@example.com",
       "cancel": "Cancel",
       "sending": "Sending...",
       "sendVerification": "Send verification"
@@ -489,6 +494,10 @@
     "noTasks": "No tasks to display.",
     "today": "TODAY",
     "submittedCount": "{count} submitted"
+  },
+  "markdownPreview": {
+    "failedLoadImage": "Failed to load image",
+    "loadingImage": "Loading image..."
   },
   "editorToolbar": {
     "bold": "Bold",

@@ -31,6 +31,7 @@
     "resetYourPassword": "Reinitialisez votre mot de passe",
     "description": "Saisissez votre adresse e-mail et nous vous enverrons un lien de reinitialisation.",
     "email": "E-mail",
+    "emailPlaceholder": "you@example.com",
     "sendResetLink": "Envoyer le lien de reinitialisation",
     "rememberPassword": "Vous vous souvenez de votre mot de passe ?",
     "signIn": "Se connecter"
@@ -91,6 +92,7 @@
     "enableWebhook": "Activer les notifications webhook",
     "webhookHint": "Envoyer une charge JSON pour chaque evenement",
     "webhookUrl": "URL webhook",
+    "webhookUrlPlaceholder": "https://example.com/webhook",
     "webhookPostHint": "Nous enverrons un corps JSON avec les details de la tache a cette URL.",
     "savePreferences": "Enregistrer les preferences"
   },
@@ -99,6 +101,7 @@
     "welcomeBack": "Bon retour",
     "signInToAccount": "Connectez-vous a votre compte TaskFlow",
     "email": "E-mail",
+    "emailPlaceholder": "you@example.com",
     "password": "Mot de passe",
     "forgotPassword": "Mot de passe oublie ?",
     "signingIn": "Connexion...",
@@ -120,6 +123,7 @@
     "createAccount": "Creer un compte",
     "getStarted": "Demarrer avec TaskFlow",
     "email": "E-mail",
+    "emailPlaceholder": "you@example.com",
     "agreeTo": "J'accepte les",
     "termsOfService": "Conditions d'utilisation",
     "and": "et",
@@ -254,6 +258,7 @@
       "title": "Changer l'adresse e-mail",
       "description": "Un lien de verification sera envoye a votre nouvelle adresse. L'e-mail ne changera qu'apres confirmation.",
       "newEmailAddress": "Nouvelle adresse e-mail",
+      "newEmailPlaceholder": "new@example.com",
       "cancel": "Annuler",
       "sending": "Envoi...",
       "sendVerification": "Envoyer la verification"
@@ -500,6 +505,10 @@
     "noTasks": "Aucune tache a afficher.",
     "today": "AUJOURD'HUI",
     "submittedCount": "{count} rendus"
+  },
+  "markdownPreview": {
+    "failedLoadImage": "Echec du chargement de l'image",
+    "loadingImage": "Chargement de l'image..."
   },
   "editorToolbar": {
     "bold": "Gras",

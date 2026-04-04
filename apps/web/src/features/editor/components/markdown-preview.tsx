@@ -1,4 +1,5 @@
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
@@ -19,10 +20,14 @@ function AuthImage({
   src,
   alt,
   token,
+  failedLoadLabel,
+  loadingLabel,
 }: {
   src: string;
   alt: string;
   token: string;
+  failedLoadLabel: string;
+  loadingLabel: string;
 }) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [error, setError] = useState(false);
@@ -44,7 +49,7 @@ function AuthImage({
   if (error) {
     return (
       <span className="my-3 inline-block rounded-lg border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
-        Failed to load image
+        {failedLoadLabel}
       </span>
     );
   }
@@ -53,7 +58,7 @@ function AuthImage({
     return (
       <span className="my-3 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
         <Loader2 size={14} className="animate-spin" />
-        Loading image…
+        {loadingLabel}
       </span>
     );
   }
@@ -72,6 +77,7 @@ export function MarkdownPreview({
   accentColor,
   authToken,
 }: MarkdownPreviewProps) {
+  const t = useTranslations("markdownPreview");
   const accent = accentColor ?? "var(--class-accent)";
 
   const components: Components = {
@@ -178,7 +184,15 @@ export function MarkdownPreview({
       const srcStr = typeof src === "string" ? src : undefined;
       const apiBase = getFileUrl("");
       if (authToken && srcStr?.startsWith(apiBase)) {
-        return <AuthImage src={srcStr} alt={alt ?? ""} token={authToken} />;
+        return (
+          <AuthImage
+            src={srcStr}
+            alt={alt ?? ""}
+            token={authToken}
+            failedLoadLabel={t("failedLoadImage")}
+            loadingLabel={t("loadingImage")}
+          />
+        );
       }
       return (
         // biome-ignore lint/performance/noImgElement: user-generated markdown content with dynamic URLs

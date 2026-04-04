@@ -162,7 +162,7 @@ export default function NotificationsPage() {
               type="url"
               value={webhookUrl}
               onChange={(e) => setWebhookUrl(e.target.value)}
-              placeholder="https://example.com/webhook"
+              placeholder={t("webhookUrlPlaceholder")}
               disabled={saving}
             />
             <p className="text-xs text-muted-foreground">

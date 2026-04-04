@@ -244,7 +244,7 @@ export default function AccountPage() {
               }}
             >
               <AlertDialogTrigger asChild>
-                <Button variant="destructive">Delete Account</Button>
+                <Button variant="destructive">{t("deleteAccount")}</Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>

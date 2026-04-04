@@ -31,6 +31,7 @@
     "resetYourPassword": "パスワードを再設定",
     "description": "メールアドレスを入力すると、再設定リンクを送信します。",
     "email": "メール",
+    "emailPlaceholder": "you@example.com",
     "sendResetLink": "再設定リンクを送信",
     "rememberPassword": "パスワードを思い出しましたか？",
     "signIn": "サインイン"
@@ -91,6 +92,7 @@
     "enableWebhook": "Webhook通知を有効化",
     "webhookHint": "各通知イベントごとにJSONをPOSTします",
     "webhookUrl": "Webhook URL",
+    "webhookUrlPlaceholder": "https://example.com/webhook",
     "webhookPostHint": "このURLに課題詳細を含むJSONをPOSTします。",
     "savePreferences": "設定を保存"
   },
@@ -99,6 +101,7 @@
     "welcomeBack": "おかえりなさい",
     "signInToAccount": "TaskFlowアカウントにサインイン",
     "email": "メール",
+    "emailPlaceholder": "you@example.com",
     "password": "パスワード",
     "forgotPassword": "パスワードをお忘れですか？",
     "signingIn": "サインイン中...",
@@ -120,6 +123,7 @@
     "createAccount": "アカウントを作成",
     "getStarted": "TaskFlowを始める",
     "email": "メール",
+    "emailPlaceholder": "you@example.com",
     "agreeTo": "私は次に同意します",
     "termsOfService": "利用規約",
     "and": "および",
@@ -254,6 +258,7 @@
       "title": "メールアドレスを変更",
       "description": "新しいメールアドレスに確認リンクを送信します。リンクをクリックするまで変更は反映されません。",
       "newEmailAddress": "新しいメールアドレス",
+      "newEmailPlaceholder": "new@example.com",
       "cancel": "キャンセル",
       "sending": "送信中...",
       "sendVerification": "確認メールを送信"
@@ -500,6 +505,10 @@
     "noTasks": "表示するタスクがありません。",
     "today": "今日",
     "submittedCount": "{count}件提出済み"
+  },
+  "markdownPreview": {
+    "failedLoadImage": "画像の読み込みに失敗しました",
+    "loadingImage": "画像を読み込み中..."
   },
   "editorToolbar": {
     "bold": "太字",
