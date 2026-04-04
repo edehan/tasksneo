@@ -29,7 +29,7 @@ async function sha256Hex(input: string): Promise<string> {
 export function buildAvatarUrlFromHash(
   hash: string,
   size = 80,
-  fallback: "identicon" | "mp" | "retro" | "robohash" | "color" = "identicon",
+  fallback: "identicon" | "mp" | "retro" | "robohash" | "color" = "color",
 ): string {
   return `${WEAVATAR_BASE}/${hash}?s=${size}&d=${fallback}`;
 }
@@ -41,7 +41,7 @@ export function buildAvatarUrlFromHash(
 export async function getAvatarUrl(
   identifier: string,
   size = 80,
-  fallback: "identicon" | "mp" | "retro" | "robohash" | "color" = "identicon",
+  fallback: "identicon" | "mp" | "retro" | "robohash" | "color" = "color",
 ): Promise<string> {
   const hash = await sha256Hex(identifier.trim().toLowerCase());
   return buildAvatarUrlFromHash(hash, size, fallback);
