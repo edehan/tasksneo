@@ -183,9 +183,8 @@ Add to your Caddyfile for the API domain:
 
 ```caddyfile
 api.yourdomain.com {
-    handle /cap/* {
-        uri strip_prefix /cap
-        uri path_prefix /<site-key>
+    handle_path /cap/* {
+        rewrite * /<site-key>{uri}
         reverse_proxy 127.0.0.1:3002
     }
 
@@ -195,17 +194,17 @@ api.yourdomain.com {
 }
 ```
 
+`handle_path` automatically strips the `/cap` prefix, then `rewrite` prepends the site key. The resulting path reaches Cap correctly:
+
+```
+Browser: /cap/cap/challenge → strip /cap → /cap/challenge → rewrite → /<site-key>/cap/challenge
+Browser: /cap/siteverify   → strip /cap → /siteverify    → rewrite → /<site-key>/siteverify
+```
+
 Replace `<site-key>` with the actual site key from step 7.1, then reload Caddy:
 
 ```bash
 sudo systemctl reload caddy
-```
-
-Verify:
-
-```bash
-curl https://api.yourdomain.com/cap/<site-key>/cap/challenge
-# Should return a JSON challenge (or a 405 since it expects POST)
 ```
 
 ### 7.3 Frontend environment
