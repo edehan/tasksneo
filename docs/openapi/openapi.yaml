@@ -69,10 +69,10 @@ components:
             nickname:
               type: string
               nullable: true
-            avatarFileKey:
+            avatarHash:
               type: string
               nullable: true
-          required: [id, nickname, avatarFileKey]
+          required: [id, nickname, avatarHash]
         replyTo:
           nullable: true
           type: object
@@ -395,16 +395,17 @@ components:
 
     ClassMember:
       type: object
-      required: [userId, role, joinedAt]
+      required: [userId, avatarHash, role, joinedAt]
       properties:
         userId:
           type: string
           format: uuid
-        email:
-          type: string
         nickname:
           type: string
           nullable: true
+        avatarHash:
+          type: string
+          description: SHA-256 hex hash of user email for gravatar lookup
         role:
           type: string
           enum: [OWNER, ADMIN, MEMBER]
@@ -642,7 +643,7 @@ components:
     SubmissionListRow:
       type: object
       description: 班级成员提交情况行（管理员视图）
-      required: [userId, email, role, submitted, attachments]
+      required: [userId, avatarHash, role, submitted, attachments]
       properties:
         userId:
           type: string
@@ -650,8 +651,9 @@ components:
         nickname:
           type: string
           nullable: true
-        email:
+        avatarHash:
           type: string
+          description: SHA-256 hex hash of user email for gravatar lookup
         schoolName:
           type: string
           nullable: true

@@ -229,13 +229,9 @@
   "settingsProfile": {
     "profileUpdated": "Profil mis a jour",
     "failedUpdateProfile": "Echec de la mise a jour du profil",
-    "selectImageFile": "Veuillez selectionner une image",
-    "imageSmallerThan5mb": "L'image doit etre inferieure a 5 Mo",
-    "avatarUpdated": "Avatar mis a jour",
-    "failedUploadAvatar": "Echec de l'upload de l'avatar",
     "avatar": "Avatar",
-    "clickUploadPhoto": "Cliquez pour televerser une nouvelle photo.",
-    "acceptedImageTypes": "JPG, PNG ou GIF. 5 Mo max.",
+    "avatarManagedByGravatar": "Votre avatar est gere par Gravatar.",
+    "changeOnGravatar": "Modifier sur Gravatar",
     "nickname": "Pseudo",
     "nicknamePlaceholder": "Comment devons-nous vous appeler ?",
     "email": "E-mail",
@@ -345,6 +341,63 @@
     "empty": {
       "noTasks": "Aucune tache dans cette classe pour le moment.",
       "postFirstTask": "Publier la premiere tache"
+    }
+  },
+  "classMembers": {
+    "classNotFound": "Classe introuvable.",
+    "backToClass": "Retour a {name}",
+    "title": "Membres",
+    "subtitle": "{count, plural, =0 {Aucun membre dans {className}} =1 {1 membre dans {className}} other {# membres dans {className}}}",
+    "transferOwnership": "Transferer la propriete",
+    "user": "Utilisateur",
+    "you": "vous",
+    "roles": {
+      "owner": "Proprietaire",
+      "admin": "Admin",
+      "member": "Membre"
+    },
+    "table": {
+      "member": "Membre",
+      "role": "Role",
+      "joined": "Rejoint",
+      "actions": "Actions"
+    },
+    "actions": {
+      "leave": "Quitter",
+      "demote": "Retrograder",
+      "promote": "Promouvoir",
+      "remove": "Retirer"
+    },
+    "common": {
+      "cancel": "Annuler"
+    },
+    "dialogs": {
+      "leave": {
+        "title": "Quitter \"{name}\" ?",
+        "description": "Vous perdrez l'acces a cette classe et a ses taches. Vous pourrez la rejoindre plus tard avec un code d'invitation.",
+        "confirm": "Quitter la classe"
+      },
+      "remove": {
+        "title": "Retirer {name} ?",
+        "description": "Cette personne perdra immediatement l'acces a la classe. Elle pourra la rejoindre de nouveau avec un code d'invitation."
+      }
+    },
+    "transferDialog": {
+      "title": "Transferer la propriete",
+      "description": "Selectionnez un membre a qui transferer la propriete de \"{name}\". Vous serez retrograde administrateur apres le transfert.",
+      "newOwner": "Nouveau proprietaire",
+      "selectMember": "Selectionner un membre"
+    },
+    "toast": {
+      "failedLoadMembers": "Echec du chargement des membres",
+      "roleUpdated": "Role mis a jour en {role}",
+      "failedUpdateRole": "Echec de la mise a jour du role",
+      "memberRemoved": "{name} a ete retire de la classe",
+      "failedRemoveMember": "Echec du retrait du membre",
+      "leftClass": "Vous avez quitte la classe",
+      "failedLeaveClass": "Echec pour quitter la classe",
+      "ownershipTransferred": "Propriete transferee",
+      "failedTransferOwnership": "Echec du transfert de propriete"
     }
   },
   "classSettings": {

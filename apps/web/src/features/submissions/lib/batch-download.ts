@@ -103,7 +103,6 @@ export interface NameTag {
 export const FOLDER_TAGS: NameTag[] = [
   { id: "nickname", label: "Nickname" },
   { id: "studentId", label: "Student ID" },
-  { id: "email", label: "Email" },
 ];
 
 export const ZIP_TAGS: NameTag[] = [

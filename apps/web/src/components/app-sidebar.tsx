@@ -21,7 +21,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { CreateClassDialog } from "@/components/create-class-dialog";
 import { useAppLocale } from "@/components/locale-provider";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAvatarUrl } from "@/hooks/use-avatar-url";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -88,6 +89,7 @@ export function AppSidebar() {
 
   const displayName = user?.nickname || user?.email || t("user");
   const initials = displayName.slice(0, 2).toUpperCase();
+  const avatarUrl = useAvatarUrl(user?.email, 64);
 
   return (
     <Sidebar>
@@ -103,6 +105,9 @@ export function AppSidebar() {
                     className="flex items-center gap-3 flex-1 min-w-0 rounded-lg hover:bg-sidebar-accent p-1 -m-1 transition-colors"
                   >
                     <Avatar className="h-8 w-8 shrink-0">
+                      {avatarUrl && (
+                        <AvatarImage src={avatarUrl} alt={displayName} />
+                      )}
                       <AvatarFallback className="text-xs font-medium">
                         {initials}
                       </AvatarFallback>

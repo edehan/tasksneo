@@ -315,7 +315,7 @@ export function SubmissionsListPage() {
               const isGraded =
                 row.submission?.score !== null &&
                 row.submission?.score !== undefined;
-              const displayName = row.nickname || row.email;
+              const displayName = row.nickname || row.studentId || "Student";
 
               return (
                 <tr
@@ -328,9 +328,9 @@ export function SubmissionsListPage() {
                       <p className="text-[13px] font-medium text-foreground">
                         {displayName}
                       </p>
-                      {row.nickname && (
+                      {row.studentId && (
                         <p className="text-[11px] text-muted-foreground">
-                          {row.email}
+                          {row.studentId}
                         </p>
                       )}
                     </div>

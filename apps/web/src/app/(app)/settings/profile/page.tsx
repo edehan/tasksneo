@@ -1,8 +1,8 @@
 "use client";
 
-import { Camera, Globe, Loader2 } from "lucide-react";
+import { ExternalLink, Globe, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -27,15 +27,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAvatarUrl } from "@/hooks/use-avatar-url";
 import type { School } from "@/lib/api";
 import {
   ApiError,
-  getMe,
-  getPresignedFileUrl,
   listSchools,
   requestEmailChange,
   updateProfile,
-  uploadAvatar,
 } from "@/lib/api";
 
 function getBrowserTimezone(): string {
@@ -98,19 +96,17 @@ function groupTimezones(timezones: string[]): Record<string, string[]> {
 export default function ProfilePage() {
   const { token, user, updateUser } = useAuth();
   const t = useTranslations("settingsProfile");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const avatarUrl = useAvatarUrl(user?.email, 160);
 
   const [schools, setSchools] = useState<School[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
 
   // Form state
   const [nickname, setNickname] = useState("");
   const [schoolId, setSchoolId] = useState<string | null>(null);
   const [studentId, setStudentId] = useState("");
   const [timezone, setTimezone] = useState("UTC");
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const browserTimezone = useMemo(() => getBrowserTimezone(), []);
   const allTimezones = useMemo(() => getSupportedTimezones(), []);
@@ -165,44 +161,6 @@ export default function ProfilePage() {
     }
   }
 
-  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file || !token) return;
-
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      toast.error(t("selectImageFile"));
-      return;
-    }
-
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error(t("imageSmallerThan5mb"));
-      return;
-    }
-
-    setUploading(true);
-    try {
-      const attachment = await uploadAvatar(token, file);
-      const presigned = await getPresignedFileUrl(token, attachment.fileKey);
-      setAvatarUrl(presigned);
-      // Reload user data to get updated profile
-      const updated = await getMe(token);
-      updateUser(updated);
-      toast.success(t("avatarUpdated"));
-    } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : t("failedUploadAvatar");
-      toast.error(message);
-    } finally {
-      setUploading(false);
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    }
-  }
-
   if (!user) {
     return null;
   }
@@ -216,38 +174,27 @@ export default function ProfilePage() {
       <div className="space-y-2">
         <Label>{t("avatar")}</Label>
         <div className="flex items-center gap-4">
-          <button
-            type="button"
-            className="relative group"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-          >
-            <Avatar className="h-20 w-20">
-              {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
-              <AvatarFallback className="text-lg font-medium">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
-              {uploading ? (
-                <Loader2 className="h-5 w-5 text-white animate-spin" />
-              ) : (
-                <Camera className="h-5 w-5 text-white" />
-              )}
-            </div>
-          </button>
-          <div className="text-sm text-muted-foreground">
-            {t("clickUploadPhoto")}
-            <br />
-            {t("acceptedImageTypes")}
+          <Avatar className="h-20 w-20">
+            {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
+            <AvatarFallback className="text-lg font-medium">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="space-y-1.5">
+            <p className="text-sm text-muted-foreground">
+              {t("avatarManagedByGravatar")}
+            </p>
+            <Button variant="outline" size="sm" asChild>
+              <a
+                href="https://gravatar.com/profile"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                {t("changeOnGravatar")}
+              </a>
+            </Button>
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleAvatarUpload}
-          />
         </div>
       </div>
 

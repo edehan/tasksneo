@@ -53,7 +53,6 @@ export interface GatheredData {
     task: TaskDetail;
     className: string;
   }>;
-  avatarFileKey: string | null;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -65,11 +64,6 @@ export function sanitizePath(name: string): string {
       .replace(/\s+/g, " ")
       .trim() || "unnamed"
   );
-}
-
-function extensionFromKey(fileKey: string): string {
-  const dot = fileKey.lastIndexOf(".");
-  return dot >= 0 ? fileKey.slice(dot) : "";
 }
 
 /** Run async tasks in parallel batches of a given size. */
@@ -202,7 +196,6 @@ export async function gatherData(
     classTaskMap,
     submissions,
     managedTasks,
-    avatarFileKey: profile.avatarFileKey,
   };
 }
 
@@ -211,8 +204,6 @@ export async function gatherData(
 export function computeSummary(data: GatheredData): ExportSummary {
   let fileCount = 0;
   let estimatedBytes = 0;
-
-  if (data.avatarFileKey) fileCount++;
 
   for (const { submission } of data.submissions) {
     for (const att of submission.attachments) {
@@ -297,15 +288,6 @@ function buildDownloadTasks(data: GatheredData): {
         folderPath: folderName,
       });
     }
-  }
-
-  // Avatar
-  if (data.avatarFileKey) {
-    downloadTasks.push({
-      fileKey: data.avatarFileKey,
-      fileName: `avatar${extensionFromKey(data.avatarFileKey)}`,
-      folderPath: "",
-    });
   }
 
   return { tasks: downloadTasks, submissionFolders, taskFolders };
@@ -450,14 +432,6 @@ export async function exportFromGatheredData(
     { name: "profile.json", content: profileJson },
     { name: "submissions.json", content: submissionsJson },
   ];
-
-  // Avatar at root
-  const avatarFiles = folderFiles.get("");
-  if (avatarFiles) {
-    for (const f of avatarFiles) {
-      rootFiles.push({ name: f.name, content: f.blob });
-    }
-  }
 
   const zipBlob = await buildZip(zipEntries, rootFiles);
 

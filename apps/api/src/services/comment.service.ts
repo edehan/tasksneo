@@ -10,10 +10,7 @@ const COMMENT_INCLUDE = {
 		select: {
 			id: true,
 			nickname: true,
-			avatarAttachment: {
-				select: { fileKey: true },
-				take: 1,
-			},
+			email: true,
 		},
 	},
 	replyTo: {

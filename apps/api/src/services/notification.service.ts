@@ -194,9 +194,9 @@ export async function enqueueCommentNotifications(params: {
 	// Get comment author name
 	const author = await prisma.user.findUnique({
 		where: { id: params.commentAuthorId },
-		select: { nickname: true, email: true },
+		select: { nickname: true },
 	});
-	const authorName = author?.nickname ?? author?.email ?? "Someone";
+	const authorName = author?.nickname ?? "Someone";
 
 	// Get class color
 	const cls = await prisma.class.findUnique({

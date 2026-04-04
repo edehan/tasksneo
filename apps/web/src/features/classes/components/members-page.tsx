@@ -9,6 +9,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -25,7 +26,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -62,41 +63,46 @@ import {
   updateMemberRole,
 } from "@/lib/api";
 
-function getRoleBadge(role: ClassMember["role"]) {
+function getRoleBadge(
+  role: ClassMember["role"],
+  t: ReturnType<typeof useTranslations>,
+) {
   switch (role) {
     case "OWNER":
       return (
         <Badge variant="default" className="gap-1">
           <Crown className="h-3 w-3" />
-          Owner
+          {t("roles.owner")}
         </Badge>
       );
     case "ADMIN":
       return (
         <Badge variant="secondary" className="gap-1">
           <ShieldCheck className="h-3 w-3" />
-          Admin
+          {t("roles.admin")}
         </Badge>
       );
     case "MEMBER":
       return (
         <Badge variant="outline" className="gap-1">
           <Shield className="h-3 w-3" />
-          Member
+          {t("roles.member")}
         </Badge>
       );
   }
 }
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString(undefined, {
+function formatDate(dateStr: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "short",
     day: "numeric",
-  });
+  }).format(new Date(dateStr));
 }
 
 export function MembersPage() {
+  const t = useTranslations("classMembers");
+  const locale = useLocale();
   const params = useParams();
   const { token, user } = useAuth();
   const classId = params?.classId as string;
@@ -121,11 +127,11 @@ export function MembersPage() {
       setCls(classData);
       setMembers(memberList);
     } catch {
-      toast.error("Failed to load members");
+      toast.error(t("toast.failedLoadMembers"));
     } finally {
       setLoading(false);
     }
-  }, [token, classId]);
+  }, [token, classId, t]);
 
   useEffect(() => {
     void loadData();
@@ -143,11 +149,15 @@ export function MembersPage() {
     setActionLoading(memberId);
     try {
       await updateMemberRole(token, classId, memberId, newRole);
-      toast.success(`Role updated to ${newRole.toLowerCase()}`);
+      toast.success(
+        t("toast.roleUpdated", {
+          role: newRole === "ADMIN" ? t("roles.admin") : t("roles.member"),
+        }),
+      );
       await loadData();
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to update role";
+        err instanceof ApiError ? err.message : t("toast.failedUpdateRole");
       toast.error(message);
     } finally {
       setActionLoading(null);
@@ -159,11 +169,11 @@ export function MembersPage() {
     setActionLoading(memberId);
     try {
       await removeMember(token, classId, memberId);
-      toast.success(`${memberName} removed from class`);
+      toast.success(t("toast.memberRemoved", { name: memberName }));
       await loadData();
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to remove member";
+        err instanceof ApiError ? err.message : t("toast.failedRemoveMember");
       toast.error(message);
     } finally {
       setActionLoading(null);
@@ -175,11 +185,11 @@ export function MembersPage() {
     setActionLoading(user.id);
     try {
       await removeMember(token, classId, user.id);
-      toast.success("You left the class");
+      toast.success(t("toast.leftClass"));
       window.location.href = "/dashboard";
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to leave class";
+        err instanceof ApiError ? err.message : t("toast.failedLeaveClass");
       toast.error(message);
       setActionLoading(null);
     }
@@ -190,13 +200,15 @@ export function MembersPage() {
     setTransferring(true);
     try {
       await transferOwnership(token, classId, transferTarget);
-      toast.success("Ownership transferred");
+      toast.success(t("toast.ownershipTransferred"));
       setTransferOpen(false);
       setTransferTarget("");
       await loadData();
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : "Failed to transfer ownership";
+        err instanceof ApiError
+          ? err.message
+          : t("toast.failedTransferOwnership");
       toast.error(message);
     } finally {
       setTransferring(false);
@@ -220,7 +232,7 @@ export function MembersPage() {
   if (!cls) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-muted-foreground">Class not found.</p>
+        <p className="text-muted-foreground">{t("classNotFound")}</p>
       </div>
     );
   }
@@ -236,14 +248,13 @@ export function MembersPage() {
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground mb-3"
       >
         <ArrowLeft size={14} strokeWidth={2} />
-        Back to {cls.name}
+        {t("backToClass", { name: cls.name })}
       </Link>
       <div className="flex items-start justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-display mb-1">Members</h1>
+          <h1 className="text-display mb-1">{t("title")}</h1>
           <p className="text-muted-foreground">
-            {members.length} member{members.length !== 1 ? "s" : ""} in{" "}
-            {cls.name}
+            {t("subtitle", { count: members.length, className: cls.name })}
           </p>
         </div>
         {isOwner && (
@@ -252,7 +263,7 @@ export function MembersPage() {
             onClick={() => setTransferOpen(true)}
             disabled={transferCandidates.length === 0}
           >
-            Transfer Ownership
+            {t("transferOwnership")}
           </Button>
         )}
       </div>
@@ -261,16 +272,15 @@ export function MembersPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[300px]">Member</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Joined</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="w-[300px]">{t("table.member")}</TableHead>
+              <TableHead>{t("table.role")}</TableHead>
+              <TableHead>{t("table.joined")}</TableHead>
+              <TableHead className="text-right">{t("table.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {members.map((member) => {
-              const displayName = member.nickname || member.email;
-              const initials = displayName.slice(0, 2).toUpperCase();
+              const displayName = member.nickname || t("user");
               const isMe = member.userId === user?.id;
               const isMemberLoading = actionLoading === member.userId;
 
@@ -278,31 +288,27 @@ export function MembersPage() {
                 <TableRow key={member.userId}>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="text-xs font-medium">
-                          {initials}
-                        </AvatarFallback>
-                      </Avatar>
+                      <UserAvatar
+                        avatarHash={member.avatarHash}
+                        name={displayName}
+                        className="h-8 w-8"
+                        size={64}
+                      />
                       <div className="min-w-0">
                         <div className="text-sm font-medium truncate">
                           {displayName}
                           {isMe && (
                             <span className="ml-1.5 text-xs text-muted-foreground">
-                              (you)
+                              ({t("you")})
                             </span>
                           )}
                         </div>
-                        {member.nickname && (
-                          <div className="text-xs text-muted-foreground truncate">
-                            {member.email}
-                          </div>
-                        )}
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{getRoleBadge(member.role)}</TableCell>
+                  <TableCell>{getRoleBadge(member.role, t)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {formatDate(member.joinedAt)}
+                    {formatDate(member.joinedAt, locale)}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
@@ -321,26 +327,25 @@ export function MembersPage() {
                               disabled={isMemberLoading}
                             >
                               <LogOut className="mr-1 h-3.5 w-3.5" />
-                              Leave
+                              {t("actions.leave")}
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
                               <AlertDialogTitle>
-                                Leave &quot;{cls.name}&quot;?
+                                {t("dialogs.leave.title", { name: cls.name })}
                               </AlertDialogTitle>
                               <AlertDialogDescription>
-                                You will lose access to this class and its
-                                tasks. You can rejoin later with an invite code.
+                                {t("dialogs.leave.description")}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={handleLeave}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                               >
-                                Leave Class
+                                {t("dialogs.leave.confirm")}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
@@ -358,7 +363,7 @@ export function MembersPage() {
                             }
                             disabled={isMemberLoading}
                           >
-                            Demote
+                            {t("actions.demote")}
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -368,29 +373,29 @@ export function MembersPage() {
                                 className="text-destructive hover:text-destructive"
                                 disabled={isMemberLoading}
                               >
-                                Remove
+                                {t("actions.remove")}
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle>
-                                  Remove {displayName}?
+                                  {t("dialogs.remove.title", {
+                                    name: displayName,
+                                  })}
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  This person will lose access to the class
-                                  immediately. They can rejoin with an invite
-                                  code.
+                                  {t("dialogs.remove.description")}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() =>
                                     handleRemove(member.userId, displayName)
                                   }
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 >
-                                  Remove
+                                  {t("actions.remove")}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -398,19 +403,23 @@ export function MembersPage() {
                         </>
                       )}
 
-                      {/* Owner or Admin viewing a MEMBER */}
+                      {/* Owner can promote a MEMBER to ADMIN */}
+                      {!isMe && isOwner && member.role === "MEMBER" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            handleRoleChange(member.userId, "ADMIN")
+                          }
+                          disabled={isMemberLoading}
+                        >
+                          {t("actions.promote")}
+                        </Button>
+                      )}
+
+                      {/* Owner or Admin can remove a MEMBER */}
                       {!isMe && isAdmin && member.role === "MEMBER" && (
                         <>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              handleRoleChange(member.userId, "ADMIN")
-                            }
-                            disabled={isMemberLoading}
-                          >
-                            Promote
-                          </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
@@ -419,29 +428,29 @@ export function MembersPage() {
                                 className="text-destructive hover:text-destructive"
                                 disabled={isMemberLoading}
                               >
-                                Remove
+                                {t("actions.remove")}
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle>
-                                  Remove {displayName}?
+                                  {t("dialogs.remove.title", {
+                                    name: displayName,
+                                  })}
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  This person will lose access to the class
-                                  immediately. They can rejoin with an invite
-                                  code.
+                                  {t("dialogs.remove.description")}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() =>
                                     handleRemove(member.userId, displayName)
                                   }
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 >
-                                  Remove
+                                  {t("actions.remove")}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -461,22 +470,23 @@ export function MembersPage() {
       <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-serif">Transfer Ownership</DialogTitle>
+            <DialogTitle className="font-serif">
+              {t("transferDialog.title")}
+            </DialogTitle>
             <DialogDescription>
-              Select a member to transfer ownership of &quot;{cls.name}&quot;
-              to. You will be demoted to Admin after the transfer.
+              {t("transferDialog.description", { name: cls.name })}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Label className="mb-2 block">New Owner</Label>
+            <Label className="mb-2 block">{t("transferDialog.newOwner")}</Label>
             <Select value={transferTarget} onValueChange={setTransferTarget}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a member" />
+                <SelectValue placeholder={t("transferDialog.selectMember")} />
               </SelectTrigger>
               <SelectContent>
                 {transferCandidates.map((m) => (
                   <SelectItem key={m.userId} value={m.userId}>
-                    {m.nickname || m.email}
+                    {m.nickname || t("user")}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -491,7 +501,7 @@ export function MembersPage() {
               }}
               disabled={transferring}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -501,7 +511,7 @@ export function MembersPage() {
               {transferring && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Transfer Ownership
+              {t("transferOwnership")}
             </Button>
           </DialogFooter>
         </DialogContent>

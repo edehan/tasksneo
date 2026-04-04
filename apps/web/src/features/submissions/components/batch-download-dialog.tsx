@@ -318,7 +318,6 @@ export function BatchDownloadDialog({
         {
           nickname: sampleRow.nickname ?? t("sampleUser"),
           studentId: sampleRow.studentId ?? "",
-          email: sampleRow.email,
         },
         "_",
       )
@@ -352,7 +351,6 @@ export function BatchDownloadDialog({
           {
             nickname: r.nickname ?? t("sampleUser"),
             studentId: r.studentId ?? "",
-            email: r.email,
           },
           "_",
         ),
@@ -524,7 +522,7 @@ export function BatchDownloadDialog({
                     onCheckedChange={() => toggleUser(row.userId)}
                   />
                   <span className="min-w-0 flex-1 truncate text-[13px] text-foreground">
-                    {row.nickname ?? row.email}
+                    {row.nickname ?? row.studentId ?? "Student"}
                   </span>
                   {row.attachments.length > 0 && (
                     <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground">
