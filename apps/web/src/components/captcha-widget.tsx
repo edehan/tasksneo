@@ -2,16 +2,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 
-function getCapEndpoint(): string | undefined {
-  if (process.env.NEXT_PUBLIC_CAP_ENABLED !== "true") return undefined;
-  if (process.env.NEXT_PUBLIC_CAP_API_ENDPOINT)
-    return process.env.NEXT_PUBLIC_CAP_API_ENDPOINT;
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (!apiBase) return undefined;
-  return `${apiBase.replace(/\/+$/, "")}/cap/`;
-}
-
-const CAP_API_ENDPOINT = getCapEndpoint();
+const CAP_API_ENDPOINT = process.env.NEXT_PUBLIC_CAP_API_ENDPOINT;
 
 interface CaptchaWidgetProps {
   onSolve: (token: string) => void;
