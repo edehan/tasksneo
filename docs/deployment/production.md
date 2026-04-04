@@ -62,7 +62,6 @@ openssl rand -hex 32  # Use output for ADMIN_TOKEN
 openssl rand -hex 32  # Use output for SYSTEM_CONFIG_SECRET
 openssl rand -hex 32  # Use output for JWT_SECRET
 openssl rand -hex 16  # Use output for POSTGRES_PASSWORD
-openssl rand -hex 32  # Use output for CAP_ADMIN_KEY
 ```
 
 Edit `infra/.env.prod` with your actual values:
@@ -102,6 +101,7 @@ curl https://api.yourdomain.com/health
 5. Output directory: `.next`
 6. Environment variables:
    - `NEXT_PUBLIC_API_BASE_URL` = `https://api.yourdomain.com`
+   - `NEXT_PUBLIC_CAP_API_ENDPOINT` = `https://cap.yourdomain.com/<site-key>/` (CAPTCHA, omit to disable)
 7. Deploy
 
 ### Option B: Cloudflare Workers
@@ -123,6 +123,7 @@ Next.js apps deploy to Cloudflare Workers via the [OpenNext adapter](https://ope
 | Variable | Value |
 |----------|-------|
 | `NEXT_PUBLIC_API_BASE_URL` | `https://api.yourdomain.com` |
+| `NEXT_PUBLIC_CAP_API_ENDPOINT` | `https://cap.yourdomain.com/<site-key>/` (omit to disable CAPTCHA) |
 | `NODE_VERSION` | `22` |
 
 > The `deploy` script in `apps/web/package.json` runs `opennextjs-cloudflare build && opennextjs-cloudflare deploy`, which builds Next.js, transforms the output, and deploys via wrangler — all from the correct directory.
@@ -145,77 +146,29 @@ pnpm run preview
 
 ## 7. CAPTCHA Setup (Cap.js)
 
-Cap.js is a self-hosted, privacy-first proof-of-work CAPTCHA. It protects registration and email-change endpoints from spam bots. The Cap container runs alongside the API and shares the existing Redis instance.
+[Cap.js](https://capjs.js.org) is a privacy-first proof-of-work CAPTCHA that protects registration and email-change endpoints from spam bots. Cap is deployed independently (see [Cap Standalone docs](https://capjs.js.org/guide/standalone/)) — it is **not** part of the TaskFlow docker-compose stack.
 
-### 7.1 Create a site key
+### Backend
 
-After the containers are running, open the Cap dashboard:
-
-```bash
-# Via SSH tunnel (if Caddy is not yet configured)
-ssh -L 3002:127.0.0.1:3002 your-vps
-
-# Then visit http://localhost:3002 in your browser
-```
-
-1. Log in with your `CAP_ADMIN_KEY`
-2. Create a new site key (name it e.g. "TaskFlow")
-3. Note both the **site key** and the **secret key**
-
-Update `infra/.env.prod`:
+Add to `infra/.env.prod`:
 
 ```bash
-CAP_URL=http://cap:3000/<site-key>    # internal Docker network URL
-CAP_SECRET=<site-secret-key>          # NOT the admin key
+CAP_ENABLED=true
+CAP_URL=https://cap.yourdomain.com/<site-key>   # your Cap instance + site key
+CAP_SECRET=<site-secret-key>                     # from Cap dashboard (NOT admin key)
 ```
 
-Restart the API to pick up the new env vars:
+Restart the API to pick up the new vars.
 
-```bash
-docker compose -f docker-compose.prod.yml restart api
-```
+### Frontend
 
-### 7.2 Caddy reverse proxy
-
-Cap needs to be accessible from the browser at `https://api.yourdomain.com/cap/`. Caddy strips the `/cap` prefix and injects the site key before forwarding to the Cap container.
-
-Add to your Caddyfile for the API domain:
-
-```caddyfile
-api.yourdomain.com {
-    handle_path /cap/* {
-        rewrite * /<site-key>{uri}
-        reverse_proxy 127.0.0.1:3002
-    }
-
-    handle {
-        reverse_proxy 127.0.0.1:3001
-    }
-}
-```
-
-`handle_path` automatically strips the `/cap` prefix, then `rewrite` prepends the site key. The resulting path reaches Cap correctly:
+Add `NEXT_PUBLIC_CAP_API_ENDPOINT` to your frontend build environment (Vercel / Cloudflare dashboard):
 
 ```
-Browser: /cap/cap/challenge → strip /cap → /cap/challenge → rewrite → /<site-key>/cap/challenge
-Browser: /cap/siteverify   → strip /cap → /siteverify    → rewrite → /<site-key>/siteverify
+NEXT_PUBLIC_CAP_API_ENDPOINT=https://cap.yourdomain.com/<site-key>/
 ```
 
-Replace `<site-key>` with the actual site key from step 7.1, then reload Caddy:
-
-```bash
-sudo systemctl reload caddy
-```
-
-### 7.3 Frontend environment
-
-Add `NEXT_PUBLIC_CAP_ENABLED=true` to your frontend build environment (Vercel / Cloudflare dashboard). The widget endpoint is automatically derived from `NEXT_PUBLIC_API_BASE_URL` + `/cap/`.
-
-No additional URL configuration is needed unless Cap is hosted on a different domain (in which case, set `NEXT_PUBLIC_CAP_API_ENDPOINT`).
-
-### Dev / test environments
-
-CAPTCHA is **disabled by default**. When `CAP_ENABLED` is not `true` on the backend (or `NEXT_PUBLIC_CAP_ENABLED` is not `true` on the frontend), the widget is hidden and the backend skips verification. No Cap container is needed for development.
+When this variable is unset, the CAPTCHA widget is hidden and the backend skips verification — no changes needed for dev/test.
 
 ## 8. Admin Setup
 
@@ -258,16 +211,15 @@ CAPTCHA is **disabled by default**. When `CAP_ENABLED` is not `true` on the back
 | `CORS_ORIGINS` | Allowed frontend origins (comma-separated) |
 | `NOTIFICATION_WORKER_ENABLED` | Enable background notification processing |
 | `CAP_ENABLED` | Enable CAPTCHA verification (`true` / unset) |
-| `CAP_URL` | Cap internal URL with site key (e.g. `http://cap:3000/<key>`) |
+| `CAP_URL` | Cap instance URL with site key (e.g. `https://cap.example.com/<key>`) |
 | `CAP_SECRET` | Cap site secret key (from dashboard) |
-| `CAP_ADMIN_KEY` | Cap dashboard admin password (min 32 chars) |
 
 ### Frontend (Vercel / Cloudflare Pages dashboard)
 
 | Variable | Description |
 |----------|-------------|
 | `NEXT_PUBLIC_API_BASE_URL` | API base URL (build-time only) |
-| `NEXT_PUBLIC_CAP_ENABLED` | Show CAPTCHA widget (`true` / unset, build-time only) |
+| `NEXT_PUBLIC_CAP_API_ENDPOINT` | Cap widget endpoint (build-time, omit to disable CAPTCHA) |
 
 ### Runtime (Admin panel → `/admin`)
 
