@@ -1,6 +1,7 @@
 import { AuthProvider, NotifChannel, prisma } from "@taskflow/db";
 import bcrypt from "bcryptjs";
 
+import { cacheDel, cacheKeys } from "../lib/cache.js";
 import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
 import { sendEmail } from "../lib/mailer.js";
@@ -56,6 +57,7 @@ export async function updateAdminUser(
 			where: { id: userId },
 			data: { isActive: input.isActive },
 		});
+		await cacheDel(cacheKeys.authUser(userId));
 	}
 
 	if (input.password) {

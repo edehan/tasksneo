@@ -1,10 +1,13 @@
 import { ClassRole, NotifChannel, NotifStatus, prisma } from "@taskflow/db";
+import { cacheGetOrSet, cacheKeys } from "../lib/cache.js";
 import { sendEmail } from "../lib/mailer.js";
 import {
 	enqueueNotificationJob,
 	processNotificationQueue,
 } from "../lib/queue.js";
 import { getConfigValue } from "./system-config.service.js";
+
+const NOTIF_PREFS_TTL_SECONDS = 900; // 15 min
 
 interface TaskNotificationPayload {
 	userId: string;
@@ -101,17 +104,23 @@ async function createNotificationJob(
 }
 
 async function getEnabledChannels(userId: string): Promise<NotifChannel[]> {
-	const prefs = await prisma.userNotificationPref.findMany({
-		where: { userId, isEnabled: true },
-		select: { channel: true },
-	});
+	return cacheGetOrSet<NotifChannel[]>(
+		cacheKeys.notifPrefs(userId),
+		NOTIF_PREFS_TTL_SECONDS,
+		async () => {
+			const prefs = await prisma.userNotificationPref.findMany({
+				where: { userId, isEnabled: true },
+				select: { channel: true },
+			});
 
-	if (prefs.length === 0) {
-		// Default to EMAIL if user has no preferences set
-		return [NotifChannel.EMAIL];
-	}
+			if (prefs.length === 0) {
+				// Default to EMAIL if user has no preferences set
+				return [NotifChannel.EMAIL];
+			}
 
-	return prefs.map((p) => p.channel);
+			return prefs.map((p) => p.channel);
+		},
+	);
 }
 
 export async function enqueueTaskPublishedNotifications(params: {
