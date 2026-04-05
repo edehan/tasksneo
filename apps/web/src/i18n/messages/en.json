@@ -716,7 +716,27 @@
     "daysAgo": "{count}d ago",
     "keyCreated": "Key Created",
     "keyCreatedHint": "Copy the key below — you won't be able to see it again.",
-    "createDescription": "Give your key a name so you can identify it later."
+    "createDescription": "Give your key a name so you can identify it later.",
+    "installCommandsHeading": "Install with your new key",
+    "installCommandsHint": "Choose one client below and run the command. Your key is already injected.",
+    "guidesHeading": "Connect Your AI Tool",
+    "guidesIntro": "Create a key above, then paste one of the setup commands below into your terminal. Replace <your-key> with the key you just copied.",
+    "claudeCode": {
+      "name": "Claude Code",
+      "tagline": "Anthropic's AI coding assistant in your terminal",
+      "step1": "Create and copy a new key above",
+      "step2": "Paste the command into your terminal",
+      "step3": "Open Claude Code — taskflow tools will be available"
+    },
+    "openClaw": {
+      "name": "OpenClaw",
+      "tagline": "Open-source autonomous AI agent",
+      "step1": "Create and copy a new key above",
+      "step2": "Paste the command into your terminal",
+      "step3": "Restart OpenClaw to load the taskflow server"
+    },
+    "steps": "Steps",
+    "command": "Command"
   },
   "batchDownloadDialog": {
     "title": "Download Submissions",

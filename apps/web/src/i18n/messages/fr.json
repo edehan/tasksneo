@@ -727,7 +727,27 @@
     "daysAgo": "il y a {count} j",
     "keyCreated": "Clé créée",
     "keyCreatedHint": "Copiez la clé ci-dessous — vous ne pourrez plus la voir.",
-    "createDescription": "Donnez un nom à votre clé pour l'identifier plus tard."
+    "createDescription": "Donnez un nom à votre clé pour l'identifier plus tard.",
+    "installCommandsHeading": "Installer avec votre nouvelle clé",
+    "installCommandsHint": "Choisissez un client ci-dessous et exécutez la commande. Votre clé est déjà injectée.",
+    "guidesHeading": "Connectez votre outil IA",
+    "guidesIntro": "Créez et copiez d'abord une clé, puis exécutez l'une des commandes d'installation ci-dessous dans votre terminal.",
+    "claudeCode": {
+      "name": "Claude Code",
+      "tagline": "Assistant de code IA d'Anthropic dans votre terminal",
+      "step1": "Créez et copiez une nouvelle clé",
+      "step2": "Collez la commande dans votre terminal",
+      "step3": "Ouvrez Claude Code, les outils TaskFlow seront disponibles"
+    },
+    "openClaw": {
+      "name": "OpenClaw",
+      "tagline": "Agent IA autonome open source",
+      "step1": "Créez et copiez une nouvelle clé",
+      "step2": "Collez la commande dans votre terminal",
+      "step3": "Redémarrez OpenClaw pour charger le serveur TaskFlow"
+    },
+    "steps": "Étapes",
+    "command": "Commande"
   },
   "batchDownloadDialog": {
     "title": "Telecharger les rendus",

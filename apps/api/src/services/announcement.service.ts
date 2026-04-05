@@ -64,18 +64,34 @@ function toRow(a: {
 
 // ── CRUD ────────────────────────────────────────────────────────────────────
 
+export type PublishMode = "immediate" | "delayed";
+
 export async function createAnnouncement(
 	title: string,
 	content: string,
+	publishMode: PublishMode = "delayed",
 ): Promise<AnnouncementRow> {
-	const scheduledAt = new Date(Date.now() + PUBLISH_DELAY_MS);
+	const now = new Date();
+	const scheduledAt =
+		publishMode === "immediate"
+			? now
+			: new Date(now.getTime() + PUBLISH_DELAY_MS);
 
 	const announcement = await prisma.siteAnnouncement.create({
 		data: { title, content, scheduledAt },
 	});
 
-	await enqueueAnnouncementPublish(announcement.id, scheduledAt);
+	if (publishMode === "immediate") {
+		// Bypass Bull queue entirely — fan out synchronously so the admin
+		// gets real feedback if SMTP/DB/Redis is broken.
+		await publishAnnouncementFanOut(announcement.id);
+		const fresh = await prisma.siteAnnouncement.findUnique({
+			where: { id: announcement.id },
+		});
+		return toRow(fresh ?? announcement);
+	}
 
+	await enqueueAnnouncementPublish(announcement.id, scheduledAt);
 	return toRow(announcement);
 }
 
@@ -121,7 +137,8 @@ export async function publishAnnouncementFanOut(
 	if (announcement.cancelledAt) return;
 	if (announcement.publishedAt) return;
 
-	// Mark as published
+	// Mark as published up-front so Bull retries don't re-fan-out and
+	// create duplicate NotificationJob rows for users we already enqueued.
 	await prisma.siteAnnouncement.update({
 		where: { id: announcementId },
 		data: { publishedAt: new Date() },
@@ -140,6 +157,8 @@ export async function publishAnnouncementFanOut(
 	});
 
 	const now = new Date();
+	let enqueued = 0;
+	let enqueueFailed = 0;
 
 	for (const user of activeUsers) {
 		const channels: NotifChannel[] =
@@ -168,11 +187,23 @@ export async function publishAnnouncementFanOut(
 
 			try {
 				await enqueueNotificationJob(job.id, now);
-			} catch {
-				// Keep PENDING row for recovery
+				enqueued++;
+			} catch (err) {
+				enqueueFailed++;
+				// Keep PENDING row for recovery, but surface the error — silent
+				// failures here were the reason announcements appeared "published"
+				// with no emails sent.
+				console.error(
+					`[announcement] Failed to enqueue notification job ${job.id} for announcement ${announcement.id}:`,
+					err,
+				);
 			}
 		}
 	}
+
+	console.info(
+		`[announcement] Fan-out complete for ${announcement.id}: ${enqueued} queued, ${enqueueFailed} failed, ${activeUsers.length} users`,
+	);
 }
 
 // ── Worker ──────────────────────────────────────────────────────────────────

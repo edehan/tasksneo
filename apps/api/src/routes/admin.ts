@@ -47,6 +47,7 @@ const createSchoolSchema = z.object({
 const createAnnouncementSchema = z.object({
 	title: z.string().trim().min(1).max(200),
 	content: z.string().trim().min(1).max(5000),
+	publishMode: z.enum(["immediate", "delayed"]).default("delayed"),
 });
 
 const announcementIdParamSchema = z.object({
@@ -123,7 +124,11 @@ adminRouter.get("/announcements", async (c) => {
 
 adminRouter.post("/announcements", async (c) => {
 	const body = createAnnouncementSchema.parse(await c.req.json());
-	const announcement = await createAnnouncement(body.title, body.content);
+	const announcement = await createAnnouncement(
+		body.title,
+		body.content,
+		body.publishMode,
+	);
 	return c.json(announcement, 201);
 });
 

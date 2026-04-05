@@ -727,7 +727,27 @@
     "daysAgo": "{count}日前",
     "keyCreated": "キーが作成されました",
     "keyCreatedHint": "下のキーをコピーしてください。再度表示することはできません。",
-    "createDescription": "後で識別できるようにキーに名前を付けてください。"
+    "createDescription": "後で識別できるようにキーに名前を付けてください。",
+    "installCommandsHeading": "新しいキーでインストール",
+    "installCommandsHint": "以下からクライアントを選んでコマンドを実行してください。キーはコマンド内に自動挿入されています。",
+    "guidesHeading": "AIツールを接続",
+    "guidesIntro": "まずキーを作成してコピーし、以下のいずれかのセットアップコマンドをターミナルで実行してください。",
+    "claudeCode": {
+      "name": "Claude Code",
+      "tagline": "ターミナルで使える Anthropic のAIコーディングアシスタント",
+      "step1": "新しいキーを作成してコピーする",
+      "step2": "コマンドをターミナルに貼り付けて実行する",
+      "step3": "Claude Code を開くと TaskFlow ツールが利用可能になります"
+    },
+    "openClaw": {
+      "name": "OpenClaw",
+      "tagline": "オープンソースの自律型AIエージェント",
+      "step1": "新しいキーを作成してコピーする",
+      "step2": "コマンドをターミナルに貼り付けて実行する",
+      "step3": "OpenClaw を再起動して TaskFlow サーバーを読み込む"
+    },
+    "steps": "手順",
+    "command": "コマンド"
   },
   "batchDownloadDialog": {
     "title": "提出をダウンロード",
