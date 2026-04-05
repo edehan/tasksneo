@@ -28,6 +28,19 @@ services:
       timeout: 5s
       retries: 20
 
+  redis-cache:
+    image: valkey/valkey:8-alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6380:6379"
+    volumes:
+      - taskflow_prod_redis_cache_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   api:
     build:
       context: ..
@@ -37,6 +50,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      redis-cache:
         condition: service_healthy
     env_file: .env.prod
     ports:
@@ -54,3 +69,4 @@ services:
 volumes:
   taskflow_prod_pg_data:
   taskflow_prod_redis_data:
+  taskflow_prod_redis_cache_data:

@@ -142,7 +142,7 @@ TASKFLOW_DEV_SEED=true pnpm dev
 
 详见 [`docs/deployment/production.md`](docs/deployment/production.md)。
 
-架构：前端部署到 Vercel / Cloudflare Pages，后端 + PostgreSQL + Redis 以 Docker 运行在 VPS 上，文件储存使用第三方 S3 兼容服务。
+架构：前端部署到 Vercel / Cloudflare Pages，后端 + PostgreSQL + Valkey（队列 / 缓存分实例）以 Docker 运行在 VPS 上，文件储存使用第三方 S3 兼容服务。
 
 ---
 

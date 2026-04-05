@@ -10,7 +10,7 @@ export function getRedisClient() {
 	}
 
 	const env = loadEnv();
-	const client = new Redis(env.redisUrl, {
+	const client = new Redis(env.redisCacheUrl, {
 		maxRetriesPerRequest: 1,
 		enableReadyCheck: false,
 	});

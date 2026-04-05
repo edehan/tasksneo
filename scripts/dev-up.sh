@@ -21,7 +21,7 @@ Starting local dev servers:
 - api: http://localhost:3001
 
 Press Ctrl+C to stop the web/api dev processes.
-Use `pnpm dev:down` if you also want to stop postgres/redis/minio.
+Use `pnpm dev:down` if you also want to stop postgres/redis/redis-cache/minio.
 EOF
 
 pids=()

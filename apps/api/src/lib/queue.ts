@@ -10,7 +10,7 @@ function getQueue() {
 	}
 
 	const env = loadEnv();
-	queue = new Bull("taskflow-notifications", env.redisUrl);
+	queue = new Bull("taskflow-notifications", env.redisQueueUrl);
 
 	return queue;
 }

@@ -8,7 +8,7 @@ For this project, the standard local development experience is:
 
 - `Next.js dev` for instant frontend hot reload
 - `tsx watch` for API restart on backend changes
-- Docker only for local infrastructure (`postgres`, `redis`, `minio`)
+- Docker only for local infrastructure (`postgres`, `redis`, `redis-cache`, `minio`)
 
 This is the practical equivalent of older static-site tools such as Live Server, but adapted for a full-stack Next.js + API project.
 
@@ -30,7 +30,7 @@ If your local `.env` predates the `SYSTEM_CONFIG_SECRET` split, `pnpm dev` will 
 
 - `pnpm dev`: start dev infra and both watch servers
 - `pnpm dev:seed`: preload local-only demo data (idempotent)
-- `pnpm dev:infra`: start `postgres`, `redis`, `minio`
+- `pnpm dev:infra`: start `postgres`, `redis`, `redis-cache`, `minio`
 - `pnpm dev:api`: start backend watch mode only
 - `pnpm dev:web`: start Next.js dev server only
 - `pnpm dev:down`: stop local dev infrastructure
@@ -44,6 +44,7 @@ If you want `pnpm dev` to seed automatically, run:
 - `web`: `3000`
 - `api`: `3001`
 - `postgres`: `5432`
-- `redis`: `6379`
+- `redis` (queue): `6379`
+- `redis-cache`: `6380`
 - `minio`: `9000`
 - `minio console`: `9001`

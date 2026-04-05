@@ -7,6 +7,8 @@ export interface AppEnv {
 	adminToken: string;
 	systemConfigSecret: string;
 	jwtSecret: string;
+	redisQueueUrl: string;
+	redisCacheUrl: string;
 	redisUrl: string;
 	s3Endpoint: string;
 	s3Port: number | undefined;
@@ -79,6 +81,7 @@ export function loadEnv(): AppEnv {
 		s3UseSSLRaw != null
 			? s3UseSSLRaw === "true"
 			: s3Port == null || s3Port === 443;
+	const redisUrl = requireEnv("REDIS_URL");
 
 	return {
 		listenHost: host,
@@ -87,7 +90,9 @@ export function loadEnv(): AppEnv {
 		adminToken: requireEnv("ADMIN_TOKEN"),
 		systemConfigSecret: requireEnv("SYSTEM_CONFIG_SECRET"),
 		jwtSecret: requireEnv("JWT_SECRET"),
-		redisUrl: requireEnv("REDIS_URL"),
+		redisQueueUrl: process.env.REDIS_QUEUE_URL ?? redisUrl,
+		redisCacheUrl: process.env.REDIS_CACHE_URL ?? redisUrl,
+		redisUrl,
 		s3Endpoint: requireEnvEither("S3_ENDPOINT", "MINIO_ENDPOINT"),
 		s3Port,
 		s3AccessKey: requireEnvEither("S3_ACCESS_KEY", "MINIO_ACCESS_KEY"),

@@ -200,7 +200,9 @@ When this variable is unset, the CAPTCHA widget is hidden and the backend skips 
 | `SYSTEM_CONFIG_SECRET` | Encrypts secrets in system_config table |
 | `JWT_SECRET` | Signs user authentication tokens |
 | `DATABASE_URL` | PostgreSQL connection string (docker network) |
-| `REDIS_URL` | Redis connection string (docker network) |
+| `REDIS_URL` | Backward-compatible default Redis URL (used if role-specific URLs are unset) |
+| `REDIS_QUEUE_URL` | Queue Redis URL (Bull notification queue) |
+| `REDIS_CACHE_URL` | Cache Redis URL (application cache) |
 | `S3_ENDPOINT` | S3 provider endpoint |
 | `S3_ACCESS_KEY` | S3 access key |
 | `S3_SECRET_KEY` | S3 secret key |

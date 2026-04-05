@@ -34,7 +34,7 @@ TaskFlow is a class-based teaching task management system designed for universit
 ### Shared & Infrastructure
 - `packages/db`: Prisma schema and client.
 - `packages/shared`: Shared types and Zod schemas.
-- `infra/`: Docker Compose files for local dev and preview.
+- `infra/`: Docker Compose files for local dev.
 
 ## Frontend Design: "Warm Paper Aesthetic"
 Implementation must strictly match the prototype in `docs/prototype/`.
@@ -76,7 +76,7 @@ Implementation must strictly match the prototype in `docs/prototype/`.
 
 ### Commands
 - `pnpm dev`: Full stack (Infra + API + Web).
-- `pnpm dev:infra`: Only Postgres, Redis, MinIO.
+- `pnpm dev:infra`: Only Postgres, Redis (queue), Redis-cache, MinIO.
 - `cd packages/db && npx prisma migrate dev`: Database migrations.
 
 ## Important Constraints
