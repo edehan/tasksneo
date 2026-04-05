@@ -6,8 +6,16 @@ import {
 	processAnnouncementQueue,
 	removeAnnouncementJob,
 } from "../lib/queue.js";
+import { AppError } from "../lib/errors.js";
+import { processNotificationJob } from "./notification.service.js";
 
 const PUBLISH_DELAY_MS = 10 * 60 * 1000; // 10 minutes
+
+type AnnouncementDispatchMode = "queue" | "inline";
+
+function isNotificationWorkerEnabled(): boolean {
+	return process.env.NOTIFICATION_WORKER_ENABLED === "true";
+}
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -71,6 +79,16 @@ export async function createAnnouncement(
 	content: string,
 	publishMode: PublishMode = "delayed",
 ): Promise<AnnouncementRow> {
+	const workerEnabled = isNotificationWorkerEnabled();
+
+	if (publishMode === "delayed" && !workerEnabled) {
+		throw new AppError(
+			503,
+			"NOTIFICATION_WORKER_DISABLED",
+			"Notification worker is disabled. Set NOTIFICATION_WORKER_ENABLED=true to schedule announcements.",
+		);
+	}
+
 	const now = new Date();
 	const scheduledAt =
 		publishMode === "immediate"
@@ -82,9 +100,12 @@ export async function createAnnouncement(
 	});
 
 	if (publishMode === "immediate") {
-		// Bypass Bull queue entirely — fan out synchronously so the admin
-		// gets real feedback if SMTP/DB/Redis is broken.
-		await publishAnnouncementFanOut(announcement.id);
+		// If worker is disabled, process notification jobs inline so "Publish Now"
+		// still delivers (or fails) immediately instead of silently stalling.
+		await publishAnnouncementFanOut(
+			announcement.id,
+			workerEnabled ? "queue" : "inline",
+		);
 		const fresh = await prisma.siteAnnouncement.findUnique({
 			where: { id: announcement.id },
 		});
@@ -128,6 +149,7 @@ export async function listAnnouncements(): Promise<AnnouncementRow[]> {
 
 export async function publishAnnouncementFanOut(
 	announcementId: string,
+	dispatchMode: AnnouncementDispatchMode = "queue",
 ): Promise<void> {
 	const announcement = await prisma.siteAnnouncement.findUnique({
 		where: { id: announcementId },
@@ -186,15 +208,17 @@ export async function publishAnnouncementFanOut(
 			});
 
 			try {
-				await enqueueNotificationJob(job.id, now);
+				if (dispatchMode === "inline") {
+					await processNotificationJob(job.id);
+				} else {
+					await enqueueNotificationJob(job.id, now);
+				}
 				enqueued++;
 			} catch (err) {
 				enqueueFailed++;
-				// Keep PENDING row for recovery, but surface the error — silent
-				// failures here were the reason announcements appeared "published"
-				// with no emails sent.
+				// Keep row for recovery and surface the error.
 				console.error(
-					`[announcement] Failed to enqueue notification job ${job.id} for announcement ${announcement.id}:`,
+					`[announcement] Failed to ${dispatchMode === "inline" ? "process" : "enqueue"} notification job ${job.id} for announcement ${announcement.id}:`,
 					err,
 				);
 			}
@@ -202,7 +226,7 @@ export async function publishAnnouncementFanOut(
 	}
 
 	console.info(
-		`[announcement] Fan-out complete for ${announcement.id}: ${enqueued} queued, ${enqueueFailed} failed, ${activeUsers.length} users`,
+		`[announcement] Fan-out complete for ${announcement.id}: ${enqueued} ${dispatchMode === "inline" ? "processed" : "queued"}, ${enqueueFailed} failed, ${activeUsers.length} users`,
 	);
 }
 
