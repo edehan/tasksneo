@@ -1194,7 +1194,11 @@ export async function listAdminAnnouncements(
 
 export async function createAdminAnnouncement(
   token: string,
-  input: { title: string; content: string },
+  input: {
+    title: string;
+    content: string;
+    publishMode?: "immediate" | "delayed";
+  },
 ): Promise<AdminAnnouncement> {
   return apiRequest<AdminAnnouncement>(
     "/admin/announcements",

@@ -514,7 +514,9 @@ export function AdminControlPlane() {
     }
   }
 
-  async function handleCreateAnnouncement() {
+  async function handleCreateAnnouncement(
+    publishMode: "immediate" | "delayed",
+  ) {
     if (!token) return;
     const title = announcementTitle.trim();
     const content = announcementContent.trim();
@@ -525,13 +527,20 @@ export function AdminControlPlane() {
 
     setAnnouncementCreating(true);
     try {
-      const created = await createAdminAnnouncement(token, { title, content });
+      const created = await createAdminAnnouncement(token, {
+        title,
+        content,
+        publishMode,
+      });
       setAnnouncements((prev) => [created, ...prev]);
       setAnnouncementTitle("");
       setAnnouncementContent("");
       setNotice({
         tone: "success",
-        message: `Announcement scheduled. Will publish in 10 minutes.`,
+        message:
+          publishMode === "immediate"
+            ? "Announcement published. Notifications are being sent now."
+            : "Announcement scheduled. Will publish in 10 minutes.",
       });
     } catch (error) {
       setNotice({
@@ -1063,8 +1072,8 @@ export function AdminControlPlane() {
               <CardTitle>Site Announcements</CardTitle>
               <CardDescription>
                 Broadcast notices to all users (maintenance, policy changes,
-                etc.). Announcements publish after a 10-minute delay, during
-                which you can cancel.
+                etc.). Choose immediate publish, or schedule with a 10-minute
+                delay during which you can cancel.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -1088,16 +1097,29 @@ export function AdminControlPlane() {
                     onChange={(e) => setAnnouncementContent(e.target.value)}
                   />
                 </div>
-                <Button
-                  onClick={() => void handleCreateAnnouncement()}
-                  disabled={announcementCreating}
-                >
-                  {announcementCreating && (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  )}
-                  <Megaphone className="h-4 w-4" />
-                  Schedule Announcement
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={() => void handleCreateAnnouncement("immediate")}
+                    disabled={announcementCreating}
+                  >
+                    {announcementCreating && (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    )}
+                    <Send className="h-4 w-4" />
+                    Publish Now
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => void handleCreateAnnouncement("delayed")}
+                    disabled={announcementCreating}
+                  >
+                    {announcementCreating && (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    )}
+                    <Megaphone className="h-4 w-4" />
+                    Schedule (10 min)
+                  </Button>
+                </div>
               </div>
 
               {announcements.length > 0 && (

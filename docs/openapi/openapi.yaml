@@ -854,6 +854,43 @@ components:
         name:
           type: string
 
+    SiteAnnouncement:
+      type: object
+      required:
+        - id
+        - title
+        - content
+        - status
+        - scheduledAt
+        - publishedAt
+        - cancelledAt
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        content:
+          type: string
+        status:
+          type: string
+          enum: [SCHEDULED, PUBLISHED, CANCELLED]
+        scheduledAt:
+          type: string
+          format: date-time
+        publishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        cancelledAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
     # ── Pagination ──
 
     PaginationMeta:
@@ -2888,6 +2925,88 @@ paths:
           description: 删除成功
         '404':
           description: 学校不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /admin/announcements:
+    get:
+      tags: [Admin]
+      summary: 列出站点公告
+      description: 返回最近 50 条站点公告（含 SCHEDULED / PUBLISHED / CANCELLED）。
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: 公告列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SiteAnnouncement'
+    post:
+      tags: [Admin]
+      summary: 创建站点公告
+      description: |
+        创建站点公告并向所有活跃用户扇出通知。
+        - `publishMode: "immediate"` 立即发布并同步扇出通知（不走延迟队列）。
+        - `publishMode: "delayed"`（默认）计划 10 分钟后发布，在此期间可取消。
+      security:
+        - adminAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, content]
+              properties:
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                content:
+                  type: string
+                  minLength: 1
+                  maxLength: 5000
+                publishMode:
+                  type: string
+                  enum: [immediate, delayed]
+                  default: delayed
+                  description: immediate 立即发布；delayed 延迟 10 分钟发布（可取消）。
+      responses:
+        '201':
+          description: 已创建
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiteAnnouncement'
+
+  /admin/announcements/{announcementId}/cancel:
+    parameters:
+      - name: announcementId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags: [Admin]
+      summary: 取消已计划的公告
+      description: 仅能取消 SCHEDULED 状态的公告；已发布或已取消的公告保持原状。
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: 已取消
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiteAnnouncement'
+        '404':
+          description: 公告不存在
           content:
             application/json:
               schema:
