@@ -727,7 +727,27 @@
     "daysAgo": "{count} 天前",
     "keyCreated": "密钥已创建",
     "keyCreatedHint": "请复制下方密钥——之后将无法再次查看。",
-    "createDescription": "为密钥命名，以便日后识别。"
+    "createDescription": "为密钥命名，以便日后识别。",
+    "installCommandsHeading": "使用新密钥安装",
+    "installCommandsHint": "选择下方任一客户端并执行命令。命令中已自动注入你的密钥。",
+    "guidesHeading": "连接你的 AI 工具",
+    "guidesIntro": "先创建并复制密钥，然后将下面任一安装命令粘贴到终端中执行。",
+    "claudeCode": {
+      "name": "Claude Code",
+      "tagline": "Anthropic 的终端 AI 编码助手",
+      "step1": "先创建并复制新密钥",
+      "step2": "将命令粘贴到终端执行",
+      "step3": "打开 Claude Code，即可使用 TaskFlow 工具"
+    },
+    "openClaw": {
+      "name": "OpenClaw",
+      "tagline": "开源自治 AI Agent",
+      "step1": "先创建并复制新密钥",
+      "step2": "将命令粘贴到终端执行",
+      "step3": "重启 OpenClaw 以加载 TaskFlow 服务器"
+    },
+    "steps": "步骤",
+    "command": "命令"
   },
   "batchDownloadDialog": {
     "title": "下载提交内容",

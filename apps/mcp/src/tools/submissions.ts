@@ -77,7 +77,7 @@ export function registerSubmissionTools(
 		"list_submissions",
 		{
 			description:
-				"List all student submissions for a task. Supports filtering by status. Returns student info alongside submission data.\n\nFor auto-grading: first call with filter='exemplary' to get the reference submission (score + reviewNote). If no exemplary submission exists, the user must set one manually in the web UI before batch grading can proceed. Then call with filter='ungraded' to get submissions needing grades.",
+				"List all student submissions for a task. Supports filtering by status. Returns student info alongside submission data. Each row includes an attachments array with fileKey values — use download_attachments to fetch download URLs for specific files, or pass the submissionId to download all of a student's files at once.\n\nFor auto-grading: first call with filter='exemplary' to get the reference submission (score + reviewNote). If no exemplary submission exists, the user must set one manually in the web UI before batch grading can proceed. Then call with filter='ungraded' to get submissions needing grades.",
 			inputSchema: {
 				taskId: z.string().uuid().describe("Task ID"),
 				filter: z
@@ -133,7 +133,7 @@ export function registerSubmissionTools(
 		"get_submission",
 		{
 			description:
-				"Get full details of a specific submission including content text and attachment metadata.",
+				"Get full details of a specific submission including content text and attachment metadata.\n\nAttachments include a fileKey for each file. To read student-uploaded files (for grading), call download_attachments with this submissionId + taskId — it returns presigned URLs for all files, which you can fetch with your HTTP download tools.",
 			inputSchema: {
 				taskId: z.string().uuid().describe("Task ID"),
 				submissionId: z.string().uuid().describe("Submission ID"),

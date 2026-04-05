@@ -54,7 +54,7 @@ export function registerTaskTools(
 		"get_task",
 		{
 			description:
-				"Get full details of a task including description, attachments metadata, and submission statistics.",
+				"Get full details of a task including description, attachments metadata, and submission statistics.\n\nAttachments in the response include a fileKey for each file. To download attachments, call the download_attachments tool with this taskId (fetches all task files at once) or with specific fileKeys[].",
 			inputSchema: {
 				taskId: z.string().uuid().describe("Task ID"),
 			},
