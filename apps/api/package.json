@@ -20,7 +20,7 @@
 		"jsonwebtoken": "^9.0.3",
 		"minio": "^8.0.7",
 		"nanoid": "^5.1.7",
-		"nodemailer": "^8.0.2",
+		"nodemailer": "^8.0.4",
 		"zod": "^4.3.6"
 	},
 	"devDependencies": {
