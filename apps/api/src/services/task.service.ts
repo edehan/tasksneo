@@ -1,6 +1,30 @@
 import { ClassRole, prisma } from "@taskflow/db";
 
+import { cacheDel, cacheGetOrSet, cacheKeys } from "../lib/cache.js";
 import { AppError } from "../lib/errors.js";
+
+const TASK_STATS_TTL_SECONDS = 60;
+
+interface TaskStats {
+	memberCount: number;
+	viewedCount: number;
+	submittedCount: number;
+}
+
+async function loadTaskStats(
+	taskId: string,
+	classId: string,
+): Promise<TaskStats> {
+	const [memberCount, viewedCount, submittedCount] = await Promise.all([
+		prisma.classMember.count({ where: { classId } }),
+		prisma.taskUserState.count({
+			where: { taskId, viewedAt: { not: null } },
+		}),
+		prisma.submission.count({ where: { taskId } }),
+	]);
+	return { memberCount, viewedCount, submittedCount };
+}
+
 import {
 	emailToAvatarHash,
 	toAttachmentMeta,
@@ -453,6 +477,13 @@ export async function findMyClassDraft(classId: string, userId: string) {
 export async function getTaskDetail(taskId: string, userId: string) {
 	const { task, classMembership } = await assertTaskAccess(taskId, userId);
 
+	const shouldLoadStats =
+		task.isPublished &&
+		!!classMembership &&
+		(classMembership.role === ClassRole.OWNER ||
+			classMembership.role === ClassRole.ADMIN) &&
+		!!task.classId;
+
 	const [userState, attachments, stats] = await Promise.all([
 		prisma.taskUserState.findUnique({
 			where: {
@@ -463,19 +494,12 @@ export async function getTaskDetail(taskId: string, userId: string) {
 			},
 		}),
 		prisma.attachment.findMany({ where: { taskId } }),
-		task.isPublished &&
-		classMembership &&
-		(classMembership.role === ClassRole.OWNER ||
-			classMembership.role === ClassRole.ADMIN)
-			? Promise.all([
-					prisma.classMember.count({
-						where: { classId: task.classId ?? undefined },
-					}),
-					prisma.taskUserState.count({
-						where: { taskId, viewedAt: { not: null } },
-					}),
-					prisma.submission.count({ where: { taskId } }),
-				])
+		shouldLoadStats && task.classId
+			? cacheGetOrSet<TaskStats>(
+					cacheKeys.taskStats(taskId),
+					TASK_STATS_TTL_SECONDS,
+					() => loadTaskStats(taskId, task.classId as string),
+				)
 			: null,
 	]);
 
@@ -483,14 +507,7 @@ export async function getTaskDetail(taskId: string, userId: string) {
 		...toTaskSummary(task, userState),
 		description: task.description,
 		attachments: attachments.map(toAttachmentMeta),
-		stats:
-			stats && task.classId
-				? {
-						memberCount: stats[0],
-						viewedCount: stats[1],
-						submittedCount: stats[2],
-					}
-				: null,
+		stats,
 	};
 }
 
@@ -641,7 +658,7 @@ export async function markTaskViewed(taskId: string, userId: string) {
 				tags: [],
 			},
 		});
-
+		await cacheDel(cacheKeys.taskStats(taskId));
 		return;
 	}
 
@@ -657,6 +674,7 @@ export async function markTaskViewed(taskId: string, userId: string) {
 				viewedAt: new Date(),
 			},
 		});
+		await cacheDel(cacheKeys.taskStats(taskId));
 	}
 }
 
@@ -870,6 +888,7 @@ async function ensureSubmission(taskId: string, userId: string) {
 			id: true,
 		},
 	});
+	await cacheDel(cacheKeys.taskStats(taskId));
 
 	return submission.id;
 }

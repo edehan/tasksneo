@@ -11,7 +11,11 @@ import { JoinClassDialog } from "@/features/classes/components/join-class-dialog
 import { FilterBar } from "@/features/dashboard/components/filter-bar";
 import { StatCards } from "@/features/dashboard/components/stat-cards";
 import { TaskDetailOverlay } from "@/features/tasks/components/task-detail-overlay";
-import { TaskGanttView } from "@/features/tasks/components/task-gantt-view";
+import {
+  DEFAULT_DAY_WIDTH,
+  GanttZoomSlider,
+  TaskGanttView,
+} from "@/features/tasks/components/task-gantt-view";
 import { TaskListView } from "@/features/tasks/components/task-list-view";
 import {
   type ViewMode,
@@ -20,8 +24,6 @@ import {
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
 import type { ClassSummary } from "@/lib/api";
 import { listClasses, listMyTasks } from "@/lib/api";
-
-type GanttRange = "week" | "month" | "2month";
 
 function deriveDisplayStatus(
   task: TaskWithClass,
@@ -43,7 +45,7 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<TaskWithClass | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("gantt");
-  const [ganttRange, setGanttRange] = useState<GanttRange>("month");
+  const [dayWidth, setDayWidth] = useState(DEFAULT_DAY_WIDTH);
   const [filters, setFilters] = useState({
     unfinished: false,
     notSubmitted: false,
@@ -202,30 +204,11 @@ export function DashboardPage() {
         />
       </div>
 
-      {/* Section heading + Gantt range toggle */}
+      {/* Section heading + zoom slider */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-heading-md">{t("allTasks")}</h2>
         {viewMode === "gantt" && (
-          <div className="flex items-center gap-1">
-            {(["week", "month", "2month"] as const).map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setGanttRange(r)}
-                className={`rounded-md px-3 py-1 text-xs transition-colors ${
-                  ganttRange === r
-                    ? "bg-foreground/10 font-medium text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {r === "week"
-                  ? t("range.week")
-                  : r === "month"
-                    ? t("range.month")
-                    : t("range.twoMonths")}
-              </button>
-            ))}
-          </div>
+          <GanttZoomSlider dayWidth={dayWidth} onDayWidthChange={setDayWidth} />
         )}
       </div>
 
@@ -234,7 +217,8 @@ export function DashboardPage() {
         {viewMode === "gantt" ? (
           <TaskGanttView
             tasks={filteredTasks}
-            ganttRange={ganttRange}
+            dayWidth={dayWidth}
+            onDayWidthChange={setDayWidth}
             onTaskClick={setSelectedTask}
           />
         ) : (

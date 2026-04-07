@@ -4,7 +4,7 @@ export default function TermsPage() {
       <h1 className="text-display mb-8">Terms of Service</h1>
       <div className="prose prose-stone dark:prose-invert space-y-4 text-sm text-muted-foreground">
         <p>
-          Effective date: March 28, 2026. These Terms of Service
+          Effective date: April 10, 2026. These Terms of Service
           (&quot;Terms&quot;) govern your access to and use of TaskFlow. By
           creating an account or using the service, you agree to these Terms.
         </p>
@@ -42,7 +42,19 @@ export default function TermsPage() {
           content only as needed to operate the service features you request.
         </p>
         <h2 className="text-heading-md !text-foreground">
-          5. AI Parsing Feature and Subprocessor
+          5. International Data Processing
+        </h2>
+        <p>
+          To improve system performance and response times, we may transfer,
+          store, and process your personal data outside the European Economic
+          Area (EEA).
+        </p>
+        <p>
+          If you do not agree to this change, you must delete your account and
+          stop using the service before April 10, 2026, 00:00 UTC.
+        </p>
+        <h2 className="text-heading-md !text-foreground">
+          6. AI Parsing Feature and Subprocessor
         </h2>
         <p>
           If you click the AI parsing feature while creating tasks, selected
@@ -51,23 +63,43 @@ export default function TermsPage() {
           personal information in this AI parsing payload.
         </p>
         <h2 className="text-heading-md !text-foreground">
-          6. Data Controls
+          7. Data Controls and Deletion Retention
         </h2>
         <p>
           You may export and delete your data through available product controls.
           Data deletion and lifecycle handling follow our platform rules and
           technical design.
         </p>
+        <p>
+          After account deletion, relevant data may remain in backup systems
+          for up to 30 days and will then be deleted on a rolling basis.
+        </p>
         <h2 className="text-heading-md !text-foreground">
-          7. Suspension and Termination
+          8. Content Removal for Legal and Terms Violations
+        </h2>
+        <p>
+          If user-uploaded content contains terrorist content, child sexual
+          abuse material (CSAM), or other content that violates applicable law
+          or these Terms, we may remove the relevant violating content.
+        </p>
+        <p>
+          For removed violating content, we do not provide restoration, export,
+          or re-download.
+        </p>
+        <h2 className="text-heading-md !text-foreground">
+          9. Suspension and Termination
         </h2>
         <p>
           We may update, suspend, or discontinue any part of the service at any
           time. We may suspend or terminate access for violations of these Terms
           or for security, legal, or operational reasons.
         </p>
+        <p>
+          We reserve the right to suspend or terminate accounts involved in
+          serious or repeated violations.
+        </p>
         <h2 className="text-heading-md !text-foreground">
-          8. Third-Party Services
+          10. Third-Party Services
         </h2>
         <p>
           The service may rely on third-party providers (for example, storage,
@@ -75,7 +107,7 @@ export default function TermsPage() {
           availability conditions.
         </p>
         <h2 className="text-heading-md !text-foreground">
-          9. Warranty Disclaimer
+          11. Warranty Disclaimer
         </h2>
         <p>
           To the maximum extent permitted by law, the service is provided
@@ -84,7 +116,7 @@ export default function TermsPage() {
           purpose, or non-infringement.
         </p>
         <h2 className="text-heading-md !text-foreground">
-          10. Limitation of Liability
+          12. Limitation of Liability
         </h2>
         <p>
           To the maximum extent permitted by law, we are not liable for
@@ -92,13 +124,13 @@ export default function TermsPage() {
           including loss of data, revenue, or business opportunities.
         </p>
         <h2 className="text-heading-md !text-foreground">
-          11. Changes to These Terms
+          13. Changes to These Terms
         </h2>
         <p>
           We may update these Terms from time to time. Material changes will be
           posted on this page with a revised effective date.
         </p>
-        <h2 className="text-heading-md !text-foreground">12. Contact</h2>
+        <h2 className="text-heading-md !text-foreground">14. Contact</h2>
         <p>
           For legal or privacy-related questions about these Terms, contact us
           at

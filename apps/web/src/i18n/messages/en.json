@@ -320,11 +320,6 @@
     "title": "Homepage",
     "subtitle": "Overview of all your tasks across every class.",
     "allTasks": "All Tasks",
-    "range": {
-      "week": "Week",
-      "month": "1 Month",
-      "twoMonths": "2 Months"
-    },
     "empty": {
       "title": "No tasks yet",
       "description": "Join a class or create one to get started with your tasks.",
@@ -338,11 +333,6 @@
     "settings": "Settings",
     "postTask": "Post Task",
     "classTasks": "{className} Tasks",
-    "range": {
-      "week": "Week",
-      "month": "1 Month",
-      "twoMonths": "2 Months"
-    },
     "empty": {
       "noTasks": "No tasks in this class yet.",
       "postFirstTask": "Post first task"

@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { AuthProvider, EmailTokenPurpose, prisma } from "@taskflow/db";
 import bcrypt from "bcryptjs";
 
+import { cacheDel, cacheKeys } from "../lib/cache.js";
 import { getJwtSecret } from "../lib/env.js";
 import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
@@ -328,6 +329,7 @@ export async function confirmEmailChange(
 	});
 
 	await consumeToken(row.id, row.email, EmailTokenPurpose.EMAIL_CHANGE);
+	await cacheDel(cacheKeys.authUser(row.userId));
 
 	return toUserProfile(user);
 }

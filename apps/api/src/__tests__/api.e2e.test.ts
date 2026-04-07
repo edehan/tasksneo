@@ -93,6 +93,55 @@ describe("TaskFlow API e2e", () => {
 		expect(decryptConfigValue(encrypted)).toBe("preview-pass-123");
 	});
 
+	it("rejects delayed announcements when notification worker is disabled", async () => {
+		const adminToken = process.env.ADMIN_TOKEN ?? "test-admin-token";
+		const res = await requestJson(app, "/admin/announcements", {
+			method: "POST",
+			headers: { Authorization: `Bearer ${adminToken}` },
+			body: JSON.stringify({
+				title: "Maintenance",
+				content: "Scheduled update",
+				publishMode: "delayed",
+			}),
+		});
+
+		expect(res.response.status).toBe(503);
+		expect((res.body as { code?: string })?.code).toBe(
+			"NOTIFICATION_WORKER_DISABLED",
+		);
+	});
+
+	it("processes immediate announcements inline when notification worker is disabled", async () => {
+		const adminToken = process.env.ADMIN_TOKEN ?? "test-admin-token";
+		const user = await prisma.user.create({
+			data: {
+				email: uniqueEmail("announcement-inline"),
+				nickname: "Announcement Inline",
+			},
+		});
+
+		const res = await requestJson(app, "/admin/announcements", {
+			method: "POST",
+			headers: { Authorization: `Bearer ${adminToken}` },
+			body: JSON.stringify({
+				title: "Immediate notice",
+				content: "Please read",
+				publishMode: "immediate",
+			}),
+		});
+
+		expect(res.response.status).toBe(201);
+
+		const jobs = await prisma.notificationJob.findMany({
+			where: { userId: user.id },
+			orderBy: { createdAt: "desc" },
+			take: 5,
+		});
+
+		expect(jobs.length).toBeGreaterThan(0);
+		expect(jobs[0]?.status).toBe("FAILED");
+	});
+
 	it("covers all implemented endpoints success and key failures", async () => {
 		const adminToken = process.env.ADMIN_TOKEN ?? "test-admin-token";
 

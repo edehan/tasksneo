@@ -66,3 +66,123 @@ export function sortTasksByDue<T extends TaskSummary>(tasks: T[]): T[] {
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 }
+
+// ─── Blocked-by grouping ────────────────────────────────────────────────────
+
+export interface BlockedByConnector {
+  fromId: string;
+  toId: string;
+}
+
+export interface BlockedBySortResult<T extends TaskSummary> {
+  tasks: T[];
+  connectors: BlockedByConnector[];
+}
+
+/**
+ * Groups tasks by their blockedBy relationships and sorts them so that
+ * connected tasks appear together. Only unsubmitted tasks participate in
+ * grouping; submitted tasks are appended at the end sorted by due date.
+ *
+ * Returns the sorted task list and a list of connectors to draw.
+ */
+export function sortTasksWithBlockedBy<T extends TaskSummary>(
+  tasks: T[],
+): BlockedBySortResult<T> {
+  const taskMap = new Map<string, T>();
+  for (const task of tasks) taskMap.set(task.id, task);
+
+  // Split into submitted (excluded from grouping) and active
+  const submitted: T[] = [];
+  const active: T[] = [];
+  for (const task of tasks) {
+    if (task.userState?.submittedAt) {
+      submitted.push(task);
+    } else {
+      active.push(task);
+    }
+  }
+
+  // Build adjacency: undirected edges between active tasks with blockedBy links
+  const adj = new Map<string, Set<string>>();
+  for (const task of active) {
+    if (!adj.has(task.id)) adj.set(task.id, new Set());
+    for (const depId of task.blockedBy) {
+      const dep = taskMap.get(depId);
+      if (!dep || dep.userState?.submittedAt) continue;
+      if (!adj.has(depId)) adj.set(depId, new Set());
+      const taskAdj = adj.get(task.id);
+      const depAdj = adj.get(depId);
+      if (taskAdj) taskAdj.add(depId);
+      if (depAdj) depAdj.add(task.id);
+    }
+  }
+
+  // Find connected components via BFS
+  const visited = new Set<string>();
+  const groups: T[][] = [];
+
+  for (const task of active) {
+    if (visited.has(task.id)) continue;
+    const group: T[] = [];
+    const queue = [task.id];
+    visited.add(task.id);
+
+    while (queue.length > 0) {
+      const id = queue.shift();
+      if (id === undefined) break;
+      const t = taskMap.get(id);
+      if (t && !t.userState?.submittedAt) group.push(t);
+
+      const neighbors = adj.get(id);
+      if (neighbors) {
+        for (const nid of neighbors) {
+          if (!visited.has(nid)) {
+            visited.add(nid);
+            queue.push(nid);
+          }
+        }
+      }
+    }
+
+    groups.push(group);
+  }
+
+  // Sort each group internally by due date (earliest first)
+  const byDue = (a: T, b: T) => {
+    if (a.dueAt && b.dueAt)
+      return new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime();
+    if (a.dueAt) return -1;
+    if (b.dueAt) return 1;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  };
+  for (const g of groups) g.sort(byDue);
+
+  // Sort groups by their earliest due date
+  const groupKey = (g: T[]): number => {
+    for (const t of g) {
+      if (t.dueAt) return new Date(t.dueAt).getTime();
+    }
+    return Number.MAX_SAFE_INTEGER;
+  };
+  groups.sort((a, b) => groupKey(a) - groupKey(b));
+
+  // Flatten groups + append submitted
+  const sorted = groups.flat();
+  sorted.push(...sortTasksByDue(submitted));
+
+  // Build connectors: directed edges from prerequisite → dependent
+  const sortedIndex = new Map<string, number>();
+  for (let i = 0; i < sorted.length; i++) sortedIndex.set(sorted[i].id, i);
+
+  const connectors: BlockedByConnector[] = [];
+  for (const task of active) {
+    for (const depId of task.blockedBy) {
+      if (sortedIndex.has(depId) && sortedIndex.has(task.id)) {
+        connectors.push({ fromId: depId, toId: task.id });
+      }
+    }
+  }
+
+  return { tasks: sorted, connectors };
+}

@@ -1,6 +1,12 @@
 import { randomBytes } from "node:crypto";
 import { ClassRole, prisma } from "@taskflow/db";
 
+import {
+	cacheDel,
+	cacheDelPattern,
+	cacheGetOrSet,
+	cacheKeys,
+} from "../lib/cache.js";
 import { AppError } from "../lib/errors.js";
 import { toClassMember, toClassSummary } from "../lib/http.js";
 import { removeObject } from "../lib/storage.js";
@@ -199,6 +205,10 @@ export async function joinClass(userId: string, inviteCode: string) {
 			role: ClassRole.MEMBER,
 		},
 	});
+	await cacheDel(
+		cacheKeys.membership(targetClass.id, userId),
+		cacheKeys.classDetail(targetClass.id),
+	);
 
 	const joinedClass = await getClassById(targetClass.id);
 
@@ -209,15 +219,56 @@ export async function joinClass(userId: string, inviteCode: string) {
 	return toClassSummary(joinedClass, ClassRole.MEMBER);
 }
 
+const CLASS_DETAIL_TTL_SECONDS = 300;
+
+interface ClassDetailCacheEntry {
+	id: string;
+	name: string;
+	description: string | null;
+	color: string;
+	schoolId: string | null;
+	ownerId: string;
+	inviteCode: string | null;
+	isPersonal: boolean;
+	createdAt: string;
+	_count: { members: number };
+}
+
 export async function getClassDetail(classId: string, userId: string) {
 	const membership = await getMembershipOrThrow(classId, userId);
-	const classInfo = await getClassById(classId);
+	const cached = await cacheGetOrSet<ClassDetailCacheEntry | null>(
+		cacheKeys.classDetail(classId),
+		CLASS_DETAIL_TTL_SECONDS,
+		async () => {
+			const row = await getClassById(classId);
+			if (!row) return null;
+			return {
+				id: row.id,
+				name: row.name,
+				description: row.description,
+				color: row.color,
+				schoolId: row.schoolId,
+				ownerId: row.ownerId,
+				inviteCode: row.inviteCode,
+				isPersonal: row.isPersonal,
+				createdAt: row.createdAt.toISOString(),
+				_count: row._count,
+			};
+		},
+	);
 
-	if (!classInfo) {
+	if (!cached) {
 		throw new AppError(404, "CLASS_NOT_FOUND", "Class not found");
 	}
 
-	return toClassSummary(classInfo, membership.role);
+	// toClassSummary accepts Date | string for createdAt via the http helper.
+	return toClassSummary(
+		{
+			...cached,
+			createdAt: new Date(cached.createdAt),
+		},
+		membership.role,
+	);
 }
 
 export async function updateClass(
@@ -243,6 +294,7 @@ export async function updateClass(
 			},
 		},
 	});
+	await cacheDel(cacheKeys.classDetail(classId));
 
 	return toClassSummary(updatedClass, membership.role);
 }
@@ -265,6 +317,7 @@ export async function refreshInviteCode(classId: string, userId: string) {
 		where: { id: classId },
 		data: { inviteCode },
 	});
+	await cacheDel(cacheKeys.classDetail(classId));
 
 	return {
 		inviteCode: updatedClass.inviteCode,
@@ -326,6 +379,9 @@ export async function transferOwnership(
 			},
 		});
 	});
+	// Owner change affects ownerId in every cached membership for this class.
+	await cacheDelPattern(cacheKeys.membershipClassPattern(classId));
+	await cacheDel(cacheKeys.classDetail(classId));
 
 	const updatedClass = await getClassById(classId);
 
@@ -414,6 +470,7 @@ export async function updateMemberRole(
 			},
 		},
 	});
+	await cacheDel(cacheKeys.membership(classId, targetUserId));
 
 	return toClassMember(updatedMembership);
 }
@@ -472,6 +529,10 @@ export async function removeMember(
 			},
 		},
 	});
+	await cacheDel(
+		cacheKeys.membership(classId, targetUserId),
+		cacheKeys.classDetail(classId),
+	);
 }
 
 export async function deleteClass(classId: string, userId: string) {
@@ -520,4 +581,6 @@ export async function deleteClass(classId: string, userId: string) {
 	await prisma.attachment.deleteMany({ where: { classId } });
 
 	await prisma.class.delete({ where: { id: classId } });
+	await cacheDelPattern(cacheKeys.membershipClassPattern(classId));
+	await cacheDel(cacheKeys.classDetail(classId));
 }

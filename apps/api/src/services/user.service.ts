@@ -1,6 +1,7 @@
 import { AuthProvider, NotifChannel, prisma } from "@taskflow/db";
 import bcrypt from "bcryptjs";
 
+import { cacheDel, cacheDelPattern, cacheKeys } from "../lib/cache.js";
 import { AppError } from "../lib/errors.js";
 import { toAttachmentMeta, toUserProfile } from "../lib/http.js";
 import { removeObject } from "../lib/storage.js";
@@ -187,7 +188,7 @@ export async function upsertMyNotificationPref(
 		address = user?.email ?? input.address;
 	}
 
-	return prisma.userNotificationPref.upsert({
+	const pref = await prisma.userNotificationPref.upsert({
 		where: {
 			userId_channel: {
 				userId,
@@ -205,6 +206,8 @@ export async function upsertMyNotificationPref(
 			isEnabled: input.isEnabled ?? true,
 		},
 	});
+	await cacheDel(cacheKeys.notifPrefs(userId));
+	return pref;
 }
 
 export async function uploadMyAvatar(
@@ -266,6 +269,7 @@ async function deleteUserSubmissions(userId: string) {
 	for (const submission of submissions) {
 		await removeSubmissionAttachments(submission.id);
 		await prisma.submission.delete({ where: { id: submission.id } });
+		await cacheDel(cacheKeys.taskStats(submission.taskId));
 		await tryHardDeleteOrphanTask(submission.taskId);
 	}
 }
@@ -302,6 +306,8 @@ async function deletePersonalClass(userId: string) {
 	}
 
 	await prisma.class.delete({ where: { id: personalClass.id } });
+	await cacheDelPattern(cacheKeys.membershipClassPattern(personalClass.id));
+	await cacheDel(cacheKeys.classDetail(personalClass.id));
 }
 
 export async function deleteMyAccount(userId: string) {
@@ -328,6 +334,7 @@ export async function deleteMyAccount(userId: string) {
 	await deletePersonalClass(userId);
 	await removeUserAvatarAttachments(userId);
 	await prisma.user.delete({ where: { id: userId } });
+	await cacheDel(cacheKeys.authUser(userId), cacheKeys.notifPrefs(userId));
 }
 
 export async function adminDeleteUser(userId: string) {
@@ -336,4 +343,5 @@ export async function adminDeleteUser(userId: string) {
 	await removeUserAvatarAttachments(userId);
 
 	await prisma.user.delete({ where: { id: userId } });
+	await cacheDel(cacheKeys.authUser(userId), cacheKeys.notifPrefs(userId));
 }

@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
+import { getCacheStats } from "./lib/cache.js";
 import { errorHandler } from "./middleware/error.js";
 import { adminRouter } from "./routes/admin.js";
 import { authRouter } from "./routes/auth.js";
@@ -48,6 +49,7 @@ export function createApp(options?: { startWorker?: boolean }) {
 	);
 
 	app.get("/health", (c) => c.json({ status: "ok" }, 200));
+	app.get("/health/cache", (c) => c.json(getCacheStats(), 200));
 	app.route("/auth", authRouter);
 	app.route("/users", usersRouter);
 	app.route("/schools", schoolsRouter);
