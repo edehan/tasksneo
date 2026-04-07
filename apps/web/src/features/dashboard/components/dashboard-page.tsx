@@ -11,7 +11,11 @@ import { JoinClassDialog } from "@/features/classes/components/join-class-dialog
 import { FilterBar } from "@/features/dashboard/components/filter-bar";
 import { StatCards } from "@/features/dashboard/components/stat-cards";
 import { TaskDetailOverlay } from "@/features/tasks/components/task-detail-overlay";
-import { TaskGanttView } from "@/features/tasks/components/task-gantt-view";
+import {
+  DEFAULT_DAY_WIDTH,
+  GanttZoomSlider,
+  TaskGanttView,
+} from "@/features/tasks/components/task-gantt-view";
 import { TaskListView } from "@/features/tasks/components/task-list-view";
 import {
   type ViewMode,
@@ -41,6 +45,7 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<TaskWithClass | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("gantt");
+  const [dayWidth, setDayWidth] = useState(DEFAULT_DAY_WIDTH);
   const [filters, setFilters] = useState({
     unfinished: false,
     notSubmitted: false,
@@ -199,9 +204,12 @@ export function DashboardPage() {
         />
       </div>
 
-      {/* Section heading */}
+      {/* Section heading + zoom slider */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-heading-md">{t("allTasks")}</h2>
+        {viewMode === "gantt" && (
+          <GanttZoomSlider dayWidth={dayWidth} onDayWidthChange={setDayWidth} />
+        )}
       </div>
 
       {/* Task views */}
@@ -209,6 +217,8 @@ export function DashboardPage() {
         {viewMode === "gantt" ? (
           <TaskGanttView
             tasks={filteredTasks}
+            dayWidth={dayWidth}
+            onDayWidthChange={setDayWidth}
             onTaskClick={setSelectedTask}
           />
         ) : (

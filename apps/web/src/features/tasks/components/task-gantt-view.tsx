@@ -8,7 +8,6 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
-  useState,
 } from "react";
 
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -29,7 +28,7 @@ const LABEL_WIDTH = 210;
 
 const MIN_DAY_WIDTH = 8;
 const MAX_DAY_WIDTH = 120;
-const DEFAULT_DAY_WIDTH = 22;
+export const DEFAULT_DAY_WIDTH = 22;
 
 const MIN_SPAN_DAYS = 90;
 const PADDING_DAYS = 14;
@@ -38,6 +37,8 @@ const PADDING_DAYS = 14;
 
 interface TaskGanttViewProps {
   tasks: TaskWithClass[];
+  dayWidth: number;
+  onDayWidthChange: (width: number) => void;
   onTaskClick?: (task: TaskWithClass) => void;
 }
 
@@ -240,14 +241,42 @@ function ConnectorLines({
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function TaskGanttView({ tasks, onTaskClick }: TaskGanttViewProps) {
+// ─── Zoom Slider (rendered by parent) ────────────────────────────────────────
+
+export function GanttZoomSlider({
+  dayWidth,
+  onDayWidthChange,
+}: {
+  dayWidth: number;
+  onDayWidthChange: (width: number) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <ZoomOut size={14} className="shrink-0 text-muted-foreground" />
+      <Slider
+        min={MIN_DAY_WIDTH}
+        max={MAX_DAY_WIDTH}
+        step={1}
+        value={[dayWidth]}
+        onValueChange={([v]) => onDayWidthChange(v)}
+        className="w-28"
+      />
+      <ZoomIn size={14} className="shrink-0 text-muted-foreground" />
+    </div>
+  );
+}
+
+export function TaskGanttView({
+  tasks,
+  dayWidth,
+  onDayWidthChange,
+  onTaskClick,
+}: TaskGanttViewProps) {
   const t = useTranslations("taskGanttView");
   const locale = useLocale();
   const scrollRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
 
-  // Continuous zoom state
-  const [dayWidth, setDayWidth] = useState(DEFAULT_DAY_WIDTH);
   const dayWidthRef = useRef(dayWidth);
   useEffect(() => {
     dayWidthRef.current = dayWidth;
@@ -328,7 +357,7 @@ export function TaskGanttView({ tasks, onTaskClick }: TaskGanttViewProps) {
         );
 
         zoomIntentRef.current = { dayUnderCursor, cursorXInViewport };
-        setDayWidth(next);
+        onDayWidthChange(next);
       } else if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
         // Horizontal scroll from vertical wheel
         e.preventDefault();
@@ -338,7 +367,7 @@ export function TaskGanttView({ tasks, onTaskClick }: TaskGanttViewProps) {
 
     viewport.addEventListener("wheel", onWheel, { passive: false });
     return () => viewport.removeEventListener("wheel", onWheel);
-  }, [getViewport]);
+  }, [getViewport, onDayWidthChange]);
 
   // Auto-scroll to today on mount only
   const hasAutoScrolled = useRef(false);
@@ -366,24 +395,7 @@ export function TaskGanttView({ tasks, onTaskClick }: TaskGanttViewProps) {
   }
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-lg border">
-      {/* Zoom toolbar (hidden on mobile) */}
-      {!isMobile && (
-        <div className="flex items-center justify-end gap-2 border-b px-3 py-1.5">
-          <ZoomOut size={14} className="shrink-0 text-muted-foreground" />
-          <Slider
-            min={MIN_DAY_WIDTH}
-            max={MAX_DAY_WIDTH}
-            step={1}
-            value={[dayWidth]}
-            onValueChange={([v]) => setDayWidth(v)}
-            className="w-28"
-          />
-          <ZoomIn size={14} className="shrink-0 text-muted-foreground" />
-        </div>
-      )}
-
-      <div className="flex overflow-hidden">
+    <div className="flex overflow-hidden rounded-lg border">
         {/* Left: pinned task column (hidden on mobile) */}
         {!isMobile && (
           <div
@@ -651,7 +663,6 @@ export function TaskGanttView({ tasks, onTaskClick }: TaskGanttViewProps) {
           </div>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
-      </div>
     </div>
   );
 }
