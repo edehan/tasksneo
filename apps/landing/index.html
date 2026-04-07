@@ -3,136 +3,330 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TaskFlow | 班级任务协作新秩序</title>
+    <title>TaskNeo | 班级协作的智能控制台</title>
     <meta
       name="description"
-      content="TaskFlow 是面向教师与学生的任务协作平台，让任务发布、提交、反馈与通知形成完整闭环。"
+      content="TaskNeo 让 AI 解析、班级切换、甘特图编排和 MCP 工作流在一个协作系统内闭环运行。"
     />
   </head>
   <body>
     <div class="bg-layer bg-layer-ink"></div>
+    <div class="bg-layer bg-layer-wave"></div>
     <div class="bg-layer bg-layer-glow"></div>
     <div class="grain"></div>
 
     <header class="topbar" data-reveal>
       <a class="brand" href="#top">
         <span class="brand-dot" aria-hidden="true"></span>
-        <span class="brand-mark">TaskFlow</span>
+        <span class="brand-mark">TaskNeo</span>
       </a>
-      <nav class="topbar-nav">
-        <a href="#story">理念</a>
-        <a href="#moments">体验</a>
+      <nav class="topbar-nav" aria-label="主导航">
+        <a href="#parse">AI解析</a>
+        <a href="#classes">班级主题</a>
+        <a href="#gantt">甘特图</a>
+        <a href="#mcp">MCP</a>
         <a href="#cta">开始</a>
       </nav>
     </header>
 
     <main id="top">
-      <section class="hero">
+      <section class="hero" data-scroll-zone>
         <div class="hero-copy" data-reveal>
-          <p class="kicker">FOR CLASSROOM TEAMS</p>
-          <h1>把教学任务，从“分发消息”升级成“可执行流程”。</h1>
+          <p class="kicker">CLASSROOM OPERATION SYSTEM</p>
+          <h1>把任务管理升级为<br />AI 驱动的班级协作编排。</h1>
           <p class="hero-lead">
-            从发布到提交，从提醒到反馈，TaskFlow
-            把每一个截止时间都变成可追踪、可协作、可交付的节奏。
+            TaskNeo 将任务发布、进度跟踪、跨助手协作与流程自动化合为一个工作台。
+            从一句自然语言开始，到可执行的课内交付闭环结束。
           </p>
           <div class="hero-actions">
-            <a class="btn btn-primary" data-target="login" href="/login">
-              进入登录
-            </a>
-            <a class="btn btn-ghost" data-target="register" href="/register">
-              立即注册
-            </a>
+            <a class="btn btn-primary" data-target="login" href="/login">进入登录</a>
+            <a class="btn btn-ghost" data-target="register" href="/register">立即注册</a>
           </div>
+          <p class="hero-meta">
+            当前演示班级：<span id="hero-class-tag">高等数学 A 班</span>
+          </p>
         </div>
 
         <div class="hero-stage" data-reveal>
-          <article class="panel panel-main" data-parallax data-depth="0.9">
-            <p class="panel-label">发布</p>
-            <h2>一句自然语言，生成结构化任务。</h2>
-            <p>
-              教师描述目标后即可补全起止时间、任务正文与附件，发布效率显著提升。
+          <article class="hero-console" data-parallax data-depth="0.8">
+            <p class="panel-label">AI 解析流</p>
+            <p class="console-input" id="hero-parse-input">
+              “下周四前提交微积分作业，附PDF和推导过程，满分100，迟交扣10%”
+            </p>
+            <div class="console-grid">
+              <div>
+                <p>班级</p>
+                <strong id="hero-parse-class">高等数学 A 班</strong>
+              </div>
+              <div>
+                <p>截止</p>
+                <strong id="hero-parse-deadline">周四 23:59</strong>
+              </div>
+              <div>
+                <p>交付</p>
+                <strong id="hero-parse-deliverable">PDF + 手写推导</strong>
+              </div>
+              <div>
+                <p>评分</p>
+                <strong id="hero-parse-rubric">满分 100 / 迟交 -10%</strong>
+              </div>
+            </div>
+          </article>
+
+          <article class="hero-pulse" data-parallax data-depth="0.42">
+            <p class="panel-label">主题联动</p>
+            <h2 id="hero-theme-title">班级切换即主题切换</h2>
+            <p id="hero-theme-note">
+              切到不同班级，按钮、高光、甘特条和工作流节点都会同步换色。
             </p>
           </article>
-          <article class="panel panel-side panel-side-a" data-parallax data-depth="0.55">
-            <p class="panel-label">收集</p>
-            <h3>多文件提交与统一收敛</h3>
-          </article>
-          <article class="panel panel-side panel-side-b" data-parallax data-depth="0.4">
-            <p class="panel-label">反馈</p>
-            <h3>通知、评分、导出一气呵成</h3>
-          </article>
-          <div class="halo halo-a" aria-hidden="true"></div>
-          <div class="halo halo-b" aria-hidden="true"></div>
+
+          <div class="signal-lines" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
         </div>
       </section>
 
-      <section id="story" class="story">
-        <div class="story-head" data-reveal>
-          <p class="kicker">BRAND STORY</p>
-          <h2>不是“任务清单”，而是“教学编排”。</h2>
+      <section id="parse" class="section parse-zone" data-scroll-zone>
+        <div class="section-head" data-reveal>
+          <p class="kicker">FEATURE 01 · AI PARSING</p>
+          <h2>自然语言任务，一次转成结构化执行清单。</h2>
         </div>
-        <div class="story-grid">
-          <article class="story-card" data-reveal>
-            <p class="story-index">01</p>
-            <h3>老师发布任务，不再手动拼信息。</h3>
-            <p>生成任务结构与时间线，减少重复操作，把时间还给教学本身。</p>
+
+        <div class="parse-layout">
+          <article class="parse-card parse-source" data-reveal>
+            <p class="panel-label">老师输入</p>
+            <h3>像说话一样发布任务</h3>
+            <p id="parse-prompt" class="parse-prompt"></p>
+            <ul class="parse-tips">
+              <li>自动提取截止时间、附件要求与评分规则</li>
+              <li>自动识别班级上下文：<span id="parse-source-class"></span></li>
+              <li>可直接生成通知 + 任务详情 + 甘特条</li>
+            </ul>
           </article>
-          <article class="story-card" data-reveal>
-            <p class="story-index">02</p>
-            <h3>学生看到的，是更清晰的行动路径。</h3>
-            <p>任务要求、附件和截止时间集中呈现，提交过程更加确定。</p>
-          </article>
-          <article class="story-card" data-reveal>
-            <p class="story-index">03</p>
-            <h3>班级协作从“消息流”转向“结果流”。</h3>
-            <p>提醒、评分、导出整合在同一个节奏中，管理成本更低。</p>
+
+          <article class="parse-card parse-output" data-reveal>
+            <p class="panel-label">解析结果</p>
+            <h3>关键字段即刻落位</h3>
+            <div class="parse-fields">
+              <div>
+                <p>班级</p>
+                <strong id="parse-output-class"></strong>
+              </div>
+              <div>
+                <p>截止时间</p>
+                <strong id="parse-output-deadline"></strong>
+              </div>
+              <div>
+                <p>交付物</p>
+                <strong id="parse-output-deliverable"></strong>
+              </div>
+              <div>
+                <p>评分策略</p>
+                <strong id="parse-output-rubric"></strong>
+              </div>
+            </div>
+            <p id="parse-output-mention" class="parse-mention"></p>
           </article>
         </div>
       </section>
 
-      <section id="moments" class="moments">
-        <div class="moments-track" data-reveal>
-          <p>发布更快</p>
-          <p>提交更稳</p>
-          <p>反馈更清晰</p>
-          <p>班级协作更可控</p>
-          <p>发布更快</p>
-          <p>提交更稳</p>
+      <section id="classes" class="section class-zone" data-scroll-zone>
+        <div class="section-head" data-reveal>
+          <p class="kicker">FEATURE 02 · CLASS SWITCHING</p>
+          <h2>班级切换不只是筛选，而是整套视觉语义的切换。</h2>
+        </div>
+
+        <div class="class-switch" data-reveal>
+          <button type="button" class="class-chip is-active" data-class="math">高等数学 A 班</button>
+          <button type="button" class="class-chip" data-class="physics">物理实验班</button>
+          <button type="button" class="class-chip" data-class="cs">软件工程实训班</button>
+          <button type="button" class="class-chip" data-class="design">视觉设计工作坊</button>
+        </div>
+
+        <div class="class-stage" data-reveal>
+          <article class="class-story">
+            <p class="panel-label">当前策略</p>
+            <h3 id="class-stage-title">高等数学 A 班 · 紧凑作业节奏</h3>
+            <p id="class-stage-desc">
+              解析模板偏向公式与证明结构，提醒节奏在截止前 48h、12h、2h 自动触发。
+            </p>
+            <div class="class-metrics">
+              <div>
+                <p>活跃任务</p>
+                <strong id="metric-active">12</strong>
+              </div>
+              <div>
+                <p>自动规则</p>
+                <strong id="metric-rules">9</strong>
+              </div>
+              <div>
+                <p>协作助手</p>
+                <strong id="metric-agents">34</strong>
+              </div>
+            </div>
+          </article>
+
+          <article class="class-preview" aria-live="polite">
+            <p class="panel-label">主题预览</p>
+            <h3 id="class-preview-title">高等数学 A 班</h3>
+            <p id="class-preview-subtitle">风格关键词：理性、克制、稳态推进</p>
+            <div class="preview-swatches">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <p class="preview-note" id="class-preview-note"></p>
+          </article>
         </div>
       </section>
 
-      <section class="value-wall">
-        <article class="value-card" data-reveal>
-          <p class="value-role">教师视角</p>
-          <h3>任务规模扩大，管理复杂度不再线性增长。</h3>
-        </article>
-        <article class="value-card" data-reveal>
-          <p class="value-role">学生视角</p>
-          <h3>每个截止前的关键动作，清楚可见。</h3>
-        </article>
-        <article class="value-card" data-reveal>
-          <p class="value-role">班级视角</p>
-          <h3>协作信息有组织，交付结果可沉淀。</h3>
-        </article>
+      <section id="gantt" class="section gantt-zone" data-scroll-zone>
+        <div class="section-head" data-reveal>
+          <p class="kicker">FEATURE 03 · GANTT VIEW</p>
+          <h2>甘特图不只是展示时间，更是班级执行节拍器。</h2>
+        </div>
+
+        <div class="gantt-shell" data-reveal>
+          <div class="gantt-meta">
+            <p>
+              班级：<strong id="gantt-class-name">高等数学 A 班</strong>
+            </p>
+            <p>
+              时间范围：<strong>4 月 7 日 - 4 月 26 日</strong>
+            </p>
+          </div>
+
+          <div class="gantt-board">
+            <div class="gantt-board-inner" id="gantt-board-inner">
+              <div class="gantt-days" id="gantt-days" aria-hidden="true"></div>
+              <div class="gantt-rows" id="gantt-rows"></div>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <section id="cta" class="final-cta" data-reveal>
-        <p class="kicker">READY TO START</p>
-        <h2>给班级一个更有秩序的工作台。</h2>
-        <p>现在开始，把教学任务从“通知”升级成“协作系统”。</p>
+      <section id="mcp" class="section mcp-zone" data-scroll-zone>
+        <div class="section-head" data-reveal>
+          <p class="kicker">FEATURE 04 · MCP WORKFLOW</p>
+          <h2>通过 MCP 协议接入成百上千个 AI 助手，自定义你的教学工作流。</h2>
+        </div>
+
+        <div class="mcp-layout">
+          <article class="mcp-map" data-reveal>
+            <p class="panel-label">CONNECTIVITY MAP</p>
+            <div class="mcp-map-stage">
+              <div class="mcp-hub">
+                <strong>TaskNeo</strong>
+                <span>MCP Gateway</span>
+              </div>
+              <span class="mcp-spoke spoke-1" aria-hidden="true"></span>
+              <span class="mcp-spoke spoke-2" aria-hidden="true"></span>
+              <span class="mcp-spoke spoke-3" aria-hidden="true"></span>
+              <span class="mcp-spoke spoke-4" aria-hidden="true"></span>
+              <span class="mcp-spoke spoke-5" aria-hidden="true"></span>
+              <span class="mcp-spoke spoke-6" aria-hidden="true"></span>
+              <span class="mcp-spoke spoke-7" aria-hidden="true"></span>
+
+              <div class="mcp-node node-claude">
+                <img
+                  src="https://cdn.simpleicons.org/anthropic/141413"
+                  alt="Claude Code"
+                  loading="lazy"
+                />
+                <span>Claude Code</span>
+              </div>
+              <div class="mcp-node node-feishu">
+                <img src="https://cdn.simpleicons.org/lark/2457F5" alt="飞书" loading="lazy" />
+                <span>飞书</span>
+              </div>
+              <div class="mcp-node node-evernote">
+                <img
+                  src="https://cdn.simpleicons.org/evernote/00A82D"
+                  alt="印象笔记"
+                  loading="lazy"
+                />
+                <span>印象笔记</span>
+              </div>
+              <div class="mcp-node node-notion">
+                <img src="https://cdn.simpleicons.org/notion/111111" alt="Notion" loading="lazy" />
+                <span>Notion</span>
+              </div>
+              <div class="mcp-node node-dingtalk">
+                <img
+                  src="https://cdn.simpleicons.org/dingtalk/0E74E7"
+                  alt="钉钉"
+                  loading="lazy"
+                />
+                <span>钉钉</span>
+              </div>
+              <div class="mcp-node node-gmail">
+                <img src="https://cdn.simpleicons.org/gmail/EA4335" alt="Gmail" loading="lazy" />
+                <span>Gmail</span>
+              </div>
+              <div class="mcp-node node-slack">
+                <img src="https://cdn.simpleicons.org/slack/4A154B" alt="Slack" loading="lazy" />
+                <span>Slack</span>
+              </div>
+            </div>
+            <p class="mcp-map-note" id="mcp-map-note">
+              当前已为 高等数学 A 班 配置 34 个协作助手节点。
+            </p>
+          </article>
+
+          <div class="mcp-cards" data-reveal>
+            <article class="mcp-card">
+              <p class="panel-label">01 · CONNECT</p>
+              <h3>统一接入</h3>
+              <p>把课堂内外工具统一接到 TaskNeo 的 MCP 接口层，不再重复配置。</p>
+            </article>
+            <article class="mcp-card">
+              <p class="panel-label">02 · CONTEXT</p>
+              <h3>上下文拼接</h3>
+              <p>自动关联班级、作业、截止时间与历史反馈，减少助手“失忆”。</p>
+            </article>
+            <article class="mcp-card">
+              <p class="panel-label">03 · ORCHESTRATE</p>
+              <h3>多助手编排</h3>
+              <p>支持并行、串行、条件分流和人工审批节点，流程可以像电路一样组合。</p>
+            </article>
+            <article class="mcp-card">
+              <p class="panel-label">04 · EXECUTE</p>
+              <h3>批量执行</h3>
+              <p>一次触发，自动写回任务状态、消息通知和甘特进度，流程无需手动同步。</p>
+            </article>
+            <article class="mcp-card">
+              <p class="panel-label">05 · GOVERN</p>
+              <h3>审计留痕</h3>
+              <p>每次助手调用都可追踪来源、输入输出和版本，方便复盘和教学治理。</p>
+            </article>
+            <article class="mcp-card">
+              <p class="panel-label">06 · SCALE</p>
+              <h3>规模化复制</h3>
+              <p id="mcp-class-note">同一流程模板可复制到平行班级，助手数量上去后效率更明显。</p>
+            </article>
+          </div>
+
+        </div>
+      </section>
+
+      <section id="cta" class="section final-cta" data-reveal>
+        <p class="kicker">READY TO DEPLOY</p>
+        <h2>把班级协作从“工具堆叠”升级成“统一指挥”。</h2>
+        <p>
+          让 AI 解析、主题联动、甘特调度与 MCP 自动化协同工作，释放你和学生的时间。
+        </p>
         <div class="hero-actions">
-          <a class="btn btn-primary" data-target="login" href="/login">
-            进入登录
-          </a>
-          <a class="btn btn-ghost" data-target="register" href="/register">
-            创建账号
-          </a>
+          <a class="btn btn-primary" data-target="login" href="/login">进入登录</a>
+          <a class="btn btn-ghost" data-target="register" href="/register">创建账号</a>
         </div>
       </section>
     </main>
 
     <footer class="footer">
-      <p>© <span id="year"></span> TaskFlow</p>
+      <p>© <span id="year"></span> TaskNeo</p>
     </footer>
 
     <script type="module" src="/src/main.ts"></script>
