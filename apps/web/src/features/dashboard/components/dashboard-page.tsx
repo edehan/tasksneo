@@ -21,8 +21,6 @@ import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
 import type { ClassSummary } from "@/lib/api";
 import { listClasses, listMyTasks } from "@/lib/api";
 
-type GanttRange = "week" | "month" | "2month";
-
 function deriveDisplayStatus(
   task: TaskWithClass,
 ): "submitted" | "overdue" | "in-progress" | "not-started" {
@@ -43,7 +41,6 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<TaskWithClass | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("gantt");
-  const [ganttRange, setGanttRange] = useState<GanttRange>("month");
   const [filters, setFilters] = useState({
     unfinished: false,
     notSubmitted: false,
@@ -202,31 +199,9 @@ export function DashboardPage() {
         />
       </div>
 
-      {/* Section heading + Gantt range toggle */}
+      {/* Section heading */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-heading-md">{t("allTasks")}</h2>
-        {viewMode === "gantt" && (
-          <div className="flex items-center gap-1">
-            {(["week", "month", "2month"] as const).map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setGanttRange(r)}
-                className={`rounded-md px-3 py-1 text-xs transition-colors ${
-                  ganttRange === r
-                    ? "bg-foreground/10 font-medium text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {r === "week"
-                  ? t("range.week")
-                  : r === "month"
-                    ? t("range.month")
-                    : t("range.twoMonths")}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Task views */}
@@ -234,7 +209,6 @@ export function DashboardPage() {
         {viewMode === "gantt" ? (
           <TaskGanttView
             tasks={filteredTasks}
-            ganttRange={ganttRange}
             onTaskClick={setSelectedTask}
           />
         ) : (
