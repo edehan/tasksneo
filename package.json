@@ -8,6 +8,7 @@
     "dev:infra": "bash scripts/dev-infra.sh",
     "dev:api": "bash scripts/dev-api.sh",
     "dev:web": "bash scripts/dev-web.sh",
+    "dev:landing": "pnpm --filter landing dev",
     "dev:seed": "pnpm --filter @taskflow/api seed:dev",
     "dev:down": "bash scripts/dev-down.sh",
     "lint": "biome check .",
