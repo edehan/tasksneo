@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
 const APP_URL = (import.meta.env.VITE_APP_URL ?? "").replace(/\/$/, "");
+const DOCS_URL = import.meta.env.VITE_DOCS_URL ?? "";
 const LINKS = {
   login: `${APP_URL}/login`,
   register: `${APP_URL}/register`,
   getStarted: `${APP_URL}/dashboard`,
-  docs: `${APP_URL}/docs`,
+  docs: DOCS_URL,
   terms: `${APP_URL}/terms`,
   privacy: `${APP_URL}/privacy`,
 };
