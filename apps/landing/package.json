@@ -1,0 +1,23 @@
+{
+	"name": "@taskflow/landing",
+	"version": "0.0.1",
+	"private": true,
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite preview"
+	},
+	"devDependencies": {
+		"@vitejs/plugin-react": "^5.2.0",
+		"typescript": "^5.0.0",
+		"vite": "^6.0.0"
+	},
+	"dependencies": {
+		"@fontsource/dm-sans": "^5.2.8",
+		"@fontsource/noto-sans-sc": "^5.2.9",
+		"@fontsource/noto-serif-sc": "^5.2.9",
+		"@fontsource/source-serif-4": "^5.2.9",
+		"react": "19.2.3",
+		"react-dom": "19.2.3"
+	}
+}

@@ -248,7 +248,8 @@ export function SubmissionDetailPage() {
   }
 
   const accentColor = cls.color || "#7B6CB0";
-  const displayName = studentRow?.nickname || studentRow?.studentId || t("student");
+  const displayName =
+    studentRow?.nickname || studentRow?.studentId || t("student");
   const attachments = submission.attachments ?? [];
 
   return (

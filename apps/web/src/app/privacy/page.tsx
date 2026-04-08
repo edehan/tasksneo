@@ -4,17 +4,14 @@ export default function PrivacyPage() {
       <h1 className="text-display mb-8">Privacy Policy</h1>
       <div className="prose prose-stone dark:prose-invert space-y-4 text-sm text-muted-foreground">
         <p>
-          Effective date: April 10, 2026. This Privacy Policy
-          explains how TaskFlow collects, uses, stores, shares, and protects
-          personal data.
+          Effective date: April 10, 2026. This Privacy Policy explains how
+          TaskFlow collects, uses, stores, shares, and protects personal data.
         </p>
         <p>
           We value your privacy. We use standard technical and organizational
           safeguards designed to protect your data and handle it responsibly.
         </p>
-        <h2 className="text-heading-md !text-foreground">
-          1. Scope
-        </h2>
+        <h2 className="text-heading-md !text-foreground">1. Scope</h2>
         <p>
           This Policy applies to information processed when you use TaskFlow
           websites and services.
@@ -46,8 +43,8 @@ export default function PrivacyPage() {
         <p>
           To improve system performance and response times, we may transfer,
           store, and process your personal data outside the European Economic
-          Area (EEA). Uploaded files are stored in our object storage system
-          and are accessible only to authorized users under the relevant access
+          Area (EEA). Uploaded files are stored in our object storage system and
+          are accessible only to authorized users under the relevant access
           controls.
         </p>
         <p>
@@ -99,9 +96,8 @@ export default function PrivacyPage() {
           legal requirements, and enforce agreements.
         </p>
         <p>
-          If you delete your account, relevant data may remain in backup
-          systems for up to 30 days and will then be deleted on a rolling
-          basis.
+          If you delete your account, relevant data may remain in backup systems
+          for up to 30 days and will then be deleted on a rolling basis.
         </p>
         <p>
           TaskFlow is a demonstration website. We do not guarantee persistence
@@ -114,16 +110,15 @@ export default function PrivacyPage() {
         <p>
           If user-uploaded content contains terrorist content, child sexual
           abuse material (CSAM), or other content that violates applicable law
-          or our Terms of Service, we may remove the relevant violating
-          content.
+          or our Terms of Service, we may remove the relevant violating content.
         </p>
         <p>
           For removed violating content, we do not provide restoration, export,
           or re-download.
         </p>
         <p>
-          We also reserve the right to suspend or terminate accounts involved
-          in serious or repeated violations.
+          We also reserve the right to suspend or terminate accounts involved in
+          serious or repeated violations.
         </p>
         <h2 className="text-heading-md !text-foreground">
           11. Your Privacy Rights
@@ -137,16 +132,12 @@ export default function PrivacyPage() {
           You can export and delete your data through available account controls
           or by contacting us.
         </p>
-        <h2 className="text-heading-md !text-foreground">
-          12. Children
-        </h2>
+        <h2 className="text-heading-md !text-foreground">12. Children</h2>
         <p>
           TaskFlow is not intended for children under the age required by
           applicable law to use this kind of service independently.
         </p>
-        <h2 className="text-heading-md !text-foreground">
-          13. Policy Updates
-        </h2>
+        <h2 className="text-heading-md !text-foreground">13. Policy Updates</h2>
         <p>
           We may update this Privacy Policy from time to time. Material changes
           will be posted on this page with an updated effective date.

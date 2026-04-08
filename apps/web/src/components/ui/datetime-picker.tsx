@@ -54,8 +54,7 @@ function ScrollColumn({
   React.useEffect(() => {
     const container = containerRef.current;
     if (!container || selectedIndex < 0) return;
-    const targetTop =
-      selectedIndex * ITEM_H - Math.floor(VISIBLE / 2) * ITEM_H;
+    const targetTop = selectedIndex * ITEM_H - Math.floor(VISIBLE / 2) * ITEM_H;
     container.scrollTop = Math.max(0, targetTop);
   }, [selectedIndex]);
 

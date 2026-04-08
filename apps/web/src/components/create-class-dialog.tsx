@@ -77,7 +77,12 @@ export function CreateClassDialog({
   // items exist causes Radix UI to enter an inconsistent internal state that
   // triggers an infinite update loop.
   useEffect(() => {
-    if (restrictSchool && schools.length > 0 && !selectedSchoolId && user?.schoolId) {
+    if (
+      restrictSchool &&
+      schools.length > 0 &&
+      !selectedSchoolId &&
+      user?.schoolId
+    ) {
       setSelectedSchoolId(user.schoolId);
     }
   }, [restrictSchool, schools.length, selectedSchoolId, user?.schoolId]);

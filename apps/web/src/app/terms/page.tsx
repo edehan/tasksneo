@@ -18,8 +18,8 @@ export default function TermsPage() {
         </p>
         <p>
           We do not guarantee long-term availability or persistence of user
-          data. Please do not upload or store important files, legal records,
-          or other critical information in this service.
+          data. Please do not upload or store important files, legal records, or
+          other critical information in this service.
         </p>
         <h2 className="text-heading-md !text-foreground">
           2. Eligibility and Account Responsibility
@@ -38,8 +38,8 @@ export default function TermsPage() {
         <h2 className="text-heading-md !text-foreground">4. Content</h2>
         <p>
           You retain ownership of your content. By uploading content, you grant
-          TaskFlow a limited license to store, process, and display that
-          content only as needed to operate the service features you request.
+          TaskFlow a limited license to store, process, and display that content
+          only as needed to operate the service features you request.
         </p>
         <h2 className="text-heading-md !text-foreground">
           5. International Data Processing
@@ -58,21 +58,21 @@ export default function TermsPage() {
         </h2>
         <p>
           If you click the AI parsing feature while creating tasks, selected
-          task content may be sent to our subprocessor OpenAI for processing.
-          We are designed not to intentionally include directly identifiable
+          task content may be sent to our subprocessor OpenAI for processing. We
+          are designed not to intentionally include directly identifiable
           personal information in this AI parsing payload.
         </p>
         <h2 className="text-heading-md !text-foreground">
           7. Data Controls and Deletion Retention
         </h2>
         <p>
-          You may export and delete your data through available product controls.
-          Data deletion and lifecycle handling follow our platform rules and
-          technical design.
+          You may export and delete your data through available product
+          controls. Data deletion and lifecycle handling follow our platform
+          rules and technical design.
         </p>
         <p>
-          After account deletion, relevant data may remain in backup systems
-          for up to 30 days and will then be deleted on a rolling basis.
+          After account deletion, relevant data may remain in backup systems for
+          up to 30 days and will then be deleted on a rolling basis.
         </p>
         <h2 className="text-heading-md !text-foreground">
           8. Content Removal for Legal and Terms Violations

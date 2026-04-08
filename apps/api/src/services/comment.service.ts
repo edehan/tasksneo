@@ -46,7 +46,11 @@ export async function createComment(
 	}
 
 	if (!task.isPublished) {
-		throw new AppError(400, "TASK_NOT_PUBLISHED", "Cannot comment on unpublished tasks");
+		throw new AppError(
+			400,
+			"TASK_NOT_PUBLISHED",
+			"Cannot comment on unpublished tasks",
+		);
 	}
 
 	if (replyToId) {

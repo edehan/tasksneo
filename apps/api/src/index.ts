@@ -12,8 +12,6 @@ serve(
 		port: env.listenPort,
 	},
 	(info) => {
-		console.log(
-			`TaskNeo API listening on http://${info.address}:${info.port}`,
-		);
+		console.log(`TaskNeo API listening on http://${info.address}:${info.port}`);
 	},
 );

@@ -396,273 +396,265 @@ export function TaskGanttView({
 
   return (
     <div className="flex overflow-hidden rounded-lg border">
-        {/* Left: pinned task column (hidden on mobile) */}
-        {!isMobile && (
-          <div
-            className="shrink-0 border-r bg-card"
-            style={{ width: LABEL_WIDTH }}
-          >
-            {/* Header spacer */}
-            <div className="border-b" style={{ height: HEADER_HEIGHT }} />
-            {/* Task rows */}
+      {/* Left: pinned task column (hidden on mobile) */}
+      {!isMobile && (
+        <div
+          className="shrink-0 border-r bg-card"
+          style={{ width: LABEL_WIDTH }}
+        >
+          {/* Header spacer */}
+          <div className="border-b" style={{ height: HEADER_HEIGHT }} />
+          {/* Task rows */}
+          {sortedTasks.map((task) => {
+            const submitted = isSubmitted(task);
+            return (
+              // biome-ignore lint/a11y/noStaticElementInteractions: clickable gantt row
+              // biome-ignore lint/a11y/useKeyWithClickEvents: keyboard nav not applicable for gantt chart
+              <div
+                key={task.id}
+                className="group flex cursor-pointer items-center gap-2 border-b px-3 transition-colors duration-150 hover:bg-surface-subtle"
+                style={{ height: ROW_HEIGHT }}
+                onClick={() => onTaskClick?.(task)}
+              >
+                <span
+                  className="inline-block h-2 w-2 shrink-0 rounded-sm"
+                  style={{ backgroundColor: task.classColor }}
+                />
+                <span
+                  className={`truncate font-sans leading-none ${
+                    submitted
+                      ? "text-text-muted-soft line-through"
+                      : "text-foreground"
+                  }`}
+                  style={{ fontSize: 13 }}
+                >
+                  {task.title}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Right: scrollable timeline */}
+      <ScrollArea className="min-w-0 flex-1" ref={scrollRef}>
+        <div style={{ width: totalWidth, minWidth: "100%" }}>
+          {/* Header with date markers */}
+          <div className="relative border-b" style={{ height: HEADER_HEIGHT }}>
+            {markers.map((m) => (
+              <div
+                key={m.dayOffset}
+                className="absolute bottom-0 pb-1.5 font-sans text-text-muted-soft"
+                style={{
+                  left: m.dayOffset * dayWidth,
+                  fontSize: 10,
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                }}
+              >
+                {m.label}
+              </div>
+            ))}
+
+            {/* Today label in header */}
+            {todayOffset >= 0 && todayOffset <= totalDays && (
+              <div
+                className="absolute bottom-1 z-20 rounded px-1 py-0.5 font-sans font-semibold text-white"
+                style={{
+                  left: todayOffset * dayWidth,
+                  transform: "translateX(-50%)",
+                  backgroundColor: "#d6394c",
+                  fontSize: 8,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  lineHeight: 1,
+                }}
+              >
+                {t("today")}
+              </div>
+            )}
+          </div>
+
+          {/* Row area */}
+          <div className="relative">
+            {/* Vertical grid lines for markers */}
+            {markers.map((m) => (
+              <div
+                key={`grid-${m.dayOffset}`}
+                className="absolute top-0 bottom-0 border-l border-border/40"
+                style={{ left: m.dayOffset * dayWidth }}
+              />
+            ))}
+
+            {/* Today line */}
+            {todayOffset >= 0 && todayOffset <= totalDays && (
+              <div
+                className="absolute top-0 bottom-0 z-10"
+                style={{
+                  left: todayOffset * dayWidth,
+                  width: 2,
+                  backgroundColor: "#d6394c",
+                }}
+              />
+            )}
+
+            {/* Blocked-by connector lines */}
+            <ConnectorLines
+              connectors={connectors}
+              barGeometries={barGeometries}
+              totalWidth={totalWidth}
+              rowCount={sortedTasks.length}
+            />
+
+            {/* Task rows with bars */}
             {sortedTasks.map((task) => {
               const submitted = isSubmitted(task);
+              const overdue = !submitted && isOverdue(task);
+
+              const barStartDate = task.startAt
+                ? new Date(task.startAt)
+                : new Date(task.createdAt);
+              const barEndDate = task.dueAt
+                ? new Date(task.dueAt)
+                : new Date(barStartDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+              const startOffset = diffDays(timelineStart, barStartDate);
+              const endOffset = diffDays(timelineStart, barEndDate);
+
+              const barLeft = Math.max(0, startOffset) * dayWidth;
+              const barRight = Math.min(totalDays, endOffset) * dayWidth;
+              const barWidth = Math.max(barRight - barLeft, dayWidth * 0.5);
+              const barDays = endOffset - Math.max(0, startOffset);
+
+              // Submission progress: submittedCount / (memberCount - 1), owner excluded
+              const eligible = Math.max(task.memberCount - 1, 1);
+              const progress = Math.min(task.submittedCount / eligible, 1);
+
+              // Bar colors: track = medium opacity, filled progress = deeper
+              const barBg = submitted ? "#c0b8ad30" : `${task.classColor}30`;
+              const fillBg = submitted ? "#c0b8ad60" : `${task.classColor}60`;
+              const barBorder = overdue
+                ? `1px dashed ${task.classColor}`
+                : "none";
+
+              // Bar label color (for mobile task title)
+              const labelColor = submitted ? "#c0b8ad" : task.classColor;
+
               return (
-                // biome-ignore lint/a11y/noStaticElementInteractions: clickable gantt row
                 // biome-ignore lint/a11y/useKeyWithClickEvents: keyboard nav not applicable for gantt chart
+                // biome-ignore lint/a11y/noStaticElementInteractions: clickable gantt bar
                 <div
                   key={task.id}
-                  className="group flex cursor-pointer items-center gap-2 border-b px-3 transition-colors duration-150 hover:bg-surface-subtle"
+                  className="group relative cursor-pointer border-b transition-colors duration-150 hover:bg-surface-subtle"
                   style={{ height: ROW_HEIGHT }}
                   onClick={() => onTaskClick?.(task)}
                 >
-                  <span
-                    className="inline-block h-2 w-2 shrink-0 rounded-sm"
-                    style={{ backgroundColor: task.classColor }}
-                  />
-                  <span
-                    className={`truncate font-sans leading-none ${
-                      submitted
-                        ? "text-text-muted-soft line-through"
-                        : "text-foreground"
-                    }`}
-                    style={{ fontSize: 13 }}
+                  {/* Bar (track) */}
+                  <div
+                    className="absolute top-1/2 rounded-sm transition-transform duration-150 group-hover:scale-y-[1.15]"
+                    style={{
+                      left: barLeft,
+                      width: barWidth,
+                      height: ROW_HEIGHT - 16,
+                      transform: "translateY(-50%)",
+                      backgroundColor: barBg,
+                      border: barBorder,
+                      borderRadius: 4,
+                      overflow: "hidden",
+                    }}
                   >
-                    {task.title}
-                  </span>
+                    {/* Progress fill */}
+                    {progress > 0 && (
+                      <div
+                        className="absolute inset-y-0 left-0"
+                        style={{
+                          width: `${progress * 100}%`,
+                          backgroundColor: fillBg,
+                          borderRadius: "inherit",
+                        }}
+                      />
+                    )}
+                    {/* Mobile: show task title inside bar */}
+                    {isMobile ? (
+                      <span
+                        className="pointer-events-none absolute inset-0 z-10 flex items-center truncate px-1.5 font-sans font-medium"
+                        style={{
+                          fontSize: 11,
+                          color: labelColor,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {task.title}
+                      </span>
+                    ) : (
+                      /* Desktop: submission count inside bar, right-aligned */
+                      <span
+                        className="pointer-events-none absolute inset-0 z-10 flex items-center justify-end truncate px-1.5 font-sans"
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 500,
+                          color: labelColor,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {task.submittedCount > 0
+                          ? t("submittedCount", {
+                              count: task.submittedCount,
+                            })
+                          : ""}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Desktop: date labels outside the bar */}
+                  {!isMobile && (
+                    <>
+                      {/* Start date — left of bar, only for bars >= 2 days */}
+                      {task.startAt && barDays >= 2 && (
+                        <span
+                          className="pointer-events-none absolute flex items-center justify-end overflow-hidden font-sans text-muted-foreground"
+                          style={{
+                            top: 0,
+                            bottom: 0,
+                            left: 0,
+                            width: Math.max(0, barLeft - 4),
+                            fontSize: 10,
+                            fontWeight: 500,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {formatShortDate(task.startAt, locale)}
+                        </span>
+                      )}
+                      {/* Due date — right of bar */}
+                      {task.dueAt && (
+                        <span
+                          className="pointer-events-none absolute flex items-center overflow-hidden font-sans text-muted-foreground"
+                          style={{
+                            top: 0,
+                            bottom: 0,
+                            left: barLeft + barWidth + 4,
+                            width: Math.max(
+                              0,
+                              totalWidth - (barLeft + barWidth + 4),
+                            ),
+                            fontSize: 10,
+                            fontWeight: 500,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {formatShortDate(task.dueAt, locale)}
+                        </span>
+                      )}
+                    </>
+                  )}
                 </div>
               );
             })}
           </div>
-        )}
-
-        {/* Right: scrollable timeline */}
-        <ScrollArea className="min-w-0 flex-1" ref={scrollRef}>
-          <div style={{ width: totalWidth, minWidth: "100%" }}>
-            {/* Header with date markers */}
-            <div
-              className="relative border-b"
-              style={{ height: HEADER_HEIGHT }}
-            >
-              {markers.map((m) => (
-                <div
-                  key={m.dayOffset}
-                  className="absolute bottom-0 pb-1.5 font-sans text-text-muted-soft"
-                  style={{
-                    left: m.dayOffset * dayWidth,
-                    fontSize: 10,
-                    letterSpacing: "0.04em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  {m.label}
-                </div>
-              ))}
-
-              {/* Today label in header */}
-              {todayOffset >= 0 && todayOffset <= totalDays && (
-                <div
-                  className="absolute bottom-1 z-20 rounded px-1 py-0.5 font-sans font-semibold text-white"
-                  style={{
-                    left: todayOffset * dayWidth,
-                    transform: "translateX(-50%)",
-                    backgroundColor: "#d6394c",
-                    fontSize: 8,
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    lineHeight: 1,
-                  }}
-                >
-                  {t("today")}
-                </div>
-              )}
-            </div>
-
-            {/* Row area */}
-            <div className="relative">
-              {/* Vertical grid lines for markers */}
-              {markers.map((m) => (
-                <div
-                  key={`grid-${m.dayOffset}`}
-                  className="absolute top-0 bottom-0 border-l border-border/40"
-                  style={{ left: m.dayOffset * dayWidth }}
-                />
-              ))}
-
-              {/* Today line */}
-              {todayOffset >= 0 && todayOffset <= totalDays && (
-                <div
-                  className="absolute top-0 bottom-0 z-10"
-                  style={{
-                    left: todayOffset * dayWidth,
-                    width: 2,
-                    backgroundColor: "#d6394c",
-                  }}
-                />
-              )}
-
-              {/* Blocked-by connector lines */}
-              <ConnectorLines
-                connectors={connectors}
-                barGeometries={barGeometries}
-                totalWidth={totalWidth}
-                rowCount={sortedTasks.length}
-
-              />
-
-              {/* Task rows with bars */}
-              {sortedTasks.map((task) => {
-                const submitted = isSubmitted(task);
-                const overdue = !submitted && isOverdue(task);
-
-                const barStartDate = task.startAt
-                  ? new Date(task.startAt)
-                  : new Date(task.createdAt);
-                const barEndDate = task.dueAt
-                  ? new Date(task.dueAt)
-                  : new Date(
-                      barStartDate.getTime() + 7 * 24 * 60 * 60 * 1000,
-                    );
-
-                const startOffset = diffDays(timelineStart, barStartDate);
-                const endOffset = diffDays(timelineStart, barEndDate);
-
-                const barLeft = Math.max(0, startOffset) * dayWidth;
-                const barRight = Math.min(totalDays, endOffset) * dayWidth;
-                const barWidth = Math.max(barRight - barLeft, dayWidth * 0.5);
-                const barDays = endOffset - Math.max(0, startOffset);
-
-                // Submission progress: submittedCount / (memberCount - 1), owner excluded
-                const eligible = Math.max(task.memberCount - 1, 1);
-                const progress = Math.min(task.submittedCount / eligible, 1);
-
-                // Bar colors: track = medium opacity, filled progress = deeper
-                const barBg = submitted ? "#c0b8ad30" : `${task.classColor}30`;
-                const fillBg = submitted
-                  ? "#c0b8ad60"
-                  : `${task.classColor}60`;
-                const barBorder = overdue
-                  ? `1px dashed ${task.classColor}`
-                  : "none";
-
-                // Bar label color (for mobile task title)
-                const labelColor = submitted ? "#c0b8ad" : task.classColor;
-
-                return (
-                  // biome-ignore lint/a11y/useKeyWithClickEvents: keyboard nav not applicable for gantt chart
-                  // biome-ignore lint/a11y/noStaticElementInteractions: clickable gantt bar
-                  <div
-                    key={task.id}
-                    className="group relative cursor-pointer border-b transition-colors duration-150 hover:bg-surface-subtle"
-                    style={{ height: ROW_HEIGHT }}
-                    onClick={() => onTaskClick?.(task)}
-                  >
-                    {/* Bar (track) */}
-                    <div
-                      className="absolute top-1/2 rounded-sm transition-transform duration-150 group-hover:scale-y-[1.15]"
-                      style={{
-                        left: barLeft,
-                        width: barWidth,
-                        height: ROW_HEIGHT - 16,
-                        transform: "translateY(-50%)",
-                        backgroundColor: barBg,
-                        border: barBorder,
-                        borderRadius: 4,
-                        overflow: "hidden",
-                      }}
-                    >
-                      {/* Progress fill */}
-                      {progress > 0 && (
-                        <div
-                          className="absolute inset-y-0 left-0"
-                          style={{
-                            width: `${progress * 100}%`,
-                            backgroundColor: fillBg,
-                            borderRadius: "inherit",
-                          }}
-                        />
-                      )}
-                      {/* Mobile: show task title inside bar */}
-                      {isMobile ? (
-                        <span
-                          className="pointer-events-none absolute inset-0 z-10 flex items-center truncate px-1.5 font-sans font-medium"
-                          style={{
-                            fontSize: 11,
-                            color: labelColor,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {task.title}
-                        </span>
-                      ) : (
-                        /* Desktop: submission count inside bar, right-aligned */
-                        <span
-                          className="pointer-events-none absolute inset-0 z-10 flex items-center justify-end truncate px-1.5 font-sans"
-                          style={{
-                            fontSize: 10,
-                            fontWeight: 500,
-                            color: labelColor,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {task.submittedCount > 0
-                            ? t("submittedCount", {
-                                count: task.submittedCount,
-                              })
-                            : ""}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Desktop: date labels outside the bar */}
-                    {!isMobile && (
-                      <>
-                        {/* Start date — left of bar, only for bars >= 2 days */}
-                        {task.startAt && barDays >= 2 && (
-                          <span
-                            className="pointer-events-none absolute flex items-center justify-end overflow-hidden font-sans text-muted-foreground"
-                            style={{
-                              top: 0,
-                              bottom: 0,
-                              left: 0,
-                              width: Math.max(0, barLeft - 4),
-                              fontSize: 10,
-                              fontWeight: 500,
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {formatShortDate(task.startAt, locale)}
-                          </span>
-                        )}
-                        {/* Due date — right of bar */}
-                        {task.dueAt && (
-                          <span
-                            className="pointer-events-none absolute flex items-center overflow-hidden font-sans text-muted-foreground"
-                            style={{
-                              top: 0,
-                              bottom: 0,
-                              left: barLeft + barWidth + 4,
-                              width: Math.max(
-                                0,
-                                totalWidth - (barLeft + barWidth + 4),
-                              ),
-                              fontSize: 10,
-                              fontWeight: 500,
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {formatShortDate(task.dueAt, locale)}
-                          </span>
-                        )}
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
     </div>
   );
 }
