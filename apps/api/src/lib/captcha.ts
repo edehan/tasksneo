@@ -58,10 +58,6 @@ export async function verifyCaptcha(token: string | undefined): Promise<void> {
 	const result = (await response.json()) as CapSiteVerifyResponse;
 
 	if (!result.success) {
-		throw new AppError(
-			403,
-			"CAPTCHA_FAILED",
-			"CAPTCHA verification failed",
-		);
+		throw new AppError(403, "CAPTCHA_FAILED", "CAPTCHA verification failed");
 	}
 }

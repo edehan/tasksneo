@@ -59,8 +59,7 @@ function buildFromHeader(config: SmtpConfig): string {
 		return from;
 	}
 
-	const displayName =
-		config.fromName || config.appTitle || DEFAULT_APP_TITLE;
+	const displayName = config.fromName || config.appTitle || DEFAULT_APP_TITLE;
 	return `"${escapeDisplayName(displayName)}" <${from}>`;
 }
 

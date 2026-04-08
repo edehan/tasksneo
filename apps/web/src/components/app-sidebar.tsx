@@ -22,7 +22,6 @@ import { useAuth } from "@/components/auth-provider";
 import { CreateClassDialog } from "@/components/create-class-dialog";
 import { useAppLocale } from "@/components/locale-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAvatarUrl } from "@/hooks/use-avatar-url";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,6 +48,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { JoinClassDialog } from "@/features/classes/components/join-class-dialog";
+import { useAvatarUrl } from "@/hooks/use-avatar-url";
 import { type AppLocale, SUPPORTED_LOCALES } from "@/i18n/locale";
 import type { ClassSummary } from "@/lib/api";
 import { listClasses } from "@/lib/api";

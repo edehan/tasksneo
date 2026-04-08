@@ -13,7 +13,8 @@
 			"!**/node_modules",
 			"!**/.next",
 			"!**/dist",
-			"!**/*.css"
+			"!**/*.css",
+			"!**/*.md"
 		]
 	},
 	"formatter": {
@@ -30,7 +31,8 @@
 				"useSemanticElements": "warn",
 				"useButtonType": "warn",
 				"noLabelWithoutControl": "warn",
-				"useFocusableInteractive": "warn"
+				"useFocusableInteractive": "warn",
+				"noSvgWithoutTitle": "warn"
 			},
 			"suspicious": {
 				"noArrayIndexKey": "warn",

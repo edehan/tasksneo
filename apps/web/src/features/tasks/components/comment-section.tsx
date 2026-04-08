@@ -119,10 +119,7 @@ export function CommentSection({ taskId, accentColor }: CommentSectionProps) {
       <div className="flex-1 overflow-y-auto px-4">
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2
-              size={18}
-              className="animate-spin text-muted-foreground"
-            />
+            <Loader2 size={18} className="animate-spin text-muted-foreground" />
           </div>
         ) : comments.length === 0 ? (
           <p className="py-8 text-center text-xs italic text-muted-foreground">

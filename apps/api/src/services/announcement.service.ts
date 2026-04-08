@@ -1,12 +1,11 @@
 import { NotifChannel, NotifStatus, prisma } from "@taskflow/db";
-
+import { AppError } from "../lib/errors.js";
 import {
 	enqueueAnnouncementPublish,
 	enqueueNotificationJob,
 	processAnnouncementQueue,
 	removeAnnouncementJob,
 } from "../lib/queue.js";
-import { AppError } from "../lib/errors.js";
 import { processNotificationJob } from "./notification.service.js";
 
 const PUBLISH_DELAY_MS = 10 * 60 * 1000; // 10 minutes

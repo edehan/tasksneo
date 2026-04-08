@@ -16,6 +16,10 @@ import {
 	parseTaskDescription,
 } from "../services/ai.service.js";
 import {
+	createComment,
+	listTaskComments,
+} from "../services/comment.service.js";
+import {
 	addSubmissionAttachments,
 	addTaskAttachments,
 	deleteTask,
@@ -34,10 +38,6 @@ import {
 	updateTaskUserState,
 	upsertMySubmissionContent,
 } from "../services/task.service.js";
-import {
-	createComment,
-	listTaskComments,
-} from "../services/comment.service.js";
 import {
 	deleteTaskDraftMarkdown,
 	getTaskDraftMarkdown,

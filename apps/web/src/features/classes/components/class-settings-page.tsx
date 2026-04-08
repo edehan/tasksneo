@@ -2,8 +2,8 @@
 
 import { ArrowLeft, Copy, Loader2, RefreshCw } from "lucide-react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -275,9 +275,7 @@ export function ClassSettingsPage() {
                 color,
               })
                 .then(() => toast.success(t("schoolRestrictionUpdated")))
-                .catch(() =>
-                  toast.error(t("failedUpdateSchoolRestriction")),
-                );
+                .catch(() => toast.error(t("failedUpdateSchoolRestriction")));
             }
           }}
         >
@@ -300,9 +298,7 @@ export function ClassSettingsPage() {
       {/* Invite Code */}
       <section className="space-y-4 mb-8">
         <h2 className="text-heading-md">{t("inviteCode")}</h2>
-        <p className="text-sm text-muted-foreground">
-          {t("inviteCodeHint")}
-        </p>
+        <p className="text-sm text-muted-foreground">{t("inviteCodeHint")}</p>
         <div className="flex items-center gap-3">
           <code className="flex-1 rounded-md border border-border bg-surface-subtle px-4 py-2.5 font-mono text-lg tracking-widest">
             {inviteCode || "---"}

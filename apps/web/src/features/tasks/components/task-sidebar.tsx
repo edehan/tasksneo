@@ -90,9 +90,9 @@ function MobileAccordionSidebar({
   labels: { attachments: string; discussion: string };
 }) {
   // "attachments" | "discussion" | null — which section is expanded (null = both collapsed)
-  const [expanded, setExpanded] = useState<
-    "attachments" | "discussion" | null
-  >(null);
+  const [expanded, setExpanded] = useState<"attachments" | "discussion" | null>(
+    null,
+  );
 
   return (
     <div className="flex flex-col">
