@@ -532,7 +532,13 @@
       "taskPublished": "任务已发布",
       "submissionSaved": "提交已保存",
       "failedSaveTask": "保存任务失败",
-      "failedSaveSubmission": "保存提交失败"
+      "failedSaveSubmission": "保存提交失败",
+      "revised": "Content revised by AI",
+      "failedTranscribe": "Failed to transcribe audio",
+      "failedRevise": "Failed to revise content",
+      "noSpeechDetected": "No speech detected in recording",
+      "deadlineExtended": "Deadline extended",
+      "failedExtendDeadline": "Failed to extend deadline"
     },
     "breadcrumb": {
       "submittingTo": "提交到 · {className}",
@@ -562,6 +568,35 @@
       "description": "发布后将通知所有班级成员。发布后仍可继续编辑。",
       "cancel": "取消",
       "confirm": "确认发布"
+    },
+    "voiceGuide": "Voice Guide",
+    "recording": "Recording...",
+    "stopRecording": "Stop",
+    "aiRevising": "AI revising...",
+    "undo": "Undo",
+    "extendDeadline": "Extend Deadline",
+    "extendDialog": {
+      "title": "Extend Deadline",
+      "currentDeadline": "Current deadline",
+      "newDeadline": "New deadline",
+      "presets": {
+        "1h": "+1 hour",
+        "3h": "+3 hours",
+        "1d": "+1 day",
+        "3d": "+3 days"
+      },
+      "custom": "Custom",
+      "amount": "Amount",
+      "unit": {
+        "hours": "Hours",
+        "days": "Days"
+      },
+      "cancel": "Cancel",
+      "confirm": "Extend",
+      "error": {
+        "invalidAmount": "Please enter a valid number",
+        "mustExtend": "New deadline must be later than current"
+      }
     }
   },
   "attachmentSidebar": {
@@ -582,7 +617,9 @@
       "failedParseTask": "解析任务失败",
       "uploadedFiles": "已上传 {count, plural, one {# 个文件} other {# 个文件}}",
       "failedUploadFile": "上传文件失败",
-      "failedCreateDraft": "创建任务草稿失败"
+      "failedCreateDraft": "创建任务草稿失败",
+      "failedTranscribe": "Failed to transcribe audio",
+      "noSpeechDetected": "No speech detected in recording"
     },
     "title": "发布任务 — {className}",
     "inputPlaceholder": "在这里描述你的任务...\\n例如：\"完成第 5 章习题，两周后截止，允许迟交\"",
@@ -619,7 +656,13 @@
       "ready": "可以继续",
       "fillRequired": "请先填写必填项"
     },
-    "editBody": "编辑正文 →"
+    "editBody": "编辑正文 →",
+    "record": "Record",
+    "recording": "Recording...",
+    "stopRecording": "Stop",
+    "voiceRecorded": "Voice recorded ({duration}s)",
+    "deleteRecording": "Delete recording",
+    "transcribing": "Transcribing..."
   },
   "submissionsListPage": {
     "toast": {

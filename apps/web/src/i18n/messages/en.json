@@ -511,7 +511,13 @@
       "taskPublished": "Task published",
       "submissionSaved": "Submission saved",
       "failedSaveTask": "Failed to save task",
-      "failedSaveSubmission": "Failed to save submission"
+      "failedSaveSubmission": "Failed to save submission",
+      "revised": "Content revised by AI",
+      "failedTranscribe": "Failed to transcribe audio",
+      "failedRevise": "Failed to revise content",
+      "noSpeechDetected": "No speech detected in recording",
+      "deadlineExtended": "Deadline extended",
+      "failedExtendDeadline": "Failed to extend deadline"
     },
     "breadcrumb": {
       "submittingTo": "Submitting to · {className}",
@@ -541,6 +547,35 @@
       "description": "This will notify all class members. You can still edit the task after publishing.",
       "cancel": "Cancel",
       "confirm": "Confirm Publish"
+    },
+    "voiceGuide": "Voice Guide",
+    "recording": "Recording...",
+    "stopRecording": "Stop",
+    "aiRevising": "AI revising...",
+    "undo": "Undo",
+    "extendDeadline": "Extend Deadline",
+    "extendDialog": {
+      "title": "Extend Deadline",
+      "currentDeadline": "Current deadline",
+      "newDeadline": "New deadline",
+      "presets": {
+        "1h": "+1 hour",
+        "3h": "+3 hours",
+        "1d": "+1 day",
+        "3d": "+3 days"
+      },
+      "custom": "Custom",
+      "amount": "Amount",
+      "unit": {
+        "hours": "Hours",
+        "days": "Days"
+      },
+      "cancel": "Cancel",
+      "confirm": "Extend",
+      "error": {
+        "invalidAmount": "Please enter a valid number",
+        "mustExtend": "New deadline must be later than current"
+      }
     }
   },
   "attachmentSidebar": {
@@ -561,7 +596,9 @@
       "failedParseTask": "Failed to parse task",
       "uploadedFiles": "Uploaded {count, plural, one {# file} other {# files}}",
       "failedUploadFile": "Failed to upload file",
-      "failedCreateDraft": "Failed to create task draft"
+      "failedCreateDraft": "Failed to create task draft",
+      "failedTranscribe": "Failed to transcribe audio",
+      "noSpeechDetected": "No speech detected in recording"
     },
     "title": "Post Task — {className}",
     "inputPlaceholder": "Describe your task here...\\ne.g. \"Complete Chapter 5 exercises, due in 2 weeks, allow late submissions\"",
@@ -572,6 +609,12 @@
     "parsing": "Parsing...",
     "parsed": "Parsed",
     "aiParse": "AI Parse",
+    "record": "Record",
+    "recording": "Recording...",
+    "stopRecording": "Stop",
+    "voiceRecorded": "Voice recorded ({duration}s)",
+    "deleteRecording": "Delete recording",
+    "transcribing": "Transcribing...",
     "timeOptions": {
       "title": "AI detected multiple possible time interpretations. Which one did you mean?",
       "none": "None of these — I'll enter manually"

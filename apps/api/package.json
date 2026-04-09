@@ -13,6 +13,7 @@
 	"dependencies": {
 		"@hono/node-server": "^1.19.11",
 		"@taskflow/db": "workspace:*",
+		"assemblyai": "^4.29.0",
 		"bcryptjs": "^3.0.3",
 		"bull": "^4.16.5",
 		"hono": "^4.12.8",
