@@ -320,11 +320,6 @@
     "title": "Page d'accueil",
     "subtitle": "Vue d’ensemble de toutes vos taches dans chaque classe.",
     "allTasks": "Toutes les taches",
-    "range": {
-      "week": "Semaine",
-      "month": "1 mois",
-      "twoMonths": "2 mois"
-    },
     "empty": {
       "title": "Aucune tache pour le moment",
       "description": "Rejoignez une classe ou creez-en une pour commencer.",
@@ -338,11 +333,6 @@
     "settings": "Parametres",
     "postTask": "Publier une tache",
     "classTasks": "Taches de {className}",
-    "range": {
-      "week": "Semaine",
-      "month": "1 mois",
-      "twoMonths": "2 mois"
-    },
     "empty": {
       "noTasks": "Aucune tache dans cette classe pour le moment.",
       "postFirstTask": "Publier la premiere tache"
@@ -446,17 +436,6 @@
     "deleteDialogTitle": "Supprimer « {name} » ?",
     "deleteDialogDescription": "Cette action supprimera definitivement la classe, y compris toutes les taches, soumissions et donnees membres. Action irreversible."
   },
-  "dashboardInbox": {
-    "inbox": "Boite de reception",
-    "markAllAsRead": "Tout marquer comme lu",
-    "time": {
-      "justNow": "a l'instant",
-      "minutesAgo": "il y a {count} min",
-      "hoursAgo": "il y a {count} h",
-      "daysAgo": "il y a {count} j",
-      "monthsAgo": "il y a {count} mois"
-    }
-  },
   "taskListView": {
     "columns": {
       "task": "Tache",
@@ -536,9 +515,7 @@
       "failedSaveTask": "Echec de sauvegarde de la tache",
       "failedSaveSubmission": "Echec de sauvegarde du rendu",
       "revised": "Content revised by AI",
-      "failedTranscribe": "Failed to transcribe audio",
       "failedRevise": "Failed to revise content",
-      "noSpeechDetected": "No speech detected in recording",
       "deadlineExtended": "Deadline extended",
       "failedExtendDeadline": "Failed to extend deadline"
     },
@@ -571,11 +548,18 @@
       "cancel": "Annuler",
       "confirm": "Confirmer la publication"
     },
-    "voiceGuide": "Voice Guide",
-    "recording": "Recording...",
-    "stopRecording": "Stop",
-    "aiRevising": "AI revising...",
+    "aiRewrite": "Reecriture IA",
     "undo": "Undo",
+    "rewriteDialog": {
+      "title": "Reecriture IA",
+      "placeholder": "Decrivez les modifications souhaitees...",
+      "voiceInput": "Saisie vocale",
+      "connecting": "Connexion...",
+      "recording": "Enregistrement...",
+      "stop": "Arreter",
+      "submit": "Reecrire",
+      "submitting": "Reecriture..."
+    },
     "extendDeadline": "Extend Deadline",
     "extendDialog": {
       "title": "Extend Deadline",
@@ -622,9 +606,7 @@
       "failedParseTask": "Echec de l'analyse de la tache",
       "uploadedFiles": "{count, plural, one {# fichier televerse} other {# fichiers televerses}}",
       "failedUploadFile": "Echec du televersement",
-      "failedCreateDraft": "Echec de creation du brouillon",
-      "failedTranscribe": "Failed to transcribe audio",
-      "noSpeechDetected": "No speech detected in recording"
+      "failedCreateDraft": "Echec de creation du brouillon"
     },
     "title": "Publier une tache — {className}",
     "inputPlaceholder": "Decrivez votre tache ici...\\nex. \"Terminer les exercices du chapitre 5, dans 2 semaines, retard autorise\"",
@@ -663,11 +645,9 @@
     },
     "editBody": "Modifier le contenu →",
     "record": "Record",
+    "connecting": "Connexion...",
     "recording": "Recording...",
-    "stopRecording": "Stop",
-    "voiceRecorded": "Voice recorded ({duration}s)",
-    "deleteRecording": "Delete recording",
-    "transcribing": "Transcribing..."
+    "stopRecording": "Stop"
   },
   "submissionsListPage": {
     "toast": {

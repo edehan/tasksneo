@@ -184,6 +184,7 @@ export function PostTaskDialog({
 
   // Voice streaming transcription
   const {
+    isConnecting,
     isStreaming,
     transcript,
     partialText,
@@ -245,6 +246,14 @@ export function PostTaskDialog({
       .then((tasks) => setClassTasks(tasks.filter((t) => t.id !== draftId)))
       .catch(() => {});
   }, [open, token, classId, draftId]);
+
+  // If dialog is closed externally (overlay click / ESC / parent state change),
+  // force-stop streaming so browser recording indicator is cleared.
+  useEffect(() => {
+    if (!open && isStreaming) {
+      stopStreaming();
+    }
+  }, [open, isStreaming, stopStreaming]);
 
   // ─── Validation ──────────────────────────────────────────────────────────
 
@@ -475,7 +484,15 @@ export function PostTaskDialog({
   // ─── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          stopStreaming();
+        }
+        onOpenChange(nextOpen);
+      }}
+    >
       <DialogContent className="max-w-xl gap-0 overflow-hidden p-0">
         {/* Header */}
         <DialogHeader className="border-b border-border px-6 py-4">
@@ -532,7 +549,7 @@ export function PostTaskDialog({
               <button
                 type="button"
                 onClick={() => {
-                  if (isStreaming) {
+                  if (isStreaming || isConnecting) {
                     stopStreaming();
                   } else if (token) {
                     void startStreaming(token);
@@ -542,6 +559,8 @@ export function PostTaskDialog({
                 className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors disabled:opacity-50 ${
                   isStreaming
                     ? "border-destructive bg-destructive/10 text-destructive"
+                    : isConnecting
+                      ? "border-border bg-muted text-foreground"
                     : "border-border text-muted-foreground hover:bg-surface-subtle hover:text-foreground"
                 }`}
               >
@@ -552,6 +571,11 @@ export function PostTaskDialog({
                       <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
                     </span>
                     {t("stopRecording")}
+                  </>
+                ) : isConnecting ? (
+                  <>
+                    <Loader2 size={13} strokeWidth={2} className="animate-spin" />
+                    {t("connecting")}
                   </>
                 ) : (
                   <>

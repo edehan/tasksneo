@@ -320,11 +320,6 @@
     "title": "首页",
     "subtitle": "汇总你在所有班级中的任务概览。",
     "allTasks": "全部任务",
-    "range": {
-      "week": "一周",
-      "month": "1 个月",
-      "twoMonths": "2 个月"
-    },
     "empty": {
       "title": "还没有任务",
       "description": "加入班级或创建班级后即可开始管理任务。",
@@ -338,11 +333,6 @@
     "settings": "设置",
     "postTask": "发布任务",
     "classTasks": "{className} 任务",
-    "range": {
-      "week": "一周",
-      "month": "1 个月",
-      "twoMonths": "2 个月"
-    },
     "empty": {
       "noTasks": "该班级还没有任务。",
       "postFirstTask": "发布第一个任务"
@@ -446,17 +436,6 @@
     "deleteDialogTitle": "删除“{name}”？",
     "deleteDialogDescription": "将永久删除该班级及其所有任务、提交和成员数据。此操作无法撤销。"
   },
-  "dashboardInbox": {
-    "inbox": "收件箱",
-    "markAllAsRead": "全部标记为已读",
-    "time": {
-      "justNow": "刚刚",
-      "minutesAgo": "{count}分钟前",
-      "hoursAgo": "{count}小时前",
-      "daysAgo": "{count}天前",
-      "monthsAgo": "{count}个月前"
-    }
-  },
   "taskListView": {
     "columns": {
       "task": "任务",
@@ -536,9 +515,7 @@
       "failedSaveTask": "保存任务失败",
       "failedSaveSubmission": "保存提交失败",
       "revised": "Content revised by AI",
-      "failedTranscribe": "Failed to transcribe audio",
       "failedRevise": "Failed to revise content",
-      "noSpeechDetected": "No speech detected in recording",
       "deadlineExtended": "Deadline extended",
       "failedExtendDeadline": "Failed to extend deadline"
     },
@@ -571,11 +548,18 @@
       "cancel": "取消",
       "confirm": "确认发布"
     },
-    "voiceGuide": "Voice Guide",
-    "recording": "Recording...",
-    "stopRecording": "Stop",
-    "aiRevising": "AI revising...",
+    "aiRewrite": "AI 改写",
     "undo": "Undo",
+    "rewriteDialog": {
+      "title": "AI 改写",
+      "placeholder": "描述你希望修改的内容...",
+      "voiceInput": "语音输入",
+      "connecting": "连接中...",
+      "recording": "录音中...",
+      "stop": "停止",
+      "submit": "改写",
+      "submitting": "改写中..."
+    },
     "extendDeadline": "Extend Deadline",
     "extendDialog": {
       "title": "Extend Deadline",
@@ -622,9 +606,7 @@
       "failedParseTask": "解析任务失败",
       "uploadedFiles": "已上传 {count, plural, one {# 个文件} other {# 个文件}}",
       "failedUploadFile": "上传文件失败",
-      "failedCreateDraft": "创建任务草稿失败",
-      "failedTranscribe": "Failed to transcribe audio",
-      "noSpeechDetected": "No speech detected in recording"
+      "failedCreateDraft": "创建任务草稿失败"
     },
     "title": "发布任务 — {className}",
     "inputPlaceholder": "在这里描述你的任务...\\n例如：\"完成第 5 章习题，两周后截止，允许迟交\"",
@@ -663,11 +645,9 @@
     },
     "editBody": "编辑正文 →",
     "record": "Record",
+    "connecting": "连接中...",
     "recording": "Recording...",
-    "stopRecording": "Stop",
-    "voiceRecorded": "Voice recorded ({duration}s)",
-    "deleteRecording": "Delete recording",
-    "transcribing": "Transcribing..."
+    "stopRecording": "Stop"
   },
   "submissionsListPage": {
     "toast": {

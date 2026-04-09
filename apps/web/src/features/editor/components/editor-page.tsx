@@ -103,6 +103,7 @@ export function EditorPage({
   const [rewriteInstruction, setRewriteInstruction] = useState("");
   const [revising, setRevising] = useState(false);
   const {
+    isConnecting: rewriteConnecting,
     isStreaming: rewriteStreaming,
     transcript: rewriteTranscript,
     partialText: rewritePartialText,
@@ -755,7 +756,7 @@ export function EditorPage({
               <button
                 type="button"
                 onClick={() => {
-                  if (rewriteStreaming) {
+                  if (rewriteStreaming || rewriteConnecting) {
                     rewriteStopStreaming();
                   } else if (token) {
                     void rewriteStartStreaming(token);
@@ -765,6 +766,8 @@ export function EditorPage({
                 className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
                   rewriteStreaming
                     ? "border-destructive bg-destructive/10 text-destructive"
+                    : rewriteConnecting
+                      ? "border-border bg-muted text-foreground"
                     : "border-border text-muted-foreground hover:bg-surface-subtle hover:text-foreground"
                 }`}
               >
@@ -775,6 +778,11 @@ export function EditorPage({
                       <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
                     </span>
                     {t("rewriteDialog.stop")}
+                  </>
+                ) : rewriteConnecting ? (
+                  <>
+                    <Loader2 size={13} className="animate-spin" />
+                    {t("rewriteDialog.connecting")}
                   </>
                 ) : (
                   <>

@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { getSTTToken } from "@/lib/api";
 
 const STT_SPEECH_MODEL = "whisper-rt";
 
 export interface UseStreamingTranscriptionReturn {
+  isConnecting: boolean;
   isStreaming: boolean;
   transcript: string;
   partialText: string;
@@ -26,6 +27,7 @@ function floatTo16BitPCM(float32Array: Float32Array): ArrayBuffer {
 }
 
 export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
+  const [isConnecting, setIsConnecting] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [partialText, setPartialText] = useState("");
@@ -34,9 +36,11 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
   const streamRef = useRef<MediaStream | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const startAttemptRef = useRef(0);
 
   const cleanup = useCallback(() => {
     if (processorRef.current) {
+      processorRef.current.onaudioprocess = null;
       processorRef.current.disconnect();
       processorRef.current = null;
     }
@@ -51,6 +55,9 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
       streamRef.current = null;
     }
     if (wsRef.current) {
+      wsRef.current.onmessage = null;
+      wsRef.current.onerror = null;
+      wsRef.current.onclose = null;
       if (wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ type: "Terminate" }));
       }
@@ -61,24 +68,39 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
 
   const startStreaming = useCallback(
     async (authToken: string) => {
-      if (isStreaming) return;
+      if (isStreaming || isConnecting) return;
 
+      const attemptId = startAttemptRef.current + 1;
+      startAttemptRef.current = attemptId;
+      setIsConnecting(true);
       setPartialText("");
 
       try {
         // Get microphone access first so we know the real browser sample rate.
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (attemptId !== startAttemptRef.current) {
+          for (const track of stream.getTracks()) {
+            track.stop();
+          }
+          return;
+        }
         streamRef.current = stream;
 
         const audioContext = new AudioContext();
+        if (attemptId !== startAttemptRef.current) {
+          void audioContext.close();
+          return;
+        }
         audioContextRef.current = audioContext;
         if (audioContext.state === "suspended") {
           await audioContext.resume();
+          if (attemptId !== startAttemptRef.current) return;
         }
         const sampleRate = Math.round(audioContext.sampleRate);
 
         // Get temporary token from backend
         const { token: sttToken } = await getSTTToken(authToken);
+        if (attemptId !== startAttemptRef.current) return;
 
         const params = new URLSearchParams({
           sample_rate: String(sampleRate),
@@ -90,6 +112,10 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
         const ws = new WebSocket(
           `wss://streaming.assemblyai.com/v3/ws?${params.toString()}`,
         );
+        if (attemptId !== startAttemptRef.current) {
+          ws.close();
+          return;
+        }
         wsRef.current = ws;
 
         ws.onmessage = (event) => {
@@ -125,6 +151,7 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
         ws.onerror = (event) => {
           console.error("[STT] WebSocket error event:", event);
           cleanup();
+          setIsConnecting(false);
           setIsStreaming(false);
         };
 
@@ -135,6 +162,7 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
             );
           }
           cleanup();
+          setIsConnecting(false);
           setIsStreaming(false);
         };
 
@@ -152,6 +180,7 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
           ws.addEventListener("open", handleOpen, { once: true });
           ws.addEventListener("error", handleOpenError, { once: true });
         });
+        if (attemptId !== startAttemptRef.current) return;
 
         const source = audioContext.createMediaStreamSource(stream);
         const processor = audioContext.createScriptProcessor(4096, 1, 1);
@@ -171,13 +200,20 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
       } catch (err) {
         console.error("[STT] Failed to start streaming:", err);
         cleanup();
+        setIsConnecting(false);
         setIsStreaming(false);
+      } finally {
+        if (attemptId === startAttemptRef.current) {
+          setIsConnecting(false);
+        }
       }
     },
-    [isStreaming, cleanup],
+    [isStreaming, isConnecting, cleanup],
   );
 
   const stopStreaming = useCallback(() => {
+    startAttemptRef.current += 1;
+    setIsConnecting(false);
     setPartialText("");
     cleanup();
     setIsStreaming(false);
@@ -188,7 +224,15 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
     setPartialText("");
   }, []);
 
+  // Ensure mic/WS resources are always released on component unmount.
+  useEffect(() => {
+    return () => {
+      cleanup();
+    };
+  }, [cleanup]);
+
   return {
+    isConnecting,
     isStreaming,
     transcript,
     partialText,

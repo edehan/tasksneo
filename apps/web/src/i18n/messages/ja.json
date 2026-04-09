@@ -320,11 +320,6 @@
     "title": "ホーム",
     "subtitle": "すべてのクラスにまたがるタスクの概要です。",
     "allTasks": "すべてのタスク",
-    "range": {
-      "week": "1週間",
-      "month": "1か月",
-      "twoMonths": "2か月"
-    },
     "empty": {
       "title": "タスクがまだありません",
       "description": "クラスに参加または作成して開始しましょう。",
@@ -338,11 +333,6 @@
     "settings": "設定",
     "postTask": "課題を投稿",
     "classTasks": "{className} のタスク",
-    "range": {
-      "week": "1週間",
-      "month": "1か月",
-      "twoMonths": "2か月"
-    },
     "empty": {
       "noTasks": "このクラスにはまだタスクがありません。",
       "postFirstTask": "最初のタスクを投稿"
@@ -446,17 +436,6 @@
     "deleteDialogTitle": "「{name}」を削除しますか？",
     "deleteDialogDescription": "クラス、すべての課題、提出、メンバーデータを完全に削除します。この操作は元に戻せません。"
   },
-  "dashboardInbox": {
-    "inbox": "受信トレイ",
-    "markAllAsRead": "すべて既読にする",
-    "time": {
-      "justNow": "たった今",
-      "minutesAgo": "{count}分前",
-      "hoursAgo": "{count}時間前",
-      "daysAgo": "{count}日前",
-      "monthsAgo": "{count}か月前"
-    }
-  },
   "taskListView": {
     "columns": {
       "task": "タスク",
@@ -536,9 +515,7 @@
       "failedSaveTask": "課題の保存に失敗しました",
       "failedSaveSubmission": "提出の保存に失敗しました",
       "revised": "Content revised by AI",
-      "failedTranscribe": "Failed to transcribe audio",
       "failedRevise": "Failed to revise content",
-      "noSpeechDetected": "No speech detected in recording",
       "deadlineExtended": "Deadline extended",
       "failedExtendDeadline": "Failed to extend deadline"
     },
@@ -571,11 +548,18 @@
       "cancel": "キャンセル",
       "confirm": "公開を確定"
     },
-    "voiceGuide": "Voice Guide",
-    "recording": "Recording...",
-    "stopRecording": "Stop",
-    "aiRevising": "AI revising...",
+    "aiRewrite": "AIリライト",
     "undo": "Undo",
+    "rewriteDialog": {
+      "title": "AIリライト",
+      "placeholder": "変更したい内容を入力...",
+      "voiceInput": "音声入力",
+      "connecting": "接続中...",
+      "recording": "録音中...",
+      "stop": "停止",
+      "submit": "リライト",
+      "submitting": "リライト中..."
+    },
     "extendDeadline": "Extend Deadline",
     "extendDialog": {
       "title": "Extend Deadline",
@@ -622,9 +606,7 @@
       "failedParseTask": "課題解析に失敗しました",
       "uploadedFiles": "{count}件のファイルをアップロードしました",
       "failedUploadFile": "ファイルのアップロードに失敗しました",
-      "failedCreateDraft": "下書き作成に失敗しました",
-      "failedTranscribe": "Failed to transcribe audio",
-      "noSpeechDetected": "No speech detected in recording"
+      "failedCreateDraft": "下書き作成に失敗しました"
     },
     "title": "課題を投稿 — {className}",
     "inputPlaceholder": "ここに課題内容を入力...\\n例: 「第5章の演習を2週間以内に提出、遅延提出を許可」",
@@ -663,11 +645,9 @@
     },
     "editBody": "本文を編集 →",
     "record": "Record",
+    "connecting": "接続中...",
     "recording": "Recording...",
-    "stopRecording": "Stop",
-    "voiceRecorded": "Voice recorded ({duration}s)",
-    "deleteRecording": "Delete recording",
-    "transcribing": "Transcribing..."
+    "stopRecording": "Stop"
   },
   "submissionsListPage": {
     "toast": {

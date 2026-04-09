@@ -554,6 +554,7 @@
       "title": "AI Rewrite",
       "placeholder": "Describe the changes you want...",
       "voiceInput": "Voice Input",
+      "connecting": "Connecting...",
       "recording": "Recording...",
       "stop": "Stop",
       "submit": "Rewrite",
@@ -617,6 +618,7 @@
     "parsed": "Parsed",
     "aiParse": "AI Parse",
     "record": "Record",
+    "connecting": "Connecting...",
     "recording": "Recording...",
     "stopRecording": "Stop",
     "timeOptions": {
