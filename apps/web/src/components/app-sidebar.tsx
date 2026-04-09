@@ -56,7 +56,7 @@ import { listClasses } from "@/lib/api";
 export function AppSidebar() {
   const { token, user, logout } = useAuth();
   const t = useTranslations("appSidebar");
-  const { theme, setTheme } = useTheme();
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const { locale, setLocale } = useAppLocale();
   const pathname = usePathname();
   const router = useRouter();
@@ -90,6 +90,7 @@ export function AppSidebar() {
   const displayName = user?.nickname || user?.email || t("user");
   const initials = displayName.slice(0, 2).toUpperCase();
   const avatarUrl = useAvatarUrl(user?.email, 64);
+  const effectiveTheme = resolvedTheme ?? "light";
 
   return (
     <Sidebar>
@@ -225,11 +226,15 @@ export function AppSidebar() {
               {/* Quick theme toggle: light ↔ dark */}
               <button
                 type="button"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                onClick={() =>
+                  setTheme(effectiveTheme === "dark" ? "light" : "dark")
+                }
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
-                title={theme === "dark" ? t("lightMode") : t("darkMode")}
+                title={
+                  effectiveTheme === "dark" ? t("lightMode") : t("darkMode")
+                }
               >
-                {theme === "dark" ? (
+                {effectiveTheme === "dark" ? (
                   <Sun className="h-4 w-4" />
                 ) : (
                   <Moon className="h-4 w-4" />

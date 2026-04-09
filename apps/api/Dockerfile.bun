@@ -1,0 +1,58 @@
+# ---- Builder ----
+FROM oven/bun:latest AS builder
+
+RUN bun add -g pnpm@10.32.1
+
+WORKDIR /app
+
+# Copy workspace config and package manifests for dependency caching
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/api/package.json ./apps/api/
+COPY packages/db/package.json ./packages/db/
+
+# Install all dependencies from pnpm lockfile (Bun lock migration for pnpm v9 is unstable)
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm config set store-dir /pnpm/store \
+  && pnpm install -r --frozen-lockfile
+
+# Generate Prisma client
+COPY packages/db/prisma ./packages/db/prisma
+RUN cd packages/db && pnpm exec prisma generate
+
+# Build packages/db to JS
+COPY packages/db/src ./packages/db/src
+COPY packages/db/tsconfig.json ./packages/db/
+RUN cd packages/db && pnpm exec tsc --target ES2022 --module NodeNext --moduleResolution NodeNext \
+    --esModuleInterop --skipLibCheck --outDir dist --declaration src/index.ts
+
+# Build API
+COPY apps/api/src ./apps/api/src
+COPY apps/api/tsconfig.json ./apps/api/
+RUN cd apps/api && pnpm run build
+
+# Update packages/db main to compiled JS
+RUN bun -e "\
+  const fs = require('fs');\
+  const f='packages/db/package.json';\
+  const p=JSON.parse(fs.readFileSync(f,'utf8'));\
+  p.main='./dist/index.js';\
+  fs.writeFileSync(f,JSON.stringify(p,null,2));"
+
+# ---- Production ----
+FROM oven/bun:latest
+ENV NODE_ENV=production
+WORKDIR /app
+
+# Copy built artifacts and node_modules
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=builder /app/packages/db/node_modules ./packages/db/node_modules
+COPY --from=builder /app/packages/db/package.json ./packages/db/package.json
+COPY --from=builder /app/packages/db/dist ./packages/db/dist
+COPY --from=builder /app/packages/db/prisma ./packages/db/prisma
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/pnpm-workspace.yaml ./
+
+WORKDIR /app/apps/api
+CMD ["bun", "run", "dist/index.js"]

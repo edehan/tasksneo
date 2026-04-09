@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
-import { getClass } from "@/lib/api";
+import { getClass, listClasses } from "@/lib/api";
 
 const DEFAULT_ACCENT = "#7B6CB0";
 
@@ -37,6 +37,22 @@ export function useClassAccent(): string {
   useEffect(() => {
     if (classId) {
       void updateAccent(classId);
+    } else if (token) {
+      // Use personal space color as fallback on non-class pages (e.g. /dashboard)
+      void listClasses(token)
+        .then((classes) => {
+          const personal = classes.find((c) => c.isPersonal);
+          const color = personal?.color || DEFAULT_ACCENT;
+          setAccent(color);
+          document.documentElement.style.setProperty("--class-accent", color);
+        })
+        .catch(() => {
+          setAccent(DEFAULT_ACCENT);
+          document.documentElement.style.setProperty(
+            "--class-accent",
+            DEFAULT_ACCENT,
+          );
+        });
     } else {
       setAccent(DEFAULT_ACCENT);
       document.documentElement.style.setProperty(
@@ -44,7 +60,7 @@ export function useClassAccent(): string {
         DEFAULT_ACCENT,
       );
     }
-  }, [classId, updateAccent]);
+  }, [classId, token, updateAccent]);
 
   return accent;
 }

@@ -234,8 +234,8 @@
     "profileUpdated": "Profil mis a jour",
     "failedUpdateProfile": "Echec de la mise a jour du profil",
     "avatar": "Avatar",
-    "avatarManagedByGravatar": "Votre avatar est gere par Gravatar.",
-    "changeOnGravatar": "Modifier sur Gravatar",
+    "avatarManagedByGravatar": "Votre avatar est gere par Weavatar.",
+    "changeOnGravatar": "Weavatar",
     "nickname": "Pseudo",
     "nicknamePlaceholder": "Comment devons-nous vous appeler ?",
     "email": "E-mail",
@@ -532,7 +532,13 @@
       "taskPublished": "Tache publiee",
       "submissionSaved": "Rendu enregistre",
       "failedSaveTask": "Echec de sauvegarde de la tache",
-      "failedSaveSubmission": "Echec de sauvegarde du rendu"
+      "failedSaveSubmission": "Echec de sauvegarde du rendu",
+      "revised": "Content revised by AI",
+      "failedTranscribe": "Failed to transcribe audio",
+      "failedRevise": "Failed to revise content",
+      "noSpeechDetected": "No speech detected in recording",
+      "deadlineExtended": "Deadline extended",
+      "failedExtendDeadline": "Failed to extend deadline"
     },
     "breadcrumb": {
       "submittingTo": "Envoi vers · {className}",
@@ -562,6 +568,35 @@
       "description": "Tous les membres de la classe seront notifies. Vous pourrez encore modifier ensuite.",
       "cancel": "Annuler",
       "confirm": "Confirmer la publication"
+    },
+    "voiceGuide": "Voice Guide",
+    "recording": "Recording...",
+    "stopRecording": "Stop",
+    "aiRevising": "AI revising...",
+    "undo": "Undo",
+    "extendDeadline": "Extend Deadline",
+    "extendDialog": {
+      "title": "Extend Deadline",
+      "currentDeadline": "Current deadline",
+      "newDeadline": "New deadline",
+      "presets": {
+        "1h": "+1 hour",
+        "3h": "+3 hours",
+        "1d": "+1 day",
+        "3d": "+3 days"
+      },
+      "custom": "Custom",
+      "amount": "Amount",
+      "unit": {
+        "hours": "Hours",
+        "days": "Days"
+      },
+      "cancel": "Cancel",
+      "confirm": "Extend",
+      "error": {
+        "invalidAmount": "Please enter a valid number",
+        "mustExtend": "New deadline must be later than current"
+      }
     }
   },
   "attachmentSidebar": {
@@ -582,7 +617,9 @@
       "failedParseTask": "Echec de l'analyse de la tache",
       "uploadedFiles": "{count, plural, one {# fichier televerse} other {# fichiers televerses}}",
       "failedUploadFile": "Echec du televersement",
-      "failedCreateDraft": "Echec de creation du brouillon"
+      "failedCreateDraft": "Echec de creation du brouillon",
+      "failedTranscribe": "Failed to transcribe audio",
+      "noSpeechDetected": "No speech detected in recording"
     },
     "title": "Publier une tache — {className}",
     "inputPlaceholder": "Decrivez votre tache ici...\\nex. \"Terminer les exercices du chapitre 5, dans 2 semaines, retard autorise\"",
@@ -619,7 +656,13 @@
       "ready": "Pret a continuer",
       "fillRequired": "Remplissez les champs obligatoires pour continuer"
     },
-    "editBody": "Modifier le contenu →"
+    "editBody": "Modifier le contenu →",
+    "record": "Record",
+    "recording": "Recording...",
+    "stopRecording": "Stop",
+    "voiceRecorded": "Voice recorded ({duration}s)",
+    "deleteRecording": "Delete recording",
+    "transcribing": "Transcribing..."
   },
   "submissionsListPage": {
     "toast": {

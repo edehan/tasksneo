@@ -234,8 +234,8 @@
     "profileUpdated": "プロフィールを更新しました",
     "failedUpdateProfile": "プロフィール更新に失敗しました",
     "avatar": "アバター",
-    "avatarManagedByGravatar": "アバターは Gravatar で管理されています。",
-    "changeOnGravatar": "Gravatar で変更",
+    "avatarManagedByGravatar": "アバターは Weavatar で管理されています。",
+    "changeOnGravatar": "Weavatar で変更",
     "nickname": "ニックネーム",
     "nicknamePlaceholder": "呼び方を入力してください",
     "email": "メール",
@@ -532,7 +532,13 @@
       "taskPublished": "課題を公開しました",
       "submissionSaved": "提出を保存しました",
       "failedSaveTask": "課題の保存に失敗しました",
-      "failedSaveSubmission": "提出の保存に失敗しました"
+      "failedSaveSubmission": "提出の保存に失敗しました",
+      "revised": "Content revised by AI",
+      "failedTranscribe": "Failed to transcribe audio",
+      "failedRevise": "Failed to revise content",
+      "noSpeechDetected": "No speech detected in recording",
+      "deadlineExtended": "Deadline extended",
+      "failedExtendDeadline": "Failed to extend deadline"
     },
     "breadcrumb": {
       "submittingTo": "{className} に提出中",
@@ -562,6 +568,35 @@
       "description": "公開するとクラス全員に通知されます。公開後も編集できます。",
       "cancel": "キャンセル",
       "confirm": "公開を確定"
+    },
+    "voiceGuide": "Voice Guide",
+    "recording": "Recording...",
+    "stopRecording": "Stop",
+    "aiRevising": "AI revising...",
+    "undo": "Undo",
+    "extendDeadline": "Extend Deadline",
+    "extendDialog": {
+      "title": "Extend Deadline",
+      "currentDeadline": "Current deadline",
+      "newDeadline": "New deadline",
+      "presets": {
+        "1h": "+1 hour",
+        "3h": "+3 hours",
+        "1d": "+1 day",
+        "3d": "+3 days"
+      },
+      "custom": "Custom",
+      "amount": "Amount",
+      "unit": {
+        "hours": "Hours",
+        "days": "Days"
+      },
+      "cancel": "Cancel",
+      "confirm": "Extend",
+      "error": {
+        "invalidAmount": "Please enter a valid number",
+        "mustExtend": "New deadline must be later than current"
+      }
     }
   },
   "attachmentSidebar": {
@@ -582,7 +617,9 @@
       "failedParseTask": "課題解析に失敗しました",
       "uploadedFiles": "{count}件のファイルをアップロードしました",
       "failedUploadFile": "ファイルのアップロードに失敗しました",
-      "failedCreateDraft": "下書き作成に失敗しました"
+      "failedCreateDraft": "下書き作成に失敗しました",
+      "failedTranscribe": "Failed to transcribe audio",
+      "noSpeechDetected": "No speech detected in recording"
     },
     "title": "課題を投稿 — {className}",
     "inputPlaceholder": "ここに課題内容を入力...\\n例: 「第5章の演習を2週間以内に提出、遅延提出を許可」",
@@ -619,7 +656,13 @@
       "ready": "続行できます",
       "fillRequired": "必須項目を入力してください"
     },
-    "editBody": "本文を編集 →"
+    "editBody": "本文を編集 →",
+    "record": "Record",
+    "recording": "Recording...",
+    "stopRecording": "Stop",
+    "voiceRecorded": "Voice recorded ({duration}s)",
+    "deleteRecording": "Delete recording",
+    "transcribing": "Transcribing..."
   },
   "submissionsListPage": {
     "toast": {

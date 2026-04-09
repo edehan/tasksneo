@@ -6,6 +6,7 @@ import {
   ChevronUp,
   Clock,
   Loader2,
+  Mic,
   Paperclip,
   Sparkles,
   Trash2,
@@ -31,6 +32,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import {
   ApiError,
   type AttachmentMeta,
@@ -41,6 +43,7 @@ import {
   type ParseTimeOption,
   parseTaskDraft,
   type TaskSummary,
+  transcribeAudio,
   updateTask,
   uploadTaskAttachment,
 } from "@/lib/api";
@@ -124,6 +127,16 @@ export function PostTaskDialog({
   // Prerequisites
   const [classTasks, setClassTasks] = useState<TaskSummary[]>([]);
   const [prereqOpen, setPrereqOpen] = useState(false);
+
+  // Voice recording
+  const {
+    isRecording,
+    audioBlob,
+    duration: recordingDuration,
+    startRecording,
+    stopRecording,
+    clearRecording,
+  } = useAudioRecorder();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -233,12 +246,45 @@ export function PostTaskDialog({
   }
 
   async function handleAiParse() {
-    if (!token || !rawText.trim() || parsing || parsed) return;
+    if (!token || parsing || parsed) return;
+
+    const hasText = rawText.trim().length > 0;
+    const hasAudio = audioBlob !== null;
+    const hasAttachments = attachments.length > 0;
+    if (!hasText && !hasAudio && !hasAttachments) return;
 
     setParsing(true);
     try {
       const taskId = await ensureDraft();
-      const result = await parseTaskDraft(token, taskId, rawText.trim());
+
+      // If there's a voice recording, transcribe it first
+      let combinedText = rawText.trim();
+      if (audioBlob) {
+        const transcription = await transcribeAudio(token, taskId, audioBlob);
+        if (transcription.text) {
+          combinedText = combinedText
+            ? `${combinedText}\n\n${transcription.text}`
+            : transcription.text;
+          // Update the raw text with transcribed content
+          setRawText(combinedText);
+          clearRecording();
+        } else {
+          toast.error(t("toast.noSpeechDetected"));
+          setParsing(false);
+          return;
+        }
+      }
+
+      if (!combinedText && !hasAttachments) {
+        setParsing(false);
+        return;
+      }
+
+      const result = await parseTaskDraft(
+        token,
+        taskId,
+        combinedText || undefined,
+      );
 
       if (result.title) setTitle(result.title);
       if (result.allowLateSubmission !== null) {
@@ -247,7 +293,6 @@ export function PostTaskDialog({
 
       const options = result.timeOptions ?? [];
       if (options.length > 1) {
-        // Multiple ambiguous options — let user pick
         setPendingTimeOptions(options);
       } else if (options.length === 1) {
         applyTimeOption(options[0]);
@@ -419,6 +464,33 @@ export function PostTaskDialog({
                 {uploading ? t("uploading") : t("attach")}
               </button>
 
+              {/* Record Voice */}
+              <button
+                type="button"
+                onClick={isRecording ? stopRecording : startRecording}
+                disabled={uploading || parsing}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors disabled:opacity-50 ${
+                  isRecording
+                    ? "border-destructive bg-destructive/10 text-destructive"
+                    : "border-border text-muted-foreground hover:bg-surface-subtle hover:text-foreground"
+                }`}
+              >
+                {isRecording ? (
+                  <>
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
+                    </span>
+                    {recordingDuration}s · {t("stopRecording")}
+                  </>
+                ) : (
+                  <>
+                    <Mic size={13} strokeWidth={2} />
+                    {t("record")}
+                  </>
+                )}
+              </button>
+
               {/* Expand Form */}
               <button
                 type="button"
@@ -433,8 +505,10 @@ export function PostTaskDialog({
                 {expanded ? t("collapse") : t("expandForm")}
               </button>
 
-              {/* AI Parse */}
-              {rawText.trim().length > 0 && (
+              {/* AI Parse — visible when any input exists */}
+              {(rawText.trim().length > 0 ||
+                audioBlob !== null ||
+                attachments.length > 0) && (
                 <button
                   type="button"
                   onClick={handleAiParse}
@@ -464,11 +538,39 @@ export function PostTaskDialog({
                   ) : (
                     <Sparkles size={13} strokeWidth={2} />
                   )}
-                  {parsing ? t("parsing") : parsed ? t("parsed") : t("aiParse")}
+                  {parsing
+                    ? audioBlob
+                      ? t("transcribing")
+                      : t("parsing")
+                    : parsed
+                      ? t("parsed")
+                      : t("aiParse")}
                 </button>
               )}
             </div>
           </div>
+
+          {/* Voice recording indicator */}
+          {audioBlob && !isRecording && (
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5">
+              <Mic
+                size={13}
+                strokeWidth={2}
+                className="text-muted-foreground"
+              />
+              <span className="text-xs font-medium text-foreground">
+                {t("voiceRecorded", { duration: recordingDuration })}
+              </span>
+              <button
+                type="button"
+                onClick={clearRecording}
+                className="rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                title={t("deleteRecording")}
+              >
+                <X size={11} strokeWidth={2} />
+              </button>
+            </div>
+          )}
 
           {/* Attachment chips */}
           {attachments.length > 0 && (

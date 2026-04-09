@@ -187,7 +187,7 @@ export default function ProfilePage() {
             </p>
             <Button variant="outline" size="sm" asChild>
               <a
-                href="https://gravatar.com/profile"
+                href="https://weavatar.com"
                 target="_blank"
                 rel="noopener noreferrer"
               >

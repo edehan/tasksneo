@@ -13,6 +13,16 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "TaskNeo",
   description: "TaskNeo frontend",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "TaskNeo",
+  },
+  icons: {
+    icon: "/icon-192.png",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default async function RootLayout({
@@ -25,6 +35,13 @@ export default async function RootLayout({
 
   return (
     <html lang={toHtmlLang(locale)} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if("serviceWorker"in navigator){navigator.serviceWorker.register("/sw.js")}`,
+          }}
+        />
+      </head>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased text-sm leading-relaxed">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>

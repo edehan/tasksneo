@@ -1949,6 +1949,92 @@ paths:
               schema:
                 $ref: '#/components/schemas/ParseDraftTaskResponse'
 
+  /tasks/{taskId}/transcribe:
+    parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags: [Tasks]
+      summary: 语音转文字（Speech-to-Text）
+      description: |
+        上传音频文件，通过 AssemblyAI Universal-2 模型转录为文本。
+        音频即用即抛，不存储。仅 OWNER/ADMIN 可调用。
+      security:
+        - userAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [audio]
+              properties:
+                audio:
+                  type: string
+                  format: binary
+                  description: 音频文件（webm、mp3 等格式）
+      responses:
+        '200':
+          description: 转录结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  text:
+                    type: string
+                    description: 转录文本
+                  language:
+                    type: string
+                    nullable: true
+                    description: 检测到的语言代码
+
+  /tasks/{taskId}/revise:
+    parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      tags: [Tasks]
+      summary: AI 修改任务正文
+      description: |
+        将当前正文和修改指令发送给 LLM，返回修改后的 markdown 内容。
+        仅 OWNER/ADMIN 可调用。
+      security:
+        - userAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentContent, instruction]
+              properties:
+                currentContent:
+                  type: string
+                  description: 当前任务正文 markdown
+                instruction:
+                  type: string
+                  description: 修改指令（通常来自语音转录）
+      responses:
+        '200':
+          description: 修改后的内容
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  revisedContent:
+                    type: string
+                    description: 修改后的 markdown 内容
+
   /tasks/{taskId}/draft-markdown:
     parameters:
       - name: taskId

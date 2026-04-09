@@ -1,6 +1,16 @@
 "use client";
 
-import { ArrowLeft, Edit3, Eye, Loader2, Send, Upload } from "lucide-react";
+import {
+  ArrowLeft,
+  Clock,
+  Edit3,
+  Eye,
+  Loader2,
+  Mic,
+  Send,
+  Undo2,
+  Upload,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -18,15 +28,20 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { EditorToolbar } from "@/features/editor/components/editor-toolbar";
 import { MarkdownPreview } from "@/features/editor/components/markdown-preview";
 import { AttachmentSidebar } from "@/features/tasks/components/attachment-sidebar";
+import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import {
   ApiError,
   type AttachmentMeta,
   deleteAttachment,
   getFileUrl,
   publishTaskDraft,
+  reviseTaskContent,
+  transcribeAudio,
   updateTask,
   uploadSubmissionAttachment,
   uploadTaskAttachment,
@@ -45,6 +60,7 @@ interface EditorPageProps {
   initialContent?: string;
   initialAttachments?: AttachmentMeta[];
   isAlreadyPublished?: boolean;
+  initialDueAt?: string;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -59,6 +75,7 @@ export function EditorPage({
   initialContent,
   initialAttachments,
   isAlreadyPublished,
+  initialDueAt,
 }: EditorPageProps) {
   const t = useTranslations("editorPage");
   const { token } = useAuth();
@@ -73,6 +90,32 @@ export function EditorPage({
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
+
+  // Voice guide
+  const {
+    isRecording: voiceRecording,
+    audioBlob: voiceBlob,
+    duration: voiceDuration,
+    startRecording: voiceStartRecording,
+    stopRecording: voiceStopRecording,
+    clearRecording: voiceClearRecording,
+  } = useAudioRecorder();
+  const [revising, setRevising] = useState(false);
+
+  // Undo stack
+  const [contentHistory, setContentHistory] = useState<string[]>([]);
+
+  // Extend deadline
+  const [dueAt, setDueAt] = useState<Date | null>(
+    initialDueAt ? new Date(initialDueAt) : null,
+  );
+  const [showExtendDialog, setShowExtendDialog] = useState(false);
+  const [extendMode, setExtendMode] = useState<
+    "1h" | "3h" | "1d" | "3d" | "custom"
+  >("1d");
+  const [customAmount, setCustomAmount] = useState("1");
+  const [customUnit, setCustomUnit] = useState<"hours" | "days">("days");
+  const [extending, setExtending] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -229,6 +272,116 @@ export function EditorPage({
     }
   }
 
+  // ─── Voice guide revision ──────────────────────────────────────────────────
+
+  // Use ref to capture latest content without adding it as a useEffect dep
+  const contentRef = useRef(content);
+  contentRef.current = content;
+
+  function handleVoiceGuideStop() {
+    voiceStopRecording();
+  }
+
+  // Process voice guide after blob is ready
+  useEffect(() => {
+    if (!voiceBlob || revising || !token) return;
+
+    const currentToken = token;
+    const currentBlob = voiceBlob;
+    const currentContent = contentRef.current;
+
+    async function processVoiceGuide() {
+      setRevising(true);
+      try {
+        const transcription = await transcribeAudio(
+          currentToken,
+          taskId,
+          currentBlob,
+        );
+        if (!transcription.text) {
+          toast.error(t("toast.noSpeechDetected"));
+          voiceClearRecording();
+          setRevising(false);
+          return;
+        }
+
+        // Save current content for undo
+        setContentHistory((prev) => [...prev, currentContent]);
+
+        const result = await reviseTaskContent(
+          currentToken,
+          taskId,
+          currentContent,
+          transcription.text,
+        );
+        setContent(result.revisedContent);
+        voiceClearRecording();
+        toast.success(t("toast.revised"));
+      } catch (err) {
+        const message =
+          err instanceof ApiError ? err.message : t("toast.failedRevise");
+        toast.error(message);
+      } finally {
+        setRevising(false);
+      }
+    }
+
+    void processVoiceGuide();
+  }, [voiceBlob, revising, token, taskId, voiceClearRecording, t]);
+
+  function handleUndo() {
+    if (contentHistory.length === 0) return;
+    const prev = contentHistory[contentHistory.length - 1];
+    setContentHistory((h) => h.slice(0, -1));
+    setContent(prev);
+  }
+
+  // ─── Extend deadline ──────────────────────────────────────────────────────
+
+  function getExtendedDate(): Date | null {
+    if (!dueAt) return null;
+
+    const result = new Date(dueAt);
+    let hours = 0;
+
+    if (extendMode === "custom") {
+      const amount = Number.parseFloat(customAmount);
+      if (Number.isNaN(amount) || amount <= 0) return null;
+      hours = customUnit === "days" ? amount * 24 : amount;
+    } else {
+      const presets: Record<string, number> = {
+        "1h": 1,
+        "3h": 3,
+        "1d": 24,
+        "3d": 72,
+      };
+      hours = presets[extendMode] ?? 0;
+    }
+
+    result.setTime(result.getTime() + hours * 60 * 60 * 1000);
+    return result;
+  }
+
+  async function handleExtendDeadline() {
+    if (!token || !dueAt) return;
+    const newDueAt = getExtendedDate();
+    if (!newDueAt || newDueAt <= dueAt) return;
+
+    setExtending(true);
+    try {
+      await updateTask(token, taskId, { dueAt: newDueAt.toISOString() });
+      setDueAt(newDueAt);
+      setShowExtendDialog(false);
+      toast.success(t("toast.deadlineExtended"));
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : t("toast.failedExtendDeadline");
+      toast.error(message);
+    } finally {
+      setExtending(false);
+    }
+  }
+
   // ─── Submit / Publish ─────────────────────────────────────────────────────
 
   function handlePrimaryClick() {
@@ -318,6 +471,68 @@ export function EditorPage({
 
         {/* Right */}
         <div className="flex items-center gap-3">
+          {/* Undo (visible when history exists) */}
+          {contentHistory.length > 0 && (
+            <button
+              type="button"
+              onClick={handleUndo}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
+            >
+              <Undo2 size={13} strokeWidth={2} />
+              {t("undo")}
+            </button>
+          )}
+
+          {/* Voice Guide (only in publish mode) */}
+          {mode === "publish" && (
+            <button
+              type="button"
+              onClick={
+                voiceRecording ? handleVoiceGuideStop : voiceStartRecording
+              }
+              disabled={revising}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors ${
+                voiceRecording
+                  ? "border-destructive bg-destructive/10 text-destructive"
+                  : revising
+                    ? "border-border text-muted-foreground opacity-50"
+                    : "border-border text-muted-foreground hover:bg-surface-subtle hover:text-foreground"
+              }`}
+            >
+              {revising ? (
+                <>
+                  <Loader2 size={13} strokeWidth={2} className="animate-spin" />
+                  {t("aiRevising")}
+                </>
+              ) : voiceRecording ? (
+                <>
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
+                  </span>
+                  {voiceDuration}s · {t("stopRecording")}
+                </>
+              ) : (
+                <>
+                  <Mic size={13} strokeWidth={2} />
+                  {t("voiceGuide")}
+                </>
+              )}
+            </button>
+          )}
+
+          {/* Extend Deadline (only in publish mode with a due date) */}
+          {mode === "publish" && dueAt && (
+            <button
+              type="button"
+              onClick={() => setShowExtendDialog(true)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
+            >
+              <Clock size={13} strokeWidth={2} />
+              {t("extendDeadline")}
+            </button>
+          )}
+
           {/* Preview / Edit toggle */}
           <button
             type="button"
@@ -475,6 +690,122 @@ export function EditorPage({
               style={{ backgroundColor: accentColor }}
             >
               {t("publishConfirm.confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Extend deadline dialog */}
+      <AlertDialog open={showExtendDialog} onOpenChange={setShowExtendDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-serif">
+              {t("extendDialog.title")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("extendDialog.currentDeadline")}:{" "}
+              {dueAt?.toLocaleString() ?? "—"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-4 py-2">
+            {/* Preset buttons */}
+            <div className="flex flex-wrap gap-2">
+              {(["1h", "3h", "1d", "3d", "custom"] as const).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setExtendMode(key)}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    extendMode === key
+                      ? "text-white"
+                      : "border-border text-muted-foreground hover:bg-surface-subtle"
+                  }`}
+                  style={
+                    extendMode === key
+                      ? {
+                          backgroundColor: accentColor,
+                          borderColor: accentColor,
+                        }
+                      : undefined
+                  }
+                >
+                  {key === "custom"
+                    ? t("extendDialog.custom")
+                    : t(`extendDialog.presets.${key}`)}
+                </button>
+              ))}
+            </div>
+
+            {/* Custom input */}
+            {extendMode === "custom" && (
+              <div className="flex items-center gap-3">
+                <div className="flex-1 space-y-1">
+                  <Label className="text-xs">{t("extendDialog.amount")}</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={customAmount}
+                    onChange={(e) => setCustomAmount(e.target.value)}
+                    className="h-8"
+                  />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <Label className="text-xs">&nbsp;</Label>
+                  <div className="flex gap-1">
+                    {(["hours", "days"] as const).map((u) => (
+                      <button
+                        key={u}
+                        type="button"
+                        onClick={() => setCustomUnit(u)}
+                        className={`flex-1 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors ${
+                          customUnit === u
+                            ? "text-white"
+                            : "border-border text-muted-foreground hover:bg-surface-subtle"
+                        }`}
+                        style={
+                          customUnit === u
+                            ? {
+                                backgroundColor: accentColor,
+                                borderColor: accentColor,
+                              }
+                            : undefined
+                        }
+                      >
+                        {t(`extendDialog.unit.${u}`)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* New deadline preview */}
+            {(() => {
+              const newDate = getExtendedDate();
+              if (!newDate) return null;
+              return (
+                <p className="text-sm text-foreground">
+                  {t("extendDialog.newDeadline")}:{" "}
+                  <span className="font-medium">
+                    {newDate.toLocaleString()}
+                  </span>
+                </p>
+              );
+            })()}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("extendDialog.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleExtendDeadline}
+              disabled={extending || !getExtendedDate()}
+              className="text-white"
+              style={{ backgroundColor: accentColor }}
+            >
+              {extending && <Loader2 size={14} className="mr-1 animate-spin" />}
+              {t("extendDialog.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
