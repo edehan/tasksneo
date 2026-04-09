@@ -98,6 +98,7 @@ export interface AttachmentMeta {
   renamedFile: string | null;
   mimeType: string | null;
   sizeBytes: number | null;
+  isVisible: boolean;
   url?: string;
   createdAt: string;
 }
@@ -1034,9 +1035,13 @@ export async function uploadTaskAttachment(
   token: string,
   taskId: string,
   file: File,
+  options?: { isVisible?: boolean },
 ): Promise<AttachmentMeta> {
   const formData = new FormData();
   formData.append("file", file);
+  if (options?.isVisible !== undefined) {
+    formData.append("isVisible", String(options.isVisible));
+  }
   // Backend returns AttachmentMeta[] — extract the first element
   const result = await apiRequest<AttachmentMeta[]>(
     `/tasks/${taskId}/attachments`,
@@ -1122,6 +1127,18 @@ export async function deleteAttachment(
   return apiRequest<void>(
     `/files/attachments/${attachmentId}`,
     { method: "DELETE" },
+    token,
+  );
+}
+
+export async function updateAttachmentVisibility(
+  token: string,
+  attachmentId: string,
+  isVisible: boolean,
+): Promise<AttachmentMeta> {
+  return apiRequest<AttachmentMeta>(
+    `/files/attachments/${attachmentId}`,
+    { method: "PATCH", body: JSON.stringify({ isVisible }) },
     token,
   );
 }

@@ -493,7 +493,12 @@ export async function getTaskDetail(taskId: string, userId: string) {
 				},
 			},
 		}),
-		prisma.attachment.findMany({ where: { taskId } }),
+		prisma.attachment.findMany({
+			where:
+				classMembership?.role === ClassRole.MEMBER
+					? { taskId, isVisible: true }
+					: { taskId },
+		}),
 		shouldLoadStats && task.classId
 			? cacheGetOrSet<TaskStats>(
 					cacheKeys.taskStats(taskId),
@@ -1025,6 +1030,7 @@ export async function addSubmissionAttachments(
 		renamedFile: string | null;
 		mimeType: string | null;
 		sizeBytes: bigint | null;
+		isVisible: boolean;
 		createdAt: Date;
 	}>;
 
@@ -1062,6 +1068,7 @@ export async function addTaskAttachments(
 		mimeType: string | null;
 		sizeBytes: bigint;
 	}>,
+	isVisible = true,
 ) {
 	const { classMembership } = await assertTaskAccess(taskId, userId);
 
@@ -1082,6 +1089,7 @@ export async function addTaskAttachments(
 		renamedFile: string | null;
 		mimeType: string | null;
 		sizeBytes: bigint | null;
+		isVisible: boolean;
 		createdAt: Date;
 	}>;
 
@@ -1092,6 +1100,7 @@ export async function addTaskAttachments(
 				originalName: attachment.originalName,
 				mimeType: attachment.mimeType,
 				sizeBytes: attachment.sizeBytes,
+				isVisible,
 				uploadedBy: userId,
 				taskId,
 			},

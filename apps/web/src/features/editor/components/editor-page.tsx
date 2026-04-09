@@ -42,6 +42,7 @@ import {
   publishTaskDraft,
   reviseTaskContent,
   transcribeAudio,
+  updateAttachmentVisibility,
   updateTask,
   uploadSubmissionAttachment,
   uploadTaskAttachment,
@@ -228,10 +229,60 @@ export function EditorPage({
     }
   }
 
+  async function handleToggleAttachmentVisibility(att: AttachmentMeta) {
+    if (!token || mode !== "publish") return;
+    try {
+      const updated = await updateAttachmentVisibility(
+        token,
+        att.id,
+        !att.isVisible,
+      );
+      setAttachments((prev) =>
+        prev.map((item) => (item.id === updated.id ? updated : item)),
+      );
+      toast.success(t("toast.attachmentVisibilityUpdated"));
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : t("toast.failedToggleAttachmentVisibility");
+      toast.error(message);
+    }
+  }
+
   // ─── Inline image upload ─────────────────────────────────────────────────
 
   function handleImageUploadClick() {
     imageInputRef.current?.click();
+  }
+
+  function insertImageMarkdown(att: AttachmentMeta) {
+    const textarea = textareaRef.current;
+    const markdown = `![${att.originalName}](${getFileUrl(att.fileKey)})`;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      setContent(
+        (prev) => prev.substring(0, start) + markdown + prev.substring(end),
+      );
+      requestAnimationFrame(() => {
+        textarea.focus();
+        const cursorPos = start + markdown.length;
+        textarea.setSelectionRange(cursorPos, cursorPos);
+      });
+    } else {
+      setContent((prev) => prev + markdown);
+    }
+  }
+
+  function handleInsertAttachmentImage(att: AttachmentMeta) {
+    const isImage =
+      att.mimeType?.toLowerCase().startsWith("image/") ||
+      /\.(png|jpe?g|gif|svg|webp|bmp)$/i.test(att.originalName);
+    if (!isImage) {
+      return;
+    }
+    insertImageMarkdown(att);
   }
 
   async function handleImageFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -241,28 +292,18 @@ export function EditorPage({
 
     setUploading(true);
     try {
-      const uploadFn =
-        mode === "publish" ? uploadTaskAttachment : uploadSubmissionAttachment;
-      const att = await uploadFn(token, taskId, file);
+      const att =
+        mode === "publish"
+          ? await uploadTaskAttachment(token, taskId, file, {
+              isVisible: false,
+            })
+          : await uploadSubmissionAttachment(token, taskId, file);
       setAttachments((prev) => [...prev, att]);
 
-      // Insert markdown image at cursor position
-      const textarea = textareaRef.current;
-      const markdown = `![${att.originalName ?? file.name}](${getFileUrl(att.fileKey)})`;
-      if (textarea) {
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        setContent(
-          (prev) => prev.substring(0, start) + markdown + prev.substring(end),
-        );
-        requestAnimationFrame(() => {
-          textarea.focus();
-          const cursorPos = start + markdown.length;
-          textarea.setSelectionRange(cursorPos, cursorPos);
-        });
-      } else {
-        setContent((prev) => prev + markdown);
-      }
+      insertImageMarkdown({
+        ...att,
+        originalName: att.originalName ?? file.name,
+      });
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("toast.failedUploadImage");
@@ -639,6 +680,12 @@ export function EditorPage({
                 attachments={attachments}
                 accentColor={accentColor}
                 onRemove={handleRemoveAttachment}
+                onInsertImage={handleInsertAttachmentImage}
+                onToggleVisibility={
+                  mode === "publish"
+                    ? handleToggleAttachmentVisibility
+                    : undefined
+                }
               />
             </div>
           </div>

@@ -146,6 +146,40 @@ async function parseFilesFromFormData(
 	return records;
 }
 
+function parseFormBoolean(
+	value: unknown,
+	fieldName: string,
+	defaultValue: boolean,
+) {
+	if (value == null) {
+		return defaultValue;
+	}
+
+	if (typeof value !== "string") {
+		throw new AppError(
+			400,
+			"VALIDATION_ERROR",
+			`${fieldName} must be a boolean string`,
+		);
+	}
+
+	const normalized = value.trim().toLowerCase();
+
+	if (normalized === "true" || normalized === "1") {
+		return true;
+	}
+
+	if (normalized === "false" || normalized === "0") {
+		return false;
+	}
+
+	throw new AppError(
+		400,
+		"VALIDATION_ERROR",
+		`${fieldName} must be one of true/false/1/0`,
+	);
+}
+
 export const tasksRouter = new Hono<{ Variables: AppVariables }>();
 
 tasksRouter.use("*", authMiddleware);
@@ -574,6 +608,11 @@ tasksRouter.post("/:taskId/attachments", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
 	const formData = await c.req.formData();
+	const isVisible = parseFormBoolean(
+		formData.get("isVisible"),
+		"isVisible",
+		true,
+	);
 
 	const records = await parseFilesFromFormData(
 		formData,
@@ -584,6 +623,7 @@ tasksRouter.post("/:taskId/attachments", async (c) => {
 		params.taskId,
 		authUser.userId,
 		records,
+		isVisible,
 	);
 
 	return c.json(attachments, 201);

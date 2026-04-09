@@ -1,7 +1,21 @@
 @baseUrl = http://localhost:3001
 @token = REPLACE_WITH_TOKEN
 @fileKey = REPLACE_WITH_FILE_KEY_URL_ENCODED
+@attachmentId = REPLACE_WITH_ATTACHMENT_ID
 
 ### Get authorized file URL
 GET {{baseUrl}}/files/{{fileKey}}
+Authorization: Bearer {{token}}
+
+### Update task attachment visibility
+PATCH {{baseUrl}}/files/attachments/{{attachmentId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "isVisible": false
+}
+
+### Delete attachment
+DELETE {{baseUrl}}/files/attachments/{{attachmentId}}
 Authorization: Bearer {{token}}
