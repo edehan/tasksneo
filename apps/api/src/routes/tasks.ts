@@ -15,7 +15,6 @@ import {
 	parseTaskContent,
 	parseTaskDescription,
 	reviseTaskContent,
-	transcribeAudio,
 } from "../services/ai.service.js";
 import {
 	createComment,
@@ -355,54 +354,6 @@ tasksRouter.post("/:taskId/parse", async (c) => {
 		},
 		200,
 	);
-});
-
-// ─── Transcribe audio (Speech-to-Text) ───────────────────────────────────────
-
-tasksRouter.post("/:taskId/transcribe", async (c) => {
-	const authUser = requireAuthUser(c);
-	const params = taskIdParamSchema.parse(c.req.param());
-
-	const task = await prisma.task.findUnique({
-		where: { id: params.taskId },
-		select: { id: true, classId: true },
-	});
-
-	if (!task) {
-		throw new AppError(404, "TASK_NOT_FOUND", "Task not found");
-	}
-
-	if (!task.classId) {
-		throw new AppError(403, "FORBIDDEN", "Only class admin can transcribe");
-	}
-
-	const membership = await prisma.classMember.findUnique({
-		where: {
-			classId_userId: {
-				classId: task.classId,
-				userId: authUser.userId,
-			},
-		},
-	});
-
-	if (
-		!membership ||
-		(membership.role !== "OWNER" && membership.role !== "ADMIN")
-	) {
-		throw new AppError(403, "FORBIDDEN", "Only class admin can transcribe");
-	}
-
-	const formData = await c.req.formData();
-	const audioFile = formData.get("audio");
-
-	if (!(audioFile instanceof File)) {
-		throw new AppError(400, "VALIDATION_ERROR", "audio file is required");
-	}
-
-	const audioBuffer = Buffer.from(await audioFile.arrayBuffer());
-	const result = await transcribeAudio(audioBuffer);
-
-	return c.json(result, 200);
 });
 
 // ─── Revise task content with AI ─────────────────────────────────────────────

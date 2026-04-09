@@ -515,9 +515,7 @@
       "failedSaveTask": "Failed to save task",
       "failedSaveSubmission": "Failed to save submission",
       "revised": "Content revised by AI",
-      "failedTranscribe": "Failed to transcribe audio",
       "failedRevise": "Failed to revise content",
-      "noSpeechDetected": "No speech detected in recording",
       "deadlineExtended": "Deadline extended",
       "failedExtendDeadline": "Failed to extend deadline"
     },
@@ -550,11 +548,17 @@
       "cancel": "Cancel",
       "confirm": "Confirm Publish"
     },
-    "voiceGuide": "Voice Guide",
-    "recording": "Recording...",
-    "stopRecording": "Stop",
-    "aiRevising": "AI revising...",
+    "aiRewrite": "AI Rewrite",
     "undo": "Undo",
+    "rewriteDialog": {
+      "title": "AI Rewrite",
+      "placeholder": "Describe the changes you want...",
+      "voiceInput": "Voice Input",
+      "recording": "Recording...",
+      "stop": "Stop",
+      "submit": "Rewrite",
+      "submitting": "Rewriting..."
+    },
     "extendDeadline": "Extend Deadline",
     "extendDialog": {
       "title": "Extend Deadline",
@@ -601,9 +605,7 @@
       "failedParseTask": "Failed to parse task",
       "uploadedFiles": "Uploaded {count, plural, one {# file} other {# files}}",
       "failedUploadFile": "Failed to upload file",
-      "failedCreateDraft": "Failed to create task draft",
-      "failedTranscribe": "Failed to transcribe audio",
-      "noSpeechDetected": "No speech detected in recording"
+      "failedCreateDraft": "Failed to create task draft"
     },
     "title": "Post Task — {className}",
     "inputPlaceholder": "Describe your task here...\\ne.g. \"Complete Chapter 5 exercises, due in 2 weeks, allow late submissions\"",
@@ -617,9 +619,6 @@
     "record": "Record",
     "recording": "Recording...",
     "stopRecording": "Stop",
-    "voiceRecorded": "Voice recorded ({duration}s)",
-    "deleteRecording": "Delete recording",
-    "transcribing": "Transcribing...",
     "timeOptions": {
       "title": "AI detected multiple possible time interpretations. Which one did you mean?",
       "none": "None of these — I'll enter manually"

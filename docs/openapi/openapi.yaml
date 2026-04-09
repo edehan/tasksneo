@@ -1952,49 +1952,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/ParseDraftTaskResponse'
 
-  /tasks/{taskId}/transcribe:
-    parameters:
-      - name: taskId
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
+  /stt/token:
     post:
-      tags: [Tasks]
-      summary: 语音转文字（Speech-to-Text）
+      tags: [STT]
+      summary: 获取 AssemblyAI 流式转录临时 Token
       description: |
-        上传音频文件，通过 AssemblyAI Universal-2 模型转录为文本。
-        音频即用即抛，不存储。仅 OWNER/ADMIN 可调用。
+        返回一个短期有效的临时 Token，前端使用该 Token 直接连接
+        AssemblyAI 流式 WebSocket 进行实时语音转文字。
+        Token 有效期 480 秒。需要登录。
       security:
         - userAuth: []
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              required: [audio]
-              properties:
-                audio:
-                  type: string
-                  format: binary
-                  description: 音频文件（webm、mp3 等格式）
       responses:
         '200':
-          description: 转录结果
+          description: 临时 Token
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  text:
+                  token:
                     type: string
-                    description: 转录文本
-                  language:
-                    type: string
-                    nullable: true
-                    description: 检测到的语言代码
+                    description: AssemblyAI 临时 Token
+        '503':
+          description: STT 服务未配置
 
   /tasks/{taskId}/revise:
     parameters:

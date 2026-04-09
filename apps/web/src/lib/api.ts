@@ -751,23 +751,8 @@ export async function parseTaskDraft(
 
 // ─── Speech-to-Text ──────────────────────────────────────────────────────────
 
-export interface TranscribeResponse {
-  text: string;
-  language: string | null;
-}
-
-export async function transcribeAudio(
-  token: string,
-  taskId: string,
-  audioBlob: Blob,
-): Promise<TranscribeResponse> {
-  const formData = new FormData();
-  formData.append("audio", audioBlob, "recording.webm");
-  return apiRequest<TranscribeResponse>(
-    `/tasks/${taskId}/transcribe`,
-    { method: "POST", body: formData },
-    token,
-  );
+export async function getSTTToken(token: string): Promise<{ token: string }> {
+  return apiRequest<{ token: string }>("/stt/token", { method: "POST" }, token);
 }
 
 // ─── AI Content Revision ─────────────────────────────────────────────────────
