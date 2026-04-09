@@ -528,6 +528,8 @@
       "attachmentRemoved": "Piece jointe supprimee",
       "failedRemoveAttachment": "Echec de suppression de la piece jointe",
       "failedUploadImage": "Echec du televersement de l'image",
+      "attachmentVisibilityUpdated": "Visibilite de la piece jointe mise a jour",
+      "failedToggleAttachmentVisibility": "Echec de mise a jour de la visibilite de la piece jointe",
       "changesSaved": "Modifications enregistrees",
       "taskPublished": "Tache publiee",
       "submissionSaved": "Rendu enregistre",
@@ -603,6 +605,9 @@
     "failedDownloadFile": "Echec du telechargement du fichier",
     "attachmentsCount": "Pieces jointes ({count})",
     "unknownFile": "Fichier inconnu",
+    "insertIntoBody": "Inserer {name} dans le contenu",
+    "hideAttachment": "Masquer {name}",
+    "showAttachment": "Afficher {name}",
     "noFilesAttached": "Aucun fichier joint",
     "showAll": "Tout afficher ({count})",
     "showLess": "Afficher moins"

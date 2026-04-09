@@ -528,6 +528,8 @@
       "attachmentRemoved": "附件已移除",
       "failedRemoveAttachment": "移除附件失败",
       "failedUploadImage": "上传图片失败",
+      "attachmentVisibilityUpdated": "附件显示状态已更新",
+      "failedToggleAttachmentVisibility": "更新附件显示状态失败",
       "changesSaved": "更改已保存",
       "taskPublished": "任务已发布",
       "submissionSaved": "提交已保存",
@@ -603,6 +605,9 @@
     "failedDownloadFile": "下载文件失败",
     "attachmentsCount": "附件（{count}）",
     "unknownFile": "未知文件",
+    "insertIntoBody": "将 {name} 插入正文",
+    "hideAttachment": "隐藏 {name}",
+    "showAttachment": "显示 {name}",
     "noFilesAttached": "还没有附件",
     "showAll": "查看全部（{count}）",
     "showLess": "收起"

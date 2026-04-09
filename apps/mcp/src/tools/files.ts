@@ -28,6 +28,7 @@ interface AttachmentMeta {
 	renamedFile: string | null;
 	mimeType: string | null;
 	sizeBytes: number | null;
+	isVisible: boolean;
 	createdAt: string;
 }
 

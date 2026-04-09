@@ -507,6 +507,8 @@
       "attachmentRemoved": "Attachment removed",
       "failedRemoveAttachment": "Failed to remove attachment",
       "failedUploadImage": "Failed to upload image",
+      "attachmentVisibilityUpdated": "Attachment visibility updated",
+      "failedToggleAttachmentVisibility": "Failed to update attachment visibility",
       "changesSaved": "Changes saved",
       "taskPublished": "Task published",
       "submissionSaved": "Submission saved",
@@ -582,6 +584,9 @@
     "failedDownloadFile": "Failed to download file",
     "attachmentsCount": "Attachments ({count})",
     "unknownFile": "Unknown file",
+    "insertIntoBody": "Insert {name} into body",
+    "hideAttachment": "Hide {name}",
+    "showAttachment": "Show {name}",
     "noFilesAttached": "No files attached yet",
     "showAll": "Show all ({count})",
     "showLess": "Show less"

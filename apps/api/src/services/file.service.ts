@@ -1,6 +1,7 @@
 import { ClassRole, prisma } from "@taskflow/db";
 
 import { AppError } from "../lib/errors.js";
+import { toAttachmentMeta } from "../lib/http.js";
 import { getPresignedUrl, removeObject } from "../lib/storage.js";
 
 async function isClassMember(classId: string, userId: string) {
@@ -203,4 +204,71 @@ export async function deleteAttachment(attachmentId: string, userId: string) {
 
 	await removeObject(attachment.fileKey);
 	await prisma.attachment.delete({ where: { id: attachment.id } });
+}
+
+export async function updateTaskAttachmentVisibility(
+	attachmentId: string,
+	userId: string,
+	isVisible: boolean,
+) {
+	const attachment = await prisma.attachment.findUnique({
+		where: { id: attachmentId },
+		select: {
+			id: true,
+			taskId: true,
+			submissionId: true,
+			classId: true,
+			avatarUserId: true,
+		},
+	});
+
+	if (!attachment) {
+		throw new AppError(404, "FILE_NOT_FOUND", "Attachment not found");
+	}
+
+	if (
+		!attachment.taskId ||
+		attachment.submissionId ||
+		attachment.classId ||
+		attachment.avatarUserId
+	) {
+		throw new AppError(
+			400,
+			"VALIDATION_ERROR",
+			"Only task attachments support visibility changes",
+		);
+	}
+
+	const task = await prisma.task.findUnique({
+		where: { id: attachment.taskId },
+		select: { classId: true },
+	});
+
+	if (!task?.classId) {
+		throw new AppError(
+			403,
+			"FORBIDDEN",
+			"Only class task attachments can be updated",
+		);
+	}
+
+	const membership = await isClassMember(task.classId, userId);
+
+	if (
+		!membership ||
+		(membership.role !== ClassRole.OWNER && membership.role !== ClassRole.ADMIN)
+	) {
+		throw new AppError(
+			403,
+			"FORBIDDEN",
+			"No permission to update this attachment",
+		);
+	}
+
+	const updated = await prisma.attachment.update({
+		where: { id: attachment.id },
+		data: { isVisible },
+	});
+
+	return toAttachmentMeta(updated);
 }

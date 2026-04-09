@@ -81,6 +81,51 @@ function formatOptionDate(iso: string | null, locale: string): string {
   }
 }
 
+function isDocxFile(file: File): boolean {
+  return /\.docx$/i.test(file.name);
+}
+
+function toPdfFileName(fileName: string): string {
+  return fileName.replace(/\.docx$/i, ".pdf");
+}
+
+async function convertDocxToPdf(file: File): Promise<File> {
+  const [{ extractRawText }, { jsPDF }] = await Promise.all([
+    import("mammoth"),
+    import("jspdf"),
+  ]);
+
+  const arrayBuffer = await file.arrayBuffer();
+  const result = await extractRawText({ arrayBuffer });
+  const plainText = result.value.trim() || file.name;
+
+  const doc = new jsPDF({
+    unit: "pt",
+    format: "a4",
+  });
+  const margin = 40;
+  const lineHeight = 16;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const maxLineWidth = pageWidth - margin * 2;
+  const lines = doc.splitTextToSize(plainText, maxLineWidth) as string[];
+
+  let cursorY = margin;
+  for (const line of lines) {
+    if (cursorY > pageHeight - margin) {
+      doc.addPage();
+      cursorY = margin;
+    }
+    doc.text(line, margin, cursorY);
+    cursorY += lineHeight;
+  }
+
+  const blob = doc.output("blob");
+  return new File([blob], toPdfFileName(file.name), {
+    type: "application/pdf",
+  });
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function PostTaskDialog({
@@ -161,7 +206,9 @@ export function PostTaskDialog({
         if (draft.dueAt) setDueAt(new Date(draft.dueAt));
         setAllowLate(draft.allowLateSubmission);
         setBlockedBy(draft.blockedBy ?? []);
-        setAttachments(draft.attachments ?? []);
+        setAttachments(
+          (draft.attachments ?? []).filter((att) => att.isVisible),
+        );
         if (draft.title || draft.dueAt) setExpanded(true);
       })
       .catch(() => {});
@@ -321,13 +368,30 @@ export function PostTaskDialog({
     setUploading(true);
     try {
       const taskId = await ensureDraft();
+      const visibleAttachments: AttachmentMeta[] = [];
 
-      const results = await Promise.all(
-        fileArray.map((f) => uploadTaskAttachment(token, taskId, f)),
+      for (const file of fileArray) {
+        const visible = await uploadTaskAttachment(token, taskId, file, {
+          isVisible: true,
+        });
+        visibleAttachments.push(visible);
+
+        if (isDocxFile(file)) {
+          try {
+            const hiddenPdf = await convertDocxToPdf(file);
+            await uploadTaskAttachment(token, taskId, hiddenPdf, {
+              isVisible: false,
+            });
+          } catch (err) {
+            console.error("Failed to convert DOCX to hidden PDF", err);
+          }
+        }
+      }
+
+      setAttachments((prev) => [...prev, ...visibleAttachments]);
+      toast.success(
+        t("toast.uploadedFiles", { count: visibleAttachments.length }),
       );
-
-      setAttachments((prev) => [...prev, ...results]);
-      toast.success(t("toast.uploadedFiles", { count: results.length }));
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("toast.failedUploadFile");

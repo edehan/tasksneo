@@ -752,7 +752,7 @@ components:
 
     AttachmentMeta:
       type: object
-      required: [id, fileKey, originalName, createdAt]
+      required: [id, fileKey, originalName, isVisible, createdAt]
       properties:
         id:
           type: string
@@ -770,6 +770,9 @@ components:
         sizeBytes:
           type: integer
           nullable: true
+        isVisible:
+          type: boolean
+          description: 仅对任务附件生效；false 时成员列表隐藏但仍可通过正文内链访问
         url:
           type: string
           description: 文件访问地址，指向 GET /files/:fileKey
@@ -2491,6 +2494,9 @@ paths:
                 file:
                   type: string
                   format: binary
+                isVisible:
+                  type: boolean
+                  description: 可选，任务附件是否在成员侧展示（默认 true）
       responses:
         '201':
           description: 上传成功
@@ -2645,6 +2651,59 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+
+  /files/attachments/{attachmentId}:
+    parameters:
+      - name: attachmentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      tags: [Attachments]
+      summary: 更新任务附件显示状态
+      description: |
+        仅支持任务附件，且仅 OWNER/ADMIN 可操作。
+      security:
+        - userAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isVisible]
+              properties:
+                isVisible:
+                  type: boolean
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttachmentMeta'
+        '403':
+          description: 权限不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: 附件不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags: [Attachments]
+      summary: 删除附件
+      security:
+        - userAuth: []
+      responses:
+        '204':
+          description: 删除成功
 
   /tasks/{taskId}/submissions/rename:
     parameters:

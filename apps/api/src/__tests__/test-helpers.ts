@@ -54,6 +54,14 @@ export async function resetDatabase() {
       ) THEN
         ALTER TABLE tasks ADD COLUMN published_at TIMESTAMPTZ;
       END IF;
+
+      IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'attachments' AND column_name = 'is_visible'
+      ) THEN
+        ALTER TABLE attachments ADD COLUMN is_visible BOOLEAN NOT NULL DEFAULT true;
+      END IF;
     END $$;
   `);
 
