@@ -1,4 +1,3 @@
-import { AssemblyAI } from "assemblyai";
 import { z } from "zod";
 
 import { AppError } from "../lib/errors.js";
@@ -602,57 +601,6 @@ export function assertParseInput(text: string) {
 	if (!text.trim()) {
 		throw new AppError(400, "INVALID_PARSE_INPUT", "text is required");
 	}
-}
-
-// ─── Speech-to-Text (AssemblyAI) ─────────────────────────────────────────────
-
-const MAX_AUDIO_BYTES = 25 * 1024 * 1024; // 25 MB
-
-export interface TranscribeResult {
-	text: string;
-	language: string | null;
-}
-
-export async function transcribeAudio(
-	audioBuffer: Buffer,
-): Promise<TranscribeResult> {
-	const apiKey = process.env.ASSEMBLYAI_API_KEY;
-
-	if (!apiKey) {
-		throw new AppError(
-			503,
-			"STT_NOT_CONFIGURED",
-			"Speech-to-text service is not configured",
-		);
-	}
-
-	if (audioBuffer.byteLength > MAX_AUDIO_BYTES) {
-		throw new AppError(
-			400,
-			"AUDIO_TOO_LARGE",
-			`Audio file must be under ${MAX_AUDIO_BYTES / (1024 * 1024)} MB`,
-		);
-	}
-
-	const client = new AssemblyAI({ apiKey });
-
-	const transcript = await client.transcripts.transcribe({
-		audio: audioBuffer,
-		language_detection: true,
-	});
-
-	if (transcript.status === "error") {
-		throw new AppError(
-			503,
-			"STT_FAILED",
-			transcript.error ?? "Speech-to-text transcription failed",
-		);
-	}
-
-	return {
-		text: transcript.text ?? "",
-		language: transcript.language_code ?? null,
-	};
 }
 
 // ─── AI Content Revision ─────────────────────────────────────────────────────

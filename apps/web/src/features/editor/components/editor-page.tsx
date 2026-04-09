@@ -8,6 +8,7 @@ import {
   Loader2,
   Mic,
   Send,
+  Sparkles,
   Undo2,
   Upload,
 } from "lucide-react";
@@ -28,12 +29,18 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { EditorToolbar } from "@/features/editor/components/editor-toolbar";
 import { MarkdownPreview } from "@/features/editor/components/markdown-preview";
 import { AttachmentSidebar } from "@/features/tasks/components/attachment-sidebar";
-import { useAudioRecorder } from "@/hooks/use-audio-recorder";
+import { useStreamingTranscription } from "@/hooks/use-streaming-transcription";
 import {
   ApiError,
   type AttachmentMeta,
@@ -41,7 +48,6 @@ import {
   getFileUrl,
   publishTaskDraft,
   reviseTaskContent,
-  transcribeAudio,
   updateAttachmentVisibility,
   updateTask,
   uploadSubmissionAttachment,
@@ -92,16 +98,18 @@ export function EditorPage({
   const [uploading, setUploading] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
-  // Voice guide
-  const {
-    isRecording: voiceRecording,
-    audioBlob: voiceBlob,
-    duration: voiceDuration,
-    startRecording: voiceStartRecording,
-    stopRecording: voiceStopRecording,
-    clearRecording: voiceClearRecording,
-  } = useAudioRecorder();
+  // AI Rewrite dialog
+  const [showRewriteDialog, setShowRewriteDialog] = useState(false);
+  const [rewriteInstruction, setRewriteInstruction] = useState("");
   const [revising, setRevising] = useState(false);
+  const {
+    isStreaming: rewriteStreaming,
+    transcript: rewriteTranscript,
+    partialText: rewritePartialText,
+    startStreaming: rewriteStartStreaming,
+    stopStreaming: rewriteStopStreaming,
+    resetTranscript: rewriteResetTranscript,
+  } = useStreamingTranscription();
 
   // Undo stack
   const [contentHistory, setContentHistory] = useState<string[]>([]);
@@ -313,62 +321,55 @@ export function EditorPage({
     }
   }
 
-  // ─── Voice guide revision ──────────────────────────────────────────────────
+  // ─── AI Rewrite ────────────────────────────────────────────────────────────
 
-  // Use ref to capture latest content without adding it as a useEffect dep
-  const contentRef = useRef(content);
-  contentRef.current = content;
-
-  function handleVoiceGuideStop() {
-    voiceStopRecording();
-  }
-
-  // Process voice guide after blob is ready
+  // Sync streaming transcript into rewrite instruction
+  const prevRewriteTranscriptRef = useRef("");
   useEffect(() => {
-    if (!voiceBlob || revising || !token) return;
-
-    const currentToken = token;
-    const currentBlob = voiceBlob;
-    const currentContent = contentRef.current;
-
-    async function processVoiceGuide() {
-      setRevising(true);
-      try {
-        const transcription = await transcribeAudio(
-          currentToken,
-          taskId,
-          currentBlob,
+    if (
+      rewriteTranscript &&
+      rewriteTranscript !== prevRewriteTranscriptRef.current
+    ) {
+      const newText = rewriteTranscript
+        .slice(prevRewriteTranscriptRef.current.length)
+        .trim();
+      if (newText) {
+        setRewriteInstruction((prev) =>
+          prev ? `${prev} ${newText}` : newText,
         );
-        if (!transcription.text) {
-          toast.error(t("toast.noSpeechDetected"));
-          voiceClearRecording();
-          setRevising(false);
-          return;
-        }
-
-        // Save current content for undo
-        setContentHistory((prev) => [...prev, currentContent]);
-
-        const result = await reviseTaskContent(
-          currentToken,
-          taskId,
-          currentContent,
-          transcription.text,
-        );
-        setContent(result.revisedContent);
-        voiceClearRecording();
-        toast.success(t("toast.revised"));
-      } catch (err) {
-        const message =
-          err instanceof ApiError ? err.message : t("toast.failedRevise");
-        toast.error(message);
-      } finally {
-        setRevising(false);
       }
+      prevRewriteTranscriptRef.current = rewriteTranscript;
     }
+  }, [rewriteTranscript]);
 
-    void processVoiceGuide();
-  }, [voiceBlob, revising, token, taskId, voiceClearRecording, t]);
+  async function handleRewriteSubmit() {
+    if (!token || !rewriteInstruction.trim() || revising) return;
+
+    setRevising(true);
+    try {
+      // Save current content for undo
+      setContentHistory((prev) => [...prev, content]);
+
+      const result = await reviseTaskContent(
+        token,
+        taskId,
+        content,
+        rewriteInstruction.trim(),
+      );
+      setContent(result.revisedContent);
+      toast.success(t("toast.revised"));
+      setShowRewriteDialog(false);
+      setRewriteInstruction("");
+      rewriteResetTranscript();
+      prevRewriteTranscriptRef.current = "";
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : t("toast.failedRevise");
+      toast.error(message);
+    } finally {
+      setRevising(false);
+    }
+  }
 
   function handleUndo() {
     if (contentHistory.length === 0) return;
@@ -524,41 +525,15 @@ export function EditorPage({
             </button>
           )}
 
-          {/* Voice Guide (only in publish mode) */}
+          {/* AI Rewrite (only in publish mode) */}
           {mode === "publish" && (
             <button
               type="button"
-              onClick={
-                voiceRecording ? handleVoiceGuideStop : voiceStartRecording
-              }
-              disabled={revising}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors ${
-                voiceRecording
-                  ? "border-destructive bg-destructive/10 text-destructive"
-                  : revising
-                    ? "border-border text-muted-foreground opacity-50"
-                    : "border-border text-muted-foreground hover:bg-surface-subtle hover:text-foreground"
-              }`}
+              onClick={() => setShowRewriteDialog(true)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
             >
-              {revising ? (
-                <>
-                  <Loader2 size={13} strokeWidth={2} className="animate-spin" />
-                  {t("aiRevising")}
-                </>
-              ) : voiceRecording ? (
-                <>
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
-                  </span>
-                  {voiceDuration}s · {t("stopRecording")}
-                </>
-              ) : (
-                <>
-                  <Mic size={13} strokeWidth={2} />
-                  {t("voiceGuide")}
-                </>
-              )}
+              <Sparkles size={13} strokeWidth={2} />
+              {t("aiRewrite")}
             </button>
           )}
 
@@ -741,6 +716,94 @@ export function EditorPage({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* AI Rewrite dialog */}
+      <Dialog
+        open={showRewriteDialog}
+        onOpenChange={(open) => {
+          setShowRewriteDialog(open);
+          if (!open) {
+            rewriteStopStreaming();
+            setRewriteInstruction("");
+            rewriteResetTranscript();
+            prevRewriteTranscriptRef.current = "";
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif">
+              {t("rewriteDialog.title")}
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <textarea
+              value={
+                rewriteInstruction +
+                (rewritePartialText ? ` ${rewritePartialText}` : "")
+              }
+              onChange={(e) => setRewriteInstruction(e.target.value)}
+              placeholder={t("rewriteDialog.placeholder")}
+              className="w-full resize-none rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-text-muted-soft focus:outline-none focus:ring-1 focus:ring-ring"
+              style={{ minHeight: 100 }}
+              disabled={revising}
+            />
+
+            <div className="flex items-center justify-between">
+              {/* Voice input toggle */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (rewriteStreaming) {
+                    rewriteStopStreaming();
+                  } else if (token) {
+                    void rewriteStartStreaming(token);
+                  }
+                }}
+                disabled={revising}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  rewriteStreaming
+                    ? "border-destructive bg-destructive/10 text-destructive"
+                    : "border-border text-muted-foreground hover:bg-surface-subtle hover:text-foreground"
+                }`}
+              >
+                {rewriteStreaming ? (
+                  <>
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
+                    </span>
+                    {t("rewriteDialog.stop")}
+                  </>
+                ) : (
+                  <>
+                    <Mic size={13} strokeWidth={2} />
+                    {t("rewriteDialog.voiceInput")}
+                  </>
+                )}
+              </button>
+
+              {/* Submit button */}
+              <Button
+                onClick={() => void handleRewriteSubmit()}
+                disabled={revising || !rewriteInstruction.trim()}
+                className="gap-2 px-6 text-white hover:opacity-90"
+                style={{ backgroundColor: accentColor }}
+              >
+                {revising ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <Sparkles size={15} strokeWidth={2} />
+                )}
+                {revising
+                  ? t("rewriteDialog.submitting")
+                  : t("rewriteDialog.submit")}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Extend deadline dialog */}
       <AlertDialog open={showExtendDialog} onOpenChange={setShowExtendDialog}>

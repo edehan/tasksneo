@@ -32,7 +32,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useAudioRecorder } from "@/hooks/use-audio-recorder";
+import { useStreamingTranscription } from "@/hooks/use-streaming-transcription";
 import {
   ApiError,
   type AttachmentMeta,
@@ -43,7 +43,6 @@ import {
   type ParseTimeOption,
   parseTaskDraft,
   type TaskSummary,
-  transcribeAudio,
   updateTask,
   uploadTaskAttachment,
 } from "@/lib/api";
@@ -183,17 +182,30 @@ export function PostTaskDialog({
   const [classTasks, setClassTasks] = useState<TaskSummary[]>([]);
   const [prereqOpen, setPrereqOpen] = useState(false);
 
-  // Voice recording
+  // Voice streaming transcription
   const {
-    isRecording,
-    audioBlob,
-    duration: recordingDuration,
-    startRecording,
-    stopRecording,
-    clearRecording,
-  } = useAudioRecorder();
+    isStreaming,
+    transcript,
+    partialText,
+    startStreaming,
+    stopStreaming,
+    resetTranscript,
+  } = useStreamingTranscription();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync streaming transcript into rawText
+  const prevTranscriptRef = useRef("");
+  useEffect(() => {
+    if (transcript && transcript !== prevTranscriptRef.current) {
+      const newText = transcript.slice(prevTranscriptRef.current.length).trim();
+      if (newText) {
+        setRawText((prev) => (prev ? `${prev} ${newText}` : newText));
+        if (parsed) setParsed(false);
+      }
+      prevTranscriptRef.current = transcript;
+    }
+  }, [transcript, parsed]);
 
   // Keep ref in sync
   useEffect(() => {
@@ -281,7 +293,9 @@ export function PostTaskDialog({
     setAttempted(false);
     setPendingTimeOptions(null);
     setClassTasks([]);
-  }, []);
+    resetTranscript();
+    prevTranscriptRef.current = "";
+  }, [resetTranscript]);
 
   // ─── AI Parse ──────────────────────────────────────────────────────────
 
@@ -306,41 +320,17 @@ export function PostTaskDialog({
     if (!token || parsing || parsed) return;
 
     const hasText = rawText.trim().length > 0;
-    const hasAudio = audioBlob !== null;
     const hasAttachments = attachments.length > 0;
-    if (!hasText && !hasAudio && !hasAttachments) return;
+    if (!hasText && !hasAttachments) return;
 
     setParsing(true);
     try {
       const taskId = await ensureDraft();
 
-      // If there's a voice recording, transcribe it first
-      let combinedText = rawText.trim();
-      if (audioBlob) {
-        const transcription = await transcribeAudio(token, taskId, audioBlob);
-        if (transcription.text) {
-          combinedText = combinedText
-            ? `${combinedText}\n\n${transcription.text}`
-            : transcription.text;
-          // Update the raw text with transcribed content
-          setRawText(combinedText);
-          clearRecording();
-        } else {
-          toast.error(t("toast.noSpeechDetected"));
-          setParsing(false);
-          return;
-        }
-      }
-
-      if (!combinedText && !hasAttachments) {
-        setParsing(false);
-        return;
-      }
-
       const result = await parseTaskDraft(
         token,
         taskId,
-        combinedText || undefined,
+        rawText.trim() || undefined,
       );
 
       if (result.title) setTitle(result.title);
@@ -538,24 +528,30 @@ export function PostTaskDialog({
                 {uploading ? t("uploading") : t("attach")}
               </button>
 
-              {/* Record Voice */}
+              {/* Voice Streaming */}
               <button
                 type="button"
-                onClick={isRecording ? stopRecording : startRecording}
+                onClick={() => {
+                  if (isStreaming) {
+                    stopStreaming();
+                  } else if (token) {
+                    void startStreaming(token);
+                  }
+                }}
                 disabled={uploading || parsing}
                 className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors disabled:opacity-50 ${
-                  isRecording
+                  isStreaming
                     ? "border-destructive bg-destructive/10 text-destructive"
                     : "border-border text-muted-foreground hover:bg-surface-subtle hover:text-foreground"
                 }`}
               >
-                {isRecording ? (
+                {isStreaming ? (
                   <>
                     <span className="relative flex h-2 w-2">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
                       <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
                     </span>
-                    {recordingDuration}s · {t("stopRecording")}
+                    {t("stopRecording")}
                   </>
                 ) : (
                   <>
@@ -580,9 +576,7 @@ export function PostTaskDialog({
               </button>
 
               {/* AI Parse — visible when any input exists */}
-              {(rawText.trim().length > 0 ||
-                audioBlob !== null ||
-                attachments.length > 0) && (
+              {(rawText.trim().length > 0 || attachments.length > 0) && (
                 <button
                   type="button"
                   onClick={handleAiParse}
@@ -612,37 +606,18 @@ export function PostTaskDialog({
                   ) : (
                     <Sparkles size={13} strokeWidth={2} />
                   )}
-                  {parsing
-                    ? audioBlob
-                      ? t("transcribing")
-                      : t("parsing")
-                    : parsed
-                      ? t("parsed")
-                      : t("aiParse")}
+                  {parsing ? t("parsing") : parsed ? t("parsed") : t("aiParse")}
                 </button>
               )}
             </div>
           </div>
 
-          {/* Voice recording indicator */}
-          {audioBlob && !isRecording && (
-            <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5">
-              <Mic
-                size={13}
-                strokeWidth={2}
-                className="text-muted-foreground"
-              />
-              <span className="text-xs font-medium text-foreground">
-                {t("voiceRecorded", { duration: recordingDuration })}
+          {/* Partial transcript indicator */}
+          {partialText && (
+            <div className="mt-2 px-1">
+              <span className="text-xs text-muted-foreground italic">
+                {partialText}
               </span>
-              <button
-                type="button"
-                onClick={clearRecording}
-                className="rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                title={t("deleteRecording")}
-              >
-                <X size={11} strokeWidth={2} />
-              </button>
             </div>
           )}
 
