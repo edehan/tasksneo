@@ -1,5 +1,8 @@
 # ---- Builder ----
 FROM oven/bun:latest AS builder
+
+RUN bun add -g pnpm@10.32.1
+
 WORKDIR /app
 
 # Copy workspace config and package manifests for dependency caching
@@ -7,24 +10,24 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/db/package.json ./packages/db/
 
-# Install all dependencies using bun
-# (Bun 内置支持 pnpm，可以直接用 pnpm-lock.yaml)
-RUN bun install
+# Install all dependencies from pnpm lockfile (Bun lock migration for pnpm v9 is unstable)
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm config set store-dir /pnpm/store \
+  && pnpm install -r --frozen-lockfile
 
 # Generate Prisma client
 COPY packages/db/prisma ./packages/db/prisma
-RUN bunx prisma generate --schema=packages/db/prisma/schema.prisma
+RUN cd packages/db && pnpm exec prisma generate
 
 # Build packages/db to JS
 COPY packages/db/src ./packages/db/src
 COPY packages/db/tsconfig.json ./packages/db/
-RUN cd packages/db && bunx tsc --target ES2022 --module NodeNext --moduleResolution NodeNext \
+RUN cd packages/db && pnpm exec tsc --target ES2022 --module NodeNext --moduleResolution NodeNext \
     --esModuleInterop --skipLibCheck --outDir dist --declaration src/index.ts
 
 # Build API
 COPY apps/api/src ./apps/api/src
 COPY apps/api/tsconfig.json ./apps/api/
-RUN cd apps/api && bun run build
+RUN cd apps/api && pnpm run build
 
 # Update packages/db main to compiled JS
 RUN bun -e "\
