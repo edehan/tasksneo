@@ -85,44 +85,54 @@ function isDocxFile(file: File): boolean {
   return /\.docx$/i.test(file.name);
 }
 
-function toPdfFileName(fileName: string): string {
-  return fileName.replace(/\.docx$/i, ".pdf");
+function toMarkdownFileName(fileName: string): string {
+  return fileName.replace(/\.docx$/i, ".md");
 }
 
-async function convertDocxToPdf(file: File): Promise<File> {
-  const [{ extractRawText }, { jsPDF }] = await Promise.all([
-    import("mammoth"),
-    import("jspdf"),
-  ]);
+async function convertDocxToMarkdownFile(file: File): Promise<File> {
+  const mammoth = await import("mammoth");
+  const { extractRawText, images } = mammoth;
+  const convertToMarkdown = (
+    mammoth as unknown as {
+      convertToMarkdown?: (
+        input: { arrayBuffer: ArrayBuffer },
+        options?: {
+          convertImage?: unknown;
+        },
+      ) => Promise<{ value: string }>;
+    }
+  ).convertToMarkdown;
 
   const arrayBuffer = await file.arrayBuffer();
-  const result = await extractRawText({ arrayBuffer });
-  const plainText = result.value.trim() || file.name;
+  let markdown = "";
 
-  const doc = new jsPDF({
-    unit: "pt",
-    format: "a4",
-  });
-  const margin = 40;
-  const lineHeight = 16;
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const maxLineWidth = pageWidth - margin * 2;
-  const lines = doc.splitTextToSize(plainText, maxLineWidth) as string[];
-
-  let cursorY = margin;
-  for (const line of lines) {
-    if (cursorY > pageHeight - margin) {
-      doc.addPage();
-      cursorY = margin;
-    }
-    doc.text(line, margin, cursorY);
-    cursorY += lineHeight;
+  if (convertToMarkdown) {
+    const result = await convertToMarkdown(
+      { arrayBuffer },
+      {
+        // Avoid huge base64 payloads in markdown while preserving image placeholders.
+        convertImage: images.imgElement(() =>
+          Promise.resolve({
+            src: "embedded-image",
+            alt: "image",
+          }),
+        ),
+      },
+    );
+    markdown = result.value.trim();
   }
 
-  const blob = doc.output("blob");
-  return new File([blob], toPdfFileName(file.name), {
-    type: "application/pdf",
+  if (!markdown) {
+    const text = await extractRawText({ arrayBuffer });
+    markdown = text.value.trim();
+  }
+
+  if (!markdown) {
+    markdown = file.name;
+  }
+
+  return new File([markdown], toMarkdownFileName(file.name), {
+    type: "text/markdown;charset=utf-8",
   });
 }
 
@@ -378,12 +388,12 @@ export function PostTaskDialog({
 
         if (isDocxFile(file)) {
           try {
-            const hiddenPdf = await convertDocxToPdf(file);
-            await uploadTaskAttachment(token, taskId, hiddenPdf, {
+            const hiddenMarkdown = await convertDocxToMarkdownFile(file);
+            await uploadTaskAttachment(token, taskId, hiddenMarkdown, {
               isVisible: false,
             });
           } catch (err) {
-            console.error("Failed to convert DOCX to hidden PDF", err);
+            console.error("Failed to convert DOCX to hidden markdown", err);
           }
         }
       }
