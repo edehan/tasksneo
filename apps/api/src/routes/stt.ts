@@ -22,14 +22,15 @@ sttRouter.post("/token", async (c) => {
 		);
 	}
 
-	const response = await fetch("https://api.assemblyai.com/v2/realtime/token", {
-		method: "POST",
-		headers: {
-			Authorization: apiKey,
-			"Content-Type": "application/json",
+	const response = await fetch(
+		"https://streaming.assemblyai.com/v3/token?expires_in_seconds=480",
+		{
+			method: "GET",
+			headers: {
+				Authorization: apiKey,
+			},
 		},
-		body: JSON.stringify({ expires_in: 480 }),
-	});
+	);
 
 	if (!response.ok) {
 		throw new AppError(503, "STT_TOKEN_FAILED", "Failed to create STT token");
