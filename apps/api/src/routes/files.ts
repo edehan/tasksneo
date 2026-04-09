@@ -6,6 +6,7 @@ import { authMiddleware } from "../middleware/auth.js";
 import {
 	deleteAttachment,
 	getAuthorizedFileUrl,
+	updateTaskAttachmentVisibility,
 } from "../services/file.service.js";
 
 import type { AppVariables } from "../types/context.js";
@@ -16,6 +17,10 @@ const fileParamSchema = z.object({
 
 const attachmentIdParamSchema = z.object({
 	attachmentId: z.string().uuid(),
+});
+
+const updateAttachmentVisibilitySchema = z.object({
+	isVisible: z.boolean(),
 });
 
 export const filesRouter = new Hono<{ Variables: AppVariables }>();
@@ -54,4 +59,16 @@ filesRouter.delete("/attachments/:attachmentId", async (c) => {
 	const params = attachmentIdParamSchema.parse(c.req.param());
 	await deleteAttachment(params.attachmentId, authUser.userId);
 	return c.body(null, 204);
+});
+
+filesRouter.patch("/attachments/:attachmentId", async (c) => {
+	const authUser = requireAuthUser(c);
+	const params = attachmentIdParamSchema.parse(c.req.param());
+	const body = updateAttachmentVisibilitySchema.parse(await c.req.json());
+	const updated = await updateTaskAttachmentVisibility(
+		params.attachmentId,
+		authUser.userId,
+		body.isVisible,
+	);
+	return c.json(updated, 200);
 });

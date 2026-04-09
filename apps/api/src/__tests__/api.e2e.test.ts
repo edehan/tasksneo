@@ -584,8 +584,113 @@ describe("TaskFlow API e2e", () => {
 		);
 		expect(taskAttachmentRes.status).toBe(201);
 		const taskAttachmentBody = (await json(taskAttachmentRes)) as Array<{
+			id: string;
 			fileKey: string;
+			isVisible: boolean;
 		}>;
+		expect(taskAttachmentBody[0]?.isVisible).toBe(true);
+
+		const hiddenTaskAttachmentForm = new FormData();
+		hiddenTaskAttachmentForm.append(
+			"files",
+			new File([Buffer.from("task-hidden-file")], "task-hidden.txt", {
+				type: "text/plain",
+			}),
+		);
+		hiddenTaskAttachmentForm.append("isVisible", "false");
+		const hiddenTaskAttachmentRes = await app.request(
+			`/tasks/${taskId}/attachments`,
+			{
+				method: "POST",
+				headers: authHeader(ownerToken),
+				body: hiddenTaskAttachmentForm,
+			},
+		);
+		expect(hiddenTaskAttachmentRes.status).toBe(201);
+		const hiddenTaskAttachmentBody = (await json(
+			hiddenTaskAttachmentRes,
+		)) as Array<{
+			id: string;
+			fileKey: string;
+			isVisible: boolean;
+		}>;
+		expect(hiddenTaskAttachmentBody[0]?.isVisible).toBe(false);
+
+		const memberTaskDetailBeforeHide = await requestJson(
+			app,
+			`/tasks/${taskId}`,
+			{
+				method: "GET",
+				headers: authHeader(memberToken),
+			},
+		);
+		expect(memberTaskDetailBeforeHide.response.status).toBe(200);
+		expect(
+			(
+				memberTaskDetailBeforeHide.body as {
+					attachments: Array<{ id: string }>;
+				}
+			).attachments.length,
+		).toBe(1);
+
+		const memberToggleHidden = await requestJson(
+			app,
+			`/files/attachments/${hiddenTaskAttachmentBody[0]?.id}`,
+			{
+				method: "PATCH",
+				headers: authHeader(memberToken),
+				body: JSON.stringify({ isVisible: true }),
+			},
+		);
+		expect(memberToggleHidden.response.status).toBe(403);
+
+		const ownerToggleVisibleToHidden = await requestJson(
+			app,
+			`/files/attachments/${taskAttachmentBody[0]?.id}`,
+			{
+				method: "PATCH",
+				headers: authHeader(ownerToken),
+				body: JSON.stringify({ isVisible: false }),
+			},
+		);
+		expect(ownerToggleVisibleToHidden.response.status).toBe(200);
+		expect(
+			(ownerToggleVisibleToHidden.body as { isVisible: boolean }).isVisible,
+		).toBe(false);
+
+		const memberTaskDetailAfterHide = await requestJson(
+			app,
+			`/tasks/${taskId}`,
+			{
+				method: "GET",
+				headers: authHeader(memberToken),
+			},
+		);
+		expect(memberTaskDetailAfterHide.response.status).toBe(200);
+		expect(
+			(
+				memberTaskDetailAfterHide.body as {
+					attachments: Array<{ id: string }>;
+				}
+			).attachments.length,
+		).toBe(0);
+
+		const ownerTaskDetailAfterHide = await requestJson(
+			app,
+			`/tasks/${taskId}`,
+			{
+				method: "GET",
+				headers: authHeader(ownerToken),
+			},
+		);
+		expect(ownerTaskDetailAfterHide.response.status).toBe(200);
+		expect(
+			(
+				ownerTaskDetailAfterHide.body as {
+					attachments: Array<{ id: string }>;
+				}
+			).attachments.length,
+		).toBe(2);
 
 		const submitTextRes = await requestJson(
 			app,

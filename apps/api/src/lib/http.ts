@@ -147,6 +147,7 @@ interface AttachmentSource {
 	renamedFile: string | null;
 	mimeType: string | null;
 	sizeBytes: bigint | null;
+	isVisible: boolean;
 	createdAt: Date;
 }
 
@@ -158,6 +159,7 @@ export function toAttachmentMeta(attachment: AttachmentSource) {
 		renamedFile: attachment.renamedFile,
 		mimeType: attachment.mimeType,
 		sizeBytes: attachment.sizeBytes ? Number(attachment.sizeBytes) : null,
+		isVisible: attachment.isVisible,
 		createdAt: attachment.createdAt.toISOString(),
 	};
 }

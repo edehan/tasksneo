@@ -4,7 +4,10 @@ import {
   ChevronDown,
   ChevronUp,
   Download,
+  Eye,
+  EyeOff,
   FileText,
+  ImagePlus,
   Loader2,
   X,
 } from "lucide-react";
@@ -20,6 +23,8 @@ interface AttachmentSidebarProps {
   attachments: AttachmentMeta[];
   accentColor?: string;
   onRemove?: (att: AttachmentMeta) => void;
+  onToggleVisibility?: (att: AttachmentMeta) => void;
+  onInsertImage?: (att: AttachmentMeta) => void;
 }
 
 const COLLAPSE_THRESHOLD = 3;
@@ -70,6 +75,18 @@ function getExtColor(filename: string | undefined): string {
   return EXT_COLORS[ext] ?? DEFAULT_ICON_COLOR;
 }
 
+function isImageAttachment(att: AttachmentMeta): boolean {
+  if (att.mimeType?.toLowerCase().startsWith("image/")) {
+    return true;
+  }
+
+  const name = att.originalName ?? "";
+  const ext = name.split(".").pop()?.toLowerCase();
+  return ["png", "jpg", "jpeg", "gif", "svg", "webp", "bmp"].includes(
+    ext ?? "",
+  );
+}
+
 // ─── File size formatting ────────────────────────────────────────────────────
 
 function formatFileSize(bytes: number | null): string {
@@ -85,6 +102,8 @@ export function AttachmentSidebar({
   attachments,
   accentColor,
   onRemove,
+  onToggleVisibility,
+  onInsertImage,
 }: AttachmentSidebarProps) {
   const t = useTranslations("attachmentSidebar");
   const { token } = useAuth();
@@ -139,12 +158,33 @@ export function AttachmentSidebar({
               className="group flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors duration-100 hover:bg-secondary"
             >
               {/* File icon */}
-              <div className="flex shrink-0 items-center justify-center">
+              <div className="group/icon relative flex h-7 w-7 shrink-0 items-center justify-center">
                 <FileText
                   size={18}
                   strokeWidth={1.8}
                   style={{ color: iconColor }}
+                  className={
+                    onInsertImage && isImageAttachment(att)
+                      ? "transition-opacity duration-150 group-hover/icon:opacity-0"
+                      : undefined
+                  }
                 />
+                {onInsertImage && isImageAttachment(att) && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onInsertImage(att);
+                    }}
+                    className="absolute inset-0 flex items-center justify-center rounded-md bg-secondary text-muted-foreground opacity-0 transition-opacity duration-150 hover:text-foreground group-hover/icon:opacity-100"
+                    aria-label={t("insertIntoBody", {
+                      name: att.originalName,
+                    })}
+                    title={t("insertIntoBody", { name: att.originalName })}
+                  >
+                    <ImagePlus size={14} strokeWidth={2} />
+                  </button>
+                )}
               </div>
 
               {/* Name + size */}
@@ -194,6 +234,43 @@ export function AttachmentSidebar({
                     <Download size={14} strokeWidth={2} />
                   )}
                 </button>
+
+                {onToggleVisibility && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleVisibility(att);
+                    }}
+                    className="flex h-7 w-7 items-center justify-center rounded-md bg-secondary text-muted-foreground transition-colors duration-100 hover:text-foreground"
+                    onMouseEnter={(e) => {
+                      (
+                        e.currentTarget as HTMLButtonElement
+                      ).style.backgroundColor = accent;
+                    }}
+                    onMouseLeave={(e) => {
+                      (
+                        e.currentTarget as HTMLButtonElement
+                      ).style.backgroundColor = "";
+                    }}
+                    aria-label={
+                      att.isVisible
+                        ? t("hideAttachment", { name: att.originalName })
+                        : t("showAttachment", { name: att.originalName })
+                    }
+                    title={
+                      att.isVisible
+                        ? t("hideAttachment", { name: att.originalName })
+                        : t("showAttachment", { name: att.originalName })
+                    }
+                  >
+                    {att.isVisible ? (
+                      <Eye size={14} strokeWidth={2} />
+                    ) : (
+                      <EyeOff size={14} strokeWidth={2} />
+                    )}
+                  </button>
+                )}
 
                 {/* Remove button (only when onRemove is provided) */}
                 {onRemove && (

@@ -87,6 +87,22 @@ Content-Type: text/plain
 hello task
 --boundary--
 
+### Upload hidden task attachment (multipart)
+POST {{baseUrl}}/tasks/{{taskId}}/attachments
+Authorization: Bearer {{ownerToken}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="isVisible"
+
+false
+--boundary
+Content-Disposition: form-data; name="files"; filename="hidden-task.txt"
+Content-Type: text/plain
+
+hello hidden task
+--boundary--
+
 ### Upload my submission attachments (multipart)
 POST {{baseUrl}}/tasks/{{taskId}}/submissions/me/attachments
 Authorization: Bearer {{memberToken}}
