@@ -748,6 +748,49 @@ export async function parseTaskDraft(
   );
 }
 
+// ─── Speech-to-Text ──────────────────────────────────────────────────────────
+
+export interface TranscribeResponse {
+  text: string;
+  language: string | null;
+}
+
+export async function transcribeAudio(
+  token: string,
+  taskId: string,
+  audioBlob: Blob,
+): Promise<TranscribeResponse> {
+  const formData = new FormData();
+  formData.append("audio", audioBlob, "recording.webm");
+  return apiRequest<TranscribeResponse>(
+    `/tasks/${taskId}/transcribe`,
+    { method: "POST", body: formData },
+    token,
+  );
+}
+
+// ─── AI Content Revision ─────────────────────────────────────────────────────
+
+export interface ReviseResponse {
+  revisedContent: string;
+}
+
+export async function reviseTaskContent(
+  token: string,
+  taskId: string,
+  currentContent: string,
+  instruction: string,
+): Promise<ReviseResponse> {
+  return apiRequest<ReviseResponse>(
+    `/tasks/${taskId}/revise`,
+    {
+      method: "POST",
+      body: JSON.stringify({ currentContent, instruction }),
+    },
+    token,
+  );
+}
+
 export async function getTaskDraftMarkdown(
   token: string,
   taskId: string,

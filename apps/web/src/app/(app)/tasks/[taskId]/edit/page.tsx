@@ -101,6 +101,7 @@ export default function EditTaskPage() {
       initialContent={markdown}
       initialAttachments={task.attachments}
       isAlreadyPublished={task.isPublished}
+      initialDueAt={task.dueAt ?? undefined}
     />
   );
 }

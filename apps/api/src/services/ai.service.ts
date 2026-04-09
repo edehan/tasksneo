@@ -1,3 +1,4 @@
+import { AssemblyAI } from "assemblyai";
 import { z } from "zod";
 
 import { AppError } from "../lib/errors.js";
@@ -601,4 +602,121 @@ export function assertParseInput(text: string) {
 	if (!text.trim()) {
 		throw new AppError(400, "INVALID_PARSE_INPUT", "text is required");
 	}
+}
+
+// ─── Speech-to-Text (AssemblyAI) ─────────────────────────────────────────────
+
+const MAX_AUDIO_BYTES = 25 * 1024 * 1024; // 25 MB
+
+export interface TranscribeResult {
+	text: string;
+	language: string | null;
+}
+
+export async function transcribeAudio(
+	audioBuffer: Buffer,
+): Promise<TranscribeResult> {
+	const apiKey = process.env.ASSEMBLYAI_API_KEY;
+
+	if (!apiKey) {
+		throw new AppError(
+			503,
+			"STT_NOT_CONFIGURED",
+			"Speech-to-text service is not configured",
+		);
+	}
+
+	if (audioBuffer.byteLength > MAX_AUDIO_BYTES) {
+		throw new AppError(
+			400,
+			"AUDIO_TOO_LARGE",
+			`Audio file must be under ${MAX_AUDIO_BYTES / (1024 * 1024)} MB`,
+		);
+	}
+
+	const client = new AssemblyAI({ apiKey });
+
+	const transcript = await client.transcripts.transcribe({
+		audio: audioBuffer,
+		language_detection: true,
+	});
+
+	if (transcript.status === "error") {
+		throw new AppError(
+			503,
+			"STT_FAILED",
+			transcript.error ?? "Speech-to-text transcription failed",
+		);
+	}
+
+	return {
+		text: transcript.text ?? "",
+		language: transcript.language_code ?? null,
+	};
+}
+
+// ─── AI Content Revision ─────────────────────────────────────────────────────
+
+export interface ReviseContentResult {
+	revisedContent: string;
+}
+
+export async function reviseTaskContent(input: {
+	currentContent: string;
+	instruction: string;
+	context: ParseTaskContext;
+}): Promise<ReviseContentResult> {
+	const provider = await getConfigValue("llm.provider");
+	const baseUrl = await getConfigValue("llm.base_url");
+	const apiKey = await getConfigValue("llm.api_key");
+	const model = await getConfigValue("llm.model");
+
+	if (!provider || !baseUrl || !apiKey || !model) {
+		throw new AppError(
+			503,
+			"LLM_NOT_CONFIGURED",
+			"AI service is not configured",
+		);
+	}
+
+	const systemPrompt = `You are a task document editor. The user will provide the current markdown content of a task and a modification instruction. Apply the requested changes and return the revised markdown content.
+
+Requirements:
+- Output ONLY the revised markdown content, nothing else.
+- Use the SAME LANGUAGE as the original content.
+- Strictly follow the user's modification instruction. Do NOT add information or make changes beyond what was requested.
+- Preserve the overall structure and formatting of the original content unless the instruction specifically asks to change it.
+- If the instruction is unclear, make minimal, conservative changes.`;
+
+	const userPrompt = `User timezone: ${input.context.userTimezone}
+Current local datetime: ${input.context.localNowWithWeekday}
+
+--- CURRENT CONTENT ---
+${input.currentContent}
+--- END CURRENT CONTENT ---
+
+--- MODIFICATION INSTRUCTION ---
+${input.instruction}
+--- END INSTRUCTION ---
+
+Please apply the modification and return the revised content.`;
+
+	const result = await callChatCompletions({
+		baseUrl,
+		apiKey,
+		body: {
+			model,
+			temperature: 0.2,
+			messages: [
+				{ role: "system", content: systemPrompt },
+				{ role: "user", content: userPrompt },
+			],
+		},
+	});
+
+	if (!result) {
+		throw new AppError(503, "LLM_FAILED", "AI revision failed");
+	}
+
+	return { revisedContent: result.trim() };
 }
