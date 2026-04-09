@@ -11,14 +11,66 @@ const LINKS = {
 	privacy: `${APP_URL}/privacy`,
 };
 
-const PALETTE = [
-	{ name: "数学", color: "#5B8C6A" },
-	{ name: "物理", color: "#7B6CB0" },
-	{ name: "文学", color: "#C4785B" },
-	{ name: "历史", color: "#5886A5" },
-	{ name: "计算机", color: "#8B7355" },
-	{ name: "艺术", color: "#B07090" },
-];
+const PALETTES = {
+	zh: [
+		{ name: "数学", color: "#5B8C6A" },
+		{ name: "物理", color: "#7B6CB0" },
+		{ name: "文学", color: "#C4785B" },
+		{ name: "历史", color: "#5886A5" },
+		{ name: "计算机", color: "#8B7355" },
+		{ name: "艺术", color: "#B07090" },
+	],
+	en: [
+		{ name: "Mathematics", color: "#5B8C6A" },
+		{ name: "Physics", color: "#7B6CB0" },
+		{ name: "Literature", color: "#C4785B" },
+		{ name: "History", color: "#5886A5" },
+		{ name: "Computer Science", color: "#8B7355" },
+		{ name: "Art", color: "#B07090" },
+	],
+};
+
+const THEMES = {
+	light: {
+		bg: "#faf7f2",
+		textPrimary: "#2c2825",
+		textSecondary: "#8a8078",
+		textMuted: "#c0b8ad",
+		borderColor: "#e8e2d8",
+		cardBg: "#fffdf8",
+		navBg: "rgba(250,247,242,0.8)",
+		scrollbarThumb: "#ddd5c8",
+	},
+	dark: {
+		bg: "#161412",
+		textPrimary: "#f2ebe1",
+		textSecondary: "#c8bfb5",
+		textMuted: "#8f867d",
+		borderColor: "#3a342e",
+		cardBg: "#211d19",
+		navBg: "rgba(22,20,18,0.82)",
+		scrollbarThumb: "#4a433c",
+	},
+};
+
+function resolvePreferredLocale() {
+	if (typeof navigator === "undefined") return "en";
+	const languages = navigator.languages?.length
+		? navigator.languages
+		: [navigator.language];
+	const hasChinese = languages.some((lang) => {
+		if (!lang) return false;
+		return lang.toLowerCase().startsWith("zh");
+	});
+	return hasChinese ? "zh" : "en";
+}
+
+function prefersDarkMode() {
+	if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+		return false;
+	}
+	return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
 
 function useInView() {
 	const ref = useRef(null);
@@ -176,7 +228,7 @@ function EvernoteLogo({ s = 36 }) {
 		</svg>
 	);
 }
-function NotionLogo({ s = 36 }) {
+function NotionLogo({ s = 36, tone = "#333" }) {
 	return (
 		<svg width={s} height={s} viewBox="0 0 48 48" fill="none">
 			<rect
@@ -185,24 +237,24 @@ function NotionLogo({ s = 36 }) {
 				width="28"
 				height="32"
 				rx="4"
-				stroke="#333"
+				stroke={tone}
 				strokeWidth="2.5"
 				fill="none"
 			/>
-			<path d="M16 16h8l6 6v10H16V16z" fill="#333" opacity=".12" />
+			<path d="M16 16h8l6 6v10H16V16z" fill={tone} opacity=".12" />
 			<path
 				d="M16 16h8v6h6"
-				stroke="#333"
+				stroke={tone}
 				strokeWidth="1.5"
 				fill="none"
 				strokeLinejoin="round"
 			/>
-			<line x1="16" y1="28" x2="30" y2="28" stroke="#333" strokeWidth="1.5" />
-			<line x1="16" y1="24" x2="26" y2="24" stroke="#333" strokeWidth="1.5" />
+			<line x1="16" y1="28" x2="30" y2="28" stroke={tone} strokeWidth="1.5" />
+			<line x1="16" y1="24" x2="26" y2="24" stroke={tone} strokeWidth="1.5" />
 		</svg>
 	);
 }
-function GmailLogo({ s = 36 }) {
+function GmailLogo({ s = 36, surface = "#fff", border = "#E0E0E0" }) {
 	return (
 		<svg width={s} height={s} viewBox="0 0 48 48" fill="none">
 			<rect
@@ -211,8 +263,8 @@ function GmailLogo({ s = 36 }) {
 				width="32"
 				height="24"
 				rx="3"
-				fill="#fff"
-				stroke="#E0E0E0"
+				fill={surface}
+				stroke={border}
 				strokeWidth="1.5"
 			/>
 			<path
@@ -240,111 +292,232 @@ function DingTalkLogo({ s = 36 }) {
 	);
 }
 
-const INTEGRATIONS = [
-	{
-		name: "飞书",
-		Logo: FeishuLogo,
-		desc: "将任务和班级动态实时同步到飞书群组。",
-	},
-	{
-		name: "Slack",
-		Logo: SlackLogo,
-		desc: "向 Slack 频道推送作业提醒和截止通知。",
-	},
-	{
-		name: "印象笔记",
-		Logo: EvernoteLogo,
-		desc: "导入学习笔记，自动关联到对应作业。",
-	},
-	{
-		name: "Notion",
-		Logo: NotionLogo,
-		desc: "与 Notion 数据库和看板进行双向同步。",
-	},
-	{
-		name: "Gmail",
-		Logo: GmailLogo,
-		desc: "自动发送作业摘要和截止日期提醒邮件。",
-	},
-	{
-		name: "钉钉",
-		Logo: DingTalkLogo,
-		desc: "通过钉钉工作流发布任务并收集提交。",
-	},
-];
-
-const AI_EXAMPLES = [
-	{
-		input:
-			"学生需要在下周五之前提交关于现代主义诗歌的论文，这个周末可以开始写。",
-		output: {
-			task: "论文：现代主义诗歌",
-			start: "3月15日",
-			due: "3月21日",
-			cls: "英语文学",
-			color: "#C4785B",
+const INTEGRATIONS_BY_LOCALE = {
+	zh: [
+		{
+			name: "飞书",
+			Logo: FeishuLogo,
+			desc: "将任务和班级动态实时同步到飞书群组。",
 		},
-	},
-	{
-		input: "波动干涉实验报告两周后截止，学生可以在周三实验结束后开始写。",
-		output: {
-			task: "实验报告：波动干涉",
-			start: "3月19日",
-			due: "4月2日",
-			cls: "物理实验",
-			color: "#7B6CB0",
+		{
+			name: "Slack",
+			Logo: SlackLogo,
+			desc: "向 Slack 频道推送作业提醒和截止通知。",
 		},
-	},
-	{
-		input: "完成微积分练习 5.1-5.8，关于积分的内容。今天布置，下周四截止。",
-		output: {
-			task: "微积分练习 5.1-5.8",
-			start: "3月18日",
-			due: "3月26日",
-			cls: "高等数学",
-			color: "#5B8C6A",
+		{
+			name: "印象笔记",
+			Logo: EvernoteLogo,
+			desc: "导入学习笔记，自动关联到对应作业。",
 		},
-	},
-];
+		{
+			name: "Notion",
+			Logo: NotionLogo,
+			desc: "与 Notion 数据库和看板进行双向同步。",
+		},
+		{
+			name: "Gmail",
+			Logo: GmailLogo,
+			desc: "自动发送作业摘要和截止日期提醒邮件。",
+		},
+		{
+			name: "钉钉",
+			Logo: DingTalkLogo,
+			desc: "通过钉钉工作流发布任务并收集提交。",
+		},
+	],
+	en: [
+		{
+			name: "Feishu",
+			Logo: FeishuLogo,
+			desc: "Let class updates and deadlines drift into Feishu in real time.",
+		},
+		{
+			name: "Slack",
+			Logo: SlackLogo,
+			desc: "Send gentle reminders and deadline whispers straight to Slack.",
+		},
+		{
+			name: "Evernote",
+			Logo: EvernoteLogo,
+			desc: "Pull in study notes and bind them to the right assignment threads.",
+		},
+		{
+			name: "Notion",
+			Logo: NotionLogo,
+			desc: "Keep databases and boards in sync, both ways, without friction.",
+		},
+		{
+			name: "Gmail",
+			Logo: GmailLogo,
+			desc: "Deliver assignment summaries and due-date nudges by email.",
+		},
+		{
+			name: "DingTalk",
+			Logo: DingTalkLogo,
+			desc: "Publish tasks through DingTalk flows and gather submissions instantly.",
+		},
+	],
+};
 
-const GANTT_TASKS = [
-	{ title: "研究论文初稿", color: "#5B8C6A", start: 0, width: 28 },
-	{ title: "物理实验报告", color: "#7B6CB0", start: 5, width: 18 },
-	{ title: "诗歌分析论文", color: "#C4785B", start: 10, width: 22 },
-	{ title: "历史课堂展示", color: "#5886A5", start: 2, width: 30 },
-	{ title: "算法作业", color: "#8B7355", start: 15, width: 20 },
-	{ title: "雕塑作品集", color: "#B07090", start: 8, width: 25 },
-	{ title: "微积分习题集", color: "#5B8C6A", start: 20, width: 15 },
-	{ title: "电路实验分析", color: "#7B6CB0", start: 12, width: 24 },
-	{ title: "读书报告", color: "#C4785B", start: 25, width: 14 },
-	{ title: "二战纪录片笔记", color: "#5886A5", start: 18, width: 20 },
-];
+const AI_EXAMPLES_BY_LOCALE = {
+	zh: [
+		{
+			input:
+				"学生需要在下周五之前提交关于现代主义诗歌的论文，这个周末可以开始写。",
+			output: {
+				task: "论文：现代主义诗歌",
+				start: "3月15日",
+				due: "3月21日",
+				cls: "英语文学",
+				color: "#C4785B",
+			},
+		},
+		{
+			input: "波动干涉实验报告两周后截止，学生可以在周三实验结束后开始写。",
+			output: {
+				task: "实验报告：波动干涉",
+				start: "3月19日",
+				due: "4月2日",
+				cls: "物理实验",
+				color: "#7B6CB0",
+			},
+		},
+		{
+			input: "完成微积分练习 5.1-5.8，关于积分的内容。今天布置，下周四截止。",
+			output: {
+				task: "微积分练习 5.1-5.8",
+				start: "3月18日",
+				due: "3月26日",
+				cls: "高等数学",
+				color: "#5B8C6A",
+			},
+		},
+	],
+	en: [
+		{
+			input:
+				"Students should submit an essay on modernist poetry by next Friday; they may begin this weekend.",
+			output: {
+				task: "Essay: Modernist Poetry",
+				start: "Mar 15",
+				due: "Mar 21",
+				cls: "English Literature",
+				color: "#C4785B",
+			},
+		},
+		{
+			input:
+				"The wave interference lab report is due in two weeks. Students can begin after Wednesday's lab.",
+			output: {
+				task: "Lab Report: Wave Interference",
+				start: "Mar 19",
+				due: "Apr 2",
+				cls: "Physics Lab",
+				color: "#7B6CB0",
+			},
+		},
+		{
+			input:
+				"Finish Calculus exercises 5.1-5.8 on integration. Assigned today, due next Thursday.",
+			output: {
+				task: "Calculus Exercises 5.1-5.8",
+				start: "Mar 18",
+				due: "Mar 26",
+				cls: "Advanced Mathematics",
+				color: "#5B8C6A",
+			},
+		},
+	],
+};
 
-const DAYS = [
-	"3月1日",
-	"3月4日",
-	"3月7日",
-	"3月10日",
-	"3月13日",
-	"3月16日",
-	"3月19日",
-	"3月22日",
-	"3月25日",
-	"3月28日",
-	"3月31日",
-	"4月3日",
-	"4月6日",
-	"4月9日",
-];
+const GANTT_TASKS_BY_LOCALE = {
+	zh: [
+		{ title: "研究论文初稿", color: "#5B8C6A", start: 0, width: 28 },
+		{ title: "物理实验报告", color: "#7B6CB0", start: 5, width: 18 },
+		{ title: "诗歌分析论文", color: "#C4785B", start: 10, width: 22 },
+		{ title: "历史课堂展示", color: "#5886A5", start: 2, width: 30 },
+		{ title: "算法作业", color: "#8B7355", start: 15, width: 20 },
+		{ title: "雕塑作品集", color: "#B07090", start: 8, width: 25 },
+		{ title: "微积分习题集", color: "#5B8C6A", start: 20, width: 15 },
+		{ title: "电路实验分析", color: "#7B6CB0", start: 12, width: 24 },
+		{ title: "读书报告", color: "#C4785B", start: 25, width: 14 },
+		{ title: "二战纪录片笔记", color: "#5886A5", start: 18, width: 20 },
+	],
+	en: [
+		{ title: "Research Paper Draft", color: "#5B8C6A", start: 0, width: 28 },
+		{ title: "Physics Lab Report", color: "#7B6CB0", start: 5, width: 18 },
+		{ title: "Poetry Analysis Essay", color: "#C4785B", start: 10, width: 22 },
+		{ title: "History Presentation", color: "#5886A5", start: 2, width: 30 },
+		{ title: "Algorithm Assignment", color: "#8B7355", start: 15, width: 20 },
+		{ title: "Sculpture Portfolio", color: "#B07090", start: 8, width: 25 },
+		{ title: "Calculus Problem Set", color: "#5B8C6A", start: 20, width: 15 },
+		{ title: "Circuit Experiment Notes", color: "#7B6CB0", start: 12, width: 24 },
+		{ title: "Reading Reflection", color: "#C4785B", start: 25, width: 14 },
+		{ title: "WWII Documentary Notes", color: "#5886A5", start: 18, width: 20 },
+	],
+};
+
+const DAYS_BY_LOCALE = {
+	zh: [
+		"3月1日",
+		"3月4日",
+		"3月7日",
+		"3月10日",
+		"3月13日",
+		"3月16日",
+		"3月19日",
+		"3月22日",
+		"3月25日",
+		"3月28日",
+		"3月31日",
+		"4月3日",
+		"4月6日",
+		"4月9日",
+	],
+	en: [
+		"Mar 1",
+		"Mar 4",
+		"Mar 7",
+		"Mar 10",
+		"Mar 13",
+		"Mar 16",
+		"Mar 19",
+		"Mar 22",
+		"Mar 25",
+		"Mar 28",
+		"Mar 31",
+		"Apr 3",
+		"Apr 6",
+		"Apr 9",
+	],
+};
 
 export default function LandingPage() {
-	const [activeColor, setActiveColor] = useState(PALETTE[1].color);
+	const [locale, setLocale] = useState(() => resolvePreferredLocale());
+	const [isDark, setIsDark] = useState(() => prefersDarkMode());
+	const [activeColor, setActiveColor] = useState(
+		() => PALETTES[resolvePreferredLocale()][1].color,
+	);
 	const [aiExample, setAiExample] = useState(0);
 	const [aiTyping, setAiTyping] = useState(false);
 	const [aiDone, setAiDone] = useState(true);
 	const [hoveredIntg, setHoveredIntg] = useState(null);
 	const [mcpAutoIdx, setMcpAutoIdx] = useState(0);
 	const [isMobile, setIsMobile] = useState(false);
+	const PALETTE = PALETTES[locale];
+	const INTEGRATIONS = INTEGRATIONS_BY_LOCALE[locale];
+	const AI_EXAMPLES = AI_EXAMPLES_BY_LOCALE[locale];
+	const GANTT_TASKS = GANTT_TASKS_BY_LOCALE[locale];
+	const DAYS = DAYS_BY_LOCALE[locale];
+	const theme = THEMES[isDark ? "dark" : "light"];
+	const { bg, textPrimary, textSecondary, textMuted, borderColor, cardBg } = theme;
+	const sansFont =
+		locale === "zh" ? "'Noto Sans SC', sans-serif" : "'DM Sans', sans-serif";
+	const serifFont =
+		locale === "zh"
+			? "'Noto Serif SC', 'Source Serif 4', Georgia, serif"
+			: "'Source Serif 4', Georgia, serif";
+	const t = (zhText, enText) => (locale === "zh" ? zhText : enText);
 	const ganttScroll = useScrollProgress();
 
 	useEffect(() => {
@@ -361,7 +534,43 @@ export default function LandingPage() {
 			2800,
 		);
 		return () => clearInterval(timer);
-	}, [hoveredIntg]);
+	}, [hoveredIntg, INTEGRATIONS.length]);
+
+	useEffect(() => {
+		const media = window.matchMedia("(prefers-color-scheme: dark)");
+		const onChange = (event) => setIsDark(event.matches);
+		setIsDark(media.matches);
+		if (typeof media.addEventListener === "function") {
+			media.addEventListener("change", onChange);
+			return () => media.removeEventListener("change", onChange);
+		}
+		media.addListener(onChange);
+		return () => media.removeListener(onChange);
+	}, []);
+
+	useEffect(() => {
+		const onLanguageChange = () => setLocale(resolvePreferredLocale());
+		window.addEventListener("languagechange", onLanguageChange);
+		return () => window.removeEventListener("languagechange", onLanguageChange);
+	}, []);
+
+	useEffect(() => {
+		document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
+		document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+		document.title =
+			locale === "zh"
+				? "TaskNeo | 班级协作的智能控制台"
+				: "TaskNeo | A Poetic Console for Class Rhythm";
+		const meta = document.querySelector('meta[name="description"]');
+		if (meta) {
+			meta.setAttribute(
+				"content",
+				locale === "zh"
+					? "TaskNeo 让 AI 解析、班级切换、甘特图编排和 MCP 工作流在一个协作系统内闭环运行。"
+					: "TaskNeo turns AI parsing, timeline orchestration, and MCP workflows into one graceful class collaboration loop.",
+			);
+		}
+	}, [isDark, locale]);
 
 	const activeLineIdx = hoveredIntg !== null ? hoveredIntg : mcpAutoIdx;
 
@@ -375,12 +584,6 @@ export default function LandingPage() {
 		setAiExample((p) => (p + 1) % AI_EXAMPLES.length);
 	}, []);
 
-	const bg = "#faf7f2";
-	const textPrimary = "#2c2825";
-	const textSecondary = "#8a8078";
-	const textMuted = "#c0b8ad";
-	const borderColor = "#e8e2d8";
-	const cardBg = "#fffdf8";
 	const ganttOffset = ganttScroll.progress * (isMobile ? -200 : -520);
 
 	return (
@@ -388,7 +591,7 @@ export default function LandingPage() {
 			style={{
 				background: bg,
 				color: textPrimary,
-				fontFamily: "'DM Sans', sans-serif",
+				fontFamily: sansFont,
 				overflowX: "hidden",
 				minHeight: "100vh",
 			}}
@@ -396,11 +599,11 @@ export default function LandingPage() {
 			<style>{`
 * { margin: 0; padding: 0; box-sizing: border-box; }
         html { scroll-behavior: smooth; }
-        body { background: #faf7f2; }
+        body { background: ${bg}; color: ${textPrimary}; }
         ::selection { background: ${activeColor}30; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #ddd5c8; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: ${theme.scrollbarThumb}; border-radius: 10px; }
         @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
         @keyframes pulseRing { 0%{transform:scale(1);opacity:.5} 100%{transform:scale(2.2);opacity:0} }
         @keyframes cursorBlink { 0%,100%{opacity:1} 50%{opacity:0} }
@@ -421,7 +624,7 @@ export default function LandingPage() {
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "space-between",
-					background: "rgba(250,247,242,0.8)",
+					background: theme.navBg,
 					backdropFilter: "blur(16px) saturate(1.8)",
 					borderBottom: `1px solid ${borderColor}`,
 				}}
@@ -485,7 +688,11 @@ export default function LandingPage() {
 					}}
 				>
 					{!isMobile &&
-						["功能特性", "生态集成", "关于我们"].map((l, i) => (
+						[
+							t("功能特性", "Features"),
+							t("生态集成", "Integrations"),
+							t("关于我们", "About"),
+						].map((l, i) => (
 							<a
 								key={l}
 								href={`#sec${i}`}
@@ -495,7 +702,7 @@ export default function LandingPage() {
 									color: textSecondary,
 									textDecoration: "none",
 									transition: "color 0.2s",
-									fontFamily: "'Noto Sans SC', sans-serif",
+									fontFamily: sansFont,
 								}}
 								onMouseEnter={(e) => (e.target.style.color = activeColor)}
 								onMouseLeave={(e) => (e.target.style.color = textSecondary)}
@@ -515,13 +722,13 @@ export default function LandingPage() {
 								fontSize: 13,
 								fontWeight: 500,
 								cursor: "pointer",
-								fontFamily: "'Noto Sans SC', sans-serif",
+								fontFamily: sansFont,
 								textDecoration: "none",
 								display: "flex",
 								alignItems: "center",
 							}}
 						>
-							注册
+							{t("注册", "Sign up")}
 						</a>
 						<a
 							href={LINKS.login}
@@ -534,7 +741,7 @@ export default function LandingPage() {
 								fontSize: 13,
 								fontWeight: 600,
 								cursor: "pointer",
-								fontFamily: "'Noto Sans SC', sans-serif",
+								fontFamily: sansFont,
 								transition: "background 0.5s",
 								boxShadow: `0 2px 14px ${activeColor}30`,
 								textDecoration: "none",
@@ -542,7 +749,7 @@ export default function LandingPage() {
 								alignItems: "center",
 							}}
 						>
-							登录
+							{t("登录", "Log in")}
 						</a>
 					</div>
 				</div>
@@ -632,10 +839,10 @@ export default function LandingPage() {
 										color: activeColor,
 										letterSpacing: "0.04em",
 										transition: "color 0.5s",
-										fontFamily: "'Noto Sans SC', sans-serif",
+										fontFamily: sansFont,
 									}}
 								>
-									公测中
+									{t("公测中", "Public Beta")}
 								</span>
 							</div>
 						</Reveal>
@@ -644,19 +851,35 @@ export default function LandingPage() {
 								style={{
 									fontSize: isMobile ? 36 : 64,
 									fontWeight: 700,
-									fontFamily:
-										"'Noto Serif SC', 'Source Serif 4', Georgia, serif",
+									fontFamily: serifFont,
 									letterSpacing: "-0.02em",
 									lineHeight: 1.2,
 									marginBottom: 24,
 								}}
 							>
-								让教学
-								<br />
-								回归
-								<span style={{ color: activeColor, transition: "color 0.5s" }}>
-									清晰
-								</span>
+								{locale === "zh" ? (
+									<>
+										让教学
+										<br />
+										回归
+										<span
+											style={{ color: activeColor, transition: "color 0.5s" }}
+										>
+											清晰
+										</span>
+									</>
+								) : (
+									<>
+										Let teaching
+										<br />
+										return to{" "}
+										<span
+											style={{ color: activeColor, transition: "color 0.5s" }}
+										>
+											clarity
+										</span>
+									</>
+								)}
 							</h1>
 						</Reveal>
 						<Reveal delay={0.16}>
@@ -667,10 +890,13 @@ export default function LandingPage() {
 									lineHeight: 1.85,
 									maxWidth: 480,
 									marginBottom: 36,
-									fontFamily: "'Noto Sans SC', sans-serif",
+									fontFamily: sansFont,
 								}}
 							>
-								一个简洁、专注的工作空间。教师用自然语言创建作业，学生一目了然地看到所有任务——分类清晰、颜色编码、按时完成。
+								{t(
+									"一个简洁、专注的工作空间。教师用自然语言创建作业，学生一目了然地看到所有任务——分类清晰、颜色编码、按时完成。",
+									"A quiet, focused space for classwork. Teachers speak in natural language, students see every task at a glance: color-coded, well-ordered, and always on pace.",
+								)}
 							</p>
 						</Reveal>
 						<Reveal delay={0.24}>
@@ -693,14 +919,14 @@ export default function LandingPage() {
 										fontSize: 15,
 										fontWeight: 600,
 										cursor: "pointer",
-										fontFamily: "'Noto Sans SC', sans-serif",
+										fontFamily: sansFont,
 										transition: "all 0.5s",
 										boxShadow: `0 4px 24px ${activeColor}30`,
 										textDecoration: "none",
 										display: "inline-block",
 									}}
 								>
-									开始使用
+									{t("开始使用", "Get started")}
 								</a>
 								<a
 									href={LINKS.docs}
@@ -713,12 +939,12 @@ export default function LandingPage() {
 										fontSize: 15,
 										fontWeight: 500,
 										cursor: "pointer",
-										fontFamily: "'Noto Sans SC', sans-serif",
+										fontFamily: sansFont,
 										textDecoration: "none",
 										display: "inline-block",
 									}}
 								>
-									阅读文档
+									{t("阅读文档", "Read docs")}
 								</a>
 							</div>
 						</Reveal>
@@ -782,7 +1008,7 @@ export default function LandingPage() {
 											width: 10,
 											height: 10,
 											borderRadius: "50%",
-											background: "#e8e2d8",
+											background: borderColor,
 										}}
 									/>
 									<div
@@ -790,7 +1016,7 @@ export default function LandingPage() {
 											width: 10,
 											height: 10,
 											borderRadius: "50%",
-											background: "#e8e2d8",
+											background: borderColor,
 										}}
 									/>
 									<div
@@ -798,7 +1024,7 @@ export default function LandingPage() {
 											width: 10,
 											height: 10,
 											borderRadius: "50%",
-											background: "#e8e2d8",
+											background: borderColor,
 										}}
 									/>
 									<div style={{ flex: 1 }} />
@@ -807,7 +1033,7 @@ export default function LandingPage() {
 											width: 80,
 											height: 6,
 											borderRadius: 3,
-											background: "#e8e2d8",
+											background: borderColor,
 										}}
 									/>
 								</div>
@@ -922,7 +1148,7 @@ export default function LandingPage() {
 							textTransform: "uppercase",
 						}}
 					>
-						向下滚动
+						{t("向下滚动", "Scroll down")}
 					</span>
 					<svg
 						width="14"
@@ -1015,7 +1241,7 @@ export default function LandingPage() {
 											textTransform: "uppercase",
 										}}
 									>
-										教师输入
+										{t("教师输入", "Teacher Prompt")}
 									</span>
 								</div>
 								<p
@@ -1023,8 +1249,7 @@ export default function LandingPage() {
 										fontSize: isMobile ? 15 : 17,
 										lineHeight: 1.8,
 										color: textPrimary,
-										fontFamily:
-											"'Noto Serif SC', 'Source Serif 4', Georgia, serif",
+										fontFamily: serifFont,
 										fontWeight: 400,
 										fontStyle: "italic",
 										minHeight: 48,
@@ -1071,13 +1296,13 @@ export default function LandingPage() {
 											transition: "color 0.5s",
 										}}
 									>
-										AI 解析结果
+										{t("AI 解析结果", "AI Parse")}
 									</span>
 									{aiTyping && (
 										<span
 											style={{ fontSize: 11, color: textMuted, marginLeft: 6 }}
 										>
-											解析中
+											{t("解析中", "Parsing")}
 											<span style={{ animation: "cursorBlink 1s infinite" }}>
 												...
 											</span>
@@ -1096,19 +1321,23 @@ export default function LandingPage() {
 								>
 									{[
 										{
-											label: "任务名称",
+											key: "task",
+											label: t("任务名称", "Task"),
 											value: AI_EXAMPLES[aiExample].output.task,
 										},
 										{
-											label: "所属班级",
+											key: "class",
+											label: t("所属班级", "Class"),
 											value: AI_EXAMPLES[aiExample].output.cls,
 										},
 										{
-											label: "开始日期",
+											key: "start",
+											label: t("开始日期", "Starts"),
 											value: AI_EXAMPLES[aiExample].output.start,
 										},
 										{
-											label: "截止日期",
+											key: "due",
+											label: t("截止日期", "Due"),
 											value: AI_EXAMPLES[aiExample].output.due,
 										},
 									].map((f, i) => (
@@ -1129,7 +1358,7 @@ export default function LandingPage() {
 													textTransform: "uppercase",
 													letterSpacing: "0.06em",
 													marginBottom: 5,
-													fontFamily: "'Noto Sans SC', sans-serif",
+													fontFamily: sansFont,
 												}}
 											>
 												{f.label}
@@ -1139,14 +1368,14 @@ export default function LandingPage() {
 													fontSize: 13,
 													fontWeight: 600,
 													color:
-														f.label === "所属班级"
+														f.key === "class"
 															? AI_EXAMPLES[aiExample].output.color
 															: textPrimary,
 													transition: "color 0.4s",
-													fontFamily: "'Noto Sans SC', sans-serif",
+													fontFamily: sansFont,
 												}}
 											>
-												{f.label === "所属班级" && (
+												{f.key === "class" && (
 													<span
 														style={{
 															display: "inline-block",
@@ -1170,10 +1399,10 @@ export default function LandingPage() {
 										color: textMuted,
 										marginTop: 14,
 										textAlign: "center",
-										fontFamily: "'Noto Sans SC', sans-serif",
+										fontFamily: sansFont,
 									}}
 								>
-									悬停查看更多示例
+									{t("悬停查看更多示例", "Hover for another example")}
 								</p>
 							</div>
 						</div>
@@ -1191,7 +1420,7 @@ export default function LandingPage() {
 									transition: "color 0.5s",
 								}}
 							>
-								智能输入
+								{t("智能输入", "Natural Input")}
 							</span>
 						</Reveal>
 						<Reveal delay={0.06}>
@@ -1199,17 +1428,26 @@ export default function LandingPage() {
 								style={{
 									fontSize: isMobile ? 28 : 42,
 									fontWeight: 700,
-									fontFamily:
-										"'Noto Serif SC', 'Source Serif 4', Georgia, serif",
+									fontFamily: serifFont,
 									letterSpacing: "-0.01em",
 									marginTop: 14,
 									lineHeight: 1.3,
 									marginBottom: 20,
 								}}
 							>
-								用自然语言描述，
-								<br />
-								剩下的交给 AI。
+								{locale === "zh" ? (
+									<>
+										用自然语言描述，
+										<br />
+										剩下的交给 AI。
+									</>
+								) : (
+									<>
+										Speak in plain language,
+										<br />
+										and let AI compose the rest.
+									</>
+								)}
 							</h2>
 						</Reveal>
 						<Reveal delay={0.12}>
@@ -1220,11 +1458,13 @@ export default function LandingPage() {
 									lineHeight: 1.8,
 									marginBottom: 28,
 									maxWidth: 440,
-									fontFamily: "'Noto Sans SC', sans-serif",
+									fontFamily: sansFont,
 								}}
 							>
-								像平时说话一样输入作业要求，AI
-								自动提取任务名称、截止日期和班级信息，一键生成结构化任务。
+								{t(
+									"像平时说话一样输入作业要求，AI自动提取任务名称、截止日期和班级信息，一键生成结构化任务。",
+									"Write assignment requirements as you normally speak. AI extracts the task, date, and class context, then turns it into a clean structured card in one pass.",
+								)}
 							</p>
 						</Reveal>
 						<Reveal delay={0.18}>
@@ -1232,9 +1472,9 @@ export default function LandingPage() {
 								style={{ display: "flex", flexDirection: "column", gap: 14 }}
 							>
 								{[
-									"自然语言自动转换为结构化任务",
-									"智能识别日期、时长和班级",
-									"支持 12 种语言",
+									t("自然语言自动转换为结构化任务", "Natural language becomes structured tasks"),
+									t("智能识别日期、时长和班级", "Smart extraction of dates, duration, and class"),
+									t("支持 12 种语言", "Supports 12 languages"),
 								].map((t, i) => (
 									<div
 										key={i}
@@ -1272,7 +1512,7 @@ export default function LandingPage() {
 												fontSize: 14,
 												color: textPrimary,
 												fontWeight: 500,
-												fontFamily: "'Noto Sans SC', sans-serif",
+												fontFamily: sansFont,
 											}}
 										>
 											{t}
@@ -1318,20 +1558,19 @@ export default function LandingPage() {
 										transition: "color 0.5s",
 									}}
 								>
-									可视化时间线
+									{t("可视化时间线", "Visual Timeline")}
 								</span>
 								<h2
 									style={{
 										fontSize: isMobile ? 28 : 42,
 										fontWeight: 700,
-										fontFamily:
-											"'Noto Serif SC', 'Source Serif 4', Georgia, serif",
+										fontFamily: serifFont,
 										letterSpacing: "-0.01em",
 										marginTop: 14,
 										lineHeight: 1.3,
 									}}
 								>
-									每项任务，清晰排列在时间轴上。
+									{t("每项任务，清晰排列在时间轴上。", "Every task, arranged with clarity on the timeline.")}
 								</h2>
 							</Reveal>
 						</div>
@@ -1342,10 +1581,13 @@ export default function LandingPage() {
 									color: textSecondary,
 									lineHeight: 1.8,
 									maxWidth: 460,
-									fontFamily: "'Noto Sans SC', sans-serif",
+									fontFamily: sansFont,
 								}}
 							>
-								按班级颜色编码，按日期排列。甘特图让学生和教师一目了然地看到即将到来和已逾期的任务。
+								{t(
+									"按班级颜色编码，按日期排列。甘特图让学生和教师一目了然地看到即将到来和已逾期的任务。",
+									"Color-coded by class and lined up by date. The Gantt view reveals what is coming next and what has slipped behind.",
+								)}
 							</p>
 						</Reveal>
 					</div>
@@ -1409,10 +1651,10 @@ export default function LandingPage() {
 								borderRadius: 4,
 								letterSpacing: "0.04em",
 								zIndex: 3,
-								fontFamily: "'Noto Sans SC', sans-serif",
+								fontFamily: sansFont,
 							}}
 						>
-							今天
+							{t("今天", "Today")}
 						</div>
 						{GANTT_TASKS.map((task, i) => (
 							<div
@@ -1450,7 +1692,7 @@ export default function LandingPage() {
 											whiteSpace: "nowrap",
 											overflow: "hidden",
 											textOverflow: "ellipsis",
-											fontFamily: "'Noto Sans SC', sans-serif",
+											fontFamily: sansFont,
 										}}
 									>
 										{task.title}
@@ -1486,7 +1728,8 @@ export default function LandingPage() {
 												whiteSpace: "nowrap",
 											}}
 										>
-											{Math.ceil(task.width / 3)}天
+											{Math.ceil(task.width / 3)}
+											{t("天", "d")}
 										</span>
 									</div>
 								</div>
@@ -1523,7 +1766,7 @@ export default function LandingPage() {
 									transition: "color 0.5s",
 								}}
 							>
-								互联互通
+								{t("互联互通", "Connected Ecosystem")}
 							</span>
 						</Reveal>
 						<Reveal delay={0.06}>
@@ -1531,15 +1774,14 @@ export default function LandingPage() {
 								style={{
 									fontSize: isMobile ? 28 : 42,
 									fontWeight: 700,
-									fontFamily:
-										"'Noto Serif SC', 'Source Serif 4', Georgia, serif",
+									fontFamily: serifFont,
 									letterSpacing: "-0.01em",
 									marginTop: 14,
 									lineHeight: 1.3,
 									marginBottom: 20,
 								}}
 							>
-								无缝连接你已有的工具。
+								{t("无缝连接你已有的工具。", "Connect gracefully with tools you already use.")}
 							</h2>
 						</Reveal>
 						<Reveal delay={0.12}>
@@ -1550,15 +1792,26 @@ export default function LandingPage() {
 									lineHeight: 1.8,
 									maxWidth: 440,
 									marginBottom: 24,
-									fontFamily: "'Noto Sans SC', sans-serif",
+									fontFamily: sansFont,
 								}}
 							>
-								通过{" "}
-								<strong style={{ color: textPrimary }}>
-									MCP（模型上下文协议）
-								</strong>
-								，TaskNeo
-								与你现有的工具栈原生对话。任务、截止日期和反馈在各平台间自动流转。
+								{locale === "zh" ? (
+									<>
+										通过{" "}
+										<strong style={{ color: textPrimary }}>
+											MCP（模型上下文协议）
+										</strong>
+										，TaskNeo 与你现有的工具栈原生对话。任务、截止日期和反馈在各平台间自动流转。
+									</>
+								) : (
+									<>
+										Through{" "}
+										<strong style={{ color: textPrimary }}>
+											MCP (Model Context Protocol)
+										</strong>
+										, TaskNeo speaks natively with your current stack. Tasks, deadlines, and feedback flow between tools in near real time.
+									</>
+								)}
 							</p>
 						</Reveal>
 						<Reveal delay={0.16}>
@@ -1582,18 +1835,20 @@ export default function LandingPage() {
 										transition: "color 0.5s",
 									}}
 								>
-									什么是 MCP？
+									{t("什么是 MCP？", "What is MCP?")}
 								</div>
 								<p
 									style={{
 										fontSize: 13,
 										color: textSecondary,
 										lineHeight: 1.8,
-										fontFamily: "'Noto Sans SC', sans-serif",
+										fontFamily: sansFont,
 									}}
 								>
-									模型上下文协议是一个连接 AI
-									应用与外部工具的开放标准，实现跨平台的实时双向数据流转。
+									{t(
+										"模型上下文协议是一个连接 AI 应用与外部工具的开放标准，实现跨平台的实时双向数据流转。",
+										"MCP is an open standard that links AI applications to external tools, enabling live two-way data flow across platforms.",
+									)}
 								</p>
 							</div>
 						</Reveal>
@@ -1604,18 +1859,27 @@ export default function LandingPage() {
 								{[
 									{
 										Icon: FeatureIcons.Workflow,
-										title: "自动规划任务工作流",
-										desc: "AI 根据一段描述自动生成任务序列和依赖关系。",
+										title: t("自动规划任务工作流", "Auto-orchestrated task workflows"),
+										desc: t(
+											"AI 根据一段描述自动生成任务序列和依赖关系。",
+											"AI turns a brief description into sequenced tasks and dependencies.",
+										),
 									},
 									{
 										Icon: FeatureIcons.Grading,
-										title: "智能批改辅助",
-										desc: "学生提交的作业自动审阅，生成结构化反馈。",
+										title: t("智能批改辅助", "Assisted grading intelligence"),
+										desc: t(
+											"学生提交的作业自动审阅，生成结构化反馈。",
+											"Student submissions are reviewed automatically and returned as structured feedback.",
+										),
 									},
 									{
 										Icon: FeatureIcons.Sync,
-										title: "全平台双向同步",
-										desc: "Notion、Slack 或飞书中的变更即时同步回来。",
+										title: t("全平台双向同步", "Bi-directional sync across platforms"),
+										desc: t(
+											"Notion、Slack 或飞书中的变更即时同步回来。",
+											"Changes from Notion, Slack, or Feishu echo back instantly.",
+										),
 									},
 								].map((f, i) => (
 									<div
@@ -1648,7 +1912,7 @@ export default function LandingPage() {
 													fontWeight: 700,
 													color: textPrimary,
 													marginBottom: 3,
-													fontFamily: "'Noto Sans SC', sans-serif",
+													fontFamily: sansFont,
 												}}
 											>
 												{f.title}
@@ -1658,7 +1922,7 @@ export default function LandingPage() {
 													fontSize: 13,
 													color: textSecondary,
 													lineHeight: 1.7,
-													fontFamily: "'Noto Sans SC', sans-serif",
+													fontFamily: sansFont,
 												}}
 											>
 												{f.desc}
@@ -1747,7 +2011,12 @@ export default function LandingPage() {
 															: "none",
 													}}
 												>
-													<intg.Logo s={26} />
+													<intg.Logo
+														s={26}
+														tone={isDark ? "#EDE5D9" : "#333"}
+														surface={isDark ? "#2B2621" : "#fff"}
+														border={isDark ? "#4a433c" : "#E0E0E0"}
+													/>
 													<span
 														style={{
 															fontSize: 9,
@@ -1755,7 +2024,7 @@ export default function LandingPage() {
 															color: isHov ? activeColor : textMuted,
 															letterSpacing: "0.04em",
 															transition: "color 0.3s",
-															fontFamily: "'Noto Sans SC', sans-serif",
+															fontFamily: sansFont,
 														}}
 													>
 														{intg.name}
@@ -1786,7 +2055,7 @@ export default function LandingPage() {
 																fontWeight: 700,
 																color: textPrimary,
 																marginBottom: 4,
-																fontFamily: "'Noto Sans SC', sans-serif",
+																fontFamily: sansFont,
 															}}
 														>
 															{intg.name}{" "}
@@ -1808,7 +2077,7 @@ export default function LandingPage() {
 																fontSize: 11,
 																color: textSecondary,
 																lineHeight: 1.6,
-																fontFamily: "'Noto Sans SC', sans-serif",
+																fontFamily: sansFont,
 															}}
 														>
 															{intg.desc}
@@ -2005,7 +2274,12 @@ export default function LandingPage() {
 													transition: "all 0.3s",
 												}}
 											>
-												<intg.Logo s={32} />
+												<intg.Logo
+													s={32}
+													tone={isDark ? "#EDE5D9" : "#333"}
+													surface={isDark ? "#2B2621" : "#fff"}
+													border={isDark ? "#4a433c" : "#E0E0E0"}
+												/>
 												<span
 													style={{
 														fontSize: 7.5,
@@ -2014,7 +2288,7 @@ export default function LandingPage() {
 															isHov || isActiveLine ? activeColor : textMuted,
 														letterSpacing: "0.04em",
 														transition: "color 0.3s",
-														fontFamily: "'Noto Sans SC', sans-serif",
+														fontFamily: sansFont,
 													}}
 												>
 													{intg.name}
@@ -2054,7 +2328,7 @@ export default function LandingPage() {
 																fontSize: 12,
 																fontWeight: 700,
 																color: textPrimary,
-																fontFamily: "'Noto Sans SC', sans-serif",
+																fontFamily: sansFont,
 															}}
 														>
 															{intg.name}
@@ -2079,7 +2353,7 @@ export default function LandingPage() {
 															color: textSecondary,
 															lineHeight: 1.6,
 															margin: 0,
-															fontFamily: "'Noto Sans SC', sans-serif",
+															fontFamily: sansFont,
 														}}
 													>
 														{intg.desc}
@@ -2114,10 +2388,10 @@ export default function LandingPage() {
 					}}
 				>
 					{[
-						{ num: "12,000+", label: "已注册学生" },
-						{ num: "860", label: "已创建班级" },
-						{ num: "98%", label: "任务按时完成" },
-						{ num: "4.9", label: "平均评分" },
+						{ num: "12,000+", label: t("已注册学生", "Registered students") },
+						{ num: "860", label: t("已创建班级", "Classes created") },
+						{ num: "98%", label: t("任务按时完成", "On-time completion") },
+						{ num: "4.9", label: t("平均评分", "Average rating") },
 					].map((s, i) => (
 						<Reveal key={i} delay={i * 0.08}>
 							<div style={{ padding: "20px 0" }}>
@@ -2139,7 +2413,7 @@ export default function LandingPage() {
 										color: textSecondary,
 										fontWeight: 500,
 										marginTop: 4,
-										fontFamily: "'Noto Sans SC', sans-serif",
+										fontFamily: sansFont,
 									}}
 								>
 									{s.label}
@@ -2157,7 +2431,7 @@ export default function LandingPage() {
 						<div
 							style={{
 								fontSize: isMobile ? 18 : 26,
-								fontFamily: "'Noto Serif SC', 'Source Serif 4', Georgia, serif",
+								fontFamily: serifFont,
 								fontWeight: 400,
 								lineHeight: 1.8,
 								color: textPrimary,
@@ -2165,7 +2439,10 @@ export default function LandingPage() {
 								marginBottom: 28,
 							}}
 						>
-							"为什么不用学习通"
+							{t(
+								'"为什么不用学习通"',
+								'"For the first time, classwork feels almost lyrical."',
+							)}
 						</div>
 						<div
 							style={{
@@ -2197,7 +2474,7 @@ export default function LandingPage() {
 									style={{
 										fontSize: 14,
 										fontWeight: 600,
-										fontFamily: "'Noto Sans SC', sans-serif",
+										fontFamily: sansFont,
 									}}
 								>
 									cc
@@ -2206,10 +2483,10 @@ export default function LandingPage() {
 									style={{
 										fontSize: 12,
 										color: textSecondary,
-										fontFamily: "'Noto Sans SC', sans-serif",
+										fontFamily: sansFont,
 									}}
 								>
-									优秀毕业生，某大学
+									{t("优秀毕业生，某大学", "Outstanding graduate, University")}
 								</div>
 							</div>
 						</div>
@@ -2261,13 +2538,15 @@ export default function LandingPage() {
 								style={{
 									fontSize: isMobile ? 26 : 38,
 									fontWeight: 700,
-									fontFamily:
-										"'Noto Serif SC', 'Source Serif 4', Georgia, serif",
+									fontFamily: serifFont,
 									letterSpacing: "-0.01em",
 									marginBottom: 16,
 								}}
 							>
-								准备好让课堂回归清晰了吗？
+								{t(
+									"准备好让课堂回归清晰了吗？",
+									"Ready to bring your classroom back to clarity?",
+								)}
 							</h2>
 							<p
 								style={{
@@ -2275,11 +2554,13 @@ export default function LandingPage() {
 									color: textSecondary,
 									maxWidth: 440,
 									lineHeight: 1.8,
-									fontFamily: "'Noto Sans SC', sans-serif",
+									fontFamily: sansFont,
 								}}
 							>
-								加入数千名已在使用 TaskNeo
-								组织作业、节省时间、让学生保持进度的教育者。
+								{t(
+									"加入数千名已在使用 TaskNeo组织作业、节省时间、让学生保持进度的教育者。",
+									"Join educators already using TaskNeo to orchestrate assignments, reclaim time, and keep every learner in rhythm.",
+								)}
 							</p>
 						</div>
 						<div
@@ -2303,7 +2584,7 @@ export default function LandingPage() {
 									fontSize: 16,
 									fontWeight: 600,
 									cursor: "pointer",
-									fontFamily: "'Noto Sans SC', sans-serif",
+									fontFamily: sansFont,
 									transition: "all 0.5s",
 									boxShadow: `0 4px 28px ${activeColor}30`,
 									whiteSpace: "nowrap",
@@ -2311,7 +2592,7 @@ export default function LandingPage() {
 									display: "inline-block",
 								}}
 							>
-								开始使用
+								{t("开始使用", "Get started")}
 							</a>
 						</div>
 					</div>
@@ -2321,11 +2602,14 @@ export default function LandingPage() {
 			{/* ASK AI */}
 			{(() => {
 				const q = encodeURIComponent(
-					`请告诉我 TaskNeo 是否适合我？这是产品文档：${LINKS.docs}`,
+					t(
+						`请告诉我 TaskNeo 是否适合我？这是产品文档：${LINKS.docs}`,
+						`Please tell me whether TaskNeo fits my teaching needs. Here is the product documentation: ${LINKS.docs}`,
+					),
 				);
 				const aiLinks = [
 					{
-						label: "询问 ChatGPT",
+						label: t("询问 ChatGPT", "Ask ChatGPT"),
 						href: `https://chat.openai.com/?q=${q}`,
 						icon: (
 							<svg
@@ -2339,7 +2623,7 @@ export default function LandingPage() {
 						),
 					},
 					{
-						label: "询问 Claude",
+						label: t("询问 Claude", "Ask Claude"),
 						href: `https://claude.ai/new?q=${q}`,
 						icon: (
 							<svg
@@ -2353,7 +2637,7 @@ export default function LandingPage() {
 						),
 					},
 					{
-						label: "询问 Perplexity",
+						label: t("询问 Perplexity", "Ask Perplexity"),
 						href: `https://www.perplexity.ai/?q=${q}`,
 						icon: (
 							<svg
@@ -2407,13 +2691,15 @@ export default function LandingPage() {
 								style={{
 									fontSize: isMobile ? 22 : 30,
 									fontWeight: 700,
-									fontFamily:
-										"'Noto Serif SC', 'Source Serif 4', Georgia, serif",
+									fontFamily: serifFont,
 									marginBottom: 32,
 									position: "relative",
 								}}
 							>
-								不确定 TaskNeo 是否适合您？
+								{t(
+									"不确定 TaskNeo 是否适合您？",
+									"Not sure whether TaskNeo is right for you?",
+								)}
 							</h2>
 							<div
 								style={{
@@ -2441,7 +2727,7 @@ export default function LandingPage() {
 											color: textPrimary,
 											fontSize: 13,
 											fontWeight: 500,
-											fontFamily: "'Noto Sans SC', sans-serif",
+											fontFamily: sansFont,
 											textDecoration: "none",
 											boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
 											transition: "border-color 0.2s, box-shadow 0.2s",
@@ -2541,37 +2827,37 @@ export default function LandingPage() {
 						>
 							{[
 								{
-									title: "产品",
+									title: t("产品", "Product"),
 									links: [
-										{ label: "功能特性", href: "#sec0" },
-										{ label: "甘特视图", href: "#" },
-										{ label: "AI 解析", href: "#" },
-										{ label: "更新日志", href: "#" },
+										{ label: t("功能特性", "Features"), href: "#sec0" },
+										{ label: t("甘特视图", "Gantt View"), href: "#" },
+										{ label: t("AI 解析", "AI Parsing"), href: "#" },
+										{ label: t("更新日志", "Changelog"), href: "#" },
 									],
 								},
 								{
-									title: "资源",
+									title: t("资源", "Resources"),
 									links: [
-										{ label: "帮助文档", href: LINKS.docs },
-										{ label: "快速入门", href: "#" },
-										{ label: "常见问题", href: "#" },
-										{ label: "API 文档", href: "#" },
+										{ label: t("帮助文档", "Docs"), href: LINKS.docs },
+										{ label: t("快速入门", "Quickstart"), href: "#" },
+										{ label: t("常见问题", "FAQ"), href: "#" },
+										{ label: "API Docs", href: "#" },
 									],
 								},
 								{
-									title: "公司",
+									title: t("公司", "Company"),
 									links: [
-										{ label: "关于我们", href: "#" },
-										{ label: "博客", href: "#" },
-										{ label: "联系我们", href: null },
+										{ label: t("关于我们", "About"), href: "#" },
+										{ label: t("博客", "Blog"), href: "#" },
+										{ label: t("联系我们", "Contact"), href: null },
 									],
 								},
 								{
-									title: "法律",
+									title: t("法律", "Legal"),
 									links: [
-										{ label: "隐私政策", href: LINKS.privacy },
-										{ label: "服务条款", href: LINKS.terms },
-										{ label: "Cookie 政策", href: "#" },
+										{ label: t("隐私政策", "Privacy"), href: LINKS.privacy },
+										{ label: t("服务条款", "Terms"), href: LINKS.terms },
+										{ label: t("Cookie 政策", "Cookie Policy"), href: "#" },
 									],
 								},
 							].map(({ title, links }) => (
@@ -2583,7 +2869,7 @@ export default function LandingPage() {
 											color: textMuted,
 											letterSpacing: "0.06em",
 											textTransform: "uppercase",
-											fontFamily: "'Noto Sans SC', sans-serif",
+											fontFamily: sansFont,
 											marginBottom: 14,
 										}}
 									>
@@ -2605,7 +2891,7 @@ export default function LandingPage() {
 														fontSize: 13,
 														color: textSecondary,
 														textDecoration: "none",
-														fontFamily: "'Noto Sans SC', sans-serif",
+														fontFamily: sansFont,
 														transition: "color 0.15s",
 													}}
 													onMouseEnter={(e) =>
@@ -2623,7 +2909,7 @@ export default function LandingPage() {
 													style={{
 														fontSize: 13,
 														color: textMuted,
-														fontFamily: "'Noto Sans SC', sans-serif",
+														fontFamily: sansFont,
 														cursor: "default",
 													}}
 												>
@@ -2655,15 +2941,15 @@ export default function LandingPage() {
 							style={{
 								fontSize: 12,
 								color: textMuted,
-								fontFamily: "'Noto Sans SC', sans-serif",
+								fontFamily: sansFont,
 							}}
 						>
 							© 2026 TaskNeo
 						</span>
 						<div style={{ display: "flex", gap: 20 }}>
 							{[
-								{ label: "服务条款", href: LINKS.terms },
-								{ label: "隐私政策", href: LINKS.privacy },
+								{ label: t("服务条款", "Terms"), href: LINKS.terms },
+								{ label: t("隐私政策", "Privacy"), href: LINKS.privacy },
 							].map(({ label, href }) => (
 								<a
 									key={label}
@@ -2672,7 +2958,7 @@ export default function LandingPage() {
 										fontSize: 12,
 										color: textMuted,
 										textDecoration: "none",
-										fontFamily: "'Noto Sans SC', sans-serif",
+										fontFamily: sansFont,
 										transition: "color 0.15s",
 									}}
 									onMouseEnter={(e) => (e.target.style.color = textSecondary)}
