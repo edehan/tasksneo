@@ -516,8 +516,8 @@
       "failedSaveSubmission": "提出の保存に失敗しました",
       "revised": "Content revised by AI",
       "failedRevise": "Failed to revise content",
-      "deadlineExtended": "Deadline extended",
-      "failedExtendDeadline": "Failed to extend deadline"
+      "deadlineExtended": "締切を延長しました",
+      "failedExtendDeadline": "締切の延長に失敗しました"
     },
     "breadcrumb": {
       "submittingTo": "{className} に提出中",
@@ -560,28 +560,28 @@
       "submit": "リライト",
       "submitting": "リライト中..."
     },
-    "extendDeadline": "Extend Deadline",
+    "extendDeadline": "締切を延長",
     "extendDialog": {
-      "title": "Extend Deadline",
-      "currentDeadline": "Current deadline",
-      "newDeadline": "New deadline",
+      "title": "締切を延長",
+      "currentDeadline": "現在の締切",
+      "newDeadline": "新しい締切",
       "presets": {
-        "1h": "+1 hour",
-        "3h": "+3 hours",
-        "1d": "+1 day",
-        "3d": "+3 days"
+        "1h": "+1時間",
+        "3h": "+3時間",
+        "1d": "+1日",
+        "3d": "+3日"
       },
-      "custom": "Custom",
-      "amount": "Amount",
+      "custom": "カスタム",
+      "amount": "数値",
       "unit": {
-        "hours": "Hours",
-        "days": "Days"
+        "hours": "時間",
+        "days": "日"
       },
-      "cancel": "Cancel",
-      "confirm": "Extend",
+      "cancel": "キャンセル",
+      "confirm": "延長",
       "error": {
-        "invalidAmount": "Please enter a valid number",
-        "mustExtend": "New deadline must be later than current"
+        "invalidAmount": "有効な数値を入力してください",
+        "mustExtend": "新しい締切は現在の締切より後である必要があります"
       }
     }
   },

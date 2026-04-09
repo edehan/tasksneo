@@ -516,8 +516,8 @@
       "failedSaveSubmission": "Echec de sauvegarde du rendu",
       "revised": "Content revised by AI",
       "failedRevise": "Failed to revise content",
-      "deadlineExtended": "Deadline extended",
-      "failedExtendDeadline": "Failed to extend deadline"
+      "deadlineExtended": "Date limite prolongee",
+      "failedExtendDeadline": "Echec de la prolongation de la date limite"
     },
     "breadcrumb": {
       "submittingTo": "Envoi vers · {className}",
@@ -560,28 +560,28 @@
       "submit": "Reecrire",
       "submitting": "Reecriture..."
     },
-    "extendDeadline": "Extend Deadline",
+    "extendDeadline": "Prolonger l'echeance",
     "extendDialog": {
-      "title": "Extend Deadline",
-      "currentDeadline": "Current deadline",
-      "newDeadline": "New deadline",
+      "title": "Prolonger l'echeance",
+      "currentDeadline": "Echeance actuelle",
+      "newDeadline": "Nouvelle echeance",
       "presets": {
-        "1h": "+1 hour",
-        "3h": "+3 hours",
-        "1d": "+1 day",
-        "3d": "+3 days"
+        "1h": "+1 heure",
+        "3h": "+3 heures",
+        "1d": "+1 jour",
+        "3d": "+3 jours"
       },
-      "custom": "Custom",
-      "amount": "Amount",
+      "custom": "Personnalise",
+      "amount": "Valeur",
       "unit": {
-        "hours": "Hours",
-        "days": "Days"
+        "hours": "Heures",
+        "days": "Jours"
       },
-      "cancel": "Cancel",
-      "confirm": "Extend",
+      "cancel": "Annuler",
+      "confirm": "Prolonger",
       "error": {
-        "invalidAmount": "Please enter a valid number",
-        "mustExtend": "New deadline must be later than current"
+        "invalidAmount": "Veuillez entrer un nombre valide",
+        "mustExtend": "La nouvelle echeance doit etre posterieure a l'actuelle"
       }
     }
   },
