@@ -163,7 +163,6 @@ export async function cacheDelPattern(pattern: string): Promise<void> {
 // Centralized so invalidation sites can't typo a key.
 
 export const cacheKeys = {
-	session: (tokenHash: string) => `session:${tokenHash}`,
 	membership: (classId: string, userId: string) =>
 		`member:${classId}:${userId}`,
 	membershipClassPattern: (classId: string) => `member:${classId}:*`,

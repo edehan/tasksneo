@@ -46,7 +46,7 @@
 
 | 层 | 技术 |
 |---|---|
-| 前端 | Next.js 14 App Router · TypeScript · Tailwind CSS · shadcn/ui |
+| 前端 | Next.js 16 App Router · TypeScript · Tailwind CSS · shadcn/ui |
 | 后端 | Hono · Node.js · TypeScript |
 | 数据库 | PostgreSQL 16 · Prisma 6 ORM |
 | 文件存储 | MinIO（自托管，兼容 S3） |
@@ -97,6 +97,15 @@ DEV_SEED_LLM_API_KEY=<your_key>
 
 该 API Key 会按 `SYSTEM_CONFIG_SECRET` 加密后写入 `system_config`。
 
+### 认证与会话模型
+
+- 普通用户登录态使用服务端持久化的 opaque session token，格式为 `tfses_<random>`。
+- `Authorization` 仍使用 Bearer 头，但 Bearer 值不是 JWT；会话真源在数据库 `sessions` 表。
+- `/auth/logout`、`/users/me/sessions`、`/users/me/sessions/:id` 都会直接撤销服务端 session，失效立即生效。
+- `trustDevice=true` 时创建 30 天滑动续期的浏览器会话；未勾选时是 7 天固定过期。
+- MCP 认证链路是 `MCP key -> /auth/mcp -> MCP session token`。撤销 MCP key 会切断关联 MCP sessions。
+- Redis 只用于 Bull 队列和业务缓存，不再承担用户认证缓存或 token 黑名单职责。
+
 默认访问：
 
 - 前端：http://localhost:3000
@@ -129,7 +138,6 @@ TASKFLOW_DEV_SEED=true pnpm dev
 | 变量 | 说明 |
 |---|---|
 | `ADMIN_TOKEN` | 管理员控制台访问令牌，只负责 `/admin` 鉴权 |
-| `JWT_SECRET` | 普通用户登录态签名密钥 |
 | `SYSTEM_CONFIG_SECRET` | 敏感系统配置的数据库加密密钥，需保持稳定 |
 | `DATABASE_URL` | PostgreSQL 连接串 |
 | `NEXT_PUBLIC_API_BASE_URL` | 前端访问后端 API 的地址，开发环境默认 `http://localhost:3001` |

@@ -78,8 +78,8 @@ export async function revokeMcpKey(userId: string, keyId: string) {
 		data: { revokedAt: new Date() },
 	});
 
-	// Cascade on the FK will remove the session rows, but we still need to
-	// flush the Redis cache entries keyed by their token hashes.
+	// Revoke any MCP sessions that were minted from this key so existing
+	// connection tokens stop working immediately.
 	await revokeMcpSessionsByKeyId(keyId);
 
 	return toMcpKey(updated);

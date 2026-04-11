@@ -5,12 +5,13 @@ Class task management system for educators. Teachers create classes, publish tas
 ## Stack
 
 - **Monorepo**: pnpm workspaces + Turborepo
-- **Frontend**: Next.js 14 App Router + TypeScript + Tailwind CSS + shadcn/ui (`apps/web`)
+- **Frontend**: Next.js 16 App Router + TypeScript + Tailwind CSS + shadcn/ui (`apps/web`)
 - **Backend**: Hono + TypeScript + Node.js (`apps/api`)
 - **Database**: PostgreSQL + Prisma 6 ORM (`packages/db`)
 - **File storage**: MinIO (S3-compatible, self-hosted)
 - **Queue**: Bull + Redis (notification jobs)
-- **Auth**: Session-based JWT; `/admin` routes use `ADMIN_TOKEN` from env only — no DB user
+- **Auth**: User requests carry opaque session tokens stored in the `sessions` table; `/admin` routes use `ADMIN_TOKEN` from env only — no DB user
+- **Redis**: Bull queue + business caches only; not used as a user-auth cache
 
 ## Key documents (read before editing related code)
 

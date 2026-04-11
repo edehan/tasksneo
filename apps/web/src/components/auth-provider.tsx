@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname, useRouter } from "next/navigation";
 import {
   createContext,
   useCallback,
@@ -9,7 +10,12 @@ import {
   useState,
 } from "react";
 import type { UserProfile } from "@/lib/api";
-import { login as apiLogin, getMe, logoutApi } from "@/lib/api";
+import {
+  getMe,
+  login as apiLogin,
+  logoutApi,
+  subscribeToAuthExpired,
+} from "@/lib/api";
 
 const TOKEN_KEY = "taskflow_token";
 
@@ -33,6 +39,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const clearAuthState = useCallback(() => {
+    localStorage.removeItem(TOKEN_KEY);
+    setToken(null);
+    setUser(null);
+  }, []);
 
   useEffect(() => {
     const stored = localStorage.getItem(TOKEN_KEY);
@@ -45,11 +59,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     getMe(stored)
       .then((u) => setUser(u))
       .catch(() => {
-        localStorage.removeItem(TOKEN_KEY);
-        setToken(null);
+        clearAuthState();
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [clearAuthState]);
+
+  useEffect(() => {
+    return subscribeToAuthExpired(() => {
+      clearAuthState();
+      if (pathname !== "/login") {
+        router.replace("/login");
+      }
+    });
+  }, [clearAuthState, pathname, router]);
 
   const login = useCallback(
     async (email: string, password: string, trustDevice?: boolean) => {
@@ -79,10 +101,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Ignore — the local clear below is the source of truth for the UI.
       }
     }
-    localStorage.removeItem(TOKEN_KEY);
-    setToken(null);
-    setUser(null);
-  }, [token]);
+    clearAuthState();
+  }, [clearAuthState, token]);
 
   const updateUser = useCallback((u: UserProfile) => {
     setUser(u);

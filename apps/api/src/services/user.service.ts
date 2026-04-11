@@ -5,10 +5,7 @@ import { cacheDel, cacheDelPattern, cacheKeys } from "../lib/cache.js";
 import { AppError } from "../lib/errors.js";
 import { toAttachmentMeta, toUserProfile } from "../lib/http.js";
 import { removeObject } from "../lib/storage.js";
-import {
-	invalidateUserSessionCaches,
-	revokeAllBrowserSessions,
-} from "./session.service.js";
+import { revokeAllBrowserSessions } from "./session.service.js";
 import {
 	hardDeleteTask,
 	removeSubmissionAttachments,
@@ -342,10 +339,6 @@ export async function deleteMyAccount(userId: string) {
 	await deleteUserSubmissions(userId);
 	await deletePersonalClass(userId);
 	await removeUserAvatarAttachments(userId);
-	// Must invalidate session caches BEFORE deleting the user, otherwise the
-	// cascade removes the session rows and we lose the token hashes we need
-	// to clean Redis with.
-	await invalidateUserSessionCaches(userId);
 	await prisma.user.delete({ where: { id: userId } });
 	await cacheDel(cacheKeys.notifPrefs(userId));
 }
@@ -354,7 +347,6 @@ export async function adminDeleteUser(userId: string) {
 	await deleteUserSubmissions(userId);
 	await deletePersonalClass(userId);
 	await removeUserAvatarAttachments(userId);
-	await invalidateUserSessionCaches(userId);
 	await prisma.user.delete({ where: { id: userId } });
 	await cacheDel(cacheKeys.notifPrefs(userId));
 }

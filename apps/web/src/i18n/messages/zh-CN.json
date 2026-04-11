@@ -5,6 +5,7 @@
       "profile": "个人资料",
       "notifications": "通知",
       "account": "账户",
+      "sessions": "会话",
       "mcpKeys": "MCP 密钥"
     }
   },
@@ -41,6 +42,7 @@
     "invalidOrExpiredLink": "此链接无效或已过期。",
     "passwordsDoNotMatch": "两次密码输入不一致",
     "passwordResetFailed": "密码重置失败",
+    "passwordResetSuccess": "密码已重置，请使用新密码重新登录。",
     "linkExpired": "链接已过期",
     "requestNewLink": "请求新的链接",
     "setNewPassword": "设置新密码",
@@ -107,7 +109,9 @@
     "signingIn": "登录中...",
     "signIn": "登录",
     "noAccount": "还没有账号？",
-    "signUp": "注册"
+    "signUp": "注册",
+    "trustDevice": "信任此设备",
+    "trustDeviceHint": "让此浏览器最多保持 30 天登录状态。公共或共享设备请勿勾选。"
   },
   "authRegister": {
     "registrationFailed": "注册失败",
@@ -810,6 +814,36 @@
     "steps": "步骤",
     "command": "命令"
   },
+  "settingsSessions": {
+    "title": "活跃会话",
+    "description": "当前登录到你账号的浏览器会话。MCP 连接会单独显示在下方。",
+    "noBrowsers": "当前没有活跃的浏览器会话。",
+    "current": "当前设备",
+    "trusted": "已信任",
+    "signOut": "登出",
+    "signOutOthers": "登出其他浏览器会话",
+    "signOutOthersTitle": "登出其他浏览器会话？",
+    "signOutOthersDescription": "其他浏览器会话会立即登出，当前设备会保持登录。MCP 密钥和 MCP 连接不会受到影响。",
+    "lastActive": "最近活跃",
+    "justNow": "刚刚",
+    "hoursAgo": "{count} 小时前",
+    "yesterday": "昨天",
+    "daysAgo": "{count} 天前",
+    "unknownDevice": "未知设备",
+    "mcpTitle": "MCP 连接",
+    "mcpDescription": "通过 MCP 密钥连接的 AI 工具。在这里登出只会断开当前这一条连接。",
+    "mcpHint": "如果你想永久停用某个密钥并切断它的所有连接，请前往 MCP 密钥 标签页中撤销该密钥。",
+    "unknownMcpKey": "未命名密钥",
+    "revokeTitle": "登出这个会话？",
+    "revokeBrowserDescription": "这个浏览器会立即登出，使用者需要重新登录。",
+    "revokeMcpDescription": "要登出 “{name}” 的这条会话吗？底层密钥仍然有效，之后仍可创建新的会话。",
+    "cancel": "取消",
+    "revoked": "会话已登出",
+    "revokedOthers": "其他会话已登出",
+    "failedLoad": "加载会话失败",
+    "failedRevoke": "登出会话失败"
+  },
+  
   "batchDownloadDialog": {
     "title": "下载提交内容",
     "description": "{count} 名学生有可下载内容",

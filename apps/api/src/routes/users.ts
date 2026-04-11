@@ -138,8 +138,6 @@ usersRouter.delete("/me/sessions/:sessionId", async (c) => {
 	const sessionId = c.req.param("sessionId");
 
 	// Make sure the target session belongs to this user before revoking.
-	// Reuse listUserSessions so the ownership check and the cache-keyed delete
-	// share the same loader.
 	const mine = await listUserSessions(authUser.userId, "");
 	const target = mine.find((s) => s.id === sessionId);
 	if (!target) {

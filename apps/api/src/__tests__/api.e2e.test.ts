@@ -705,14 +705,9 @@ describe("TaskFlow API e2e", () => {
 				body: submissionForm,
 			},
 		);
-		expect(submitRes.status).toBe(200);
-		const submitBody = (await json(submitRes)) as {
-			id: string;
-			content: string | null;
-			attachments: Array<{ fileKey: string }>;
-		};
-		const submissionId = submitBody.id;
-		expect(submitBody.content).toBe("My first answer");
+		expect(submitRes.status).toBe(201);
+		const submitBody = (await json(submitRes)) as Array<{ fileKey: string }>;
+		expect(submitBody.length).toBe(1);
 
 		const mySubmissionRes = await app.request(
 			`/tasks/${taskId}/submissions/me`,
@@ -720,9 +715,13 @@ describe("TaskFlow API e2e", () => {
 		);
 		expect(mySubmissionRes.status).toBe(200);
 		const mySubmissionBody = (await json(mySubmissionRes)) as {
+			id: string;
 			content: string | null;
+			attachments: Array<{ fileKey: string }>;
 		};
+		const submissionId = mySubmissionBody.id;
 		expect(mySubmissionBody.content).toBe("My first answer");
+		expect(mySubmissionBody.attachments.length).toBe(1);
 
 		const submissionDetailRes = await app.request(
 			`/tasks/${taskId}/submissions/${submissionId}`,
@@ -789,7 +788,7 @@ describe("TaskFlow API e2e", () => {
 		expect(fileTaskRes.status).toBe(302);
 
 		const fileSubmissionRes = await app.request(
-			`/files/${encodeURIComponent(submitBody.attachments[0].fileKey)}`,
+			`/files/${encodeURIComponent(submitBody[0].fileKey)}`,
 			{
 				headers: authHeader(ownerToken),
 			},
@@ -949,6 +948,21 @@ describe("Session lifecycle", () => {
 		const secondToken = (secondLogin.body as { token: string }).token;
 		expect(secondToken).not.toBe(first.token);
 
+		const createKeyRes = await requestJson(app, "/users/me/mcp-keys", {
+			method: "POST",
+			headers: authHeader(first.token),
+			body: JSON.stringify({ name: "CI key" }),
+		});
+		expect(createKeyRes.response.status).toBe(201);
+		const rawMcpKey = (createKeyRes.body as { key: string }).key;
+
+		const mcpExchangeRes = await requestJson(app, "/auth/mcp", {
+			method: "POST",
+			body: JSON.stringify({ key: rawMcpKey }),
+		});
+		expect(mcpExchangeRes.response.status).toBe(200);
+		const mcpToken = (mcpExchangeRes.body as { token: string }).token;
+
 		// Change password from the first session.
 		const patchPassword = await requestJson(app, "/users/me/password", {
 			method: "PATCH",
@@ -971,11 +985,32 @@ describe("Session lifecycle", () => {
 			headers: authHeader(secondToken),
 		});
 		expect(secondAfter.status).toBe(401);
+
+		// MCP sessions remain valid; MCP keys are intentionally unaffected.
+		const mcpAfter = await app.request("/users/me", {
+			headers: authHeader(mcpToken),
+		});
+		expect(mcpAfter.status).toBe(200);
 	});
 
 	it("password reset kills every browser session and does not return a new token", async () => {
 		const email = uniqueEmail("reset");
 		const { token } = await createTestUser({ email, password: "Passw0rd!" });
+
+		const createKeyRes = await requestJson(app, "/users/me/mcp-keys", {
+			method: "POST",
+			headers: authHeader(token),
+			body: JSON.stringify({ name: "Reset-safe key" }),
+		});
+		expect(createKeyRes.response.status).toBe(201);
+		const rawMcpKey = (createKeyRes.body as { key: string }).key;
+
+		const mcpExchangeRes = await requestJson(app, "/auth/mcp", {
+			method: "POST",
+			body: JSON.stringify({ key: rawMcpKey }),
+		});
+		expect(mcpExchangeRes.response.status).toBe(200);
+		const mcpToken = (mcpExchangeRes.body as { token: string }).token;
 
 		// Drive the reset flow through the service to sidestep the email dispatch —
 		// createVerificationToken is internal, so we drop a row directly.
@@ -1015,6 +1050,12 @@ describe("Session lifecycle", () => {
 			body: JSON.stringify({ email, password: "Passw0rd!Reset" }),
 		});
 		expect(newLogin.response.status).toBe(200);
+
+		// MCP sessions remain valid; password recovery does not revoke API-key access.
+		const mcpAfter = await app.request("/users/me", {
+			headers: authHeader(mcpToken),
+		});
+		expect(mcpAfter.status).toBe(200);
 	});
 
 	it("GET /users/me/sessions lists sessions and marks the current one", async () => {

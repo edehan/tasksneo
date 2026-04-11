@@ -2,10 +2,9 @@ import type { MiddlewareHandler } from "hono";
 
 import { AppError } from "../lib/errors.js";
 import {
-	hashSessionToken,
 	isSessionToken,
 	loadSessionByToken,
-	touchSessionWithHash,
+	touchSession,
 } from "../services/session.service.js";
 import type { AppVariables } from "../types/context.js";
 
@@ -34,11 +33,10 @@ export const authMiddleware: MiddlewareHandler<{
 		throw new AppError(403, "USER_INACTIVE", "Account is disabled");
 	}
 
-	// Touch is debounced to once per 24h per session, so this is a no-op on
+	// Touch is debounced to once per hour per session, so this is a no-op on
 	// the vast majority of requests. For trusted browser sessions it also
 	// slides the expiresAt forward in the same UPDATE.
-	const tokenHash = hashSessionToken(token);
-	session = await touchSessionWithHash(tokenHash, session);
+	session = await touchSession(session);
 
 	c.set("authUser", { userId: session.userId, email: session.email });
 	c.set("authSession", {
@@ -47,7 +45,6 @@ export const authMiddleware: MiddlewareHandler<{
 		kind: session.kind,
 		isTrusted: session.isTrusted,
 		mcpKeyId: session.mcpKeyId,
-		tokenHash,
 	});
 
 	await next();

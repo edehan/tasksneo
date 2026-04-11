@@ -1,8 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { SessionKind, prisma } from "@taskflow/db";
 
-import { cacheDel, cacheGetOrSet, cacheKeys } from "../lib/cache.js";
-import { AppError } from "../lib/errors.js";
 import {
 	processSessionCleanupQueue,
 	scheduleSessionCleanupCron,
@@ -11,8 +9,7 @@ import {
 // ── Constants ───────────────────────────────────────────────────────────────
 
 const SESSION_TOKEN_PREFIX = "tfses_";
-const SESSION_CACHE_TTL_SECONDS = 600; // 10 min — same bound as old authUser cache.
-const TOUCH_DEBOUNCE_MS = 24 * 60 * 60 * 1000; // 1 day
+const TOUCH_DEBOUNCE_MS = 60 * 60 * 1000; // 1 hour
 const UNTRUSTED_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days, hard cap
 const TRUSTED_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days, sliding
 
@@ -33,11 +30,6 @@ export interface CreateMcpSessionInput {
 	ipAddress: string | null;
 }
 
-/**
- * The cached shape of a session. Kept flat and small so it fits comfortably
- * in a single Redis value. User fields are included so the middleware never
- * has to do a second lookup for isActive / email.
- */
 export interface CachedSession {
 	id: string;
 	userId: string;
@@ -110,82 +102,61 @@ export async function createMcpSession(input: CreateMcpSessionInput) {
 	return { session, token: raw };
 }
 
-// ── Lookup / cache ──────────────────────────────────────────────────────────
+// ── Lookup ─────────────────────────────────────────────────────────────────
 
 /**
- * Load a session by raw token, hitting Redis first. Returns null if the
- * session does not exist, is expired, or the owning user is inactive.
- *
- * The null sentinel in cacheGetOrSet handles repeated lookups of invalid
- * tokens without hammering the DB.
+ * Load a session by raw token directly from DB. This makes the database the
+ * source of truth for revocation so deleting a session invalidates it
+ * immediately without relying on cache invalidation succeeding.
  */
 export async function loadSessionByToken(
 	rawToken: string,
 ): Promise<CachedSession | null> {
 	const hash = hashSessionToken(rawToken);
-	const cacheKey = cacheKeys.session(hash);
 
-	const cached = await cacheGetOrSet<CachedSession | null>(
-		cacheKey,
-		SESSION_CACHE_TTL_SECONDS,
-		async () => {
-			const row = await prisma.session.findUnique({
-				where: { tokenHash: hash },
-				include: {
-					user: {
-						select: { id: true, email: true, isActive: true },
-					},
-				},
-			});
-
-			if (!row) return null;
-
-			return {
-				id: row.id,
-				userId: row.userId,
-				email: row.user.email,
-				isActive: row.user.isActive,
-				kind: row.kind,
-				mcpKeyId: row.mcpKeyId,
-				isTrusted: row.isTrusted,
-				lastSeenAt: row.lastSeenAt.toISOString(),
-				expiresAt: row.expiresAt?.toISOString() ?? null,
-			};
+	const row = await prisma.session.findUnique({
+		where: { tokenHash: hash },
+		include: {
+			user: {
+				select: { id: true, email: true, isActive: true },
+			},
 		},
-	);
+	});
 
-	if (!cached) return null;
-
-	// Hard expiry check happens here (not in DB query) so the cache can cover
-	// the common case cheaply. If expired, nuke the cache entry.
-	if (cached.expiresAt && new Date(cached.expiresAt).getTime() < Date.now()) {
-		await cacheDel(cacheKey);
+	if (!row) {
 		return null;
 	}
 
-	return cached;
+	if (row.expiresAt && row.expiresAt.getTime() < Date.now()) {
+		return null;
+	}
+
+	return {
+		id: row.id,
+		userId: row.userId,
+		email: row.user.email,
+		isActive: row.user.isActive,
+		kind: row.kind,
+		mcpKeyId: row.mcpKeyId,
+		isTrusted: row.isTrusted,
+		lastSeenAt: row.lastSeenAt.toISOString(),
+		expiresAt: row.expiresAt?.toISOString() ?? null,
+	};
 }
 
 // ── Touch (debounced lastSeenAt + sliding expiresAt) ─────────────────────────
 
 /**
- * Update lastSeenAt if more than 24h have passed since the last touch. For
+ * Update lastSeenAt if more than 1h has passed since the last touch. For
  * trusted BROWSER sessions, extends expiresAt to now + 30d in the same UPDATE.
  *
  * MCP sessions: never touched here. Their lifetime follows McpKey.expiresAt.
  * Untrusted BROWSER: only lastSeenAt is updated, expiresAt stays fixed.
  *
- * Debouncing happens in memory (cache read) — we do at most 1 DB write per
- * session per 24h regardless of request volume.
- *
- * Takes the tokenHash so we can invalidate the cache precisely; after the
- * update we drop the cache entry and let the next request repopulate from
- * DB with the fresh timestamps.
+ * Debouncing is based on the DB-backed lastSeenAt we loaded for this request,
+ * so revocation remains correct even if Redis is unavailable.
  */
-export async function touchSessionWithHash(
-	tokenHash: string,
-	session: CachedSession,
-): Promise<CachedSession> {
+export async function touchSession(session: CachedSession): Promise<CachedSession> {
 	if (session.kind === SessionKind.MCP) {
 		return session;
 	}
@@ -209,11 +180,6 @@ export async function touchSessionWithHash(
 		},
 	});
 
-	// Drop the cache entry so the next request repopulates from DB with the
-	// fresh timestamps. Alternative (writing the updated value back) would be
-	// faster but adds a serialization step; the next miss is cheap.
-	await cacheDel(cacheKeys.session(tokenHash));
-
 	return {
 		...session,
 		lastSeenAt: updated.lastSeenAt.toISOString(),
@@ -224,23 +190,7 @@ export async function touchSessionWithHash(
 // ── Revocation ──────────────────────────────────────────────────────────────
 
 export async function revokeSession(sessionId: string): Promise<void> {
-	const row = await prisma.session.findUnique({
-		where: { id: sessionId },
-		select: { tokenHash: true },
-	});
-	if (!row) return;
-
-	await prisma.session.delete({ where: { id: sessionId } });
-	await cacheDel(cacheKeys.session(row.tokenHash));
-}
-
-export async function revokeSessionByTokenHash(
-	tokenHash: string,
-): Promise<void> {
-	await prisma.session
-		.delete({ where: { tokenHash } })
-		.catch(() => undefined);
-	await cacheDel(cacheKeys.session(tokenHash));
+	await prisma.session.delete({ where: { id: sessionId } }).catch(() => undefined);
 }
 
 /**
@@ -252,17 +202,6 @@ export async function revokeAllBrowserSessions(
 	userId: string,
 	exceptSessionId?: string,
 ): Promise<void> {
-	const rows = await prisma.session.findMany({
-		where: {
-			userId,
-			kind: SessionKind.BROWSER,
-			...(exceptSessionId ? { id: { not: exceptSessionId } } : {}),
-		},
-		select: { tokenHash: true },
-	});
-
-	if (rows.length === 0) return;
-
 	await prisma.session.deleteMany({
 		where: {
 			userId,
@@ -270,47 +209,16 @@ export async function revokeAllBrowserSessions(
 			...(exceptSessionId ? { id: { not: exceptSessionId } } : {}),
 		},
 	});
-
-	if (rows.length > 0) {
-		await cacheDel(...rows.map((r) => cacheKeys.session(r.tokenHash)));
-	}
 }
 
 /**
  * Delete all sessions tied to a specific MCP key. Called when an MCP key is
- * revoked. Cascade on the FK would do the DB rows, but we still need explicit
- * cache invalidation.
+ * revoked so existing MCP session tokens stop working immediately.
  */
 export async function revokeMcpSessionsByKeyId(
 	mcpKeyId: string,
 ): Promise<void> {
-	const rows = await prisma.session.findMany({
-		where: { mcpKeyId },
-		select: { tokenHash: true },
-	});
-
-	if (rows.length === 0) return;
-
 	await prisma.session.deleteMany({ where: { mcpKeyId } });
-	await cacheDel(...rows.map((r) => cacheKeys.session(r.tokenHash)));
-}
-
-/**
- * Invalidate the Redis cache for every active session owned by `userId`
- * WITHOUT deleting the sessions themselves. Used when user fields that are
- * embedded in the cached session (email, isActive) change — the sessions
- * should stay alive but their next request must re-read from DB.
- */
-export async function invalidateUserSessionCaches(
-	userId: string,
-): Promise<void> {
-	const rows = await prisma.session.findMany({
-		where: { userId },
-		select: { tokenHash: true },
-	});
-
-	if (rows.length === 0) return;
-	await cacheDel(...rows.map((r) => cacheKeys.session(r.tokenHash)));
 }
 
 // ── Listing ─────────────────────────────────────────────────────────────────
@@ -381,4 +289,3 @@ export async function startSessionCleanupWorker() {
 
 	await scheduleSessionCleanupCron();
 }
-

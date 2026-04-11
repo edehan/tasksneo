@@ -94,9 +94,10 @@ function DeviceIcon({ kind }: { kind: ParsedUserAgent["deviceKind"] | "mcp" }) {
 
 /**
  * Relative time per UX spec:
- *   today (<24h from start of today)
+ *   just now (<1h, same calendar day)
+ *   N hours ago (same calendar day)
  *   yesterday
- *   N days ago  (2–7 days)
+ *   N days ago (2–7 days)
  *   absolute date (>7 days)
  */
 function formatLastSeen(
@@ -105,6 +106,7 @@ function formatLastSeen(
 ): string {
   const date = new Date(iso);
   const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
 
   const startOfToday = new Date(
     now.getFullYear(),
@@ -120,7 +122,15 @@ function formatLastSeen(
     (startOfToday.getTime() - startOfDate.getTime()) / (24 * 3600 * 1000),
   );
 
-  if (dayDiff <= 0) return t("today");
+  if (dayDiff <= 0) {
+    if (diffMs < 60 * 60 * 1000) {
+      return t("justNow");
+    }
+
+    return t("hoursAgo", {
+      count: Math.max(1, Math.floor(diffMs / (60 * 60 * 1000))),
+    });
+  }
   if (dayDiff === 1) return t("yesterday");
   if (dayDiff <= 7) return t("daysAgo", { count: dayDiff });
   return date.toLocaleDateString(undefined, {
@@ -201,7 +211,7 @@ export default function SessionsPage() {
 
   const browserSessions = sessions.filter((s) => s.kind === "BROWSER");
   const mcpSessions = sessions.filter((s) => s.kind === "MCP");
-  const hasOthers = sessions.some((s) => !s.isCurrent);
+  const hasOtherBrowserSessions = browserSessions.some((s) => !s.isCurrent);
 
   return (
     <div className="space-y-10">
@@ -211,7 +221,7 @@ export default function SessionsPage() {
             <h2 className="text-heading-md">{t("title")}</h2>
             <p className="text-sm text-muted-foreground">{t("description")}</p>
           </div>
-          {hasOthers && (
+          {hasOtherBrowserSessions && (
             <Button
               variant="outline"
               size="sm"

@@ -11,7 +11,6 @@ export interface AuthSession {
 	kind: SessionKind;
 	isTrusted: boolean;
 	mcpKeyId: string | null;
-	tokenHash: string;
 }
 
 export interface AppVariables {

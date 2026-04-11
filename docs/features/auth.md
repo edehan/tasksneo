@@ -1,73 +1,129 @@
-# 认证 — 注册、登录与密码
+# 认证 — 注册、登录、会话与密码
+
+## 总览
+
+- 普通用户登录态不是 JWT，而是服务端持久化的 opaque session token，格式为 `tfses_<random>`。
+- Bearer 头部格式保持不变：`Authorization: Bearer <token>`。
+- 用户会话真源在数据库 `sessions` 表；删除 session 后会立即失效。
+- Redis 不再承担用户认证缓存或 token 黑名单职责，只保留队列和业务缓存用途。
+
+---
 
 ## 注册
 
-### 流程
+### 两步流
 
-1. 用户提交注册表单，包含：邮箱（必填）、密码（必填）、昵称（选填）、学校（选填）、学号（条件必填）。
-2. 如果用户选择了学校，则学号为必填项。此规则在前端表单验证和后端服务层同时强制执行。
-3. 后端检查 `system_config` 中 `auth.registration_open` 的值。若为 `'false'`，则返回 403，拒绝注册。
-4. 后端创建 `users` 表记录，随后创建 `user_credentials` 表记录，`provider = LOCAL`，`passwordHash = bcrypt(password)`。
-5. 后端自动为新用户创建一个私人班级，字段如下：
-   - `name = "个人空间"`
-   - `isPersonal = true`
-   - `inviteCode = null`
-   - `ownerId` 指向新用户
-   - 同时在 `class_members` 中插入一条记录，`role = OWNER`
-6. 返回 JWT，用户直接处于登录状态。
+1. 用户在 `/register` 第一步只提交邮箱。
+2. 后端检查 `auth.registration_open`；若关闭则拒绝注册。
+3. 后端发送注册验证邮件，并把一次性 token 写入 `email_verification_tokens`。
+4. 用户点击邮件链接，前端先调用 `GET /auth/verify-token?purpose=REGISTRATION` 校验 token。
+5. 用户在 `/register/complete` 页面补充密码、昵称、学校、学号、时区，并提交到 `POST /auth/register/complete`。
+6. 后端创建：
+   - `users`
+   - `user_credentials`（`LOCAL` + bcrypt hash）
+   - 私人班级
+   - 首个浏览器 session
+7. 响应返回 `{ token, user }`，前端进入已登录状态。
 
-### 邮箱验证码（v1 暂不实现）
+### 规则
 
-v1 不做邮箱验证，用户注册后立即激活。
-
-v2 及后续版本的实现方案：
-- 将短效验证码存入 **Redis**，设置 15 分钟 TTL，无需新增数据库表。
-- 系统向邮箱发送验证码，用户调用 `/auth/verify-email` 接口提交验证码。
-- 验证通过后，在 `users` 表新增 `emailVerifiedAt` 字段并写入时间戳（届时需要一次数据库迁移）。
-
-### 昵称
-
-昵称为空时，后端存储 NULL，不写入任何默认值。前端在需要显示名称的地方，用邮箱地址作为展示名的回退方案。
-
-### 学号唯一性
-
-数据库层面通过 `@@unique([schoolId, studentId])` 保证同一学校内学号唯一。若冲突，后端返回 409 并附带明确的错误信息。
+- 学校已选时，学号必填。
+- `trustDevice=true` 时，注册完成后创建 30 天滑动续期浏览器会话；否则创建 7 天固定过期浏览器会话。
+- 昵称为空时存 `NULL`，前端可回退显示邮箱。
+- 注册邮件按邮箱地址限流：24 小时内最多 5 封。
 
 ---
 
 ## 登录
 
-1. 用户提交邮箱和密码。
-2. 后端查询 `user_credentials`，找到 `userId` 匹配且 `provider = LOCAL` 的记录。
-3. 使用 bcrypt 对比提交的密码与存储的 `passwordHash`。
-4. 若 `users.isActive = false`，返回 403，提示信息："账号已被停用，请联系管理员"。
-5. 验证通过后，签发包含 `{ sub: userId, email }` 的 JWT，有效期 7 天。
-6. Token 在响应体中返回，前端存储后在后续所有请求中以 `Authorization: Bearer <token>` 的形式携带。
+1. 用户提交邮箱、密码，可选 `trustDevice`。
+2. 后端查找 `user_credentials(provider=LOCAL)` 并校验 bcrypt。
+3. 若 `users.isActive = false`，返回 `403 USER_INACTIVE`。
+4. 登录成功后返回 `{ token, user }`。
 
----
+### 会话时长
 
-## 密码重置
-
-v1 不提供用户自助重置密码功能。管理员可通过 `/admin` 控制平面手动重置任意用户的密码。
-
-v2 及后续版本：通过邮件链接实现自助重置，Token 存入 Redis，与邮箱验证码方案一致。
+- `trustDevice=false` 或未传：7 天固定过期浏览器会话。
+- `trustDevice=true`：30 天滑动续期浏览器会话。
+- `lastSeenAt` / trusted session 的续期写入会做 1 小时 debounce，避免每个请求都写库。
 
 ---
 
 ## 鉴权中间件
 
-所有受保护路由均经过 `authMiddleware`：
-1. 从 `Authorization` 请求头中提取 Bearer Token。
-2. 验证 JWT 签名与有效期。
-3. 从数据库查询用户，检查 `isActive`。若为 false，返回 403。
-4. 将 `{ userId, email }` 挂载到请求上下文中，供后续路由处理器使用。
+所有用户保护路由都经过 `authMiddleware`：
 
-`/admin` 路由使用独立的 `adminMiddleware`，仅验证 `Authorization: Bearer $ADMIN_TOKEN` 是否与环境变量匹配，与用户鉴权体系完全隔离。
+1. 读取 `Authorization: Bearer <token>`。
+2. 校验前缀是否为 `tfses_`。
+3. 用 token hash 查询数据库 `sessions` 表，并联查用户的 `email` / `isActive`。
+4. 若 session 不存在、已过期、或用户已停用，则拒绝请求。
+5. 对浏览器会话执行 debounced touch：
+   - 超过 1 小时未更新时刷新 `lastSeenAt`
+   - trusted browser session 同时把 `expiresAt` 向后顺延 30 天
+   - MCP session 不做 touch
+
+`/admin/*` 继续使用完全独立的 `ADMIN_TOKEN`。
 
 ---
 
-## 登出
+## 登出与会话管理
 
-JWT 为无状态设计。登出由前端丢弃 Token 实现，服务端不维护会话状态，v1 无需服务端登出接口。
+### 当前会话登出
 
-如果后续需要 Token 吊销能力，可以在 Redis 中维护一个 Token 黑名单，无需修改数据库结构。
+- `POST /auth/logout`
+- 服务端直接删除当前 session
+- token 立即失效
+
+### 会话列表
+
+- `GET /users/me/sessions`
+- 返回当前用户的所有 `BROWSER` + `MCP` session
+- 前端按 `lastSeenAt` 展示最近使用时间
+
+### 登出其他浏览器会话
+
+- `DELETE /users/me/sessions`
+- 仅撤销“其他浏览器会话”
+- 当前浏览器会话保留
+- MCP keys / MCP sessions 不受影响
+
+### 撤销单个会话
+
+- `DELETE /users/me/sessions/:id`
+- 可撤销指定 browser session 或 MCP session
+- 若撤销的是当前 session，效果等同于当前设备立即登出
+- 若撤销的是 MCP session，只断开这条连接，不会吊销底层 MCP key
+
+---
+
+## 密码修改与重置
+
+### 已登录修改密码
+
+- 接口：`PATCH /users/me/password`
+- 要求提供当前密码
+- 成功后：
+  - 保留当前浏览器 session
+  - 撤销其他浏览器 sessions
+  - MCP keys / MCP sessions 不受影响
+
+### 忘记密码 / 重置密码
+
+1. 用户提交邮箱到 `POST /auth/forgot-password`
+2. 后端若账号存在则发送重置邮件；若不存在也返回 200，防止枚举邮箱
+3. 前端进入重置页前先调用 `GET /auth/verify-token?purpose=PASSWORD_RESET`
+4. 用户提交新密码到 `POST /auth/reset-password`
+5. 成功后：
+   - 更新本地密码 hash
+   - 撤销该用户全部浏览器 sessions
+   - 不自动登录
+   - MCP keys / MCP sessions 仍保持可用
+
+---
+
+## 邮箱修改
+
+1. 已登录用户发起 `POST /users/me/email/change`
+2. 系统向新邮箱发送确认邮件
+3. 用户登录状态下调用 `POST /users/me/email/confirm`
+4. 邮箱更新成功后，现有 sessions 保持可用；下次鉴权会读到新的用户邮箱

@@ -21,10 +21,11 @@ taskflow/
 │   │   │   ├── routes/             # One file per resource group
 │   │   │   ├── middleware/         # auth.ts, admin.ts, error.ts
 │   │   │   ├── services/           # Business logic (routes call services, not prisma directly)
-│   │   │   └── lib/                # env.ts, errors.ts, http.ts, jwt.ts, mailer.ts, queue.ts, storage.ts, system-config.ts
+│   │   │   └── lib/                # env.ts, errors.ts, http.ts, captcha.ts, mailer.ts, queue.ts, storage.ts
 │   │   └── CLAUDE.md
 │   │
-│   └── web/                        # Next.js 14 frontend (App Router + TypeScript)
+│   ├── mcp/                        # MCP package distributed to external AI tools
+│   └── web/                        # Next.js 16 frontend (App Router + TypeScript)
 │       ├── app/                    # Pages and layouts
 │       ├── components/             # Shared UI components
 │       ├── features/               # Feature modules (tasks/, classes/, auth/)
@@ -45,7 +46,7 @@ taskflow/
 │
 ├── docs/
 │   ├── DATABASE.md                 # Data model, table descriptions, deletion rules
-│   ├── DEVELOPMENT_LOG.md          # Running dev log: decisions, pitfalls, verification
+│   ├── api-tests/                  # HTTP examples for manual endpoint verification
 │   ├── openapi/
 │   │   └── openapi.yaml            # Complete API contract (OpenAPI 3.0)
 │   ├── features/                   # Natural language feature specs (Chinese, non-authoritative)
@@ -56,6 +57,7 @@ taskflow/
 │   │   ├── attachments.md
 │   │   ├── notifications.md
 │   │   └── data_policy.md
+│   ├── ux/                         # User journey / product-facing notes
 │   └── deployment/
 │       ├── local-dev.md
 │       └── production.md           # Production deployment guide
@@ -86,7 +88,7 @@ taskflow/
 | Layer | Choice | Notes |
 |---|---|---|
 | Backend framework | Hono | Lightweight, TypeScript-first, runs on Node.js |
-| Frontend framework | Next.js 14 App Router | SSR + static, file-based routing |
+| Frontend framework | Next.js 16 App Router | SSR + static, file-based routing |
 | UI components | shadcn/ui + Tailwind CSS | Unstyled base components, fully customisable |
 | ORM | Prisma 6 | Schema-first, auto-generated types |
 | Database | PostgreSQL 16 | Via Docker in dev and prod |
@@ -110,9 +112,11 @@ taskflow/
 - Tasks belong to exactly one class. There is no multi-class publishing.
 
 ### Auth
-- User routes: `Authorization: Bearer <JWT>`. Verified by `authMiddleware`.
+- User routes: `Authorization: Bearer <tfses_...>` opaque session token. Verified by `authMiddleware` against the `sessions` table.
 - Admin routes (`/admin/*`): `Authorization: Bearer <ADMIN_TOKEN>`. Verified by `adminMiddleware`. The admin is not a database user.
 - These two middleware are completely independent.
+- MCP integrations exchange stored MCP keys at `/auth/mcp` and then use the returned opaque session token.
+- Redis supports Bull queues and business caches only; it is not an auth source of truth.
 
 ### Code structure
 - Routes never import `prisma` directly. They call service functions.

@@ -12,10 +12,7 @@ import {
 	type RegisterInput,
 	type SessionMetadata,
 } from "./auth.service.js";
-import {
-	invalidateUserSessionCaches,
-	revokeAllBrowserSessions,
-} from "./session.service.js";
+import { revokeAllBrowserSessions } from "./session.service.js";
 import { getConfigValue } from "./system-config.service.js";
 
 const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -337,10 +334,6 @@ export async function confirmEmailChange(
 	});
 
 	await consumeToken(row.id, row.email, EmailTokenPurpose.EMAIL_CHANGE);
-	// Session rows keep the old email in their cached shape; blow those away
-	// so the next request re-reads fresh user data from DB. Sessions themselves
-	// stay alive (changing email shouldn't kick you out).
-	await invalidateUserSessionCaches(row.userId);
 
 	return toUserProfile(user);
 }

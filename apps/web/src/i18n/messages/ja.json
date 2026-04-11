@@ -5,6 +5,7 @@
       "profile": "プロフィール",
       "notifications": "通知",
       "account": "アカウント",
+      "sessions": "セッション",
       "mcpKeys": "MCPキー"
     }
   },
@@ -41,6 +42,7 @@
     "invalidOrExpiredLink": "このリンクは無効か期限切れです。",
     "passwordsDoNotMatch": "パスワードが一致しません",
     "passwordResetFailed": "パスワード再設定に失敗しました",
+    "passwordResetSuccess": "パスワードを再設定しました。新しいパスワードでサインインしてください。",
     "linkExpired": "リンクの有効期限が切れています",
     "requestNewLink": "新しいリンクをリクエスト",
     "setNewPassword": "新しいパスワードを設定",
@@ -107,7 +109,9 @@
     "signingIn": "サインイン中...",
     "signIn": "サインイン",
     "noAccount": "アカウントをお持ちでないですか？",
-    "signUp": "新規登録"
+    "signUp": "新規登録",
+    "trustDevice": "このデバイスを信頼する",
+    "trustDeviceHint": "このブラウザで最大 30 日間サインイン状態を維持します。共有端末や公共端末ではオフのままにしてください。"
   },
   "authRegister": {
     "registrationFailed": "登録に失敗しました",
@@ -806,6 +810,35 @@
     },
     "steps": "手順",
     "command": "コマンド"
+  },
+  "settingsSessions": {
+    "title": "アクティブなセッション",
+    "description": "現在あなたのアカウントにサインインしているブラウザセッションです。MCP 接続は下に別表示されます。",
+    "noBrowsers": "有効なブラウザセッションはありません。",
+    "current": "このデバイス",
+    "trusted": "信頼済み",
+    "signOut": "サインアウト",
+    "signOutOthers": "他のブラウザセッションをサインアウト",
+    "signOutOthersTitle": "他のブラウザセッションをサインアウトしますか？",
+    "signOutOthersDescription": "他のブラウザセッションはすべて直ちにサインアウトされます。このデバイスはサインインしたままです。MCP キーと MCP 接続には影響しません。",
+    "lastActive": "最終アクティブ",
+    "justNow": "たった今",
+    "hoursAgo": "{count}時間前",
+    "yesterday": "昨日",
+    "daysAgo": "{count}日前",
+    "unknownDevice": "不明なデバイス",
+    "mcpTitle": "MCP 接続",
+    "mcpDescription": "MCP キー経由で接続している AI ツールです。ここでのサインアウトはこの接続 1 件だけを終了します。",
+    "mcpHint": "キー自体を無効にしてすべての接続を切断したい場合は、MCP キー タブでそのキーを失効させてください。",
+    "unknownMcpKey": "名称未設定のキー",
+    "revokeTitle": "このセッションをサインアウトしますか？",
+    "revokeBrowserDescription": "このブラウザは直ちにサインアウトされ、利用者は再度サインインする必要があります。",
+    "revokeMcpDescription": "「{name}」のセッションをサインアウトしますか？元のキーは有効なままで、新しいセッションを引き続き作成できます。",
+    "cancel": "キャンセル",
+    "revoked": "セッションをサインアウトしました",
+    "revokedOthers": "他のセッションをサインアウトしました",
+    "failedLoad": "セッションの読み込みに失敗しました",
+    "failedRevoke": "セッションのサインアウトに失敗しました"
   },
   "batchDownloadDialog": {
     "title": "提出をダウンロード",

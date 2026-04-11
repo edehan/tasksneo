@@ -16,6 +16,30 @@ export class ApiError extends Error {
   }
 }
 
+const AUTH_EXPIRED_EVENT = "taskflow:auth-expired";
+const AUTH_ERROR_CODES = new Set([
+  "INVALID_TOKEN",
+  "UNAUTHORIZED",
+  "USER_INACTIVE",
+]);
+
+function emitAuthExpired() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+}
+
+export function subscribeToAuthExpired(handler: () => void): () => void {
+  if (typeof window === "undefined") {
+    return () => undefined;
+  }
+
+  window.addEventListener(AUTH_EXPIRED_EVENT, handler);
+  return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handler);
+}
+
 // ─── Domain Types ────────────────────────────────────────────────────────────
 
 export interface UserProfile {
@@ -285,6 +309,10 @@ export async function apiRequest<T>(
       }
     } catch {
       // Keep fallback message when response body is not JSON.
+    }
+
+    if (token && (response.status === 401 || AUTH_ERROR_CODES.has(errorCode))) {
+      emitAuthExpired();
     }
 
     throw new ApiError(errorMessage, errorCode, response.status);

@@ -1,16 +1,32 @@
 @baseUrl = http://localhost:3001
 @email = demo-auth@example.com
 @password = Passw0rd!
-@token = REPLACE_WITH_TOKEN
+@token = REPLACE_WITH_SESSION_TOKEN
+@registrationToken = REPLACE_WITH_REGISTRATION_TOKEN
+@resetToken = REPLACE_WITH_RESET_TOKEN
+@mcpKey = REPLACE_WITH_MCP_KEY
 
-### Register
+### Step 1: request registration email
 POST {{baseUrl}}/auth/register
 Content-Type: application/json
 
 {
-  "email": "{{email}}",
+  "email": "{{email}}"
+}
+
+### Verify registration token before showing the completion form
+GET {{baseUrl}}/auth/verify-token?purpose=REGISTRATION&token={{registrationToken}}
+
+### Step 2: complete registration and create the first browser session
+POST {{baseUrl}}/auth/register/complete
+Content-Type: application/json
+
+{
+  "token": "{{registrationToken}}",
   "password": "{{password}}",
-  "nickname": "Demo Auth"
+  "nickname": "Demo Auth",
+  "timezone": "Asia/Shanghai",
+  "trustDevice": true
 }
 
 ### Login
@@ -19,9 +35,42 @@ Content-Type: application/json
 
 {
   "email": "{{email}}",
-  "password": "{{password}}"
+  "password": "{{password}}",
+  "trustDevice": false
 }
 
-### Me
+### Current user
 GET {{baseUrl}}/users/me
 Authorization: Bearer {{token}}
+
+### Logout current session
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{token}}
+
+### Request password reset email
+POST {{baseUrl}}/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "{{email}}"
+}
+
+### Verify password reset token before showing the reset form
+GET {{baseUrl}}/auth/verify-token?purpose=PASSWORD_RESET&token={{resetToken}}
+
+### Reset password
+POST {{baseUrl}}/auth/reset-password
+Content-Type: application/json
+
+{
+  "token": "{{resetToken}}",
+  "password": "Passw0rd!2"
+}
+
+### Exchange MCP key for an MCP session token
+POST {{baseUrl}}/auth/mcp
+Content-Type: application/json
+
+{
+  "key": "{{mcpKey}}"
+}

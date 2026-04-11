@@ -5,7 +5,6 @@ import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
 import { sendEmail } from "../lib/mailer.js";
 import { createSchool, deleteSchool, listSchools } from "./school.service.js";
-import { invalidateUserSessionCaches } from "./session.service.js";
 import {
 	getConfigMap,
 	getConfigValue,
@@ -57,7 +56,6 @@ export async function updateAdminUser(
 			where: { id: userId },
 			data: { isActive: input.isActive },
 		});
-		await invalidateUserSessionCaches(userId);
 	}
 
 	if (input.password) {
