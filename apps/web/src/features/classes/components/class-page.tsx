@@ -131,9 +131,9 @@ export function ClassPage() {
 
   if (loading) {
     return (
-      <div className="p-8 max-w-[960px] mx-auto">
+      <div className="w-full px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
         <div className="h-10 w-64 bg-muted animate-pulse rounded mb-8" />
-        <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholder
             <div key={i} className="h-24 bg-muted animate-pulse rounded-lg" />
@@ -158,17 +158,17 @@ export function ClassPage() {
   }
 
   return (
-    <div className="p-8 max-w-[960px] mx-auto">
+    <div className="flex w-full min-w-0 flex-col px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
       {/* Title + Post Task */}
-      <div className="flex items-start justify-between gap-4 mb-8">
-        <div className="flex items-center gap-3">
+      <div className="mb-8 flex min-w-0 flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
           <span
             className="h-3 w-3 rounded-sm shrink-0"
             style={{ backgroundColor: cls.color || "#8B7355" }}
           />
-          <h1 className="text-display">{cls.name}</h1>
+          <h1 className="min-w-0 break-words text-display">{cls.name}</h1>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 xl:shrink-0 xl:justify-end">
           <button
             type="button"
             onClick={() => router.push(`/classes/${classId}/members`)}
@@ -201,7 +201,7 @@ export function ClassPage() {
       </div>
 
       {/* Controls row */}
-      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+      <div className="mb-6 grid min-w-0 gap-3 xl:grid-cols-[auto_minmax(0,1fr)] xl:items-center">
         <ViewSwitcher mode={viewMode} onChange={setViewMode} />
         <FilterBar filters={filters} onChange={setFilters} />
       </div>
@@ -217,7 +217,7 @@ export function ClassPage() {
       </div>
 
       {/* Section heading + zoom slider */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <h2 className="text-heading-md">
           {t("classTasks", { className: cls.name })}
         </h2>
@@ -238,7 +238,7 @@ export function ClassPage() {
           )}
         </div>
       ) : (
-        <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <div className="w-full min-w-0 max-w-full rounded-lg border border-border bg-card overflow-hidden">
           {viewMode === "gantt" ? (
             <TaskGanttView
               tasks={filteredTasks}

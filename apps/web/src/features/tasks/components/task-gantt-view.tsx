@@ -251,7 +251,7 @@ export function GanttZoomSlider({
   onDayWidthChange: (width: number) => void;
 }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex shrink-0 items-center gap-2 self-start">
       <ZoomOut size={14} className="shrink-0 text-muted-foreground" />
       <Slider
         min={MIN_DAY_WIDTH}
@@ -395,7 +395,7 @@ export function TaskGanttView({
   }
 
   return (
-    <div className="flex overflow-hidden rounded-lg border">
+    <div className="flex w-full min-w-0 max-w-full overflow-hidden rounded-lg border">
       {/* Left: pinned task column (hidden on mobile) */}
       {!isMobile && (
         <div
@@ -437,8 +437,9 @@ export function TaskGanttView({
       )}
 
       {/* Right: scrollable timeline */}
-      <ScrollArea className="min-w-0 flex-1" ref={scrollRef}>
-        <div style={{ width: totalWidth, minWidth: "100%" }}>
+      <div className="w-0 min-w-0 flex-1 overflow-hidden">
+        <ScrollArea className="h-full w-full" ref={scrollRef}>
+          <div className="min-w-full" style={{ width: totalWidth }}>
           {/* Header with date markers */}
           <div className="relative border-b" style={{ height: HEADER_HEIGHT }}>
             {markers.map((m) => (
@@ -652,9 +653,10 @@ export function TaskGanttView({
               );
             })}
           </div>
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      </div>
     </div>
   );
 }

@@ -37,7 +37,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarInset>
         <AppHeader />
         <TimezonePrompt />
-        <main className="flex-1 overflow-auto">
+        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
           <PageTransition>{children}</PageTransition>
         </main>
       </SidebarInset>
