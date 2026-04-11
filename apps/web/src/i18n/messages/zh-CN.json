@@ -170,6 +170,32 @@
       "monthsAgo": "{count}个月前"
     }
   },
+  "globalSearch": {
+    "placeholder": "搜索任务、评论、附件...",
+    "resultsTitle": "全局搜索",
+    "shortcutHint": "用 ↑ ↓ 切换结果，按 Enter 打开",
+    "emptyIdle": "开始输入，即可搜索班级、任务、评论、附件和提交记录。",
+    "emptyLoading": "正在建立搜索索引...",
+    "emptyNoResults": "没有找到匹配结果。",
+    "shortcut": {
+      "modifier": "Ctrl/Cmd"
+    },
+    "sections": {
+      "task": "任务",
+      "comment": "评论",
+      "submission": "提交",
+      "class": "班级",
+      "attachment": "附件",
+      "member": "成员"
+    },
+    "status": {
+      "searching": "搜索中...",
+      "loading": "正在索引内容...",
+      "indexingMore": "正在补充更多内容...",
+      "failed": "搜索索引不可用",
+      "mayImprove": "随着更多任务详情完成索引，结果可能会继续变好。"
+    }
+  },
   "settingsAccount": {
     "newPasswordsDoNotMatch": "两次新密码输入不一致",
     "passwordMinLength": "密码至少 8 个字符",
@@ -479,6 +505,10 @@
       "submitted": "已提交",
       "submitAssignment": "提交作业"
     }
+  },
+  "taskDetailPage": {
+    "backToClass": "返回班级",
+    "notFound": "未找到任务"
   },
   "taskGanttView": {
     "noTasks": "暂无可显示的任务。",

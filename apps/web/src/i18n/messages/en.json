@@ -170,6 +170,32 @@
       "monthsAgo": "{count}mo ago"
     }
   },
+  "globalSearch": {
+    "placeholder": "Search tasks, comments, files...",
+    "resultsTitle": "Global Search",
+    "shortcutHint": "Jump with ↑ ↓ and open with Enter",
+    "emptyIdle": "Start typing to search across your classes, tasks, comments, files, and submissions.",
+    "emptyLoading": "Building your search index...",
+    "emptyNoResults": "No matching results found.",
+    "shortcut": {
+      "modifier": "Ctrl/Cmd"
+    },
+    "sections": {
+      "task": "Tasks",
+      "comment": "Comments",
+      "submission": "Submissions",
+      "class": "Classes",
+      "attachment": "Attachments",
+      "member": "Members"
+    },
+    "status": {
+      "searching": "Searching...",
+      "loading": "Indexing content...",
+      "indexingMore": "Indexing more content...",
+      "failed": "Search index unavailable",
+      "mayImprove": "Results may improve as more task details finish indexing."
+    }
+  },
   "settingsAccount": {
     "newPasswordsDoNotMatch": "New passwords do not match",
     "passwordMinLength": "Password must be at least 8 characters",
@@ -479,6 +505,10 @@
       "submitted": "Submitted",
       "submitAssignment": "Submit Assignment"
     }
+  },
+  "taskDetailPage": {
+    "backToClass": "Back to class",
+    "notFound": "Task not found"
   },
   "taskGanttView": {
     "noTasks": "No tasks to display.",

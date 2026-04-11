@@ -170,6 +170,32 @@
       "monthsAgo": "{count}か月前"
     }
   },
+  "globalSearch": {
+    "placeholder": "タスク、コメント、添付を検索...",
+    "resultsTitle": "グローバル検索",
+    "shortcutHint": "↑ ↓ で移動し、Enter で開きます",
+    "emptyIdle": "入力を始めると、クラス、タスク、コメント、添付、提出を検索できます。",
+    "emptyLoading": "検索インデックスを作成しています...",
+    "emptyNoResults": "一致する結果が見つかりません。",
+    "shortcut": {
+      "modifier": "Ctrl/Cmd"
+    },
+    "sections": {
+      "task": "タスク",
+      "comment": "コメント",
+      "submission": "提出",
+      "class": "クラス",
+      "attachment": "添付",
+      "member": "メンバー"
+    },
+    "status": {
+      "searching": "検索中...",
+      "loading": "内容を索引中...",
+      "indexingMore": "さらに内容を索引中...",
+      "failed": "検索インデックスを利用できません",
+      "mayImprove": "さらにタスク詳細の索引が進むと、結果が改善される場合があります。"
+    }
+  },
   "settingsAccount": {
     "newPasswordsDoNotMatch": "新しいパスワードが一致しません",
     "passwordMinLength": "パスワードは8文字以上必要です",
@@ -479,6 +505,10 @@
       "submitted": "提出済み",
       "submitAssignment": "課題を提出"
     }
+  },
+  "taskDetailPage": {
+    "backToClass": "クラスに戻る",
+    "notFound": "タスクが見つかりません"
   },
   "taskGanttView": {
     "noTasks": "表示するタスクがありません。",

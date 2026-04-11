@@ -8,6 +8,7 @@ import { useAuth } from "@/components/auth-provider";
 import { PageTransition } from "@/components/page-transition";
 import { TimezonePrompt } from "@/components/timezone-prompt";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { GlobalSearchProvider } from "@/features/search/global-search";
 import { useClassAccent } from "@/hooks/use-class-accent";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -33,14 +34,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <AppHeader />
-        <TimezonePrompt />
-        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
-          <PageTransition>{children}</PageTransition>
-        </main>
-      </SidebarInset>
+      <GlobalSearchProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <AppHeader />
+          <TimezonePrompt />
+          <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
+            <PageTransition>{children}</PageTransition>
+          </main>
+        </SidebarInset>
+      </GlobalSearchProvider>
     </SidebarProvider>
   );
 }

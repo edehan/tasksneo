@@ -170,6 +170,32 @@
       "monthsAgo": "il y a {count} mois"
     }
   },
+  "globalSearch": {
+    "placeholder": "Rechercher taches, commentaires, fichiers...",
+    "resultsTitle": "Recherche globale",
+    "shortcutHint": "Naviguez avec ↑ ↓ puis ouvrez avec Entree",
+    "emptyIdle": "Commencez a taper pour rechercher dans les classes, taches, commentaires, fichiers et remises.",
+    "emptyLoading": "Creation de l'index de recherche...",
+    "emptyNoResults": "Aucun resultat correspondant.",
+    "shortcut": {
+      "modifier": "Ctrl/Cmd"
+    },
+    "sections": {
+      "task": "Taches",
+      "comment": "Commentaires",
+      "submission": "Remises",
+      "class": "Classes",
+      "attachment": "Pieces jointes",
+      "member": "Membres"
+    },
+    "status": {
+      "searching": "Recherche...",
+      "loading": "Indexation du contenu...",
+      "indexingMore": "Indexation de contenu supplementaire...",
+      "failed": "Index de recherche indisponible",
+      "mayImprove": "Les resultats peuvent encore s'ameliorer pendant l'indexation des details des taches."
+    }
+  },
   "settingsAccount": {
     "newPasswordsDoNotMatch": "Les nouveaux mots de passe ne correspondent pas",
     "passwordMinLength": "Le mot de passe doit contenir au moins 8 caracteres",
@@ -479,6 +505,10 @@
       "submitted": "Rendu",
       "submitAssignment": "Rendre le devoir"
     }
+  },
+  "taskDetailPage": {
+    "backToClass": "Retour a la classe",
+    "notFound": "Tache introuvable"
   },
   "taskGanttView": {
     "noTasks": "Aucune tache a afficher.",

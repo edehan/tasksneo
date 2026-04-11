@@ -2,7 +2,7 @@
 
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { AttachmentMeta } from "@/lib/api";
 
@@ -10,6 +10,7 @@ import { AttachmentSidebar } from "./attachment-sidebar";
 import { CommentSection } from "./comment-section";
 
 const SIDEBAR_MOBILE_BREAKPOINT = 700;
+export type TaskSidebarSection = "attachments" | "discussion";
 
 function useIsNarrow() {
   const [narrow, setNarrow] = useState(false);
@@ -29,16 +30,36 @@ interface TaskSidebarProps {
   attachments: AttachmentMeta[];
   taskId: string;
   accentColor?: string;
+  initialSection?: TaskSidebarSection;
 }
 
 export function TaskSidebar({
   attachments,
   taskId,
   accentColor,
+  initialSection,
 }: TaskSidebarProps) {
   const t = useTranslations("taskSidebar");
   const isMobile = useIsNarrow();
   const hasAttachments = attachments.length > 0;
+  const attachmentsRef = useRef<HTMLDivElement>(null);
+  const discussionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isMobile || !initialSection) return;
+
+    const target =
+      initialSection === "attachments"
+        ? attachmentsRef.current
+        : discussionRef.current;
+    if (!target) return;
+
+    const timeout = window.setTimeout(() => {
+      target.scrollIntoView({ block: "start", behavior: "smooth" });
+    }, 150);
+
+    return () => window.clearTimeout(timeout);
+  }, [initialSection, isMobile]);
 
   // Mobile: accordion-style sections with clickable headers
   if (isMobile) {
@@ -48,6 +69,7 @@ export function TaskSidebar({
         taskId={taskId}
         accentColor={accentColor}
         hasAttachments={hasAttachments}
+        initialSection={initialSection}
         labels={{
           attachments: t("attachmentsTab", { count: attachments.length }),
           discussion: t("discussionTab"),
@@ -60,14 +82,14 @@ export function TaskSidebar({
   return (
     <div className="flex h-full flex-col">
       {hasAttachments && (
-        <div className="shrink-0 border-b border-border">
+        <div ref={attachmentsRef} className="shrink-0 border-b border-border">
           <AttachmentSidebar
             attachments={attachments}
             accentColor={accentColor}
           />
         </div>
       )}
-      <div className="min-h-0 flex-1">
+      <div ref={discussionRef} className="min-h-0 flex-1">
         <CommentSection taskId={taskId} accentColor={accentColor} />
       </div>
     </div>
@@ -81,18 +103,24 @@ function MobileAccordionSidebar({
   taskId,
   accentColor,
   hasAttachments,
+  initialSection,
   labels,
 }: {
   attachments: AttachmentMeta[];
   taskId: string;
   accentColor?: string;
   hasAttachments: boolean;
+  initialSection?: TaskSidebarSection;
   labels: { attachments: string; discussion: string };
 }) {
   // "attachments" | "discussion" | null — which section is expanded (null = both collapsed)
   const [expanded, setExpanded] = useState<"attachments" | "discussion" | null>(
-    null,
+    initialSection ?? null,
   );
+
+  useEffect(() => {
+    setExpanded(initialSection ?? null);
+  }, [initialSection]);
 
   return (
     <div className="flex flex-col">
