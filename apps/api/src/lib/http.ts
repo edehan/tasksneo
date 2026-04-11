@@ -1,8 +1,26 @@
 import { createHash } from "node:crypto";
 import type { ClassRole, McpKey, User } from "@taskflow/db";
+import type { Context } from "hono";
 
 export function emailToAvatarHash(email: string): string {
 	return createHash("sha256").update(email.trim().toLowerCase()).digest("hex");
+}
+
+/**
+ * Extract the client IP for audit/display. Reads X-Forwarded-For first (if
+ * present, the first value), falling back to the underlying Node socket.
+ * Returns null if nothing can be determined — callers should tolerate nulls.
+ */
+export function getClientIp(c: Context): string | null {
+	const xff = c.req.header("x-forwarded-for");
+	if (xff) {
+		const first = xff.split(",")[0]?.trim();
+		if (first) return first;
+	}
+	// @hono/node-server exposes the raw incoming message via c.env.incoming.
+	const incoming = (c.env as { incoming?: { socket?: { remoteAddress?: string } } } | undefined)
+		?.incoming;
+	return incoming?.socket?.remoteAddress ?? null;
 }
 
 export function toUserProfile(

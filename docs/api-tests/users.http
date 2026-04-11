@@ -1,5 +1,7 @@
 @baseUrl = http://localhost:3001
-@token = REPLACE_WITH_TOKEN
+@token = REPLACE_WITH_SESSION_TOKEN
+@sessionId = REPLACE_WITH_SESSION_ID
+@keyId = REPLACE_WITH_MCP_KEY_ID
 
 ### Get my profile
 GET {{baseUrl}}/users/me
@@ -11,7 +13,8 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "nickname": "Updated Name"
+  "nickname": "Updated Name",
+  "timezone": "Asia/Singapore"
 }
 
 ### Update my password
@@ -23,6 +26,35 @@ Content-Type: application/json
   "currentPassword": "Passw0rd!",
   "newPassword": "Passw0rd!2"
 }
+
+### List all browser + MCP sessions
+GET {{baseUrl}}/users/me/sessions
+Authorization: Bearer {{token}}
+
+### Sign out other browser sessions only
+DELETE {{baseUrl}}/users/me/sessions
+Authorization: Bearer {{token}}
+
+### Revoke one specific session
+DELETE {{baseUrl}}/users/me/sessions/{{sessionId}}
+Authorization: Bearer {{token}}
+
+### List MCP keys
+GET {{baseUrl}}/users/me/mcp-keys
+Authorization: Bearer {{token}}
+
+### Create MCP key
+POST {{baseUrl}}/users/me/mcp-keys
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Claude Desktop"
+}
+
+### Revoke MCP key
+DELETE {{baseUrl}}/users/me/mcp-keys/{{keyId}}
+Authorization: Bearer {{token}}
 
 ### Get notification preferences
 GET {{baseUrl}}/users/me/notification-prefs

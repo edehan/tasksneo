@@ -14,6 +14,7 @@ import { tasksRouter } from "./routes/tasks.js";
 import { usersRouter } from "./routes/users.js";
 import { startAnnouncementWorker } from "./services/announcement.service.js";
 import { startNotificationWorker } from "./services/notification.service.js";
+import { startSessionCleanupWorker } from "./services/session.service.js";
 
 import type { AppVariables } from "./types/context.js";
 
@@ -64,6 +65,9 @@ export function createApp(options?: { startWorker?: boolean }) {
 	if (options?.startWorker) {
 		startNotificationWorker();
 		startAnnouncementWorker();
+		void startSessionCleanupWorker().catch((err) => {
+			console.error("[session-cleanup] failed to start worker", err);
+		});
 	}
 
 	return app;

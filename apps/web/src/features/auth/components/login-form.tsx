@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiError } from "@/lib/api";
@@ -25,6 +26,7 @@ export function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [trustDevice, setTrustDevice] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -33,7 +35,7 @@ export function LoginForm() {
 
     setSubmitting(true);
     try {
-      await login(email, password);
+      await login(email, password, trustDevice);
       router.replace("/dashboard");
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t("loginFailed");
@@ -84,6 +86,25 @@ export function LoginForm() {
               required
               autoComplete="current-password"
             />
+          </div>
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="trustDevice"
+              checked={trustDevice}
+              onCheckedChange={(checked) => setTrustDevice(checked === true)}
+              className="mt-0.5"
+            />
+            <div className="space-y-1 leading-none">
+              <Label
+                htmlFor="trustDevice"
+                className="text-sm font-normal cursor-pointer"
+              >
+                {t("trustDevice")}
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {t("trustDeviceHint")}
+              </p>
+            </div>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-3">

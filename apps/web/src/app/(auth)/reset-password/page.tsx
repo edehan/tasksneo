@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,7 +22,6 @@ function ResetPasswordInner() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const router = useRouter();
-  const { setAuth } = useAuth();
   const t = useTranslations("authResetPassword");
 
   const [verifying, setVerifying] = useState(true);
@@ -66,9 +64,12 @@ function ResetPasswordInner() {
 
     setSubmitting(true);
     try {
-      const res = await resetPassword(token, password);
-      setAuth(res.token, res.user);
-      router.replace("/dashboard");
+      await resetPassword(token, password);
+      // After reset, all prior sessions are revoked server-side. The user
+      // must log in again with the new password — we do NOT auto-login to
+      // avoid re-binding the freshly-killed token cache to this browser.
+      toast.success(t("passwordResetSuccess"));
+      router.replace("/login");
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("passwordResetFailed");

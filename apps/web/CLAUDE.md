@@ -1,6 +1,6 @@
 # Frontend (apps/web)
 
-Next.js 14 App Router + TypeScript + Tailwind CSS 4 + shadcn/ui. See root `CLAUDE.md` for the overall project overview.
+Next.js 16 App Router + TypeScript + Tailwind CSS 4 + shadcn/ui. See root `CLAUDE.md` for the overall project overview.
 
 ## Design philosophy
 
@@ -94,6 +94,7 @@ hooks/                # Custom hooks (use-mobile, use-class-accent)
 ### Components
 - Server Components by default. Add `'use client'` only when needed.
 - API calls go through `lib/api.ts`.
+- User auth uses opaque session tokens from the API, not JWTs.
 
 ### Dark mode
 - Support via `dark:` variants + `next-themes`.

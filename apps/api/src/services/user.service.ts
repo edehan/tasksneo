@@ -5,6 +5,7 @@ import { cacheDel, cacheDelPattern, cacheKeys } from "../lib/cache.js";
 import { AppError } from "../lib/errors.js";
 import { toAttachmentMeta, toUserProfile } from "../lib/http.js";
 import { removeObject } from "../lib/storage.js";
+import { revokeAllBrowserSessions } from "./session.service.js";
 import {
 	hardDeleteTask,
 	removeSubmissionAttachments,
@@ -98,6 +99,7 @@ export async function updateMyPassword(
 	userId: string,
 	currentPassword: string,
 	newPassword: string,
+	currentSessionId: string,
 ) {
 	const credential = await prisma.userCredential.findUnique({
 		where: {
@@ -139,6 +141,10 @@ export async function updateMyPassword(
 			passwordHash,
 		},
 	});
+
+	// Keep the current session alive — the user is acting intentionally right
+	// now — but kick every other browser session. MCP sessions are untouched.
+	await revokeAllBrowserSessions(userId, currentSessionId);
 }
 
 export async function listMyNotificationPrefs(userId: string) {
@@ -334,14 +340,13 @@ export async function deleteMyAccount(userId: string) {
 	await deletePersonalClass(userId);
 	await removeUserAvatarAttachments(userId);
 	await prisma.user.delete({ where: { id: userId } });
-	await cacheDel(cacheKeys.authUser(userId), cacheKeys.notifPrefs(userId));
+	await cacheDel(cacheKeys.notifPrefs(userId));
 }
 
 export async function adminDeleteUser(userId: string) {
 	await deleteUserSubmissions(userId);
 	await deletePersonalClass(userId);
 	await removeUserAvatarAttachments(userId);
-
 	await prisma.user.delete({ where: { id: userId } });
-	await cacheDel(cacheKeys.authUser(userId), cacheKeys.notifPrefs(userId));
+	await cacheDel(cacheKeys.notifPrefs(userId));
 }

@@ -60,7 +60,6 @@ cp infra/.env.prod.example infra/.env.prod
 # Generate secrets
 openssl rand -hex 32  # Use output for ADMIN_TOKEN
 openssl rand -hex 32  # Use output for SYSTEM_CONFIG_SECRET
-openssl rand -hex 32  # Use output for JWT_SECRET
 openssl rand -hex 16  # Use output for POSTGRES_PASSWORD
 ```
 
@@ -106,7 +105,7 @@ curl https://api.yourdomain.com/health
 
 ### Option B: Cloudflare Workers
 
-Next.js apps deploy to Cloudflare Workers via the [OpenNext adapter](https://opennext.js.org/cloudflare). The adapter transforms `next build` output into a Worker that runs on Cloudflare's edge network. Next.js 14–16 are all supported.
+This Next.js 16 app deploys to Cloudflare Workers via the [OpenNext adapter](https://opennext.js.org/cloudflare). The adapter transforms `next build` output into a Worker that runs on Cloudflare's edge network.
 
 #### Workers Builds (recommended — git-connected CI)
 
@@ -198,7 +197,6 @@ When this variable is unset, the CAPTCHA widget is hidden and the backend skips 
 | `LISTEN_ADDR` | Server bind address (default `0.0.0.0:3001`) |
 | `ADMIN_TOKEN` | Admin panel authentication |
 | `SYSTEM_CONFIG_SECRET` | Encrypts secrets in system_config table |
-| `JWT_SECRET` | Signs user authentication tokens |
 | `DATABASE_URL` | PostgreSQL connection string (docker network) |
 | `REDIS_URL` | Redis connection string (docker network) |
 | `S3_ENDPOINT` | S3 provider endpoint |
@@ -213,6 +211,8 @@ When this variable is unset, the CAPTCHA widget is hidden and the backend skips 
 | `CAP_ENABLED` | Enable CAPTCHA verification (`true` / unset) |
 | `CAP_URL` | Cap instance URL with site key (e.g. `https://cap.example.com/<key>`) |
 | `CAP_SECRET` | Cap site secret key (from dashboard) |
+
+User authentication tokens are opaque session IDs stored in PostgreSQL `sessions`; Redis is used for Bull jobs and business caches only.
 
 ### Frontend (Vercel / Cloudflare Pages dashboard)
 

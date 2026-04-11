@@ -1,18 +1,12 @@
-import { prisma } from "@taskflow/db";
 import type { MiddlewareHandler } from "hono";
-import { cacheGetOrSet, cacheKeys } from "../lib/cache.js";
-import { getJwtSecret } from "../lib/env.js";
+
 import { AppError } from "../lib/errors.js";
-import { verifyUserJwt } from "../lib/jwt.js";
+import {
+	isSessionToken,
+	loadSessionByToken,
+	touchSession,
+} from "../services/session.service.js";
 import type { AppVariables } from "../types/context.js";
-
-const AUTH_USER_TTL_SECONDS = 600; // 10 min — bounds the banned-user lockout window.
-
-interface AuthUserCacheEntry {
-	id: string;
-	email: string;
-	isActive: boolean;
-}
 
 export const authMiddleware: MiddlewareHandler<{
 	Variables: AppVariables;
@@ -24,28 +18,34 @@ export const authMiddleware: MiddlewareHandler<{
 	}
 
 	const token = authHeader.slice("Bearer ".length).trim();
-	const payload = verifyUserJwt(token, getJwtSecret());
 
-	const user = await cacheGetOrSet<AuthUserCacheEntry | null>(
-		cacheKeys.authUser(payload.sub),
-		AUTH_USER_TTL_SECONDS,
-		async () => {
-			const row = await prisma.user.findUnique({
-				where: { id: payload.sub },
-				select: { id: true, email: true, isActive: true },
-			});
-			return row ?? null;
-		},
-	);
-
-	if (!user) {
-		throw new AppError(401, "UNAUTHORIZED", "User not found");
+	if (!isSessionToken(token)) {
+		throw new AppError(401, "INVALID_TOKEN", "Invalid or expired token");
 	}
 
-	if (!user.isActive) {
+	let session = await loadSessionByToken(token);
+
+	if (!session) {
+		throw new AppError(401, "INVALID_TOKEN", "Invalid or expired token");
+	}
+
+	if (!session.isActive) {
 		throw new AppError(403, "USER_INACTIVE", "Account is disabled");
 	}
 
-	c.set("authUser", { userId: user.id, email: user.email });
+	// Touch is debounced to once per hour per session, so this is a no-op on
+	// the vast majority of requests. For trusted browser sessions it also
+	// slides the expiresAt forward in the same UPDATE.
+	session = await touchSession(session);
+
+	c.set("authUser", { userId: session.userId, email: session.email });
+	c.set("authSession", {
+		id: session.id,
+		userId: session.userId,
+		kind: session.kind,
+		isTrusted: session.isTrusted,
+		mcpKeyId: session.mcpKeyId,
+	});
+
 	await next();
 };

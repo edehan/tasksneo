@@ -6,7 +6,6 @@ export interface AppEnv {
 	databaseUrl: string;
 	adminToken: string;
 	systemConfigSecret: string;
-	jwtSecret: string;
 	redisUrl: string;
 	s3Endpoint: string;
 	s3Port: number | undefined;
@@ -86,7 +85,6 @@ export function loadEnv(): AppEnv {
 		databaseUrl: requireEnv("DATABASE_URL"),
 		adminToken: requireEnv("ADMIN_TOKEN"),
 		systemConfigSecret: requireEnv("SYSTEM_CONFIG_SECRET"),
-		jwtSecret: requireEnv("JWT_SECRET"),
 		redisUrl: requireEnv("REDIS_URL"),
 		s3Endpoint: requireEnvEither("S3_ENDPOINT", "MINIO_ENDPOINT"),
 		s3Port,
@@ -97,10 +95,6 @@ export function loadEnv(): AppEnv {
 		s3Region: process.env.S3_REGION ?? "auto",
 		s3PathStyle: (process.env.S3_PATH_STYLE ?? "true") === "true",
 	};
-}
-
-export function getJwtSecret(): string {
-	return requireEnv("JWT_SECRET");
 }
 
 export function getAdminToken(): string {

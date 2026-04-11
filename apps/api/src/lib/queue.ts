@@ -99,3 +99,47 @@ export function processAnnouncementQueue(
 		await processor(job.data as AnnouncementQueueJob);
 	});
 }
+
+// ── Session cleanup cron ────────────────────────────────────────────────────
+
+const SESSION_CLEANUP_JOB_NAME = "session-cleanup";
+const SESSION_CLEANUP_JOB_ID = "session-cleanup-daily";
+const SESSION_CLEANUP_CRON = "0 3 * * *"; // every day at 03:00 local time
+
+/**
+ * Register the daily session cleanup cron. Safe to call repeatedly — Bull
+ * deduplicates the repeatable entry by jobId + cron.
+ */
+export async function scheduleSessionCleanupCron() {
+	const q = getQueue();
+
+	// Strip any prior repeatable entries for this job so changing the cron
+	// expression between deploys doesn't leave the old schedule orphaned.
+	const existing = await q.getRepeatableJobs();
+	for (const entry of existing) {
+		if (entry.name === SESSION_CLEANUP_JOB_NAME) {
+			await q.removeRepeatableByKey(entry.key);
+		}
+	}
+
+	await q.add(
+		SESSION_CLEANUP_JOB_NAME,
+		{},
+		{
+			jobId: SESSION_CLEANUP_JOB_ID,
+			repeat: { cron: SESSION_CLEANUP_CRON },
+			removeOnComplete: true,
+			removeOnFail: true,
+		},
+	);
+}
+
+export function processSessionCleanupQueue(
+	processor: () => Promise<void>,
+) {
+	const q = getQueue();
+
+	q.process(SESSION_CLEANUP_JOB_NAME, async () => {
+		await processor();
+	});
+}

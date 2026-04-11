@@ -5,6 +5,7 @@
       "profile": "Profile",
       "notifications": "Notifications",
       "account": "Account",
+      "sessions": "Sessions",
       "mcpKeys": "MCP Keys"
     }
   },
@@ -41,6 +42,7 @@
     "invalidOrExpiredLink": "This link is invalid or has expired.",
     "passwordsDoNotMatch": "Passwords do not match",
     "passwordResetFailed": "Password reset failed",
+    "passwordResetSuccess": "Password reset. Please sign in with your new password.",
     "linkExpired": "Link expired",
     "requestNewLink": "Request a new link",
     "setNewPassword": "Set a new password",
@@ -107,7 +109,9 @@
     "signingIn": "Signing in...",
     "signIn": "Sign in",
     "noAccount": "Don't have an account?",
-    "signUp": "Sign up"
+    "signUp": "Sign up",
+    "trustDevice": "Trust this device",
+    "trustDeviceHint": "Keep this browser signed in for up to 30 days. Leave unchecked on shared or public computers."
   },
   "authRegister": {
     "registrationFailed": "Registration failed",
@@ -809,6 +813,35 @@
     },
     "steps": "Steps",
     "command": "Command"
+  },
+  "settingsSessions": {
+    "title": "Active Sessions",
+    "description": "Browser sessions currently signed into your account. MCP connections are listed separately below.",
+    "noBrowsers": "No active browser sessions.",
+    "current": "This device",
+    "trusted": "Trusted",
+    "signOut": "Sign out",
+    "signOutOthers": "Sign out other browser sessions",
+    "signOutOthersTitle": "Sign out other browser sessions?",
+    "signOutOthersDescription": "All other browser sessions will be signed out immediately. This device stays signed in. MCP keys and MCP connections are not affected.",
+    "lastActive": "Last active",
+    "justNow": "just now",
+    "hoursAgo": "{count} {count, plural, one {hour} other {hours}} ago",
+    "yesterday": "yesterday",
+    "daysAgo": "{count} days ago",
+    "unknownDevice": "Unknown device",
+    "mcpTitle": "MCP Connections",
+    "mcpDescription": "AI tools connected via MCP keys. Signing out here only ends this single connection.",
+    "mcpHint": "To permanently disable a key and cut off all its connections, revoke it from the MCP Keys tab.",
+    "unknownMcpKey": "Unnamed key",
+    "revokeTitle": "Sign out this session?",
+    "revokeBrowserDescription": "This browser will be signed out immediately. The person using it will need to sign in again.",
+    "revokeMcpDescription": "Sign out the session for \"{name}\"? The underlying key stays active and can create new sessions.",
+    "cancel": "Cancel",
+    "revoked": "Session signed out",
+    "revokedOthers": "Other sessions signed out",
+    "failedLoad": "Failed to load sessions",
+    "failedRevoke": "Failed to sign out session"
   },
   "batchDownloadDialog": {
     "title": "Download Submissions",

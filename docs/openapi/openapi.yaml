@@ -8,9 +8,10 @@ info:
     
     ## 鉴权说明
     
-    - 普通用户接口：在请求头中携带 `Authorization: Bearer <JWT>`
+    - 普通用户接口：在请求头中携带 `Authorization: Bearer <tfses_...>`
     - 管理员控制平面接口（`/admin/*`）：在请求头中携带 `Authorization: Bearer <ADMIN_TOKEN>`
-    - 两套鉴权体系完全独立
+    - MCP key 先通过 `/auth/mcp` 交换成同样的 Bearer session token，再访问受保护接口
+    - 两套鉴权体系完全独立；Redis 不是用户认证真源
     
     ## 错误格式
     
@@ -36,8 +37,11 @@ components:
     userAuth:
       type: http
       scheme: bearer
-      bearerFormat: JWT
-      description: 用户 JWT Token，通过 /auth/login 获取
+      description: |
+        Opaque session token returned by /auth/login (format: tfses_<random>).
+        Stored server-side in the sessions table; revocable via /auth/logout or
+        /users/me/sessions/{id}. Expires after 7 days by default, or 30 days
+        with sliding renewal when the session is trusted.
     adminAuth:
       type: http
       scheme: bearer
@@ -108,6 +112,9 @@ components:
         email:
           type: string
           format: email
+        captchaToken:
+          type: string
+          description: Optional Cap.js token when CAPTCHA is enabled
       description: Step 1 — sends a verification email to the address.
 
     RegisterCompleteRequest:
@@ -134,6 +141,10 @@ components:
           type: string
           description: IANA timezone identifier (e.g. Asia/Shanghai), defaults to UTC
           example: Asia/Shanghai
+        trustDevice:
+          type: boolean
+          default: false
+          description: Creates a trusted 30-day sliding browser session when true.
 
     ForgotPasswordRequest:
       type: object
@@ -160,6 +171,9 @@ components:
         email:
           type: string
           format: email
+        captchaToken:
+          type: string
+          description: Optional Cap.js token when CAPTCHA is enabled
 
     ConfirmEmailRequest:
       type: object
@@ -177,6 +191,14 @@ components:
           format: email
         password:
           type: string
+        trustDevice:
+          type: boolean
+          default: false
+          description: |
+            When true, the created session is marked trusted and expires after
+            30 days with sliding renewal on each request (rate-limited to one
+            DB write per hour per session). When false/omitted, the session
+            expires after 7 days with no renewal.
 
     AuthResponse:
       type: object
@@ -184,9 +206,118 @@ components:
       properties:
         token:
           type: string
-          description: JWT Token，有效期 7 天
+          description: |
+            Opaque session token (format: tfses_<random>). Send as
+            `Authorization: Bearer <token>` on subsequent requests.
         user:
           $ref: '#/components/schemas/UserProfile'
+
+    SessionInfo:
+      type: object
+      required:
+        [id, kind, isTrusted, isCurrent, createdAt, lastSeenAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum: [BROWSER, MCP]
+        isTrusted:
+          type: boolean
+        isCurrent:
+          type: boolean
+          description: True if this is the session making the current request.
+        userAgent:
+          type: string
+          nullable: true
+        ipAddress:
+          type: string
+          nullable: true
+        mcpKeyId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Set only when kind = MCP.
+        mcpKeyName:
+          type: string
+          nullable: true
+          description: Name of the source MCP key, for display. Set only when kind = MCP.
+        createdAt:
+          type: string
+          format: date-time
+        lastSeenAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Null for MCP sessions tied to a never-expiring key.
+
+    McpExchangeRequest:
+      type: object
+      required: [key]
+      properties:
+        key:
+          type: string
+          description: Raw MCP key created from the user settings page
+
+    McpExchangeResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+          description: Opaque MCP session token (format: tfses_<random>)
+        user:
+          $ref: '#/components/schemas/UserProfile'
+
+    McpKey:
+      type: object
+      required: [id, name, keyPrefix, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        keyPrefix:
+          type: string
+        lastUsedAt:
+          type: string
+          format: date-time
+          nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        revokedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreateMcpKeyRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+
+    CreateMcpKeyResponse:
+      allOf:
+        - $ref: '#/components/schemas/McpKey'
+        - type: object
+          required: [key]
+          properties:
+            key:
+              type: string
+              description: Raw MCP key returned only once at creation time
 
     # ── Users ──
 
@@ -968,7 +1099,8 @@ paths:
       summary: Complete registration after email verification
       description: |
         Step 2 of registration. Accepts the token from the verification email
-        along with account details. Creates the user and returns a JWT.
+        along with account details. Creates the user and returns an opaque
+        browser session token plus the user profile.
 
         - Token is single-use and expires after 1 hour.
         - Automatically creates a personal class for the user.
@@ -980,7 +1112,7 @@ paths:
               $ref: '#/components/schemas/RegisterCompleteRequest'
       responses:
         '201':
-          description: Registration complete, returns JWT and user profile
+          description: Registration complete, returns session token and user profile
           content:
             application/json:
               schema:
@@ -996,6 +1128,10 @@ paths:
     post:
       tags: [Auth]
       summary: 用户登录
+      description: |
+        Creates a new session and returns an opaque token. The session is
+        trusted (30-day sliding) when `trustDevice` is true, otherwise short-
+        lived (7-day fixed).
       requestBody:
         required: true
         content:
@@ -1017,6 +1153,26 @@ paths:
                 $ref: '#/components/schemas/Error'
         '403':
           description: Account is deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Sign out the current session
+      description: |
+        Revokes the session identified by the Authorization header. The token
+        is immediately invalidated on the server by deleting the session row.
+        Idempotent — returns 204 even if the session is already gone.
+      security:
+        - userAuth: []
+      responses:
+        '204':
+          description: Session revoked
+        '401':
+          description: Missing or invalid token
           content:
             application/json:
               schema:
@@ -1058,9 +1214,10 @@ paths:
       tags: [Auth]
       summary: Reset password with token
       description: |
-        Validates the reset token and sets a new password.
-        Returns a JWT so the user is logged in immediately.
-        Token is single-use and expires after 1 hour.
+        Validates the reset token, sets the new password, and revokes **all**
+        BROWSER sessions belonging to the user. MCP sessions are not touched.
+        The response does NOT include a token — the user must sign in again
+        with the new password. Token is single-use and expires after 1 hour.
       requestBody:
         required: true
         content:
@@ -1069,13 +1226,50 @@ paths:
               $ref: '#/components/schemas/ResetPasswordRequest'
       responses:
         '200':
-          description: Password reset successful, returns JWT and user profile
+          description: Password reset successful. All browser sessions revoked.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
+                type: object
+                properties:
+                  message:
+                    type: string
         '400':
           description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/mcp:
+    post:
+      tags: [Auth]
+      summary: Exchange an MCP key for an MCP session token
+      description: |
+        Validates a raw MCP key and mints a `kind = MCP` session token for API
+        access. The returned token uses the same Bearer mechanism as browser
+        sessions, but its lifetime follows the underlying MCP key.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/McpExchangeRequest'
+      responses:
+        '200':
+          description: MCP session token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpExchangeResponse'
+        '401':
+          description: Invalid, revoked, or expired MCP key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Key belongs to a disabled user
           content:
             application/json:
               schema:
@@ -1175,6 +1369,10 @@ paths:
     patch:
       tags: [Users]
       summary: 修改当前用户密码
+      description: |
+        Updates the local password, keeps the current browser session alive,
+        revokes every other browser session, and leaves MCP keys / MCP
+        sessions untouched.
       security:
         - userAuth: []
       requestBody:
@@ -1439,6 +1637,161 @@ paths:
                               type: string
                             name:
                               type: string
+
+  /users/me/sessions:
+    get:
+      tags: [Users]
+      summary: List the current user's active sessions
+      description: |
+        Returns all BROWSER and MCP sessions belonging to the authenticated
+        user. The session matching the current request is flagged with
+        `isCurrent: true`. Ordered by `lastSeenAt` descending.
+      security:
+        - userAuth: []
+      responses:
+        '200':
+          description: Session list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SessionInfo'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags: [Users]
+      summary: Revoke all other browser sessions
+      description: |
+        Signs out every other `kind = BROWSER` session belonging to the
+        current user while keeping the current browser session alive.
+        MCP sessions are not affected; revoke those individually or revoke
+        the underlying MCP key instead.
+      security:
+        - userAuth: []
+      responses:
+        '204':
+          description: Other sessions revoked
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/me/sessions/{id}:
+    delete:
+      tags: [Users]
+      summary: Revoke a specific session
+      description: |
+        Signs out the session with the given ID. Must belong to the current
+        user. Revoking the current session works — the caller's token is
+        immediately invalidated (equivalent to /auth/logout). Revoking an MCP
+        session does not revoke the underlying MCP key.
+      security:
+        - userAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Session revoked
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Session not found or not owned by caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/me/mcp-keys:
+    get:
+      tags: [Users]
+      summary: List MCP keys owned by the current user
+      description: |
+        Returns active and revoked MCP keys. The raw key secret is never
+        returned after creation.
+      security:
+        - userAuth: []
+      responses:
+        '200':
+          description: MCP key list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/McpKey'
+    post:
+      tags: [Users]
+      summary: Create a new MCP key
+      description: |
+        Creates a new MCP key and returns the raw secret exactly once.
+        Users may hold multiple active keys for different local tools.
+      security:
+        - userAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMcpKeyRequest'
+      responses:
+        '201':
+          description: MCP key created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateMcpKeyResponse'
+        '400':
+          description: Key limit reached or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/me/mcp-keys/{keyId}:
+    delete:
+      tags: [Users]
+      summary: Revoke an MCP key
+      description: |
+        Revokes the key and immediately invalidates any MCP sessions minted
+        from it.
+      security:
+        - userAuth: []
+      parameters:
+        - name: keyId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: MCP key revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpKey'
+        '404':
+          description: MCP key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   # ══════════════════════════════════════════════════════
   # SCHOOLS (公开接口，无需登录)
