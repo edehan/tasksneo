@@ -7,11 +7,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { MarkdownPreview } from "@/features/editor/components/markdown-preview";
 import { TaskSidebar } from "@/features/tasks/components/task-sidebar";
+import {
+  deriveDetailStatus,
+  getFooterText,
+  getStatusBadge,
+} from "@/features/tasks/lib/task-detail-status";
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
 import type { TaskDetail } from "@/lib/api";
 import { deleteTask, getTask, markTaskViewed } from "@/lib/api";
-
-// ─── Props ───────────────────────────────────────────────────────────────────
 
 interface TaskDetailOverlayProps {
   task: TaskWithClass;
@@ -19,62 +22,6 @@ interface TaskDetailOverlayProps {
   onSubmit?: (task: TaskWithClass) => void;
   isAdmin?: boolean;
 }
-
-// ─── Status derivation ──────────────────────────────────────────────────────
-
-type OverlayStatus = "submitted" | "overdue" | "in-progress" | "not-started";
-type TranslateFn = ReturnType<typeof useTranslations>;
-
-function deriveStatus(task: TaskWithClass): OverlayStatus {
-  if (task.userState?.submittedAt) return "submitted";
-  const now = Date.now();
-  const dueAt = task.dueAt ? new Date(task.dueAt).getTime() : null;
-  const startAt = task.startAt ? new Date(task.startAt).getTime() : null;
-  if (dueAt && dueAt < now) return "overdue";
-  if (startAt && startAt <= now && dueAt && dueAt >= now) return "in-progress";
-  return "not-started";
-}
-
-function getStatusBadge(
-  status: OverlayStatus,
-  classColor: string,
-  t: TranslateFn,
-): { label: string; bg: string; text: string } {
-  switch (status) {
-    case "submitted":
-      return { label: t("status.submitted"), bg: "#5B8C6A18", text: "#5B8C6A" };
-    case "overdue":
-      return { label: t("status.overdue"), bg: "#c45c5c18", text: "#c45c5c" };
-    case "in-progress":
-      return {
-        label: t("status.inProgress"),
-        bg: `${classColor}18`,
-        text: classColor,
-      };
-    case "not-started":
-      return {
-        label: t("status.notStarted"),
-        bg: "var(--muted)",
-        text: "var(--muted-foreground)",
-      };
-  }
-}
-
-// ─── Footer status text ─────────────────────────────────────────────────────
-
-function getFooterText(
-  status: OverlayStatus,
-  dueAt: string | null,
-  t: TranslateFn,
-  formatDate: (iso: string | null) => string,
-): string {
-  if (status === "submitted") return t("footer.submitted");
-  if (status === "overdue") return t("footer.overdue");
-  if (dueAt) return t("footer.dueAt", { date: formatDate(dueAt) });
-  return t("footer.noDueDate");
-}
-
-// ─── Component ───────────────────────────────────────────────────────────────
 
 export function TaskDetailOverlay({
   task,
@@ -108,7 +55,7 @@ export function TaskDetailOverlay({
     [dateFormatter],
   );
 
-  const status = deriveStatus(task);
+  const status = deriveDetailStatus(task);
   const badge = getStatusBadge(status, task.classColor, t);
   const isSubmitted = status === "submitted";
 
@@ -184,7 +131,9 @@ export function TaskDetailOverlay({
     };
   }, []);
 
-  const attachments = taskDetail?.attachments ?? [];
+  const attachments = (taskDetail?.attachments ?? []).filter(
+    (attachment) => attachment.isVisible,
+  );
   const bodyContent = taskDetail?.description ?? "";
 
   return (

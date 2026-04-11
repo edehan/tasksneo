@@ -36,8 +36,8 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <Filter className="h-4 w-4 text-muted-foreground" />
+    <div className="flex w-full min-w-0 flex-wrap items-center gap-2 xl:justify-end">
+      <Filter className="h-4 w-4 shrink-0 text-muted-foreground" />
 
       {filterDefs.map((def) => {
         const active = filters[def.key];
@@ -47,7 +47,7 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
             key={def.key}
             type="button"
             onClick={() => toggle(def.key)}
-            className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors ${
+            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors ${
               active
                 ? "border-foreground font-medium text-foreground"
                 : "border-border text-muted-foreground hover:text-foreground"

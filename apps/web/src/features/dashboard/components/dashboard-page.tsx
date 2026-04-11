@@ -136,10 +136,10 @@ export function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="p-8 max-w-[960px] mx-auto">
+      <div className="w-full px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
         <div className="h-8 w-48 bg-muted animate-pulse rounded mb-2" />
         <div className="h-4 w-80 bg-muted animate-pulse rounded mb-8" />
-        <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholder
             <div key={i} className="h-24 bg-muted animate-pulse rounded-lg" />
@@ -183,13 +183,13 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="p-8 max-w-[960px] mx-auto">
+    <div className="flex w-full min-w-0 flex-col px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
       {/* Title */}
       <h1 className="text-display mb-1">{t("title")}</h1>
       <p className="text-muted-foreground mb-8">{t("subtitle")}</p>
 
       {/* Controls row */}
-      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+      <div className="mb-6 grid min-w-0 gap-3 xl:grid-cols-[auto_minmax(0,1fr)] xl:items-center">
         <ViewSwitcher mode={viewMode} onChange={setViewMode} />
         <FilterBar filters={filters} onChange={setFilters} />
       </div>
@@ -205,7 +205,7 @@ export function DashboardPage() {
       </div>
 
       {/* Section heading + zoom slider */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <h2 className="text-heading-md">{t("allTasks")}</h2>
         {viewMode === "gantt" && (
           <GanttZoomSlider dayWidth={dayWidth} onDayWidthChange={setDayWidth} />
@@ -213,7 +213,7 @@ export function DashboardPage() {
       </div>
 
       {/* Task views */}
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
+      <div className="w-full min-w-0 max-w-full rounded-lg border border-border bg-card overflow-hidden">
         {viewMode === "gantt" ? (
           <TaskGanttView
             tasks={filteredTasks}
@@ -244,7 +244,7 @@ export function DashboardPage() {
 
       {/* Class legend (Gantt mode) */}
       {viewMode === "gantt" && classLegend.length > 0 && (
-        <div className="flex items-center gap-4 mt-4 flex-wrap">
+        <div className="mt-4 flex min-w-0 flex-wrap items-center gap-4">
           {classLegend.map((c) => (
             <div key={c.name} className="flex items-center gap-1.5">
               <span

@@ -170,6 +170,32 @@
       "monthsAgo": "{count}个月前"
     }
   },
+  "globalSearch": {
+    "placeholder": "搜索任务、评论、附件...",
+    "resultsTitle": "全局搜索",
+    "shortcutHint": "用 ↑ ↓ 切换结果，按 Enter 打开",
+    "emptyIdle": "开始输入，即可搜索班级、任务、评论、附件和提交记录。",
+    "emptyLoading": "正在建立搜索索引...",
+    "emptyNoResults": "没有找到匹配结果。",
+    "shortcut": {
+      "modifier": "Ctrl/Cmd"
+    },
+    "sections": {
+      "task": "任务",
+      "comment": "评论",
+      "submission": "提交",
+      "class": "班级",
+      "attachment": "附件",
+      "member": "成员"
+    },
+    "status": {
+      "searching": "搜索中...",
+      "loading": "正在索引内容...",
+      "indexingMore": "正在补充更多内容...",
+      "failed": "搜索索引不可用",
+      "mayImprove": "随着更多任务详情完成索引，结果可能会继续变好。"
+    }
+  },
   "settingsAccount": {
     "newPasswordsDoNotMatch": "两次新密码输入不一致",
     "passwordMinLength": "密码至少 8 个字符",
@@ -480,6 +506,10 @@
       "submitAssignment": "提交作业"
     }
   },
+  "taskDetailPage": {
+    "backToClass": "返回班级",
+    "notFound": "未找到任务"
+  },
   "taskGanttView": {
     "noTasks": "暂无可显示的任务。",
     "today": "今天",
@@ -516,8 +546,8 @@
       "failedSaveSubmission": "保存提交失败",
       "revised": "Content revised by AI",
       "failedRevise": "Failed to revise content",
-      "deadlineExtended": "Deadline extended",
-      "failedExtendDeadline": "Failed to extend deadline"
+      "deadlineExtended": "截止时间已延长",
+      "failedExtendDeadline": "延长截止时间失败"
     },
     "breadcrumb": {
       "submittingTo": "提交到 · {className}",
@@ -537,6 +567,9 @@
     "editorPlaceholder": "使用 Markdown 编写内容...",
     "uploading": "上传中...",
     "dropOrClickUpload": "拖拽文件到此或点击上传",
+    "manageAttachments": "管理附件",
+    "attachmentsPanel": "附件与上传（{count}）",
+    "attachmentsSheetDescription": "可在这里上传附件、管理可见性，或将图片插入正文。",
     "footer": {
       "wordCount": "{count} {count, plural, one {词} other {词}}",
       "markdownSupported": "支持 Markdown",
@@ -560,28 +593,28 @@
       "submit": "改写",
       "submitting": "改写中..."
     },
-    "extendDeadline": "Extend Deadline",
+    "extendDeadline": "延长截止时间",
     "extendDialog": {
-      "title": "Extend Deadline",
-      "currentDeadline": "Current deadline",
-      "newDeadline": "New deadline",
+      "title": "延长截止时间",
+      "currentDeadline": "当前截止时间",
+      "newDeadline": "新的截止时间",
       "presets": {
-        "1h": "+1 hour",
-        "3h": "+3 hours",
-        "1d": "+1 day",
-        "3d": "+3 days"
+        "1h": "+1 小时",
+        "3h": "+3 小时",
+        "1d": "+1 天",
+        "3d": "+3 天"
       },
-      "custom": "Custom",
-      "amount": "Amount",
+      "custom": "自定义",
+      "amount": "数量",
       "unit": {
-        "hours": "Hours",
-        "days": "Days"
+        "hours": "小时",
+        "days": "天"
       },
-      "cancel": "Cancel",
-      "confirm": "Extend",
+      "cancel": "取消",
+      "confirm": "延长",
       "error": {
-        "invalidAmount": "Please enter a valid number",
-        "mustExtend": "New deadline must be later than current"
+        "invalidAmount": "请输入有效数字",
+        "mustExtend": "新的截止时间必须晚于当前截止时间"
       }
     }
   },

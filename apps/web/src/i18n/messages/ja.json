@@ -170,6 +170,32 @@
       "monthsAgo": "{count}か月前"
     }
   },
+  "globalSearch": {
+    "placeholder": "タスク、コメント、添付を検索...",
+    "resultsTitle": "グローバル検索",
+    "shortcutHint": "↑ ↓ で移動し、Enter で開きます",
+    "emptyIdle": "入力を始めると、クラス、タスク、コメント、添付、提出を検索できます。",
+    "emptyLoading": "検索インデックスを作成しています...",
+    "emptyNoResults": "一致する結果が見つかりません。",
+    "shortcut": {
+      "modifier": "Ctrl/Cmd"
+    },
+    "sections": {
+      "task": "タスク",
+      "comment": "コメント",
+      "submission": "提出",
+      "class": "クラス",
+      "attachment": "添付",
+      "member": "メンバー"
+    },
+    "status": {
+      "searching": "検索中...",
+      "loading": "内容を索引中...",
+      "indexingMore": "さらに内容を索引中...",
+      "failed": "検索インデックスを利用できません",
+      "mayImprove": "さらにタスク詳細の索引が進むと、結果が改善される場合があります。"
+    }
+  },
   "settingsAccount": {
     "newPasswordsDoNotMatch": "新しいパスワードが一致しません",
     "passwordMinLength": "パスワードは8文字以上必要です",
@@ -480,6 +506,10 @@
       "submitAssignment": "課題を提出"
     }
   },
+  "taskDetailPage": {
+    "backToClass": "クラスに戻る",
+    "notFound": "タスクが見つかりません"
+  },
   "taskGanttView": {
     "noTasks": "表示するタスクがありません。",
     "today": "今日",
@@ -516,8 +546,8 @@
       "failedSaveSubmission": "提出の保存に失敗しました",
       "revised": "Content revised by AI",
       "failedRevise": "Failed to revise content",
-      "deadlineExtended": "Deadline extended",
-      "failedExtendDeadline": "Failed to extend deadline"
+      "deadlineExtended": "締切を延長しました",
+      "failedExtendDeadline": "締切の延長に失敗しました"
     },
     "breadcrumb": {
       "submittingTo": "{className} に提出中",
@@ -560,28 +590,28 @@
       "submit": "リライト",
       "submitting": "リライト中..."
     },
-    "extendDeadline": "Extend Deadline",
+    "extendDeadline": "締切を延長",
     "extendDialog": {
-      "title": "Extend Deadline",
-      "currentDeadline": "Current deadline",
-      "newDeadline": "New deadline",
+      "title": "締切を延長",
+      "currentDeadline": "現在の締切",
+      "newDeadline": "新しい締切",
       "presets": {
-        "1h": "+1 hour",
-        "3h": "+3 hours",
-        "1d": "+1 day",
-        "3d": "+3 days"
+        "1h": "+1時間",
+        "3h": "+3時間",
+        "1d": "+1日",
+        "3d": "+3日"
       },
-      "custom": "Custom",
-      "amount": "Amount",
+      "custom": "カスタム",
+      "amount": "数値",
       "unit": {
-        "hours": "Hours",
-        "days": "Days"
+        "hours": "時間",
+        "days": "日"
       },
-      "cancel": "Cancel",
-      "confirm": "Extend",
+      "cancel": "キャンセル",
+      "confirm": "延長",
       "error": {
-        "invalidAmount": "Please enter a valid number",
-        "mustExtend": "New deadline must be later than current"
+        "invalidAmount": "有効な数値を入力してください",
+        "mustExtend": "新しい締切は現在の締切より後である必要があります"
       }
     }
   },

@@ -7,6 +7,7 @@ import {
   Eye,
   Loader2,
   Mic,
+  Paperclip,
   Send,
   Sparkles,
   Undo2,
@@ -37,6 +38,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { EditorToolbar } from "@/features/editor/components/editor-toolbar";
 import { MarkdownPreview } from "@/features/editor/components/markdown-preview";
 import { AttachmentSidebar } from "@/features/tasks/components/attachment-sidebar";
@@ -97,6 +105,7 @@ export function EditorPage({
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showPublishConfirm, setShowPublishConfirm] = useState(false);
+  const [showMobileAttachments, setShowMobileAttachments] = useState(false);
 
   // AI Rewrite dialog
   const [showRewriteDialog, setShowRewriteDialog] = useState(false);
@@ -487,109 +496,170 @@ export function EditorPage({
         ? t("primary.saveChanges")
         : t("primary.publishTask");
 
+  const mobileAttachmentButtonLabel = t("manageAttachments");
+  const mobileAttachmentLabel = t("attachmentsPanel", {
+    count: attachments.length,
+  });
+
+  const secondaryActionClass =
+    "inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground md:px-3.5 md:py-1.5";
+
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-background">
       {/* Header */}
-      <header className="flex shrink-0 items-center justify-between border-b border-border bg-card px-8 py-4">
-        {/* Left */}
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
-            aria-label={t("goBack")}
-          >
-            <ArrowLeft size={16} strokeWidth={2} />
-          </button>
+      <header className="shrink-0 border-b border-border bg-card px-4 py-3 md:px-8 md:py-4">
+        <div className="flex items-start justify-between gap-4 md:items-center">
+          {/* Left */}
+          <div className="flex min-w-0 flex-1 items-start gap-3 md:items-center md:gap-4">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
+              aria-label={t("goBack")}
+            >
+              <ArrowLeft size={16} strokeWidth={2} />
+            </button>
 
-          <div className="flex flex-col">
-            <span className="text-label-upper">{breadcrumbLabel}</span>
-            <span className="font-serif text-base font-bold text-foreground">
-              {taskTitle}
-            </span>
+            <div className="min-w-0 flex-1">
+              <span className="text-label-upper">{breadcrumbLabel}</span>
+              <span className="mt-1 block break-words font-serif text-sm font-bold text-foreground md:text-base">
+                {taskTitle}
+              </span>
+            </div>
+          </div>
+
+          {/* Desktop actions */}
+          <div className="hidden items-center justify-end gap-3 md:flex md:flex-wrap">
+            {contentHistory.length > 0 && (
+              <button
+                type="button"
+                onClick={handleUndo}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
+              >
+                <Undo2 size={13} strokeWidth={2} />
+                {t("undo")}
+              </button>
+            )}
+
+            {mode === "publish" && (
+              <button
+                type="button"
+                onClick={() => setShowRewriteDialog(true)}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
+              >
+                <Sparkles size={13} strokeWidth={2} />
+                {t("aiRewrite")}
+              </button>
+            )}
+
+            {mode === "publish" && dueAt && (
+              <button
+                type="button"
+                onClick={() => setShowExtendDialog(true)}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
+              >
+                <Clock size={13} strokeWidth={2} />
+                {t("extendDeadline")}
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setPreview(!preview)}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
+            >
+              {preview ? (
+                <>
+                  <Edit3 size={13} strokeWidth={2} />
+                  {t("toggle.edit")}
+                </>
+              ) : (
+                <>
+                  <Eye size={13} strokeWidth={2} />
+                  {t("toggle.preview")}
+                </>
+              )}
+            </button>
+
+            <Button
+              onClick={handlePrimaryClick}
+              disabled={submitting}
+              className="shrink-0 gap-2 text-white hover:opacity-90"
+              style={{ backgroundColor: accentColor }}
+            >
+              {submitting ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <Send size={15} strokeWidth={2} />
+              )}
+              {primaryLabel}
+            </Button>
           </div>
         </div>
 
-        {/* Right */}
-        <div className="flex items-center gap-3">
-          {/* Undo (visible when history exists) */}
-          {contentHistory.length > 0 && (
-            <button
-              type="button"
-              onClick={handleUndo}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
-            >
-              <Undo2 size={13} strokeWidth={2} />
-              {t("undo")}
-            </button>
-          )}
-
-          {/* AI Rewrite (only in publish mode) */}
-          {mode === "publish" && (
-            <button
-              type="button"
-              onClick={() => setShowRewriteDialog(true)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
-            >
-              <Sparkles size={13} strokeWidth={2} />
-              {t("aiRewrite")}
-            </button>
-          )}
-
-          {/* Extend Deadline (only in publish mode with a due date) */}
-          {mode === "publish" && dueAt && (
-            <button
-              type="button"
-              onClick={() => setShowExtendDialog(true)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
-            >
-              <Clock size={13} strokeWidth={2} />
-              {t("extendDeadline")}
-            </button>
-          )}
-
-          {/* Preview / Edit toggle */}
-          <button
-            type="button"
-            onClick={() => setPreview(!preview)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
-          >
-            {preview ? (
-              <>
-                <Edit3 size={13} strokeWidth={2} />
-                {t("toggle.edit")}
-              </>
-            ) : (
-              <>
-                <Eye size={13} strokeWidth={2} />
-                {t("toggle.preview")}
-              </>
+        {/* Mobile secondary actions */}
+        <div className="-mx-4 mt-3 overflow-x-auto px-4 pb-1 md:hidden">
+          <div className="flex min-w-max items-center gap-2">
+            {contentHistory.length > 0 && (
+              <button
+                type="button"
+                onClick={handleUndo}
+                className={secondaryActionClass}
+              >
+                <Undo2 size={13} strokeWidth={2} />
+                {t("undo")}
+              </button>
             )}
-          </button>
 
-          {/* Primary action */}
-          <Button
-            onClick={handlePrimaryClick}
-            disabled={submitting}
-            className="gap-2 text-white hover:opacity-90"
-            style={{ backgroundColor: accentColor }}
-          >
-            {submitting ? (
-              <Loader2 size={15} className="animate-spin" />
-            ) : (
-              <Send size={15} strokeWidth={2} />
+            {mode === "publish" && (
+              <button
+                type="button"
+                onClick={() => setShowRewriteDialog(true)}
+                className={secondaryActionClass}
+              >
+                <Sparkles size={13} strokeWidth={2} />
+                {t("aiRewrite")}
+              </button>
             )}
-            {primaryLabel}
-          </Button>
+
+            {mode === "publish" && dueAt && (
+              <button
+                type="button"
+                onClick={() => setShowExtendDialog(true)}
+                className={secondaryActionClass}
+              >
+                <Clock size={13} strokeWidth={2} />
+                {t("extendDeadline")}
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setPreview(!preview)}
+              className={secondaryActionClass}
+            >
+              {preview ? (
+                <>
+                  <Edit3 size={13} strokeWidth={2} />
+                  {t("toggle.edit")}
+                </>
+              ) : (
+                <>
+                  <Eye size={13} strokeWidth={2} />
+                  {t("toggle.preview")}
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Body */}
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 flex-col pb-32 md:flex-row md:pb-0">
         {/* Editor / Preview area */}
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           {/* Toolbar (only in edit mode) */}
           {!preview && (
             <EditorToolbar
@@ -600,7 +670,7 @@ export function EditorPage({
 
           {/* Content */}
           {preview ? (
-            <div className="flex-1 overflow-y-auto px-8 py-7">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 md:px-8 md:py-7">
               <MarkdownPreview
                 content={content}
                 accentColor={accentColor}
@@ -613,13 +683,13 @@ export function EditorPage({
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder={t("editorPlaceholder")}
-              className="flex-1 resize-none bg-transparent px-8 py-7 font-mono text-sm leading-relaxed text-foreground placeholder:text-text-muted-soft focus:outline-none"
+              className="min-h-0 flex-1 resize-none bg-transparent px-4 py-5 font-mono text-sm leading-relaxed text-foreground placeholder:text-text-muted-soft focus:outline-none md:px-8 md:py-7"
             />
           )}
         </div>
 
         {/* Attachment sidebar */}
-        <div className="w-[260px] shrink-0 border-l border-border">
+        <div className="hidden w-[260px] shrink-0 border-l border-border md:block">
           <div className="flex h-full flex-col">
             {/* Drag-drop zone */}
             {/* biome-ignore lint/a11y/noStaticElementInteractions: drag-drop zone for file uploads */}
@@ -669,18 +739,117 @@ export function EditorPage({
       </div>
 
       {/* Footer */}
-      <footer className="flex shrink-0 items-center justify-between border-t border-border px-8 py-3">
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <span>{t("footer.wordCount", { count: wordCount })}</span>
-          <span className="text-text-muted-soft">&middot;</span>
-          <span className="text-text-muted-soft">
-            {t("footer.markdownSupported")}
+      <footer
+        className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/95 px-4 py-3 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] backdrop-blur supports-[backdrop-filter]:bg-card/90 md:static md:shrink-0 md:bg-background md:px-8 md:shadow-none"
+        style={{
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)",
+        }}
+      >
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground md:gap-4">
+            <span>{t("footer.wordCount", { count: wordCount })}</span>
+            <span className="hidden text-text-muted-soft md:inline">
+              &middot;
+            </span>
+            <span className="hidden text-text-muted-soft md:inline">
+              {t("footer.markdownSupported")}
+            </span>
+            <span className="text-text-muted-soft md:hidden">
+              {t("footer.draftSaved")}
+            </span>
+          </div>
+          <span className="hidden text-xs text-text-muted-soft md:inline">
+            {t("footer.draftSaved")}
           </span>
+          <div className="grid grid-cols-2 gap-3 md:hidden">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowMobileAttachments(true)}
+              className="h-11 justify-between rounded-2xl px-4 text-foreground"
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <Paperclip size={15} strokeWidth={2} />
+                <span className="truncate">{mobileAttachmentButtonLabel}</span>
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {attachments.length}
+              </span>
+            </Button>
+            <Button
+              onClick={handlePrimaryClick}
+              disabled={submitting}
+              className="h-11 rounded-2xl text-white hover:opacity-90"
+              style={{ backgroundColor: accentColor }}
+            >
+              {submitting ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <Send size={15} strokeWidth={2} />
+              )}
+              {primaryLabel}
+            </Button>
+          </div>
         </div>
-        <span className="text-xs text-text-muted-soft">
-          {t("footer.draftSaved")}
-        </span>
       </footer>
+
+      <Sheet open={showMobileAttachments} onOpenChange={setShowMobileAttachments}>
+        <SheetContent
+          side="bottom"
+          className="max-h-[80dvh] rounded-t-[24px] px-0 pb-0"
+        >
+          <SheetHeader className="px-4 pb-3 pt-1 text-left">
+            <SheetTitle className="font-serif text-base">
+              {mobileAttachmentLabel}
+            </SheetTitle>
+            <SheetDescription>
+              {t("attachmentsSheetDescription")}
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="min-h-0 overflow-y-auto">
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: drag-drop zone for file uploads */}
+            <div
+              className={`border-y border-border p-4 ${
+                dragOver ? "bg-surface-subtle" : ""
+              }`}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+            >
+              <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border px-4 py-6 text-center transition-colors hover:border-muted-foreground hover:bg-surface-subtle">
+                <Upload
+                  size={20}
+                  strokeWidth={1.5}
+                  className="text-muted-foreground"
+                />
+                <span className="text-xs text-muted-foreground">
+                  {uploading ? t("uploading") : t("dropOrClickUpload")}
+                </span>
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileInputChange}
+                  disabled={uploading}
+                />
+              </label>
+            </div>
+
+            <AttachmentSidebar
+              attachments={attachments}
+              accentColor={accentColor}
+              onRemove={handleRemoveAttachment}
+              onInsertImage={handleInsertAttachmentImage}
+              onToggleVisibility={
+                mode === "publish"
+                  ? handleToggleAttachmentVisibility
+                  : undefined
+              }
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Hidden image file input */}
       <input
