@@ -184,7 +184,9 @@ export function TaskDetailOverlay({
     };
   }, []);
 
-  const attachments = taskDetail?.attachments ?? [];
+  const attachments = (taskDetail?.attachments ?? []).filter(
+    (attachment) => attachment.isVisible,
+  );
   const bodyContent = taskDetail?.description ?? "";
 
   return (

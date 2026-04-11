@@ -155,53 +155,55 @@ export function AttachmentSidebar({
           return (
             <div
               key={att.id}
-              className="group flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors duration-100 hover:bg-secondary"
+              className="group flex flex-col gap-2 rounded-lg px-2 py-2 transition-colors duration-100 hover:bg-secondary md:flex-row md:items-center md:gap-2.5 md:py-1.5"
             >
-              {/* File icon */}
-              <div className="group/icon relative flex h-7 w-7 shrink-0 items-center justify-center">
-                <FileText
-                  size={18}
-                  strokeWidth={1.8}
-                  style={{ color: iconColor }}
-                  className={
-                    onInsertImage && isImageAttachment(att)
-                      ? "transition-opacity duration-150 group-hover/icon:opacity-0"
-                      : undefined
-                  }
-                />
-                {onInsertImage && isImageAttachment(att) && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onInsertImage(att);
-                    }}
-                    className="absolute inset-0 flex items-center justify-center rounded-md bg-secondary text-muted-foreground opacity-0 transition-opacity duration-150 hover:text-foreground group-hover/icon:opacity-100"
-                    aria-label={t("insertIntoBody", {
-                      name: att.originalName,
-                    })}
-                    title={t("insertIntoBody", { name: att.originalName })}
-                  >
-                    <ImagePlus size={14} strokeWidth={2} />
-                  </button>
-                )}
-              </div>
+              <div className="flex min-w-0 items-center gap-2.5">
+                {/* File icon */}
+                <div className="group/icon relative flex h-8 w-8 shrink-0 items-center justify-center md:h-7 md:w-7">
+                  <FileText
+                    size={18}
+                    strokeWidth={1.8}
+                    style={{ color: iconColor }}
+                    className={
+                      onInsertImage && isImageAttachment(att)
+                        ? "transition-opacity duration-150 group-hover/icon:opacity-0"
+                        : undefined
+                    }
+                  />
+                  {onInsertImage && isImageAttachment(att) && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onInsertImage(att);
+                      }}
+                      className="absolute inset-0 flex items-center justify-center rounded-md bg-secondary text-muted-foreground opacity-0 transition-opacity duration-150 hover:text-foreground group-hover/icon:opacity-100"
+                      aria-label={t("insertIntoBody", {
+                        name: att.originalName,
+                      })}
+                      title={t("insertIntoBody", { name: att.originalName })}
+                    >
+                      <ImagePlus size={14} strokeWidth={2} />
+                    </button>
+                  )}
+                </div>
 
-              {/* Name + size */}
-              <div className="min-w-0 flex-1">
-                <p
-                  className="truncate text-[12.5px] font-medium text-foreground"
-                  title={att.originalName ?? t("unknownFile")}
-                >
-                  {att.originalName ?? t("unknownFile")}
-                </p>
-                <p className="text-[11px] text-muted-foreground">
-                  {formatFileSize(att.sizeBytes)}
-                </p>
+                {/* Name + size */}
+                <div className="min-w-0 flex-1">
+                  <p
+                    className="truncate text-[12.5px] font-medium text-foreground"
+                    title={att.originalName ?? t("unknownFile")}
+                  >
+                    {att.originalName ?? t("unknownFile")}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {formatFileSize(att.sizeBytes)}
+                  </p>
+                </div>
               </div>
 
               {/* Action buttons */}
-              <div className="flex shrink-0 items-center gap-1">
+              <div className="flex shrink-0 items-center justify-end gap-1 pl-[42px] md:pl-0">
                 {/* Download button */}
                 <button
                   type="button"
@@ -210,7 +212,7 @@ export function AttachmentSidebar({
                     e.stopPropagation();
                     void handleDownload(att);
                   }}
-                  className="flex h-7 w-7 items-center justify-center rounded-md bg-secondary text-muted-foreground transition-colors duration-100 hover:text-white disabled:opacity-50"
+                  className="flex h-8 w-8 items-center justify-center rounded-md bg-secondary text-muted-foreground transition-colors duration-100 hover:text-white disabled:opacity-50 md:h-7 md:w-7"
                   onMouseEnter={(e) => {
                     if (!isDownloading)
                       (
@@ -242,7 +244,7 @@ export function AttachmentSidebar({
                       e.stopPropagation();
                       onToggleVisibility(att);
                     }}
-                    className="flex h-7 w-7 items-center justify-center rounded-md bg-secondary text-muted-foreground transition-colors duration-100 hover:text-foreground"
+                    className="flex h-8 w-8 items-center justify-center rounded-md bg-secondary text-muted-foreground transition-colors duration-100 hover:text-foreground md:h-7 md:w-7"
                     onMouseEnter={(e) => {
                       (
                         e.currentTarget as HTMLButtonElement
@@ -280,7 +282,7 @@ export function AttachmentSidebar({
                       e.stopPropagation();
                       onRemove(att);
                     }}
-                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors duration-100 hover:bg-destructive/10 hover:text-destructive"
+                    className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors duration-100 hover:bg-destructive/10 hover:text-destructive md:h-7 md:w-7"
                     aria-label={`Remove ${att.originalName}`}
                   >
                     <X size={14} strokeWidth={2} />

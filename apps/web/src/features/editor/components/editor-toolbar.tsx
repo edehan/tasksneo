@@ -106,32 +106,37 @@ export function EditorToolbar({ onInsert, onImageUpload }: EditorToolbarProps) {
   const t = useTranslations("editorToolbar");
 
   return (
-    <div className="flex items-center gap-0.5 border-b border-border px-4 py-2">
-      {TOOLBAR_ITEMS.map((item, i) => {
-        if (item.type === "separator") {
+    <div className="min-w-0 overflow-x-auto border-b border-border">
+      <div className="flex min-w-max items-center gap-0.5 px-4 py-2">
+        {TOOLBAR_ITEMS.map((item, i) => {
+          if (item.type === "separator") {
+            return (
+              // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholder
+              <div
+                key={`sep-${i}`}
+                className="mx-1.5 h-[18px] w-px shrink-0 bg-border"
+              />
+            );
+          }
+
+          const handleClick =
+            item.labelKey === "image" && onImageUpload
+              ? onImageUpload
+              : () => onInsert(item.before, item.after);
+
           return (
-            // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholder
-            <div key={`sep-${i}`} className="mx-1.5 h-[18px] w-px bg-border" />
+            <button
+              key={item.labelKey}
+              type="button"
+              onClick={handleClick}
+              title={t(item.labelKey)}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[7px] bg-transparent text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-[var(--class-accent)]"
+            >
+              {item.icon}
+            </button>
           );
-        }
-
-        const handleClick =
-          item.labelKey === "image" && onImageUpload
-            ? onImageUpload
-            : () => onInsert(item.before, item.after);
-
-        return (
-          <button
-            key={item.labelKey}
-            type="button"
-            onClick={handleClick}
-            title={t(item.labelKey)}
-            className="flex h-8 w-8 items-center justify-center rounded-[7px] bg-transparent text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-[var(--class-accent)]"
-          >
-            {item.icon}
-          </button>
-        );
-      })}
+        })}
+      </div>
     </div>
   );
 }

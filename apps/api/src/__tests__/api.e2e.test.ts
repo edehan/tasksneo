@@ -692,6 +692,14 @@ describe("TaskFlow API e2e", () => {
 			).attachments.length,
 		).toBe(2);
 
+		const ownerHiddenFileRes = await app.request(
+			`/files/${encodeURIComponent(hiddenTaskAttachmentBody[0].fileKey)}`,
+			{
+				headers: authHeader(ownerToken),
+			},
+		);
+		expect(ownerHiddenFileRes.status).toBe(302);
+
 		const submitTextRes = await requestJson(
 			app,
 			`/tasks/${taskId}/submissions/me`,

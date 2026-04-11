@@ -537,6 +537,9 @@
     "editorPlaceholder": "Write your content in Markdown...",
     "uploading": "Uploading...",
     "dropOrClickUpload": "Drop files or click to upload",
+    "manageAttachments": "Manage Files",
+    "attachmentsPanel": "Attachments & Upload ({count})",
+    "attachmentsSheetDescription": "Upload files, manage visibility, or insert images into the body.",
     "footer": {
       "wordCount": "{count} {count, plural, one {word} other {words}}",
       "markdownSupported": "Markdown supported",
