@@ -202,6 +202,22 @@ export interface McpKeyCreated extends McpKeyInfo {
   key: string;
 }
 
+export type SessionKind = "BROWSER" | "MCP";
+
+export interface SessionInfo {
+  id: string;
+  kind: SessionKind;
+  isTrusted: boolean;
+  isCurrent: boolean;
+  userAgent: string | null;
+  ipAddress: string | null;
+  mcpKeyId: string | null;
+  mcpKeyName: string | null;
+  createdAt: string;
+  lastSeenAt: string;
+  expiresAt: string | null;
+}
+
 // ─── Admin Types (kept for admin panel) ──────────────────────────────────────
 
 export interface AdminSchool {
@@ -286,11 +302,20 @@ export async function apiRequest<T>(
 export async function login(
   email: string,
   password: string,
+  trustDevice?: boolean,
 ): Promise<AuthResponse> {
   return apiRequest<AuthResponse>("/auth/login", {
     method: "POST",
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({
+      email,
+      password,
+      ...(trustDevice ? { trustDevice: true } : {}),
+    }),
   });
+}
+
+export async function logoutApi(token: string): Promise<void> {
+  return apiRequest<void>("/auth/logout", { method: "POST" }, token);
 }
 
 export async function register(
@@ -322,6 +347,7 @@ export async function completeRegistration(input: {
   schoolId?: string | null;
   studentId?: string | null;
   timezone?: string;
+  trustDevice?: boolean;
 }): Promise<AuthResponse> {
   return apiRequest<AuthResponse>("/auth/register/complete", {
     method: "POST",
@@ -341,8 +367,8 @@ export async function requestPasswordReset(
 export async function resetPassword(
   token: string,
   password: string,
-): Promise<AuthResponse> {
-  return apiRequest<AuthResponse>("/auth/reset-password", {
+): Promise<{ message: string }> {
+  return apiRequest<{ message: string }>("/auth/reset-password", {
     method: "POST",
     body: JSON.stringify({ token, password }),
   });
@@ -507,6 +533,31 @@ export async function revokeMcpKey(
 ): Promise<McpKeyInfo> {
   return apiRequest<McpKeyInfo>(
     `/users/me/mcp-keys/${keyId}`,
+    { method: "DELETE" },
+    token,
+  );
+}
+
+// ── Sessions ───────────────────────────────────────────────────────────────
+
+export async function listSessions(token: string): Promise<SessionInfo[]> {
+  return apiRequest<SessionInfo[]>("/users/me/sessions", {}, token);
+}
+
+export async function revokeSession(
+  token: string,
+  sessionId: string,
+): Promise<void> {
+  return apiRequest<void>(
+    `/users/me/sessions/${sessionId}`,
+    { method: "DELETE" },
+    token,
+  );
+}
+
+export async function revokeOtherSessions(token: string): Promise<void> {
+  return apiRequest<void>(
+    "/users/me/sessions",
     { method: "DELETE" },
     token,
   );

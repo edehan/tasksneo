@@ -3,17 +3,19 @@ import { randomBytes } from "node:crypto";
 import { AuthProvider, EmailTokenPurpose, prisma } from "@taskflow/db";
 import bcrypt from "bcryptjs";
 
-import { cacheDel, cacheKeys } from "../lib/cache.js";
-import { getJwtSecret } from "../lib/env.js";
 import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
-import { signUserJwt } from "../lib/jwt.js";
 import { sendEmail } from "../lib/mailer.js";
 
 import {
 	createUserWithPersonalClass,
 	type RegisterInput,
+	type SessionMetadata,
 } from "./auth.service.js";
+import {
+	invalidateUserSessionCaches,
+	revokeAllBrowserSessions,
+} from "./session.service.js";
 import { getConfigValue } from "./system-config.service.js";
 
 const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -184,13 +186,17 @@ export async function verifyRegistrationToken(token: string) {
 export async function completeRegistration(
 	token: string,
 	input: Omit<RegisterInput, "email">,
+	sessionMeta: SessionMetadata,
 ) {
 	const row = await validateToken(token, EmailTokenPurpose.REGISTRATION);
 
-	const result = await createUserWithPersonalClass({
-		email: row.email,
-		...input,
-	});
+	const result = await createUserWithPersonalClass(
+		{
+			email: row.email,
+			...input,
+		},
+		sessionMeta,
+	);
 
 	await consumeToken(row.id, row.email, EmailTokenPurpose.REGISTRATION);
 
@@ -244,7 +250,6 @@ export async function resetPassword(token: string, newPassword: string) {
 
 	const user = await prisma.user.findUnique({
 		where: { id: row.userId },
-		include: { school: { select: { name: true } } },
 	});
 
 	if (!user) {
@@ -258,12 +263,15 @@ export async function resetPassword(token: string, newPassword: string) {
 		data: { passwordHash },
 	});
 
+	// Kill all existing browser sessions for this user — after a password
+	// reset, the user must prove they know the new password by logging in
+	// again. MCP sessions are left alone (they have their own revocation
+	// path via mcp_keys).
+	await revokeAllBrowserSessions(row.userId);
+
 	await consumeToken(row.id, row.email, EmailTokenPurpose.PASSWORD_RESET);
 
-	return {
-		token: signUserJwt({ sub: user.id, email: user.email }, getJwtSecret()),
-		user: toUserProfile(user),
-	};
+	return { message: "Password reset. Please log in with your new password." };
 }
 
 // ── Email change flow ───────────────────────────────────────────────────────
@@ -329,7 +337,10 @@ export async function confirmEmailChange(
 	});
 
 	await consumeToken(row.id, row.email, EmailTokenPurpose.EMAIL_CHANGE);
-	await cacheDel(cacheKeys.authUser(row.userId));
+	// Session rows keep the old email in their cached shape; blow those away
+	// so the next request re-reads fresh user data from DB. Sessions themselves
+	// stay alive (changing email shouldn't kick you out).
+	await invalidateUserSessionCaches(row.userId);
 
 	return toUserProfile(user);
 }

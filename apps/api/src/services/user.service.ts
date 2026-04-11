@@ -6,6 +6,10 @@ import { AppError } from "../lib/errors.js";
 import { toAttachmentMeta, toUserProfile } from "../lib/http.js";
 import { removeObject } from "../lib/storage.js";
 import {
+	invalidateUserSessionCaches,
+	revokeAllBrowserSessions,
+} from "./session.service.js";
+import {
 	hardDeleteTask,
 	removeSubmissionAttachments,
 	softDeleteTask,
@@ -98,6 +102,7 @@ export async function updateMyPassword(
 	userId: string,
 	currentPassword: string,
 	newPassword: string,
+	currentSessionId: string,
 ) {
 	const credential = await prisma.userCredential.findUnique({
 		where: {
@@ -139,6 +144,10 @@ export async function updateMyPassword(
 			passwordHash,
 		},
 	});
+
+	// Keep the current session alive — the user is acting intentionally right
+	// now — but kick every other browser session. MCP sessions are untouched.
+	await revokeAllBrowserSessions(userId, currentSessionId);
 }
 
 export async function listMyNotificationPrefs(userId: string) {
@@ -333,15 +342,19 @@ export async function deleteMyAccount(userId: string) {
 	await deleteUserSubmissions(userId);
 	await deletePersonalClass(userId);
 	await removeUserAvatarAttachments(userId);
+	// Must invalidate session caches BEFORE deleting the user, otherwise the
+	// cascade removes the session rows and we lose the token hashes we need
+	// to clean Redis with.
+	await invalidateUserSessionCaches(userId);
 	await prisma.user.delete({ where: { id: userId } });
-	await cacheDel(cacheKeys.authUser(userId), cacheKeys.notifPrefs(userId));
+	await cacheDel(cacheKeys.notifPrefs(userId));
 }
 
 export async function adminDeleteUser(userId: string) {
 	await deleteUserSubmissions(userId);
 	await deletePersonalClass(userId);
 	await removeUserAvatarAttachments(userId);
-
+	await invalidateUserSessionCaches(userId);
 	await prisma.user.delete({ where: { id: userId } });
-	await cacheDel(cacheKeys.authUser(userId), cacheKeys.notifPrefs(userId));
+	await cacheDel(cacheKeys.notifPrefs(userId));
 }

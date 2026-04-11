@@ -1,10 +1,12 @@
 import { createHash, randomBytes } from "node:crypto";
 import { prisma } from "@taskflow/db";
 
-import { getJwtSecret } from "../lib/env.js";
 import { AppError } from "../lib/errors.js";
 import { toMcpKey, toUserProfile } from "../lib/http.js";
-import { signUserJwt } from "../lib/jwt.js";
+import {
+	createMcpSession,
+	revokeMcpSessionsByKeyId,
+} from "./session.service.js";
 
 const MAX_KEYS_PER_USER = 10;
 const KEY_PREFIX = "tfmcp_";
@@ -76,10 +78,17 @@ export async function revokeMcpKey(userId: string, keyId: string) {
 		data: { revokedAt: new Date() },
 	});
 
+	// Cascade on the FK will remove the session rows, but we still need to
+	// flush the Redis cache entries keyed by their token hashes.
+	await revokeMcpSessionsByKeyId(keyId);
+
 	return toMcpKey(updated);
 }
 
-export async function exchangeMcpKey(rawKey: string) {
+export async function exchangeMcpKey(
+	rawKey: string,
+	meta: { userAgent: string | null; ipAddress: string | null },
+) {
 	if (!rawKey.startsWith(KEY_PREFIX)) {
 		throw new AppError(401, "MCP_KEY_INVALID", "Invalid MCP key format");
 	}
@@ -118,11 +127,17 @@ export async function exchangeMcpKey(rawKey: string) {
 		data: { lastUsedAt: new Date() },
 	});
 
+	const { token } = await createMcpSession({
+		userId: key.user.id,
+		mcpKeyId: key.id,
+		// Inherit the underlying key's expiry — null means "never expires".
+		expiresAt: key.expiresAt,
+		userAgent: meta.userAgent,
+		ipAddress: meta.ipAddress,
+	});
+
 	return {
-		token: signUserJwt(
-			{ sub: key.user.id, email: key.user.email },
-			getJwtSecret(),
-		),
+		token,
 		user: toUserProfile(key.user),
 	};
 }

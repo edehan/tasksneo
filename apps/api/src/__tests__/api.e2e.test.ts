@@ -1,4 +1,4 @@
-import { prisma } from "@taskflow/db";
+import { EmailTokenPurpose, prisma } from "@taskflow/db";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { createApp } from "../app.js";
@@ -7,6 +7,7 @@ import {
 	encryptConfigValue,
 } from "../lib/system-config.js";
 import {
+	createTestUser,
 	json,
 	requestJson,
 	resetDatabase,
@@ -200,72 +201,51 @@ describe("TaskFlow API e2e", () => {
 		const outsiderEmail = uniqueEmail("outsider");
 		const tempEmail = uniqueEmail("temp");
 
-		const registerOwner = await requestJson(app, "/auth/register", {
-			method: "POST",
-			body: JSON.stringify({
-				email: ownerEmail,
-				password: "Passw0rd!",
-				nickname: "Owner",
-				schoolId: schoolAId,
-				studentId: "A001",
-				timezone: "Asia/Shanghai",
-			}),
+		// Create users directly via the service — bypasses the two-step email
+		// verification flow that /auth/register expects. Helper returns the same
+		// `{ token, user }` shape as a successful registration.
+		const ownerRegisterBody = await createTestUser({
+			email: ownerEmail,
+			password: "Passw0rd!",
+			nickname: "Owner",
+			schoolId: schoolAId,
+			studentId: "A001",
+			timezone: "Asia/Shanghai",
 		});
-		expect(registerOwner.response.status).toBe(201);
-		const ownerRegisterBody = registerOwner.body as {
-			token: string;
-			user: { id: string; timezone: string };
-		};
 		expect(ownerRegisterBody.user.timezone).toBe("Asia/Shanghai");
 
 		const ownerToken = ownerRegisterBody.token;
 		const ownerUserId = ownerRegisterBody.user.id;
 
-		const registerMember = await requestJson(app, "/auth/register", {
-			method: "POST",
-			body: JSON.stringify({
-				email: memberEmail,
-				password: "Passw0rd!",
-				nickname: "Member",
-				schoolId: schoolAId,
-				studentId: "A002",
-			}),
+		const registerMember = await createTestUser({
+			email: memberEmail,
+			password: "Passw0rd!",
+			nickname: "Member",
+			schoolId: schoolAId,
+			studentId: "A002",
 		});
-		expect(registerMember.response.status).toBe(201);
 
-		const memberToken = (registerMember.body as { token: string }).token;
-		const memberUserId = (registerMember.body as { user: { id: string } }).user
-			.id;
+		const memberToken = registerMember.token;
+		const memberUserId = registerMember.user.id;
 
-		const registerOutsider = await requestJson(app, "/auth/register", {
-			method: "POST",
-			body: JSON.stringify({
-				email: outsiderEmail,
-				password: "Passw0rd!",
-				nickname: "Outsider",
-				schoolId: schoolBId,
-				studentId: "B001",
-			}),
+		const registerOutsider = await createTestUser({
+			email: outsiderEmail,
+			password: "Passw0rd!",
+			nickname: "Outsider",
+			schoolId: schoolBId,
+			studentId: "B001",
 		});
-		expect(registerOutsider.response.status).toBe(201);
 
-		const outsiderToken = (registerOutsider.body as { token: string }).token;
-		const outsiderUserId = (registerOutsider.body as { user: { id: string } })
-			.user.id;
+		const outsiderToken = registerOutsider.token;
+		const outsiderUserId = registerOutsider.user.id;
 
-		const registerTemp = await requestJson(app, "/auth/register", {
-			method: "POST",
-			body: JSON.stringify({
-				email: tempEmail,
-				password: "Passw0rd!",
-			}),
+		const registerTemp = await createTestUser({
+			email: tempEmail,
+			password: "Passw0rd!",
 		});
-		expect(registerTemp.response.status).toBe(201);
-		expect(
-			(registerTemp.body as { user: { timezone: string } }).user.timezone,
-		).toBe("UTC");
+		expect(registerTemp.user.timezone).toBe("UTC");
 
-		const tempToken = (registerTemp.body as { token: string }).token;
+		const tempToken = registerTemp.token;
 
 		const loginOwner = await requestJson(app, "/auth/login", {
 			method: "POST",
@@ -429,18 +409,14 @@ describe("TaskFlow API e2e", () => {
 		expect(memberDemote.response.status).toBe(200);
 
 		const thirdEmail = uniqueEmail("third");
-		const thirdRegister = await requestJson(app, "/auth/register", {
-			method: "POST",
-			body: JSON.stringify({
-				email: thirdEmail,
-				password: "Passw0rd!",
-				schoolId: schoolAId,
-				studentId: "A333",
-			}),
+		const thirdRegister = await createTestUser({
+			email: thirdEmail,
+			password: "Passw0rd!",
+			schoolId: schoolAId,
+			studentId: "A333",
 		});
-		const thirdToken = (thirdRegister.body as { token: string }).token;
-		const thirdUserId = (thirdRegister.body as { user: { id: string } }).user
-			.id;
+		const thirdToken = thirdRegister.token;
+		const thirdUserId = thirdRegister.user.id;
 
 		await requestJson(app, "/classes/join", {
 			method: "POST",
@@ -929,5 +905,214 @@ describe("TaskFlow API e2e", () => {
 		expect([404, 409]).toContain(oldInviteJoin.response.status);
 
 		expect(ownerUserId).not.toBe(memberUserId);
+	});
+});
+
+describe("Session lifecycle", () => {
+	beforeEach(async () => {
+		await resetDatabase();
+	});
+
+	it("invalidates the token after POST /auth/logout", async () => {
+		const { token } = await createTestUser({ emailPrefix: "logout" });
+
+		const before = await app.request("/users/me", {
+			headers: authHeader(token),
+		});
+		expect(before.status).toBe(200);
+
+		const logoutRes = await app.request("/auth/logout", {
+			method: "POST",
+			headers: authHeader(token),
+		});
+		expect(logoutRes.status).toBe(204);
+
+		const after = await app.request("/users/me", {
+			headers: authHeader(token),
+		});
+		expect(after.status).toBe(401);
+	});
+
+	it("changing password keeps current session alive and kicks other browser sessions", async () => {
+		const email = uniqueEmail("passchange");
+		const first = await createTestUser({
+			email,
+			password: "Passw0rd!",
+		});
+
+		// Log in a second time to create a separate browser session.
+		const secondLogin = await requestJson(app, "/auth/login", {
+			method: "POST",
+			body: JSON.stringify({ email, password: "Passw0rd!" }),
+		});
+		expect(secondLogin.response.status).toBe(200);
+		const secondToken = (secondLogin.body as { token: string }).token;
+		expect(secondToken).not.toBe(first.token);
+
+		// Change password from the first session.
+		const patchPassword = await requestJson(app, "/users/me/password", {
+			method: "PATCH",
+			headers: authHeader(first.token),
+			body: JSON.stringify({
+				currentPassword: "Passw0rd!",
+				newPassword: "Passw0rd!New",
+			}),
+		});
+		expect(patchPassword.response.status).toBe(204);
+
+		// First session (the one that issued the change) is still alive.
+		const firstAfter = await app.request("/users/me", {
+			headers: authHeader(first.token),
+		});
+		expect(firstAfter.status).toBe(200);
+
+		// Second session got kicked.
+		const secondAfter = await app.request("/users/me", {
+			headers: authHeader(secondToken),
+		});
+		expect(secondAfter.status).toBe(401);
+	});
+
+	it("password reset kills every browser session and does not return a new token", async () => {
+		const email = uniqueEmail("reset");
+		const { token } = await createTestUser({ email, password: "Passw0rd!" });
+
+		// Drive the reset flow through the service to sidestep the email dispatch —
+		// createVerificationToken is internal, so we drop a row directly.
+		const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+		const resetToken = "test-reset-token-" + Math.random().toString(36).slice(2);
+		await prisma.emailVerificationToken.create({
+			data: {
+				email,
+				token: resetToken,
+				purpose: EmailTokenPurpose.PASSWORD_RESET,
+				userId: user.id,
+				expiresAt: new Date(Date.now() + 60_000),
+			},
+		});
+
+		const resetRes = await requestJson(app, "/auth/reset-password", {
+			method: "POST",
+			body: JSON.stringify({
+				token: resetToken,
+				password: "Passw0rd!Reset",
+			}),
+		});
+		expect(resetRes.response.status).toBe(200);
+		// Response must not leak a new token — user is expected to log in again.
+		expect(resetRes.body).not.toHaveProperty("token");
+		expect(resetRes.body).not.toHaveProperty("user");
+
+		// Old session is dead.
+		const after = await app.request("/users/me", {
+			headers: authHeader(token),
+		});
+		expect(after.status).toBe(401);
+
+		// But the new password works.
+		const newLogin = await requestJson(app, "/auth/login", {
+			method: "POST",
+			body: JSON.stringify({ email, password: "Passw0rd!Reset" }),
+		});
+		expect(newLogin.response.status).toBe(200);
+	});
+
+	it("GET /users/me/sessions lists sessions and marks the current one", async () => {
+		const email = uniqueEmail("sessions-list");
+		const first = await createTestUser({ email });
+
+		const second = await requestJson(app, "/auth/login", {
+			method: "POST",
+			body: JSON.stringify({ email, password: "Passw0rd!" }),
+		});
+		expect(second.response.status).toBe(200);
+		const secondToken = (second.body as { token: string }).token;
+
+		const listRes = await app.request("/users/me/sessions", {
+			headers: authHeader(first.token),
+		});
+		expect(listRes.status).toBe(200);
+		const sessions = (await json(listRes)) as Array<{
+			id: string;
+			isCurrent: boolean;
+			kind: string;
+		}>;
+		expect(sessions.length).toBe(2);
+		const currentCount = sessions.filter((s) => s.isCurrent).length;
+		expect(currentCount).toBe(1);
+		expect(sessions.every((s) => s.kind === "BROWSER")).toBe(true);
+
+		// Revoking everything-except-current leaves exactly one session.
+		const revokeAll = await app.request("/users/me/sessions", {
+			method: "DELETE",
+			headers: authHeader(first.token),
+		});
+		expect(revokeAll.status).toBe(204);
+
+		const listAfter = await app.request("/users/me/sessions", {
+			headers: authHeader(first.token),
+		});
+		const sessionsAfter = (await json(listAfter)) as Array<{ id: string }>;
+		expect(sessionsAfter.length).toBe(1);
+
+		// The other token is now dead.
+		const secondAfter = await app.request("/users/me", {
+			headers: authHeader(secondToken),
+		});
+		expect(secondAfter.status).toBe(401);
+	});
+
+	it("DELETE /users/me/sessions/:id only revokes sessions owned by the caller", async () => {
+		const alice = await createTestUser({ emailPrefix: "alice" });
+		const bob = await createTestUser({ emailPrefix: "bob" });
+
+		// Find Bob's session id.
+		const bobList = await app.request("/users/me/sessions", {
+			headers: authHeader(bob.token),
+		});
+		const bobSessions = (await json(bobList)) as Array<{ id: string }>;
+		const bobSessionId = bobSessions[0]?.id;
+		expect(bobSessionId).toBeDefined();
+
+		// Alice tries to revoke Bob's session — should 404 (not 403, we don't
+		// leak existence of other users' session IDs).
+		const crossRes = await app.request(`/users/me/sessions/${bobSessionId}`, {
+			method: "DELETE",
+			headers: authHeader(alice.token),
+		});
+		expect(crossRes.status).toBe(404);
+
+		// Bob's session still works.
+		const bobStillOk = await app.request("/users/me", {
+			headers: authHeader(bob.token),
+		});
+		expect(bobStillOk.status).toBe(200);
+	});
+
+	it("trusted sessions get a longer expiresAt than untrusted ones", async () => {
+		const untrusted = await createTestUser({
+			emailPrefix: "untrusted",
+			password: "Passw0rd!",
+		});
+		const trusted = await createTestUser(
+			{ emailPrefix: "trusted", password: "Passw0rd!" },
+			{ trustDevice: true },
+		);
+
+		const rows = await prisma.session.findMany({
+			where: {
+				userId: { in: [untrusted.user.id, trusted.user.id] },
+			},
+			select: { userId: true, isTrusted: true, expiresAt: true },
+		});
+		const untrustedRow = rows.find((r) => r.userId === untrusted.user.id);
+		const trustedRow = rows.find((r) => r.userId === trusted.user.id);
+
+		expect(untrustedRow?.isTrusted).toBe(false);
+		expect(trustedRow?.isTrusted).toBe(true);
+		// Trusted TTL (30d) should outstrip untrusted TTL (7d) by at least 20 days.
+		const trustedMs = trustedRow!.expiresAt!.getTime();
+		const untrustedMs = untrustedRow!.expiresAt!.getTime();
+		expect(trustedMs - untrustedMs).toBeGreaterThan(20 * 24 * 3600 * 1000);
 	});
 });

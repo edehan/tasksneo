@@ -36,8 +36,11 @@ components:
     userAuth:
       type: http
       scheme: bearer
-      bearerFormat: JWT
-      description: 用户 JWT Token，通过 /auth/login 获取
+      description: |
+        Opaque session token returned by /auth/login (format: tfses_<random>).
+        Stored server-side in the sessions table; revocable via /auth/logout or
+        /users/me/sessions/{id}. Expires after 7 days by default, or 30 days
+        with sliding renewal when the session is trusted.
     adminAuth:
       type: http
       scheme: bearer
@@ -177,6 +180,14 @@ components:
           format: email
         password:
           type: string
+        trustDevice:
+          type: boolean
+          default: false
+          description: |
+            When true, the created session is marked trusted and expires after
+            30 days with sliding renewal on each request (rate-limited to one
+            DB write per 24h per session). When false/omitted, the session
+            expires after 7 days with no renewal.
 
     AuthResponse:
       type: object
@@ -184,9 +195,54 @@ components:
       properties:
         token:
           type: string
-          description: JWT Token，有效期 7 天
+          description: |
+            Opaque session token (format: tfses_<random>). Send as
+            `Authorization: Bearer <token>` on subsequent requests.
         user:
           $ref: '#/components/schemas/UserProfile'
+
+    SessionInfo:
+      type: object
+      required:
+        [id, kind, isTrusted, isCurrent, createdAt, lastSeenAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum: [BROWSER, MCP]
+        isTrusted:
+          type: boolean
+        isCurrent:
+          type: boolean
+          description: True if this is the session making the current request.
+        userAgent:
+          type: string
+          nullable: true
+        ipAddress:
+          type: string
+          nullable: true
+        mcpKeyId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Set only when kind = MCP.
+        mcpKeyName:
+          type: string
+          nullable: true
+          description: Name of the source MCP key, for display. Set only when kind = MCP.
+        createdAt:
+          type: string
+          format: date-time
+        lastSeenAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Null for MCP sessions tied to a never-expiring key.
 
     # ── Users ──
 
@@ -996,6 +1052,10 @@ paths:
     post:
       tags: [Auth]
       summary: 用户登录
+      description: |
+        Creates a new session and returns an opaque token. The session is
+        trusted (30-day sliding) when `trustDevice` is true, otherwise short-
+        lived (7-day fixed).
       requestBody:
         required: true
         content:
@@ -1017,6 +1077,26 @@ paths:
                 $ref: '#/components/schemas/Error'
         '403':
           description: Account is deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Sign out the current session
+      description: |
+        Revokes the session identified by the Authorization header. The token
+        is immediately invalidated on the server and removed from cache.
+        Idempotent — returns 204 even if the session is already gone.
+      security:
+        - userAuth: []
+      responses:
+        '204':
+          description: Session revoked
+        '401':
+          description: Missing or invalid token
           content:
             application/json:
               schema:
@@ -1058,9 +1138,10 @@ paths:
       tags: [Auth]
       summary: Reset password with token
       description: |
-        Validates the reset token and sets a new password.
-        Returns a JWT so the user is logged in immediately.
-        Token is single-use and expires after 1 hour.
+        Validates the reset token, sets the new password, and revokes **all**
+        BROWSER sessions belonging to the user. MCP sessions are not touched.
+        The response does NOT include a token — the user must sign in again
+        with the new password. Token is single-use and expires after 1 hour.
       requestBody:
         required: true
         content:
@@ -1069,11 +1150,14 @@ paths:
               $ref: '#/components/schemas/ResetPasswordRequest'
       responses:
         '200':
-          description: Password reset successful, returns JWT and user profile
+          description: Password reset successful. All browser sessions revoked.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
+                type: object
+                properties:
+                  message:
+                    type: string
         '400':
           description: Invalid or expired token
           content:
@@ -1439,6 +1523,83 @@ paths:
                               type: string
                             name:
                               type: string
+
+  /users/me/sessions:
+    get:
+      tags: [Users]
+      summary: List the current user's active sessions
+      description: |
+        Returns all BROWSER and MCP sessions belonging to the authenticated
+        user. The session matching the current request is flagged with
+        `isCurrent: true`. Ordered by `lastSeenAt` descending.
+      security:
+        - userAuth: []
+      responses:
+        '200':
+          description: Session list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SessionInfo'
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags: [Users]
+      summary: Revoke all other sessions
+      description: |
+        Signs out every session belonging to the current user **except** the
+        one making this request. Useful for "sign out of all other devices"
+        after a security concern.
+      security:
+        - userAuth: []
+      responses:
+        '204':
+          description: Other sessions revoked
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/me/sessions/{id}:
+    delete:
+      tags: [Users]
+      summary: Revoke a specific session
+      description: |
+        Signs out the session with the given ID. Must belong to the current
+        user. Revoking the current session works — the caller's token is
+        immediately invalidated (equivalent to /auth/logout).
+      security:
+        - userAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Session revoked
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Session not found or not owned by caller
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   # ══════════════════════════════════════════════════════
   # SCHOOLS (公开接口，无需登录)

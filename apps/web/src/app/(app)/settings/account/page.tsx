@@ -107,7 +107,7 @@ export default function AccountPage() {
     try {
       await deleteAccount(token);
       toast.success(t("accountDeleted"));
-      logout();
+      await logout();
       router.push("/login");
     } catch (err) {
       const message =

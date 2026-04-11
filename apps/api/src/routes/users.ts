@@ -3,7 +3,7 @@ import type { MiddlewareHandler } from "hono";
 import { Hono } from "hono";
 import { z } from "zod";
 import { verifyCaptcha } from "../lib/captcha.js";
-import { requireAuthUser } from "../lib/context.js";
+import { requireAuthSession, requireAuthUser } from "../lib/context.js";
 import { uploadObject } from "../lib/storage.js";
 import { authMiddleware } from "../middleware/auth.js";
 import {
@@ -15,6 +15,11 @@ import {
 	listMcpKeys,
 	revokeMcpKey,
 } from "../services/mcp-key.service.js";
+import {
+	listUserSessions,
+	revokeAllBrowserSessions,
+	revokeSession,
+} from "../services/session.service.js";
 import {
 	getUnreadNotificationCount,
 	listMyNotifications,
@@ -99,12 +104,48 @@ usersRouter.post("/me/email/confirm", async (c) => {
 
 usersRouter.patch("/me/password", async (c) => {
 	const authUser = requireAuthUser(c);
+	const session = requireAuthSession(c);
 	const body = updatePasswordSchema.parse(await c.req.json());
 	await updateMyPassword(
 		authUser.userId,
 		body.currentPassword,
 		body.newPassword,
+		session.id,
 	);
+	return c.body(null, 204);
+});
+
+// ── Session management ─────────────────────────────────────────────────────
+
+usersRouter.get("/me/sessions", async (c) => {
+	const authUser = requireAuthUser(c);
+	const session = requireAuthSession(c);
+	const sessions = await listUserSessions(authUser.userId, session.id);
+	return c.json(sessions, 200);
+});
+
+usersRouter.delete("/me/sessions", async (c) => {
+	const authUser = requireAuthUser(c);
+	const session = requireAuthSession(c);
+	// Delete all BROWSER sessions for the user except the current one. MCP
+	// sessions are revoked via the MCP keys UI.
+	await revokeAllBrowserSessions(authUser.userId, session.id);
+	return c.body(null, 204);
+});
+
+usersRouter.delete("/me/sessions/:sessionId", async (c) => {
+	const authUser = requireAuthUser(c);
+	const sessionId = c.req.param("sessionId");
+
+	// Make sure the target session belongs to this user before revoking.
+	// Reuse listUserSessions so the ownership check and the cache-keyed delete
+	// share the same loader.
+	const mine = await listUserSessions(authUser.userId, "");
+	const target = mine.find((s) => s.id === sessionId);
+	if (!target) {
+		return c.json({ error: "Session not found", code: "NOT_FOUND" }, 404);
+	}
+	await revokeSession(sessionId);
 	return c.body(null, 204);
 });
 
