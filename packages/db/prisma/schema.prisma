@@ -52,6 +52,7 @@ model User {
   avatarAttachment   Attachment[]         @relation("UserAvatar")
   notificationJobs   NotificationJob[]
   mcpKeys            McpKey[]
+  sessions           Session[]
   comments           Comment[]            @relation("CommentAuthor")
   commentReplies     Comment[]            @relation("CommentReplyTarget")
 
@@ -366,7 +367,42 @@ model McpKey {
   userId String @map("user_id")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  sessions Session[]
+
   @@map("mcp_keys")
+}
+
+// ─── Sessions ───────────────────────────────────────────────────────────────
+
+model Session {
+  id         String      @id @default(uuid())
+  userId     String      @map("user_id")
+  tokenHash  String      @unique @map("token_hash")
+  kind       SessionKind @default(BROWSER)
+  mcpKeyId   String?     @map("mcp_key_id")
+  isTrusted  Boolean     @default(false) @map("is_trusted")
+
+  userAgent  String? @map("user_agent") @db.VarChar(512)
+  ipAddress  String? @map("ip_address") @db.VarChar(45)
+
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  lastSeenAt DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz
+  // null 表示永不过期（仅 MCP 类型 session 允许）
+  expiresAt  DateTime? @map("expires_at") @db.Timestamptz
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mcpKey McpKey? @relation(fields: [mcpKeyId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+enum SessionKind {
+  BROWSER
+  MCP
+
+  @@map("session_kind")
 }
 
 // ─── System Config ───────────────────────────────────────────────────────────

@@ -3,6 +3,12 @@ import path from "node:path";
 import { prisma } from "@taskflow/db";
 import dotenv from "dotenv";
 
+import {
+	createUserWithPersonalClass,
+	type RegisterInput,
+	type SessionMetadata,
+} from "../services/auth.service.js";
+
 const repoRoot = path.resolve(process.cwd(), "../../");
 const testEnvPath = path.join(repoRoot, ".env.test");
 const fallbackEnvPath = path.join(repoRoot, ".env");
@@ -10,10 +16,6 @@ const fallbackEnvPath = path.join(repoRoot, ".env");
 dotenv.config({
 	path: fs.existsSync(testEnvPath) ? testEnvPath : fallbackEnvPath,
 });
-
-if (!process.env.JWT_SECRET) {
-	process.env.JWT_SECRET = "test-jwt-secret";
-}
 
 if (!process.env.ADMIN_TOKEN) {
 	process.env.ADMIN_TOKEN = "test-admin-token";
@@ -82,6 +84,7 @@ export async function resetDatabase() {
       classes,
       user_notification_prefs,
       user_credentials,
+      sessions,
       users,
       schools,
       system_config
@@ -125,6 +128,39 @@ export async function requestJson(
 		response,
 		body: await json(response),
 	};
+}
+
+/**
+ * Creates a user, personal class, credential, and browser session directly
+ * via the auth service — bypassing the two-step email verification flow
+ * that the live `/auth/register` route uses. Returns the same
+ * `{ token, user }` shape as `/auth/register/complete` so tests can treat
+ * this like a registration result.
+ */
+export async function createTestUser(
+	input: Partial<RegisterInput> & { emailPrefix?: string } = {},
+	sessionOverrides: Partial<SessionMetadata> = {},
+) {
+	const meta: SessionMetadata = {
+		trustDevice: false,
+		userAgent: "vitest",
+		ipAddress: "127.0.0.1",
+		...sessionOverrides,
+	};
+
+	const result = await createUserWithPersonalClass(
+		{
+			email: input.email ?? uniqueEmail(input.emailPrefix ?? "user"),
+			password: input.password ?? "Passw0rd!",
+			nickname: input.nickname ?? null,
+			schoolId: input.schoolId ?? null,
+			studentId: input.studentId ?? null,
+			timezone: input.timezone,
+		},
+		meta,
+	);
+
+	return result;
 }
 
 export async function requestAny(

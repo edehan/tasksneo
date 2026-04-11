@@ -5,6 +5,7 @@
       "profile": "Profil",
       "notifications": "Notifications",
       "account": "Compte",
+      "sessions": "Sessions",
       "mcpKeys": "Clés MCP"
     }
   },
@@ -41,6 +42,7 @@
     "invalidOrExpiredLink": "Ce lien est invalide ou a expire.",
     "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
     "passwordResetFailed": "La reinitialisation a echoue",
+    "passwordResetSuccess": "Mot de passe reinitialise. Connectez-vous avec votre nouveau mot de passe.",
     "linkExpired": "Lien expire",
     "requestNewLink": "Demander un nouveau lien",
     "setNewPassword": "Definir un nouveau mot de passe",
@@ -107,7 +109,9 @@
     "signingIn": "Connexion...",
     "signIn": "Se connecter",
     "noAccount": "Vous n'avez pas de compte ?",
-    "signUp": "S'inscrire"
+    "signUp": "S'inscrire",
+    "trustDevice": "Faire confiance a cet appareil",
+    "trustDeviceHint": "Conserver la connexion sur ce navigateur pendant 30 jours maximum. Laissez cette option desactivee sur un appareil partage ou public."
   },
   "authRegister": {
     "registrationFailed": "Echec de l'inscription",
@@ -806,6 +810,35 @@
     },
     "steps": "Étapes",
     "command": "Commande"
+  },
+  "settingsSessions": {
+    "title": "Sessions actives",
+    "description": "Sessions de navigateur actuellement connectees a votre compte. Les connexions MCP sont listees separement ci-dessous.",
+    "noBrowsers": "Aucune session de navigateur active.",
+    "current": "Cet appareil",
+    "trusted": "Fiable",
+    "signOut": "Se deconnecter",
+    "signOutOthers": "Deconnecter les autres sessions navigateur",
+    "signOutOthersTitle": "Deconnecter les autres sessions navigateur ?",
+    "signOutOthersDescription": "Toutes les autres sessions navigateur seront deconnectees immediatement. Cet appareil restera connecte. Les clés MCP et les connexions MCP ne sont pas affectees.",
+    "lastActive": "Derniere activite",
+    "justNow": "a l'instant",
+    "hoursAgo": "il y a {count} {count, plural, one {heure} other {heures}}",
+    "yesterday": "hier",
+    "daysAgo": "il y a {count} jours",
+    "unknownDevice": "Appareil inconnu",
+    "mcpTitle": "Connexions MCP",
+    "mcpDescription": "Outils IA connectes via des clés MCP. Se deconnecter ici termine uniquement cette connexion.",
+    "mcpHint": "Pour desactiver definitivement une clé et couper toutes ses connexions, revoquez-la depuis l'onglet Clés MCP.",
+    "unknownMcpKey": "Clé sans nom",
+    "revokeTitle": "Se deconnecter de cette session ?",
+    "revokeBrowserDescription": "Ce navigateur sera deconnecte immediatement. La personne devra se reconnecter.",
+    "revokeMcpDescription": "Se deconnecter de la session pour \"{name}\" ? La clé sous-jacente reste active et peut encore creer de nouvelles sessions.",
+    "cancel": "Annuler",
+    "revoked": "Session deconnectee",
+    "revokedOthers": "Autres sessions deconnectees",
+    "failedLoad": "Echec du chargement des sessions",
+    "failedRevoke": "Echec de la deconnexion de la session"
   },
   "batchDownloadDialog": {
     "title": "Telecharger les rendus",

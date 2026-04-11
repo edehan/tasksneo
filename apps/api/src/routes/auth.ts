@@ -1,8 +1,11 @@
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { z } from "zod";
 
 import { verifyCaptcha } from "../lib/captcha.js";
-import { login } from "../services/auth.service.js";
+import { requireAuthSession } from "../lib/context.js";
+import { getClientIp } from "../lib/http.js";
+import { authMiddleware } from "../middleware/auth.js";
+import { login, type SessionMetadata } from "../services/auth.service.js";
 import {
 	completeRegistration,
 	resetPassword,
@@ -12,6 +15,8 @@ import {
 	verifyRegistrationToken,
 } from "../services/email-verification.service.js";
 import { exchangeMcpKey } from "../services/mcp-key.service.js";
+import { revokeSession } from "../services/session.service.js";
+import type { AppVariables } from "../types/context.js";
 
 const registerStep1Schema = z.object({
 	email: z.string().email(),
@@ -25,11 +30,13 @@ const registerCompleteSchema = z.object({
 	schoolId: z.string().uuid().optional().nullable(),
 	studentId: z.string().optional().nullable(),
 	timezone: z.string().max(64).optional(),
+	trustDevice: z.boolean().optional(),
 });
 
 const loginBodySchema = z.object({
 	email: z.string().email(),
 	password: z.string(),
+	trustDevice: z.boolean().optional(),
 });
 
 const forgotPasswordSchema = z.object({
@@ -50,7 +57,18 @@ const verifyTokenSchema = z.object({
 	purpose: z.enum(["REGISTRATION", "PASSWORD_RESET"]),
 });
 
-export const authRouter = new Hono();
+export const authRouter = new Hono<{ Variables: AppVariables }>();
+
+function readSessionMeta(
+	c: Context,
+	trustDevice: boolean | undefined,
+): SessionMetadata {
+	return {
+		trustDevice: trustDevice === true,
+		userAgent: c.req.header("user-agent") ?? null,
+		ipAddress: getClientIp(c),
+	};
+}
 
 // Step 1: send verification email
 authRouter.post("/register", async (c) => {
@@ -63,20 +81,34 @@ authRouter.post("/register", async (c) => {
 // Step 2: complete registration after email verification
 authRouter.post("/register/complete", async (c) => {
 	const body = registerCompleteSchema.parse(await c.req.json());
-	const result = await completeRegistration(body.token, {
-		password: body.password,
-		nickname: body.nickname,
-		schoolId: body.schoolId,
-		studentId: body.studentId,
-		timezone: body.timezone,
-	});
+	const result = await completeRegistration(
+		body.token,
+		{
+			password: body.password,
+			nickname: body.nickname,
+			schoolId: body.schoolId,
+			studentId: body.studentId,
+			timezone: body.timezone,
+		},
+		readSessionMeta(c, body.trustDevice),
+	);
 	return c.json(result, 201);
 });
 
 authRouter.post("/login", async (c) => {
 	const body = loginBodySchema.parse(await c.req.json());
-	const result = await login(body);
+	const result = await login({
+		email: body.email,
+		password: body.password,
+		sessionMeta: readSessionMeta(c, body.trustDevice),
+	});
 	return c.json(result, 200);
+});
+
+authRouter.post("/logout", authMiddleware, async (c) => {
+	const session = requireAuthSession(c);
+	await revokeSession(session.id);
+	return c.body(null, 204);
 });
 
 authRouter.post("/forgot-password", async (c) => {
@@ -97,7 +129,10 @@ authRouter.post("/reset-password", async (c) => {
 
 authRouter.post("/mcp", async (c) => {
 	const body = mcpKeySchema.parse(await c.req.json());
-	const result = await exchangeMcpKey(body.key);
+	const result = await exchangeMcpKey(body.key, {
+		userAgent: c.req.header("user-agent") ?? null,
+		ipAddress: getClientIp(c),
+	});
 	return c.json(result, 200);
 });
 

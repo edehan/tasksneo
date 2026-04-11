@@ -12,7 +12,7 @@ interface AppHeaderProps {
 
 export function AppHeader({ breadcrumbs, children }: AppHeaderProps) {
   return (
-    <header className="grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_minmax(16rem,42rem)_auto] items-center gap-3 border-b px-4">
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
       <div className="flex min-w-0 items-center gap-3">
         <SidebarTrigger className="-ml-1 shrink-0" />
         {breadcrumbs && breadcrumbs.length > 0 && (
@@ -36,11 +36,11 @@ export function AppHeader({ breadcrumbs, children }: AppHeaderProps) {
         )}
       </div>
 
-      <div className="min-w-0">
+      <div className="ml-auto min-w-0">
         <GlobalSearchInput />
       </div>
 
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex shrink-0 items-center justify-end gap-2">
         <NotificationBell />
         {children}
       </div>

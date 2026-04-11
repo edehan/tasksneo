@@ -8,7 +8,7 @@ Hono + Node.js REST API. See root `CLAUDE.md` for project overview.
 src/
   index.ts          # Entry point, registers all routers
   routes/           # One file per resource (auth.ts, classes.ts, tasks.ts, ...)
-  middleware/        # auth.ts (JWT), admin.ts (ADMIN_TOKEN), error.ts
+  middleware/        # auth.ts (opaque session tokens), admin.ts (ADMIN_TOKEN), error.ts
   services/         # Business logic, called by routes (no Prisma in routes directly)
   lib/              # db.ts, minio.ts, mailer.ts, llm.ts, queue.ts
 ```

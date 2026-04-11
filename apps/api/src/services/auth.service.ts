@@ -1,10 +1,9 @@
 import { AuthProvider, ClassRole, prisma } from "@taskflow/db";
 import bcrypt from "bcryptjs";
 
-import { getJwtSecret } from "../lib/env.js";
 import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
-import { signUserJwt } from "../lib/jwt.js";
+import { createBrowserSession } from "./session.service.js";
 import { assertRegistrationOpen } from "./system-config.service.js";
 
 const SALT_ROUNDS = 10;
@@ -19,16 +18,26 @@ export interface RegisterInput {
 	timezone?: string;
 }
 
+export interface SessionMetadata {
+	trustDevice: boolean;
+	userAgent: string | null;
+	ipAddress: string | null;
+}
+
 export interface LoginInput {
 	email: string;
 	password: string;
+	sessionMeta: SessionMetadata;
 }
 
 /**
  * Shared helper: creates user, credential, and personal class in a transaction.
  * Used by both direct registration and email-verified registration.
  */
-export async function createUserWithPersonalClass(input: RegisterInput) {
+export async function createUserWithPersonalClass(
+	input: RegisterInput,
+	sessionMeta: SessionMetadata,
+) {
 	await assertRegistrationOpen();
 
 	if (input.schoolId && !input.studentId) {
@@ -120,17 +129,24 @@ export async function createUserWithPersonalClass(input: RegisterInput) {
 		throw new AppError(500, "USER_NOT_FOUND", "Failed to load created user");
 	}
 
+	const { token } = await createBrowserSession({
+		userId: fullUser.id,
+		isTrusted: sessionMeta.trustDevice,
+		userAgent: sessionMeta.userAgent,
+		ipAddress: sessionMeta.ipAddress,
+	});
+
 	return {
-		token: signUserJwt(
-			{ sub: fullUser.id, email: fullUser.email },
-			getJwtSecret(),
-		),
+		token,
 		user: toUserProfile(fullUser),
 	};
 }
 
-export async function register(input: RegisterInput) {
-	return createUserWithPersonalClass(input);
+export async function register(
+	input: RegisterInput,
+	sessionMeta: SessionMetadata,
+) {
+	return createUserWithPersonalClass(input, sessionMeta);
 }
 
 export async function login(input: LoginInput) {
@@ -171,8 +187,15 @@ export async function login(input: LoginInput) {
 		throw new AppError(401, "INVALID_CREDENTIALS", "Invalid email or password");
 	}
 
+	const { token } = await createBrowserSession({
+		userId: user.id,
+		isTrusted: input.sessionMeta.trustDevice,
+		userAgent: input.sessionMeta.userAgent,
+		ipAddress: input.sessionMeta.ipAddress,
+	});
+
 	return {
-		token: signUserJwt({ sub: user.id, email: user.email }, getJwtSecret()),
+		token,
 		user: toUserProfile(user),
 	};
 }

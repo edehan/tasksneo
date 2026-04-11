@@ -15,15 +15,14 @@
 - **No dynamic field schemas.** Grading fields are fixed columns on `submissions`.
 - **Credentials are separated from identity** to support future OAuth providers without schema migration.
 - **Admin is not a database entity.** `/admin` routes are authenticated by `ADMIN_TOKEN` env var only.
-- **Sensitive system config is encrypted at rest.** Secret values in `system_config` use `SYSTEM_CONFIG_SECRET`, which is intentionally separate from both `ADMIN_TOKEN` and `JWT_SECRET`.
+- **Sensitive system config is encrypted at rest.** Secret values in `system_config` use `SYSTEM_CONFIG_SECRET`, which is intentionally separate from `ADMIN_TOKEN`.
 - **Application layer enforces business rules** that cannot be expressed as database constraints in Prisma (conditional uniqueness, cross-field validation). These are noted per table below.
 
 ### Runtime Secrets
 
-The backend currently relies on three runtime secrets with different responsibilities:
+The backend currently relies on two runtime secrets with different responsibilities:
 
 - `ADMIN_TOKEN`: authenticates `/admin` requests only.
-- `JWT_SECRET`: signs and verifies normal user JWTs.
 - `SYSTEM_CONFIG_SECRET`: encrypts and decrypts sensitive `system_config` entries such as SMTP and LLM credentials.
 
 These secrets should not be reused for each other. In particular, rotating `ADMIN_TOKEN` must not invalidate encrypted config rows.
@@ -93,6 +92,79 @@ Authentication methods, separated from identity to support multiple providers pe
 - Rule "LOCAL must have passwordHash; OAuth must have providerUid" is enforced in the service layer.
 
 **v1**: Only `LOCAL` provider is implemented. `GOOGLE` and `GITHUB` enum values are reserved.
+
+---
+
+### email_verification_tokens
+
+Short-lived single-use tokens for registration, password reset, and email change flows.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | UUID PK | |
+| email | String | target email address |
+| token | String UNIQUE | opaque random token sent in email links |
+| purpose | Enum EmailTokenPurpose | `REGISTRATION` \| `PASSWORD_RESET` \| `EMAIL_CHANGE` |
+| userId | UUID? | present for password reset and email change |
+| expiresAt | DateTime | 1 hour TTL |
+| createdAt | DateTime | |
+
+**Operational rules**:
+- Tokens are single-use and deleted after successful consumption.
+- Rate limiting is enforced in the application layer by counting rows per `(email, purpose)` over the trailing 24 hours.
+- These tokens live in PostgreSQL, not Redis, so email flows continue to match the server-side source of truth model.
+
+---
+
+### mcp_keys
+
+Long-lived credentials that let external AI tools mint MCP sessions on behalf of a user.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | UUID PK | |
+| userId | UUID FK → users | CASCADE on delete |
+| name | String | user-facing label, e.g. `Claude Desktop` |
+| keyHash | String | SHA-256 of the raw key; raw key is never stored |
+| keyPrefix | String | short prefix shown in UI for identification |
+| lastUsedAt | DateTime? | updated when `/auth/mcp` exchanges the key |
+| expiresAt | DateTime? | null = no expiry |
+| createdAt | DateTime | |
+| revokedAt | DateTime? | null = active |
+
+**Operational rules**:
+- Raw keys are shown once at creation time, then discarded.
+- Revoking a key must immediately revoke all `sessions.kind = MCP` rows tied to that key.
+- Password changes, password resets, and “sign out other browser sessions” do **not** revoke MCP keys.
+
+---
+
+### sessions
+
+Server-side authentication state for both browsers and MCP clients.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | UUID PK | |
+| userId | UUID FK → users | CASCADE on delete |
+| tokenHash | String UNIQUE | SHA-256 of opaque token `tfses_<random>` |
+| kind | Enum SessionKind | `BROWSER` \| `MCP` |
+| mcpKeyId | UUID? FK → mcp_keys | set only for MCP sessions |
+| isTrusted | Boolean | true only for trusted browser sessions |
+| userAgent | String? | up to 512 chars |
+| ipAddress | String? | up to 45 chars |
+| createdAt | DateTime | |
+| lastSeenAt | DateTime | touched with 1 hour debounce for browser sessions |
+| expiresAt | DateTime? | null allowed only for MCP sessions tied to non-expiring keys |
+
+**Operational rules**:
+- The database is the source of truth for session validity; no Redis auth cache sits in front of it.
+- Untrusted browser sessions expire after 7 days and do not slide.
+- Trusted browser sessions expire after 30 days and slide forward on touch.
+- MCP sessions inherit the underlying key expiry and are not touched on each request.
+- `POST /auth/logout` deletes the current session row.
+- `DELETE /users/me/sessions` deletes only other browser sessions.
+- `DELETE /users/me/sessions/{id}` can revoke either a browser session or an MCP session owned by the caller.
 
 ---
 
@@ -325,6 +397,7 @@ Key-value store for runtime configuration. Managed exclusively via `/admin`. No 
 | Delete submission | Submission row + its attachments | FK CASCADE on attachments |
 | Delete school | `schoolId` set NULL on affected users and classes | FK SET NULL |
 | Delete reviewer | `reviewerId` set NULL on affected submissions | FK SET NULL |
+| Revoke MCP key | Deletes MCP sessions minted from that key | Application layer + FK cascade |
 
 ---
 
@@ -351,6 +424,31 @@ erDiagram
         text provider
         text provider_uid
         text password_hash
+    }
+    email_verification_tokens {
+        uuid id PK
+        text email
+        text token UK
+        text purpose
+        uuid user_id
+        timestamptz expires_at
+    }
+    mcp_keys {
+        uuid id PK
+        uuid user_id FK
+        text name
+        text key_hash
+        text key_prefix
+        timestamptz revoked_at
+    }
+    sessions {
+        uuid id PK
+        uuid user_id FK
+        text token_hash UK
+        text kind
+        uuid mcp_key_id FK
+        bool is_trusted
+        timestamptz expires_at
     }
     user_notification_prefs {
         uuid id PK
@@ -426,6 +524,10 @@ erDiagram
     schools ||--o{ users : "enrolled in"
     schools ||--o{ classes : "restricts join"
     users ||--o{ user_credentials : "authenticates via"
+    users ||--o{ email_verification_tokens : "verifies"
+    users ||--o{ mcp_keys : "owns"
+    users ||--o{ sessions : "authenticates via"
+    mcp_keys ||--o{ sessions : "mints MCP sessions"
     users ||--o{ user_notification_prefs : "configures"
     users ||--o{ classes : "owns"
     users ||--o{ class_members : "member via"

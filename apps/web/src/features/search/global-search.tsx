@@ -113,8 +113,14 @@ const GROUP_ORDER_MAP = new Map(
 );
 const MAX_RESULTS = 24;
 const BACKGROUND_BATCH_SIZE = 3;
-const LIGHT_REFRESH_INTERVAL_MS = 2 * 60 * 1000;
 const DEFAULT_CLASS_COLOR = "#8B7355";
+const SEARCH_CACHE_TTL_MS = 10 * 60 * 1000;
+const SEARCH_CACHE_KEY_PREFIX = "taskflow_global_search_v1";
+
+interface SearchCachePayload {
+  cachedAt: number;
+  docs: SearchDocument[];
+}
 
 function normalizeForSearch(value: string): string {
   return value
@@ -174,6 +180,43 @@ function submissionRoute(submissionId: string): string {
 
 function memberRoute(classId: string): string {
   return `/classes/${classId}/members`;
+}
+
+function getSearchCacheKey(userId: string): string {
+  return `${SEARCH_CACHE_KEY_PREFIX}:${userId}`;
+}
+
+function readSearchCache(userId: string): SearchCachePayload | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(getSearchCacheKey(userId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as SearchCachePayload;
+    if (typeof parsed.cachedAt !== "number" || !Array.isArray(parsed.docs)) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeSearchCache(userId: string, docs: SearchDocument[]): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    const payload: SearchCachePayload = {
+      cachedAt: Date.now(),
+      docs,
+    };
+    window.localStorage.setItem(
+      getSearchCacheKey(userId),
+      JSON.stringify(payload),
+    );
+  } catch {
+    // Ignore browser storage failures.
+  }
 }
 
 function toClassDocument(cls: ClassSummary): SearchDocument {
@@ -519,7 +562,7 @@ export function GlobalSearchProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [documents, setDocuments] = useState<SearchDocument[]>([]);
@@ -528,8 +571,8 @@ export function GlobalSearchProvider({
 
   const deferredQuery = useDeferredValue(query);
   const refreshGenerationRef = useRef(0);
-  const lastRefreshRef = useRef<number | null>(null);
   const documentsRef = useRef<SearchDocument[]>([]);
+  const cacheHydratedRef = useRef(false);
 
   useEffect(() => {
     documentsRef.current = documents;
@@ -567,7 +610,7 @@ export function GlobalSearchProvider({
 
   const runRefresh = useCallback(
     async (mode: RefreshMode) => {
-      if (!token) return;
+      if (!token || !user?.id) return;
 
       const generation = refreshGenerationRef.current + 1;
       refreshGenerationRef.current = generation;
@@ -584,9 +627,9 @@ export function GlobalSearchProvider({
           setDocuments(snapshot.docs);
           setPhase(snapshot.taskRecords.length > 0 ? "enriching" : "ready");
         });
+        writeSearchCache(user.id, snapshot.docs);
 
         const refreshedAt = Date.now();
-        lastRefreshRef.current = refreshedAt;
         setLastRefreshAt(refreshedAt);
 
         if (snapshot.taskRecords.length === 0) return;
@@ -626,10 +669,12 @@ export function GlobalSearchProvider({
             setDocuments(mergedDocuments);
             setPhase("enriching");
           });
+          writeSearchCache(user.id, mergedDocuments);
         }
 
         if (refreshGenerationRef.current === generation) {
           setPhase("ready");
+          writeSearchCache(user.id, Array.from(nextDocuments.values()));
         }
       } catch {
         if (refreshGenerationRef.current === generation) {
@@ -637,7 +682,7 @@ export function GlobalSearchProvider({
         }
       }
     },
-    [token],
+    [token, user?.id],
   );
 
   const refresh = useCallback(async () => {
@@ -645,34 +690,36 @@ export function GlobalSearchProvider({
   }, [runRefresh]);
 
   useEffect(() => {
-    if (!token) {
+    if (!token || !user?.id) {
       refreshGenerationRef.current += 1;
       setDocuments([]);
       setPhase("idle");
       setLastRefreshAt(null);
-      lastRefreshRef.current = null;
+      cacheHydratedRef.current = false;
+      return;
+    }
+  }, [token, user?.id]);
+
+  useEffect(() => {
+    if (!open || !token || !user?.id) return;
+
+    const cached = readSearchCache(user.id);
+    const hasFreshCache =
+      cached !== null && Date.now() - cached.cachedAt < SEARCH_CACHE_TTL_MS;
+
+    if (!cacheHydratedRef.current && cached) {
+      setDocuments(cached.docs);
+      setLastRefreshAt(cached.cachedAt);
+      setPhase(hasFreshCache ? "ready" : "enriching");
+      cacheHydratedRef.current = true;
+    }
+
+    if (hasFreshCache || phase === "loading" || phase === "enriching") {
       return;
     }
 
-    void runRefresh("full");
-  }, [runRefresh, token]);
-
-  useEffect(() => {
-    if (!token) return;
-
-    function handleFocus() {
-      const lastRefresh = lastRefreshRef.current;
-      if (
-        !lastRefresh ||
-        Date.now() - lastRefresh > LIGHT_REFRESH_INTERVAL_MS
-      ) {
-        void runRefresh("lightweight");
-      }
-    }
-
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-  }, [runRefresh, token]);
+    void runRefresh(cached ? "lightweight" : "full");
+  }, [open, phase, runRefresh, token, user?.id]);
 
   const value = useMemo<GlobalSearchContextValue>(
     () => ({
