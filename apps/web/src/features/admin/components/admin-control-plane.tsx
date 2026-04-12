@@ -1,6 +1,16 @@
 "use client";
 
-import { Loader2, LogOut, Megaphone, Moon, Send, Sun, X } from "lucide-react";
+import {
+  Activity,
+  Loader2,
+  LogOut,
+  Megaphone,
+  Moon,
+  RefreshCw,
+  Send,
+  Sun,
+  X,
+} from "lucide-react";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -45,6 +55,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
   type AdminAnnouncement,
+  type AdminMetrics,
   type AdminSchool,
   ApiError,
   cancelAdminAnnouncement,
@@ -52,6 +63,7 @@ import {
   createAdminSchool,
   deleteAdminSchool,
   getAdminConfig,
+  getAdminMetrics,
   getAdminStorageStatus,
   listAdminAnnouncements,
   listAdminSchools,
@@ -259,6 +271,9 @@ export function AdminControlPlane() {
   const [announcementCreating, setAnnouncementCreating] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
+  const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
+  const [metricsLoading, setMetricsLoading] = useState(false);
+
   const { resolvedTheme, setTheme } = useTheme();
 
   const filteredUsers = useMemo(() => {
@@ -275,16 +290,23 @@ export function AdminControlPlane() {
   const loadAdminData = useCallback(async (adminToken: string) => {
     setDataLoading(true);
     try {
-      const [config, adminUsers, adminSchools, storage, adminAnnouncements] =
-        await Promise.all([
-          getAdminConfig(adminToken),
-          listAdminUsers(adminToken),
-          listAdminSchools(adminToken),
-          getAdminStorageStatus(adminToken).catch(() => null),
-          listAdminAnnouncements(adminToken).catch(
-            () => [] as AdminAnnouncement[],
-          ),
-        ]);
+      const [
+        config,
+        adminUsers,
+        adminSchools,
+        storage,
+        adminAnnouncements,
+        initialMetrics,
+      ] = await Promise.all([
+        getAdminConfig(adminToken),
+        listAdminUsers(adminToken),
+        listAdminSchools(adminToken),
+        getAdminStorageStatus(adminToken).catch(() => null),
+        listAdminAnnouncements(adminToken).catch(
+          () => [] as AdminAnnouncement[],
+        ),
+        getAdminMetrics(adminToken).catch(() => null),
+      ]);
 
       const normalized = normalizeConfig(config);
       setConfigInitial(normalized);
@@ -293,10 +315,27 @@ export function AdminControlPlane() {
       setSchools(adminSchools);
       if (storage) setStorageStatus(storage);
       setAnnouncements(adminAnnouncements);
+      setMetrics(initialMetrics);
     } finally {
       setDataLoading(false);
     }
   }, []);
+
+  const refreshMetrics = useCallback(async () => {
+    if (!token) return;
+    setMetricsLoading(true);
+    try {
+      const snapshot = await getAdminMetrics(token);
+      setMetrics(snapshot);
+    } catch (error) {
+      setNotice({
+        tone: "error",
+        message: `Failed to load metrics: ${getErrorMessage(error)}`,
+      });
+    } finally {
+      setMetricsLoading(false);
+    }
+  }, [token]);
 
   const authenticate = useCallback(
     async (nextToken: string) => {
@@ -684,6 +723,7 @@ export function AdminControlPlane() {
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="schools">Schools</TabsTrigger>
           <TabsTrigger value="announcements">Announcements</TabsTrigger>
+          <TabsTrigger value="metrics">Metrics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="config" className="space-y-6">
@@ -1170,6 +1210,157 @@ export function AdminControlPlane() {
             </CardContent>
           </Card>
         </TabsContent>
+        <TabsContent value="metrics">
+          <Card>
+            <CardHeader className="flex flex-row items-start justify-between gap-4">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-4 w-4" />
+                  Runtime Metrics
+                </CardTitle>
+                <CardDescription>
+                  In-memory snapshot from{" "}
+                  <code className="font-mono text-xs">/admin/metrics</code>.
+                  Request counts, status distribution, and per-route p50/p95/p99
+                  latency since process start. Resets on restart.
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void refreshMetrics()}
+                disabled={metricsLoading || !token}
+              >
+                {metricsLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                Refresh
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {!metrics ? (
+                <p className="text-sm text-muted-foreground">
+                  No metrics snapshot loaded. Click Refresh to fetch.
+                </p>
+              ) : (
+                <>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <MetricTile
+                      label="Uptime"
+                      value={formatUptime(metrics.uptime_s)}
+                    />
+                    <MetricTile
+                      label="Total Requests"
+                      value={metrics.requests_total.toLocaleString()}
+                    />
+                    <MetricTile
+                      label="Error Rate"
+                      value={formatErrorRate(metrics.requests_by_status)}
+                      tone={
+                        errorRateNumber(metrics.requests_by_status) > 0.01
+                          ? "error"
+                          : "normal"
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                      Status Distribution
+                    </Label>
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(metrics.requests_by_status)
+                        .filter(([key]) => /^[1-5]xx$/.test(key))
+                        .sort(([a], [b]) => a.localeCompare(b))
+                        .map(([bucket, count]) => (
+                          <Badge
+                            key={bucket}
+                            variant="outline"
+                            className={statusBucketClass(bucket)}
+                          >
+                            {bucket}: {count.toLocaleString()}
+                          </Badge>
+                        ))}
+                      {Object.keys(metrics.requests_by_status).filter((k) =>
+                        /^[1-5]xx$/.test(k),
+                      ).length === 0 && (
+                        <span className="text-sm text-muted-foreground">
+                          No requests recorded yet.
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {metrics.routes.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Route</TableHead>
+                          <TableHead className="text-right">Count</TableHead>
+                          <TableHead className="text-right">Errors</TableHead>
+                          <TableHead className="text-right">p50 (ms)</TableHead>
+                          <TableHead className="text-right">p95 (ms)</TableHead>
+                          <TableHead className="text-right">p99 (ms)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {[...metrics.routes]
+                          .sort((a, b) => b.count - a.count)
+                          .map((r) => (
+                            <TableRow key={r.route}>
+                              <TableCell className="font-mono text-xs">
+                                {r.route}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {r.count.toLocaleString()}
+                              </TableCell>
+                              <TableCell
+                                className={cn(
+                                  "text-right",
+                                  r.errors > 0 &&
+                                    "font-semibold text-destructive",
+                                )}
+                              >
+                                {r.errors}
+                              </TableCell>
+                              <TableCell className="text-right font-mono text-xs">
+                                {r.p50_ms}
+                              </TableCell>
+                              <TableCell
+                                className={cn(
+                                  "text-right font-mono text-xs",
+                                  r.p95_ms > 500 &&
+                                    "text-amber-600 dark:text-amber-400",
+                                  r.p95_ms > 1000 && "text-destructive",
+                                )}
+                              >
+                                {r.p95_ms}
+                              </TableCell>
+                              <TableCell
+                                className={cn(
+                                  "text-right font-mono text-xs",
+                                  r.p99_ms > 1000 &&
+                                    "font-semibold text-destructive",
+                                )}
+                              >
+                                {r.p99_ms}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No per-route samples yet. Make a few requests and refresh.
+                    </p>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       <Dialog
@@ -1239,6 +1430,74 @@ export function AdminControlPlane() {
       </AlertDialog>
     </main>
   );
+}
+
+// ── Metrics Helpers ─────────────────────────────────────────────────────────
+
+function MetricTile({
+  label,
+  value,
+  tone = "normal",
+}: {
+  label: string;
+  value: string;
+  tone?: "normal" | "error";
+}) {
+  return (
+    <div className="rounded-md border bg-muted/30 p-3">
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
+      <div
+        className={cn(
+          "mt-1 font-serif text-2xl font-semibold",
+          tone === "error" && "text-destructive",
+        )}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function formatUptime(seconds: number): string {
+  if (seconds < 60) return `${Math.floor(seconds)}s`;
+  const mins = Math.floor(seconds / 60);
+  if (mins < 60) return `${mins}m ${Math.floor(seconds % 60)}s`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ${mins % 60}m`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ${hours % 24}h`;
+}
+
+function errorRateNumber(buckets: Record<string, number>): number {
+  const total = Object.entries(buckets)
+    .filter(([k]) => /^[1-5]xx$/.test(k))
+    .reduce((sum, [, v]) => sum + v, 0);
+  if (total === 0) return 0;
+  const errors = (buckets["4xx"] ?? 0) + (buckets["5xx"] ?? 0);
+  return errors / total;
+}
+
+function formatErrorRate(buckets: Record<string, number>): string {
+  const rate = errorRateNumber(buckets);
+  if (rate === 0) return "0%";
+  return `${(rate * 100).toFixed(2)}%`;
+}
+
+function statusBucketClass(bucket: string): string {
+  switch (bucket) {
+    case "2xx":
+      return "border-green-500/40 bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400";
+    case "3xx":
+      return "border-blue-500/40 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400";
+    case "4xx":
+      return "border-amber-500/40 bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400";
+    case "5xx":
+      return "border-destructive/50 bg-destructive/10 text-destructive";
+    default:
+      return "border-border bg-muted text-muted-foreground";
+  }
 }
 
 // ── Announcement Sub-components ─────────────────────────────────────────────

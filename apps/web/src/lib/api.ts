@@ -1224,6 +1224,26 @@ export async function getAdminStorageStatus(
   return apiRequest<StorageStatus>("/admin/storage-status", {}, token);
 }
 
+export interface AdminMetricsRoute {
+  route: string;
+  count: number;
+  errors: number;
+  p50_ms: number;
+  p95_ms: number;
+  p99_ms: number;
+}
+
+export interface AdminMetrics {
+  uptime_s: number;
+  requests_total: number;
+  requests_by_status: Record<string, number>;
+  routes: AdminMetricsRoute[];
+}
+
+export async function getAdminMetrics(token: string): Promise<AdminMetrics> {
+  return apiRequest<AdminMetrics>("/admin/metrics", {}, token);
+}
+
 export async function getAdminConfig(
   token: string,
 ): Promise<Record<string, string>> {
