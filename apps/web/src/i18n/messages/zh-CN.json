@@ -147,17 +147,12 @@
     "schoolOpenToAll": "面向所有学校",
     "memberCountLabel": "成员数",
     "memberCountValue": "{count} 人",
-    "readyBadge": "可加入",
-    "joinedBadge": "已加入",
-    "restrictedBadge": "受限",
     "reviewHint": "你可以先确认班级信息，再决定是否加入。",
     "alreadyJoinedHint": "你已经在这个班级里了，现在可以直接打开它。",
     "join": "加入班级",
     "openClass": "打开班级",
-    "cancel": "取消",
     "joining": "加入中...",
     "invalidInviteCode": "该邀请码无效或已过期。",
-    "alreadyMember": "你已经是这个班级的成员。",
     "schoolMismatch": "该班级限制为特定学校加入，与你的账号信息不匹配。",
     "joinFailed": "加入班级失败，请重试。",
     "loadPreviewFailed": "加载班级信息失败，请重试。",
@@ -622,7 +617,6 @@
       "placeholder": "描述你希望修改的内容...",
       "voiceInput": "语音输入",
       "connecting": "连接中...",
-      "recording": "录音中...",
       "stop": "停止",
       "submit": "改写",
       "submitting": "改写中..."
@@ -646,10 +640,7 @@
       },
       "cancel": "取消",
       "confirm": "延长",
-      "error": {
-        "invalidAmount": "请输入有效数字",
-        "mustExtend": "新的截止时间必须晚于当前截止时间"
-      }
+      "error": {}
     }
   },
   "attachmentSidebar": {
@@ -713,7 +704,6 @@
     "editBody": "编辑正文 →",
     "record": "Record",
     "connecting": "连接中...",
-    "recording": "Recording...",
     "stopRecording": "Stop"
   },
   "submissionsListPage": {
@@ -801,7 +791,6 @@
     "create": "创建",
     "secretKey": "密钥",
     "keyWontShowAgain": "此密钥不会再次显示，请立即复制。",
-    "configSnippet": "快速配置（Claude Code）",
     "copy": "复制",
     "done": "完成",
     "revokeTitle": "吊销密钥",
@@ -825,24 +814,14 @@
     "createDescription": "为密钥命名，以便日后识别。",
     "installCommandsHeading": "使用新密钥安装",
     "installCommandsHint": "选择下方任一客户端并执行命令。命令中已自动注入你的密钥。",
-    "guidesHeading": "连接你的 AI 工具",
-    "guidesIntro": "先创建并复制密钥，然后将下面任一安装命令粘贴到终端中执行。",
     "claudeCode": {
       "name": "Claude Code",
-      "tagline": "Anthropic 的终端 AI 编码助手",
-      "step1": "先创建并复制新密钥",
-      "step2": "将命令粘贴到终端执行",
-      "step3": "打开 Claude Code，即可使用 TaskFlow 工具"
+      "tagline": "Anthropic 的终端 AI 编码助手"
     },
     "openClaw": {
       "name": "OpenClaw",
-      "tagline": "开源自治 AI Agent",
-      "step1": "先创建并复制新密钥",
-      "step2": "将命令粘贴到终端执行",
-      "step3": "重启 OpenClaw 以加载 TaskFlow 服务器"
-    },
-    "steps": "步骤",
-    "command": "命令"
+      "tagline": "开源自治 AI Agent"
+    }
   },
   "settingsSessions": {
     "title": "活跃会话",
@@ -873,7 +852,6 @@
     "failedLoad": "加载会话失败",
     "failedRevoke": "登出会话失败"
   },
-
   "batchDownloadDialog": {
     "title": "下载提交内容",
     "description": "{count} 名学生有可下载内容",
@@ -916,10 +894,8 @@
   "commentSection": {
     "title": "讨论",
     "placeholder": "写下评论...",
-    "send": "发送",
     "reply": "回复",
     "replyingTo": "回复 {name}",
-    "cancelReply": "取消",
     "noComments": "还没有评论，来开启讨论吧！",
     "failedToLoad": "加载评论失败",
     "failedToSend": "发送评论失败",

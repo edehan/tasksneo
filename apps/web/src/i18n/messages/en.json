@@ -147,17 +147,12 @@
     "schoolOpenToAll": "Open to all schools",
     "memberCountLabel": "Members",
     "memberCountValue": "{count} members",
-    "readyBadge": "Open",
-    "joinedBadge": "Joined",
-    "restrictedBadge": "Restricted",
     "reviewHint": "Review the class details before you join.",
     "alreadyJoinedHint": "You already belong to this class. You can open it directly.",
     "join": "Join Class",
     "openClass": "Open Class",
-    "cancel": "Cancel",
     "joining": "Joining...",
     "invalidInviteCode": "This invite code is invalid or has expired.",
-    "alreadyMember": "You are already a member of this class.",
     "schoolMismatch": "This class is restricted to a school that does not match your account.",
     "joinFailed": "Failed to join class. Please try again.",
     "loadPreviewFailed": "Failed to load class details. Please try again.",
@@ -622,7 +617,6 @@
       "placeholder": "Describe the changes you want...",
       "voiceInput": "Voice Input",
       "connecting": "Connecting...",
-      "recording": "Recording...",
       "stop": "Stop",
       "submit": "Rewrite",
       "submitting": "Rewriting..."
@@ -646,10 +640,7 @@
       },
       "cancel": "Cancel",
       "confirm": "Extend",
-      "error": {
-        "invalidAmount": "Please enter a valid number",
-        "mustExtend": "New deadline must be later than current"
-      }
+      "error": {}
     }
   },
   "attachmentSidebar": {
@@ -686,7 +677,6 @@
     "aiParse": "AI Parse",
     "record": "Record",
     "connecting": "Connecting...",
-    "recording": "Recording...",
     "stopRecording": "Stop",
     "timeOptions": {
       "title": "AI detected multiple possible time interpretations. Which one did you mean?",
@@ -801,7 +791,6 @@
     "create": "Create",
     "secretKey": "Secret Key",
     "keyWontShowAgain": "This key won't be shown again. Copy it now.",
-    "configSnippet": "Quick Setup (Claude Code)",
     "copy": "Copy",
     "done": "Done",
     "revokeTitle": "Revoke Key",
@@ -825,24 +814,14 @@
     "createDescription": "Give your key a name so you can identify it later.",
     "installCommandsHeading": "Install with your new key",
     "installCommandsHint": "Choose one client below and run the command. Your key is already injected.",
-    "guidesHeading": "Connect Your AI Tool",
-    "guidesIntro": "Create a key above, then paste one of the setup commands below into your terminal. Replace <your-key> with the key you just copied.",
     "claudeCode": {
       "name": "Claude Code",
-      "tagline": "Anthropic's AI coding assistant in your terminal",
-      "step1": "Create and copy a new key above",
-      "step2": "Paste the command into your terminal",
-      "step3": "Open Claude Code — taskflow tools will be available"
+      "tagline": "Anthropic's AI coding assistant in your terminal"
     },
     "openClaw": {
       "name": "OpenClaw",
-      "tagline": "Open-source autonomous AI agent",
-      "step1": "Create and copy a new key above",
-      "step2": "Paste the command into your terminal",
-      "step3": "Restart OpenClaw to load the taskflow server"
-    },
-    "steps": "Steps",
-    "command": "Command"
+      "tagline": "Open-source autonomous AI agent"
+    }
   },
   "settingsSessions": {
     "title": "Active Sessions",
@@ -915,10 +894,8 @@
   "commentSection": {
     "title": "Discussion",
     "placeholder": "Write a comment...",
-    "send": "Send",
     "reply": "Reply",
     "replyingTo": "Replying to {name}",
-    "cancelReply": "Cancel",
     "noComments": "No comments yet. Start the discussion!",
     "failedToLoad": "Failed to load comments",
     "failedToSend": "Failed to send comment",
