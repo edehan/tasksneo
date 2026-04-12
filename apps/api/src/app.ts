@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 
 import { getCacheStats } from "./lib/cache.js";
 import { errorHandler } from "./middleware/error.js";
+import { requestLogMiddleware } from "./middleware/request-log.js";
 import { adminRouter } from "./routes/admin.js";
 import { authRouter } from "./routes/auth.js";
 import { classesRouter } from "./routes/classes.js";
@@ -35,6 +36,7 @@ export function createApp(options?: { startWorker?: boolean }) {
 	const app = new Hono<{ Variables: AppVariables }>();
 
 	app.onError(errorHandler);
+	app.use("*", requestLogMiddleware);
 	app.use(
 		"*",
 		cors({
