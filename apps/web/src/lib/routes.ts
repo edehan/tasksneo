@@ -12,7 +12,7 @@ function resolveRouteId(resource: ResourceRef | string, publicId?: string | null
 }
 
 export function classPath(resource: ResourceRef | string, publicId?: string | null) {
-  return `/classes/${resolveRouteId(resource, publicId)}`;
+  return `/c/${resolveRouteId(resource, publicId)}`;
 }
 
 export function classMembersPath(
@@ -34,7 +34,7 @@ export function taskPath(
   options?: { publicId?: string | null; section?: "attachments" | "discussion" },
 ) {
   const routeId = resolveRouteId(resource, options?.publicId);
-  const base = `/tasks/${routeId}`;
+  const base = `/t/${routeId}`;
 
   if (!options?.section) {
     return base;
@@ -68,7 +68,7 @@ export function submissionPath(
   resource: ResourceRef | string,
   publicId?: string | null,
 ) {
-  return `/submissions/${resolveRouteId(resource, publicId)}`;
+  return `/s/${resolveRouteId(resource, publicId)}`;
 }
 
 export function joinClassPath(inviteCode: string) {

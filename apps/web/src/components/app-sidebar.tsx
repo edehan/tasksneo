@@ -93,6 +93,14 @@ export function AppSidebar() {
   const initials = displayName.slice(0, 2).toUpperCase();
   const avatarUrl = useAvatarUrl(user?.email, 64);
   const effectiveTheme = resolvedTheme ?? "light";
+  const isClassActive = useCallback(
+    (cls: ClassSummary) =>
+      pathname === classPath(cls) ||
+      pathname === `/classes/${cls.id}` ||
+      pathname.startsWith(`${classPath(cls)}/`) ||
+      pathname.startsWith(`/classes/${cls.id}/`),
+    [pathname],
+  );
 
   return (
     <Sidebar>
@@ -285,7 +293,7 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    isActive={pathname === classPath(personalClass)}
+                    isActive={isClassActive(personalClass)}
                   >
                     <Link href={classPath(personalClass)}>
                       <BookOpen className="h-4 w-4" />
@@ -322,7 +330,7 @@ export function AppSidebar() {
                     <SidebarMenuItem key={cls.id}>
                       <SidebarMenuButton
                         asChild
-                        isActive={pathname.startsWith(classPath(cls))}
+                        isActive={isClassActive(cls)}
                       >
                         <Link href={classPath(cls)}>
                           <span
@@ -357,7 +365,7 @@ export function AppSidebar() {
                     <SidebarMenuItem key={cls.id}>
                       <SidebarMenuButton
                         asChild
-                        isActive={pathname.startsWith(classPath(cls))}
+                        isActive={isClassActive(cls)}
                       >
                         <Link href={classPath(cls)}>
                           <span

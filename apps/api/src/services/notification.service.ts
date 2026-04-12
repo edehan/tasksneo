@@ -354,7 +354,7 @@ function buildCommentHtml(
 ) {
 	const accentColor = payload.classColor || "#7B6CB0";
 	const taskRouteId = payload.taskPublicId || payload.taskId;
-	const taskUrl = `${baseUrl}/tasks/${taskRouteId}?section=discussion`;
+	const taskUrl = `${baseUrl}/t/${taskRouteId}?section=discussion`;
 	const unsubscribeUrl = `${baseUrl}/settings/notifications`;
 	const safeTitle = escapeHtml(appTitle);
 	const contentHtml = escapeHtml(payload.commentContent).replace(/\n/g, "<br>");
@@ -416,7 +416,7 @@ function buildHtml(
 	const dueText = formatDueAt(payload.dueAt, timezone);
 	const accentColor = payload.classColor || "#7B6CB0";
 	const taskRouteId = payload.taskPublicId || payload.taskId;
-	const taskUrl = `${baseUrl}/tasks/${taskRouteId}`;
+	const taskUrl = `${baseUrl}/t/${taskRouteId}`;
 	const unsubscribeUrl = `${baseUrl}/settings/notifications`;
 	const safeTitle = escapeHtml(appTitle);
 
@@ -504,7 +504,7 @@ async function sendWebhook(
 				commentAuthorName: payload.commentAuthorName,
 				commentContent: payload.commentContent,
 				isReply: payload.isReply,
-				url: `${baseUrl}/tasks/${taskRouteId}?section=discussion`,
+				url: `${baseUrl}/t/${taskRouteId}?section=discussion`,
 			};
 		} else {
 			const taskRouteId = payload.taskPublicId || payload.taskId;
@@ -515,7 +515,7 @@ async function sendWebhook(
 				taskTitle: payload.taskTitle,
 				className: payload.className,
 				dueAt: formatDueAt(payload.dueAt, timezone),
-				url: `${baseUrl}/tasks/${taskRouteId}`,
+				url: `${baseUrl}/t/${taskRouteId}`,
 			};
 		}
 
