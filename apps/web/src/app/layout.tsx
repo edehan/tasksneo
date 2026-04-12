@@ -4,8 +4,8 @@ import { getLocale, getMessages } from "next-intl/server";
 
 import { AuthProvider } from "@/components/auth-provider";
 import { LocaleProvider } from "@/components/locale-provider";
+import { RouteAwareToaster } from "@/components/route-aware-toaster";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/sonner";
 import { type AppLocale, toHtmlLang } from "@/i18n/locale";
 
 import "./globals.css";
@@ -48,7 +48,7 @@ export default async function RootLayout({
             <LocaleProvider>
               <AuthProvider>
                 {children}
-                <Toaster richColors position="top-right" />
+                <RouteAwareToaster />
               </AuthProvider>
             </LocaleProvider>
           </ThemeProvider>

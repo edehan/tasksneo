@@ -2,17 +2,21 @@
 
 import {
   Activity,
+  GraduationCap,
   Loader2,
   LogOut,
   Megaphone,
   Moon,
   RefreshCw,
   Send,
+  Settings,
   Sun,
+  Users,
   X,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -100,11 +104,6 @@ const CONFIG_DEFAULTS = {
 
 type ConfigKey = keyof typeof CONFIG_DEFAULTS;
 type ConfigState = Record<ConfigKey, string>;
-
-interface Notice {
-  tone: "success" | "error" | "info";
-  message: string;
-}
 
 interface ConfigField {
   key: ConfigKey;
@@ -200,6 +199,15 @@ const SECRET_CONFIG_KEYS = new Set<ConfigKey>([
 ]);
 const SECRET_MASK = "***";
 const SECRET_REENTER = "[re-enter value]";
+const ADMIN_TABS = [
+  { value: "config", label: "Config", icon: Settings },
+  { value: "users", label: "Users", icon: Users },
+  { value: "schools", label: "Schools", icon: GraduationCap },
+  { value: "announcements", label: "Announcements", icon: Megaphone },
+  { value: "metrics", label: "Metrics", icon: Activity },
+] as const;
+
+type AdminTab = (typeof ADMIN_TABS)[number]["value"];
 
 function normalizeConfig(config: Record<string, string>): ConfigState {
   const normalized = { ...CONFIG_DEFAULTS } as ConfigState;
@@ -244,7 +252,6 @@ export function AdminControlPlane() {
   const [tokenInput, setTokenInput] = useState("");
   const [authLoading, setAuthLoading] = useState(true);
   const [dataLoading, setDataLoading] = useState(false);
-  const [notice, setNotice] = useState<Notice | null>(null);
 
   const [configInitial, setConfigInitial] =
     useState<ConfigState>(CONFIG_DEFAULTS);
@@ -281,8 +288,16 @@ export function AdminControlPlane() {
 
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<AdminTab>("config");
 
   const { resolvedTheme, setTheme } = useTheme();
+  const hasConfigChanges = useMemo(
+    () =>
+      CONFIG_KEYS.some((key) => {
+        return configForm[key] !== configInitial[key];
+      }),
+    [configForm, configInitial],
+  );
 
   const filteredUsers = useMemo(() => {
     const q = userQuery.trim().toLowerCase();
@@ -336,10 +351,7 @@ export function AdminControlPlane() {
       const snapshot = await getAdminMetrics(token);
       setMetrics(snapshot);
     } catch (error) {
-      setNotice({
-        tone: "error",
-        message: `Failed to load metrics: ${getErrorMessage(error)}`,
-      });
+      toast.error(`Failed to load metrics: ${getErrorMessage(error)}`);
     } finally {
       setMetricsLoading(false);
     }
@@ -353,14 +365,11 @@ export function AdminControlPlane() {
         sessionStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, nextToken);
         setToken(nextToken);
         setTokenInput("");
-        setNotice({ tone: "success", message: "Admin token verified." });
+        toast.success("Admin token verified.");
       } catch (error) {
         sessionStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
         setToken(null);
-        setNotice({
-          tone: "error",
-          message: `Authentication failed: ${getErrorMessage(error)}`,
-        });
+        toast.error(`Authentication failed: ${getErrorMessage(error)}`);
       } finally {
         setAuthLoading(false);
       }
@@ -374,7 +383,7 @@ export function AdminControlPlane() {
     setTokenInput("");
     setUsers([]);
     setSchools([]);
-    setNotice({ tone: "info", message: "Admin token cleared." });
+    toast.info("Admin token cleared.");
   }
 
   useEffect(() => {
@@ -399,7 +408,7 @@ export function AdminControlPlane() {
     }
 
     if (Object.keys(changes).length === 0) {
-      setNotice({ tone: "info", message: "No configuration changes to save." });
+      toast.info("No configuration changes to save.");
       return;
     }
 
@@ -409,12 +418,9 @@ export function AdminControlPlane() {
       const normalized = normalizeConfig(nextConfig);
       setConfigInitial(normalized);
       setConfigForm(normalized);
-      setNotice({ tone: "success", message: "System configuration updated." });
+      toast.success("System configuration updated.");
     } catch (error) {
-      setNotice({
-        tone: "error",
-        message: `Config update failed: ${getErrorMessage(error)}`,
-      });
+      toast.error(`Config update failed: ${getErrorMessage(error)}`);
     } finally {
       setConfigSaving(false);
     }
@@ -426,19 +432,16 @@ export function AdminControlPlane() {
     }
     const recipient = testEmailTo.trim();
     if (!recipient) {
-      setNotice({ tone: "error", message: "Please enter a recipient email." });
+      toast.error("Please enter a recipient email.");
       return;
     }
 
     setTestEmailSending(true);
     try {
       await sendAdminTestEmail(token, recipient);
-      setNotice({ tone: "success", message: "Test email sent." });
+      toast.success("Test email sent.");
     } catch (error) {
-      setNotice({
-        tone: "error",
-        message: `Test email failed: ${getErrorMessage(error)}`,
-      });
+      toast.error(`Test email failed: ${getErrorMessage(error)}`);
     } finally {
       setTestEmailSending(false);
     }
@@ -458,15 +461,11 @@ export function AdminControlPlane() {
           candidate.id === updated.id ? updated : candidate,
         ),
       );
-      setNotice({
-        tone: "success",
-        message: `${updated.email} is now ${updated.isActive ? "active" : "disabled"}.`,
-      });
+      toast.success(
+        `${updated.email} is now ${updated.isActive ? "active" : "disabled"}.`,
+      );
     } catch (error) {
-      setNotice({
-        tone: "error",
-        message: `User update failed: ${getErrorMessage(error)}`,
-      });
+      toast.error(`User update failed: ${getErrorMessage(error)}`);
     } finally {
       setUpdatingUserId(null);
     }
@@ -478,27 +477,18 @@ export function AdminControlPlane() {
     }
     const nextPassword = newPassword.trim();
     if (nextPassword.length < 8) {
-      setNotice({
-        tone: "error",
-        message: "Password must be at least 8 characters.",
-      });
+      toast.error("Password must be at least 8 characters.");
       return;
     }
 
     setPasswordSaving(true);
     try {
       await patchAdminUser(token, passwordUser.id, { password: nextPassword });
-      setNotice({
-        tone: "success",
-        message: `Password reset for ${passwordUser.email}.`,
-      });
+      toast.success(`Password reset for ${passwordUser.email}.`);
       setPasswordUser(null);
       setNewPassword("");
     } catch (error) {
-      setNotice({
-        tone: "error",
-        message: `Password reset failed: ${getErrorMessage(error)}`,
-      });
+      toast.error(`Password reset failed: ${getErrorMessage(error)}`);
     } finally {
       setPasswordSaving(false);
     }
@@ -510,7 +500,7 @@ export function AdminControlPlane() {
     }
     const name = newSchoolName.trim();
     if (!name) {
-      setNotice({ tone: "error", message: "School name is required." });
+      toast.error("School name is required.");
       return;
     }
 
@@ -521,15 +511,9 @@ export function AdminControlPlane() {
         [...prev, created].sort((a, b) => a.name.localeCompare(b.name)),
       );
       setNewSchoolName("");
-      setNotice({
-        tone: "success",
-        message: `School "${created.name}" created.`,
-      });
+      toast.success(`School "${created.name}" created.`);
     } catch (error) {
-      setNotice({
-        tone: "error",
-        message: `Create school failed: ${getErrorMessage(error)}`,
-      });
+      toast.error(`Create school failed: ${getErrorMessage(error)}`);
     } finally {
       setSchoolCreating(false);
     }
@@ -546,16 +530,10 @@ export function AdminControlPlane() {
       setSchools((prev) =>
         prev.filter((school) => school.id !== schoolToDelete.id),
       );
-      setNotice({
-        tone: "success",
-        message: `School "${schoolToDelete.name}" deleted.`,
-      });
+      toast.success(`School "${schoolToDelete.name}" deleted.`);
       setSchoolToDelete(null);
     } catch (error) {
-      setNotice({
-        tone: "error",
-        message: `Delete school failed: ${getErrorMessage(error)}`,
-      });
+      toast.error(`Delete school failed: ${getErrorMessage(error)}`);
     } finally {
       setSchoolDeletingId(null);
     }
@@ -568,7 +546,7 @@ export function AdminControlPlane() {
     const title = announcementTitle.trim();
     const content = announcementContent.trim();
     if (!title || !content) {
-      setNotice({ tone: "error", message: "Title and content are required." });
+      toast.error("Title and content are required.");
       return;
     }
 
@@ -582,18 +560,13 @@ export function AdminControlPlane() {
       setAnnouncements((prev) => [created, ...prev]);
       setAnnouncementTitle("");
       setAnnouncementContent("");
-      setNotice({
-        tone: "success",
-        message:
-          publishMode === "immediate"
-            ? "Announcement published. Notifications are being sent now."
-            : "Announcement scheduled. Will publish in 10 minutes.",
-      });
+      toast.success(
+        publishMode === "immediate"
+          ? "Announcement published. Notifications are being sent now."
+          : "Announcement scheduled. Will publish in 10 minutes.",
+      );
     } catch (error) {
-      setNotice({
-        tone: "error",
-        message: `Create announcement failed: ${getErrorMessage(error)}`,
-      });
+      toast.error(`Create announcement failed: ${getErrorMessage(error)}`);
     } finally {
       setAnnouncementCreating(false);
     }
@@ -607,12 +580,9 @@ export function AdminControlPlane() {
       setAnnouncements((prev) =>
         prev.map((a) => (a.id === updated.id ? updated : a)),
       );
-      setNotice({ tone: "success", message: "Announcement cancelled." });
+      toast.success("Announcement cancelled.");
     } catch (error) {
-      setNotice({
-        tone: "error",
-        message: `Cancel failed: ${getErrorMessage(error)}`,
-      });
+      toast.error(`Cancel failed: ${getErrorMessage(error)}`);
     } finally {
       setCancellingId(null);
     }
@@ -660,18 +630,6 @@ export function AdminControlPlane() {
               {authLoading && <Loader2 className="h-4 w-4 animate-spin" />}
               Sign In
             </Button>
-            {notice && (
-              <p
-                className={cn(
-                  "text-sm",
-                  notice.tone === "error"
-                    ? "text-destructive"
-                    : "text-muted-foreground",
-                )}
-              >
-                {notice.message}
-              </p>
-            )}
           </CardContent>
         </Card>
       </main>
@@ -679,70 +637,99 @@ export function AdminControlPlane() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-6 py-8">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Admin Control Plane
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Simple and utilitarian panel for system operations.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() =>
-              setTheme(resolvedTheme === "dark" ? "light" : "dark")
-            }
-          >
-            {resolvedTheme === "dark" ? (
-              <Sun className="h-4 w-4" />
-            ) : (
-              <Moon className="h-4 w-4" />
+    <main className="flex min-h-screen w-full flex-col px-4 pb-8 sm:px-6 lg:px-8 xl:px-10">
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as AdminTab)}
+        className="flex min-h-screen flex-col"
+      >
+        <header className="sticky top-0 z-20 flex flex-col gap-4 border-b bg-background/95 pb-4 pt-8 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight">
+                Admin Control Plane
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                System operations and configuration.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() =>
+                  setTheme(resolvedTheme === "dark" ? "light" : "dark")
+                }
+              >
+                {resolvedTheme === "dark" ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+                <span className="sr-only">Toggle theme</span>
+              </Button>
+              <Button variant="outline" onClick={clearSession}>
+                <LogOut className="h-4 w-4" />
+                Sign Out
+              </Button>
+            </div>
+          </div>
+
+          <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto whitespace-nowrap rounded-xl bg-muted/70 p-1 md:hidden">
+            {ADMIN_TABS.map(({ value, label, icon: Icon }) => (
+              <TabsTrigger key={value} value={value} className="shrink-0 gap-2">
+                <Icon className="h-4 w-4" />
+                {label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </header>
+
+        <div className="grid flex-1 gap-6 py-6 md:grid-cols-[220px_minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)]">
+          <aside className="hidden md:block">
+            <div className="sticky top-28 space-y-3">
+              <p className="px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Navigation
+              </p>
+              <TabsList className="flex h-auto w-full flex-col items-stretch gap-1 rounded-xl bg-muted/70 p-2">
+                {ADMIN_TABS.map(({ value, label, icon: Icon }) => (
+                  <TabsTrigger
+                    key={value}
+                    value={value}
+                    className="w-full justify-start gap-2 px-3 py-2 text-left"
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span>{label}</span>
+                    {value === "config" && hasConfigChanges && (
+                      <>
+                        <span
+                          className="ml-auto inline-block h-2 w-2 rounded-full bg-amber-500"
+                          aria-hidden="true"
+                        />
+                        <span className="sr-only">
+                          Configuration has unsaved changes
+                        </span>
+                      </>
+                    )}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+          </aside>
+
+          <section
+            className={cn(
+              "min-w-0",
+              activeTab === "config" && "pb-24 sm:pb-28",
             )}
-            <span className="sr-only">Toggle theme</span>
-          </Button>
-          <Button variant="outline" onClick={clearSession}>
-            <LogOut className="h-4 w-4" />
-            Sign Out
-          </Button>
-        </div>
-      </header>
-
-      {notice && (
-        <div
-          className={cn(
-            "rounded-md border px-4 py-3 text-sm",
-            notice.tone === "error" && "border-destructive/50 text-destructive",
-            notice.tone === "success" &&
-              "border-green-500/40 text-green-700 dark:text-green-400",
-            notice.tone === "info" && "border-border text-muted-foreground",
-          )}
-        >
-          {notice.message}
-        </div>
-      )}
-
-      <Tabs defaultValue="config">
-        <TabsList>
-          <TabsTrigger value="config">Config</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="schools">Schools</TabsTrigger>
-          <TabsTrigger value="announcements">Announcements</TabsTrigger>
-          <TabsTrigger value="metrics">Metrics</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="config" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>System Configuration</CardTitle>
-              <CardDescription>
-                Edit grouped system keys and save only changed values.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          >
+            <TabsContent value="config" className="mt-0 space-y-6">
+              <div className="space-y-1">
+                <h2 className="text-lg font-semibold">System Configuration</h2>
+                <p className="text-sm text-muted-foreground">
+                  Edit grouped system keys and save only changed values.
+                </p>
+              </div>
               {dataLoading && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -845,6 +832,554 @@ export function AdminControlPlane() {
                   </Card>
                 ))}
               </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Object Storage (S3)</CardTitle>
+                  <CardDescription>
+                    Read-only status of the S3-compatible storage backend.
+                    Configuration is set via environment variables.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {storageStatus ? (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">
+                          Endpoint
+                        </Label>
+                        <p className="text-sm font-mono">
+                          {storageStatus.endpoint}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">
+                          Bucket
+                        </Label>
+                        <p className="text-sm font-mono">
+                          {storageStatus.bucket}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">
+                          SSL
+                        </Label>
+                        <p className="text-sm">
+                          {storageStatus.useSSL ? "Enabled" : "Disabled"}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">
+                          Region
+                        </Label>
+                        <p className="text-sm font-mono">
+                          {storageStatus.region}
+                        </p>
+                      </div>
+                      <div className="space-y-1 sm:col-span-2">
+                        <Label className="text-xs text-muted-foreground">
+                          Status
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={cn(
+                              "inline-block h-2.5 w-2.5 rounded-full",
+                              storageStatus.connected
+                                ? "bg-green-500"
+                                : "bg-red-500",
+                            )}
+                          />
+                          <span className="text-sm">
+                            {storageStatus.connected
+                              ? "Connected"
+                              : `Disconnected${storageStatus.error ? `: ${storageStatus.error}` : ""}`}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Loading...</p>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={storageChecking}
+                    onClick={async () => {
+                      if (!token) return;
+                      setStorageChecking(true);
+                      try {
+                        const status = await getAdminStorageStatus(token);
+                        setStorageStatus(status);
+                        if (status.connected) {
+                          toast.success("Storage connection OK.");
+                        } else {
+                          toast.error(
+                            `Storage check failed: ${status.error ?? "unknown"}`,
+                          );
+                        }
+                      } catch {
+                        toast.error("Failed to check storage status.");
+                      } finally {
+                        setStorageChecking(false);
+                      }
+                    }}
+                  >
+                    {storageChecking && (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    )}
+                    Test Connection
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>SMTP Test Email</CardTitle>
+                  <CardDescription>
+                    Send a test message using current SMTP settings.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-3 sm:flex-row">
+                  <Input
+                    type="email"
+                    placeholder="recipient@example.com"
+                    value={testEmailTo}
+                    onChange={(event) => setTestEmailTo(event.target.value)}
+                  />
+                  <Button
+                    onClick={() => void handleSendTestEmail()}
+                    disabled={testEmailSending}
+                  >
+                    {testEmailSending && (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    )}
+                    <Send className="h-4 w-4" />
+                    Send Test
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="users" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>User Management</CardTitle>
+                  <CardDescription>
+                    Enable/disable users and reset passwords.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <Input
+                      className="sm:max-w-sm"
+                      placeholder="Search by email or nickname"
+                      value={userQuery}
+                      onChange={(event) => setUserQuery(event.target.value)}
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      {filteredUsers.length} users
+                    </p>
+                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Nickname</TableHead>
+                        <TableHead>School</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredUsers.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>{user.nickname ?? "-"}</TableCell>
+                          <TableCell>{user.schoolName ?? "-"}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={user.isActive ? "default" : "secondary"}
+                            >
+                              {user.isActive ? "Active" : "Disabled"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {formatDateTime(user.createdAt)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                size="sm"
+                                variant={
+                                  user.isActive ? "destructive" : "secondary"
+                                }
+                                disabled={updatingUserId === user.id}
+                                onClick={() => void handleToggleUser(user)}
+                              >
+                                {updatingUserId === user.id && (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                )}
+                                {user.isActive ? "Disable" : "Enable"}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setPasswordUser(user);
+                                  setNewPassword("");
+                                }}
+                              >
+                                Reset Password
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="schools" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>School Management</CardTitle>
+                  <CardDescription>
+                    Maintain the school list used by registration.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <Input
+                      placeholder="New school name"
+                      value={newSchoolName}
+                      onChange={(event) => setNewSchoolName(event.target.value)}
+                    />
+                    <Button
+                      onClick={() => void handleCreateSchool()}
+                      disabled={schoolCreating}
+                    >
+                      {schoolCreating && (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      )}
+                      Add School
+                    </Button>
+                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>ID</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {schools.map((school) => (
+                        <TableRow key={school.id}>
+                          <TableCell>{school.name}</TableCell>
+                          <TableCell className="font-mono text-xs text-muted-foreground">
+                            {school.id}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => setSchoolToDelete(school)}
+                            >
+                              Delete
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="announcements" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Site Announcements</CardTitle>
+                  <CardDescription>
+                    Broadcast notices to all users (maintenance, policy changes,
+                    etc.). Choose immediate publish, or schedule with a
+                    10-minute delay during which you can cancel.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="ann-title">Title</Label>
+                      <Input
+                        id="ann-title"
+                        placeholder="e.g. Scheduled maintenance on March 30"
+                        value={announcementTitle}
+                        onChange={(e) => setAnnouncementTitle(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ann-content">Content</Label>
+                      <Textarea
+                        id="ann-content"
+                        rows={4}
+                        placeholder="Notification body sent to all users..."
+                        value={announcementContent}
+                        onChange={(e) => setAnnouncementContent(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        onClick={() =>
+                          void handleCreateAnnouncement("immediate")
+                        }
+                        disabled={announcementCreating}
+                      >
+                        {announcementCreating && (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        )}
+                        <Send className="h-4 w-4" />
+                        Publish Now
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => void handleCreateAnnouncement("delayed")}
+                        disabled={announcementCreating}
+                      >
+                        {announcementCreating && (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        )}
+                        <Megaphone className="h-4 w-4" />
+                        Schedule (10 min)
+                      </Button>
+                    </div>
+                  </div>
+
+                  {announcements.length > 0 && (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Scheduled</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {announcements.map((a) => (
+                          <TableRow key={a.id}>
+                            <TableCell className="max-w-[300px]">
+                              <p className="truncate font-medium">{a.title}</p>
+                              <p className="truncate text-xs text-muted-foreground">
+                                {a.content}
+                              </p>
+                            </TableCell>
+                            <TableCell>
+                              <AnnouncementStatusBadge announcement={a} />
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {formatDateTime(a.scheduledAt)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {a.status === "SCHEDULED" ? (
+                                <CountdownCancelButton
+                                  scheduledAt={a.scheduledAt}
+                                  cancelling={cancellingId === a.id}
+                                  onCancel={() =>
+                                    void handleCancelAnnouncement(a.id)
+                                  }
+                                />
+                              ) : (
+                                <span className="text-xs text-muted-foreground">
+                                  —
+                                </span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="metrics" className="mt-0">
+              <Card>
+                <CardHeader className="flex flex-row items-start justify-between gap-4">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Activity className="h-4 w-4" />
+                      Runtime Metrics
+                    </CardTitle>
+                    <CardDescription>
+                      In-memory snapshot from{" "}
+                      <code className="font-mono text-xs">/admin/metrics</code>.
+                      Request counts, status distribution, and per-route
+                      p50/p95/p99 latency since process start. Resets on
+                      restart.
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void refreshMetrics()}
+                    disabled={metricsLoading || !token}
+                  >
+                    {metricsLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                    Refresh
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {!metrics ? (
+                    <p className="text-sm text-muted-foreground">
+                      No metrics snapshot loaded. Click Refresh to fetch.
+                    </p>
+                  ) : (
+                    <>
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        <MetricTile
+                          label="Uptime"
+                          value={formatUptime(metrics.uptime_s)}
+                        />
+                        <MetricTile
+                          label="Total Requests"
+                          value={metrics.requests_total.toLocaleString()}
+                        />
+                        <MetricTile
+                          label="Error Rate"
+                          value={formatErrorRate(metrics.requests_by_status)}
+                          tone={
+                            errorRateNumber(metrics.requests_by_status) > 0.01
+                              ? "error"
+                              : "normal"
+                          }
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Status Distribution
+                        </Label>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(metrics.requests_by_status)
+                            .filter(([key]) => /^[1-5]xx$/.test(key))
+                            .sort(([a], [b]) => a.localeCompare(b))
+                            .map(([bucket, count]) => (
+                              <Badge
+                                key={bucket}
+                                variant="outline"
+                                className={statusBucketClass(bucket)}
+                              >
+                                {bucket}: {count.toLocaleString()}
+                              </Badge>
+                            ))}
+                          {Object.keys(metrics.requests_by_status).filter((k) =>
+                            /^[1-5]xx$/.test(k),
+                          ).length === 0 && (
+                            <span className="text-sm text-muted-foreground">
+                              No requests recorded yet.
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {metrics.routes.length > 0 ? (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Route</TableHead>
+                              <TableHead className="text-right">
+                                Count
+                              </TableHead>
+                              <TableHead className="text-right">
+                                Errors
+                              </TableHead>
+                              <TableHead className="text-right">
+                                p50 (ms)
+                              </TableHead>
+                              <TableHead className="text-right">
+                                p95 (ms)
+                              </TableHead>
+                              <TableHead className="text-right">
+                                p99 (ms)
+                              </TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {[...metrics.routes]
+                              .sort((a, b) => b.count - a.count)
+                              .map((r) => (
+                                <TableRow key={r.route}>
+                                  <TableCell className="font-mono text-xs">
+                                    {r.route}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    {r.count.toLocaleString()}
+                                  </TableCell>
+                                  <TableCell
+                                    className={cn(
+                                      "text-right",
+                                      r.errors > 0 &&
+                                        "font-semibold text-destructive",
+                                    )}
+                                  >
+                                    {r.errors}
+                                  </TableCell>
+                                  <TableCell className="text-right font-mono text-xs">
+                                    {r.p50_ms}
+                                  </TableCell>
+                                  <TableCell
+                                    className={cn(
+                                      "text-right font-mono text-xs",
+                                      r.p95_ms > 500 &&
+                                        "text-amber-600 dark:text-amber-400",
+                                      r.p95_ms > 1000 && "text-destructive",
+                                    )}
+                                  >
+                                    {r.p95_ms}
+                                  </TableCell>
+                                  <TableCell
+                                    className={cn(
+                                      "text-right font-mono text-xs",
+                                      r.p99_ms > 1000 &&
+                                        "font-semibold text-destructive",
+                                    )}
+                                  >
+                                    {r.p99_ms}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                          </TableBody>
+                        </Table>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          No per-route samples yet. Make a few requests and
+                          refresh.
+                        </p>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </section>
+        </div>
+
+        {activeTab === "config" && (
+          <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+            <div className="flex w-full items-center justify-end gap-3 px-4 py-3 sm:px-6 lg:px-8 xl:px-10">
+              {!hasConfigChanges && (
+                <span className="hidden text-xs text-muted-foreground sm:inline">
+                  No unsaved configuration changes.
+                </span>
+              )}
               <Button
                 onClick={() => void handleConfigSave()}
                 disabled={configSaving}
@@ -852,523 +1387,9 @@ export function AdminControlPlane() {
                 {configSaving && <Loader2 className="h-4 w-4 animate-spin" />}
                 Save Configuration
               </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Object Storage (S3)</CardTitle>
-              <CardDescription>
-                Read-only status of the S3-compatible storage backend.
-                Configuration is set via environment variables.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {storageStatus ? (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">
-                      Endpoint
-                    </Label>
-                    <p className="text-sm font-mono">
-                      {storageStatus.endpoint}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">
-                      Bucket
-                    </Label>
-                    <p className="text-sm font-mono">{storageStatus.bucket}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">SSL</Label>
-                    <p className="text-sm">
-                      {storageStatus.useSSL ? "Enabled" : "Disabled"}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">
-                      Region
-                    </Label>
-                    <p className="text-sm font-mono">{storageStatus.region}</p>
-                  </div>
-                  <div className="space-y-1 sm:col-span-2">
-                    <Label className="text-xs text-muted-foreground">
-                      Status
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={cn(
-                          "inline-block h-2.5 w-2.5 rounded-full",
-                          storageStatus.connected
-                            ? "bg-green-500"
-                            : "bg-red-500",
-                        )}
-                      />
-                      <span className="text-sm">
-                        {storageStatus.connected
-                          ? "Connected"
-                          : `Disconnected${storageStatus.error ? `: ${storageStatus.error}` : ""}`}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Loading...</p>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={storageChecking}
-                onClick={async () => {
-                  if (!token) return;
-                  setStorageChecking(true);
-                  try {
-                    const status = await getAdminStorageStatus(token);
-                    setStorageStatus(status);
-                    setNotice({
-                      tone: status.connected ? "success" : "error",
-                      message: status.connected
-                        ? "Storage connection OK."
-                        : `Storage check failed: ${status.error ?? "unknown"}`,
-                    });
-                  } catch {
-                    setNotice({
-                      tone: "error",
-                      message: "Failed to check storage status.",
-                    });
-                  } finally {
-                    setStorageChecking(false);
-                  }
-                }}
-              >
-                {storageChecking && (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                )}
-                Test Connection
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>SMTP Test Email</CardTitle>
-              <CardDescription>
-                Send a test message using current SMTP settings.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3 sm:flex-row">
-              <Input
-                type="email"
-                placeholder="recipient@example.com"
-                value={testEmailTo}
-                onChange={(event) => setTestEmailTo(event.target.value)}
-              />
-              <Button
-                onClick={() => void handleSendTestEmail()}
-                disabled={testEmailSending}
-              >
-                {testEmailSending && (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                )}
-                <Send className="h-4 w-4" />
-                Send Test
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="users">
-          <Card>
-            <CardHeader>
-              <CardTitle>User Management</CardTitle>
-              <CardDescription>
-                Enable/disable users and reset passwords.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <Input
-                  className="sm:max-w-sm"
-                  placeholder="Search by email or nickname"
-                  value={userQuery}
-                  onChange={(event) => setUserQuery(event.target.value)}
-                />
-                <p className="text-sm text-muted-foreground">
-                  {filteredUsers.length} users
-                </p>
-              </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Nickname</TableHead>
-                    <TableHead>School</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.nickname ?? "-"}</TableCell>
-                      <TableCell>{user.schoolName ?? "-"}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={user.isActive ? "default" : "secondary"}
-                        >
-                          {user.isActive ? "Active" : "Disabled"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{formatDateTime(user.createdAt)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            size="sm"
-                            variant={
-                              user.isActive ? "destructive" : "secondary"
-                            }
-                            disabled={updatingUserId === user.id}
-                            onClick={() => void handleToggleUser(user)}
-                          >
-                            {updatingUserId === user.id && (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            )}
-                            {user.isActive ? "Disable" : "Enable"}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setPasswordUser(user);
-                              setNewPassword("");
-                            }}
-                          >
-                            Reset Password
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="schools">
-          <Card>
-            <CardHeader>
-              <CardTitle>School Management</CardTitle>
-              <CardDescription>
-                Maintain the school list used by registration.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Input
-                  placeholder="New school name"
-                  value={newSchoolName}
-                  onChange={(event) => setNewSchoolName(event.target.value)}
-                />
-                <Button
-                  onClick={() => void handleCreateSchool()}
-                  disabled={schoolCreating}
-                >
-                  {schoolCreating && (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  )}
-                  Add School
-                </Button>
-              </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>ID</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {schools.map((school) => (
-                    <TableRow key={school.id}>
-                      <TableCell>{school.name}</TableCell>
-                      <TableCell className="font-mono text-xs text-muted-foreground">
-                        {school.id}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => setSchoolToDelete(school)}
-                        >
-                          Delete
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="announcements">
-          <Card>
-            <CardHeader>
-              <CardTitle>Site Announcements</CardTitle>
-              <CardDescription>
-                Broadcast notices to all users (maintenance, policy changes,
-                etc.). Choose immediate publish, or schedule with a 10-minute
-                delay during which you can cancel.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label htmlFor="ann-title">Title</Label>
-                  <Input
-                    id="ann-title"
-                    placeholder="e.g. Scheduled maintenance on March 30"
-                    value={announcementTitle}
-                    onChange={(e) => setAnnouncementTitle(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ann-content">Content</Label>
-                  <Textarea
-                    id="ann-content"
-                    rows={4}
-                    placeholder="Notification body sent to all users..."
-                    value={announcementContent}
-                    onChange={(e) => setAnnouncementContent(e.target.value)}
-                  />
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    onClick={() => void handleCreateAnnouncement("immediate")}
-                    disabled={announcementCreating}
-                  >
-                    {announcementCreating && (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    )}
-                    <Send className="h-4 w-4" />
-                    Publish Now
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => void handleCreateAnnouncement("delayed")}
-                    disabled={announcementCreating}
-                  >
-                    {announcementCreating && (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    )}
-                    <Megaphone className="h-4 w-4" />
-                    Schedule (10 min)
-                  </Button>
-                </div>
-              </div>
-
-              {announcements.length > 0 && (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Scheduled</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {announcements.map((a) => (
-                      <TableRow key={a.id}>
-                        <TableCell className="max-w-[300px]">
-                          <p className="truncate font-medium">{a.title}</p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {a.content}
-                          </p>
-                        </TableCell>
-                        <TableCell>
-                          <AnnouncementStatusBadge announcement={a} />
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {formatDateTime(a.scheduledAt)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {a.status === "SCHEDULED" ? (
-                            <CountdownCancelButton
-                              scheduledAt={a.scheduledAt}
-                              cancelling={cancellingId === a.id}
-                              onCancel={() =>
-                                void handleCancelAnnouncement(a.id)
-                              }
-                            />
-                          ) : (
-                            <span className="text-xs text-muted-foreground">
-                              —
-                            </span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="metrics">
-          <Card>
-            <CardHeader className="flex flex-row items-start justify-between gap-4">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-4 w-4" />
-                  Runtime Metrics
-                </CardTitle>
-                <CardDescription>
-                  In-memory snapshot from{" "}
-                  <code className="font-mono text-xs">/admin/metrics</code>.
-                  Request counts, status distribution, and per-route p50/p95/p99
-                  latency since process start. Resets on restart.
-                </CardDescription>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => void refreshMetrics()}
-                disabled={metricsLoading || !token}
-              >
-                {metricsLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-                Refresh
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {!metrics ? (
-                <p className="text-sm text-muted-foreground">
-                  No metrics snapshot loaded. Click Refresh to fetch.
-                </p>
-              ) : (
-                <>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <MetricTile
-                      label="Uptime"
-                      value={formatUptime(metrics.uptime_s)}
-                    />
-                    <MetricTile
-                      label="Total Requests"
-                      value={metrics.requests_total.toLocaleString()}
-                    />
-                    <MetricTile
-                      label="Error Rate"
-                      value={formatErrorRate(metrics.requests_by_status)}
-                      tone={
-                        errorRateNumber(metrics.requests_by_status) > 0.01
-                          ? "error"
-                          : "normal"
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Status Distribution
-                    </Label>
-                    <div className="flex flex-wrap gap-2">
-                      {Object.entries(metrics.requests_by_status)
-                        .filter(([key]) => /^[1-5]xx$/.test(key))
-                        .sort(([a], [b]) => a.localeCompare(b))
-                        .map(([bucket, count]) => (
-                          <Badge
-                            key={bucket}
-                            variant="outline"
-                            className={statusBucketClass(bucket)}
-                          >
-                            {bucket}: {count.toLocaleString()}
-                          </Badge>
-                        ))}
-                      {Object.keys(metrics.requests_by_status).filter((k) =>
-                        /^[1-5]xx$/.test(k),
-                      ).length === 0 && (
-                        <span className="text-sm text-muted-foreground">
-                          No requests recorded yet.
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {metrics.routes.length > 0 ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Route</TableHead>
-                          <TableHead className="text-right">Count</TableHead>
-                          <TableHead className="text-right">Errors</TableHead>
-                          <TableHead className="text-right">p50 (ms)</TableHead>
-                          <TableHead className="text-right">p95 (ms)</TableHead>
-                          <TableHead className="text-right">p99 (ms)</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {[...metrics.routes]
-                          .sort((a, b) => b.count - a.count)
-                          .map((r) => (
-                            <TableRow key={r.route}>
-                              <TableCell className="font-mono text-xs">
-                                {r.route}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                {r.count.toLocaleString()}
-                              </TableCell>
-                              <TableCell
-                                className={cn(
-                                  "text-right",
-                                  r.errors > 0 &&
-                                    "font-semibold text-destructive",
-                                )}
-                              >
-                                {r.errors}
-                              </TableCell>
-                              <TableCell className="text-right font-mono text-xs">
-                                {r.p50_ms}
-                              </TableCell>
-                              <TableCell
-                                className={cn(
-                                  "text-right font-mono text-xs",
-                                  r.p95_ms > 500 &&
-                                    "text-amber-600 dark:text-amber-400",
-                                  r.p95_ms > 1000 && "text-destructive",
-                                )}
-                              >
-                                {r.p95_ms}
-                              </TableCell>
-                              <TableCell
-                                className={cn(
-                                  "text-right font-mono text-xs",
-                                  r.p99_ms > 1000 &&
-                                    "font-semibold text-destructive",
-                                )}
-                              >
-                                {r.p99_ms}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      No per-route samples yet. Make a few requests and refresh.
-                    </p>
-                  )}
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          </div>
+        )}
       </Tabs>
 
       <Dialog
