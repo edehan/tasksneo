@@ -296,7 +296,7 @@ function readSeedEnv(...keys: string[]) {
 	return null;
 }
 
-async function seedLlmConfig() {
+async function seedAiConfig() {
 	const entries: Record<string, string> = {};
 
 	const provider = readSeedEnv("DEV_SEED_LLM_PROVIDER", "LLM_PROVIDER");
@@ -320,15 +320,19 @@ async function seedLlmConfig() {
 		entries["llm.api_key"] = apiKey;
 	}
 
-	entries["llm.prompt_task_parse_structured"] =
-		readSeedEnv("DEV_SEED_LLM_PROMPT_STRUCTURED") ??
-		"Extract task fields into JSON schema {title,startAt,dueAt,description}.";
-	entries["llm.prompt_task_parse_markdown"] =
-		readSeedEnv("DEV_SEED_LLM_PROMPT_MARKDOWN") ??
-		"Generate a markdown task brief from the provided text and files.";
+	entries["llm.prompt_task_parse"] =
+		readSeedEnv("DEV_SEED_LLM_PROMPT_PARSE") ??
+		"You are a task parser for an educational platform. Teachers provide task descriptions (assignments, homework, project specs) as text, sometimes with attached files (PDFs, images). Extract structured metadata and produce a formatted markdown document.";
+
+	// STT (AssemblyAI)
+	const sttApiKey = readSeedEnv("DEV_SEED_STT_API_KEY", "ASSEMBLYAI_API_KEY");
+
+	if (sttApiKey) {
+		entries["stt.api_key"] = sttApiKey;
+	}
 
 	await updateConfig(entries);
-	console.log("Seeded admin LLM config keys:", Object.keys(entries).join(", "));
+	console.log("Seeded admin AI config keys:", Object.keys(entries).join(", "));
 }
 
 // ─── 主流程 ────────────────────────────────────────────────────────────────────
@@ -1113,7 +1117,7 @@ iVIX 的优点在于有官方背书、数据可靠性高。缺点是覆盖标的
 		});
 	}
 
-	await seedLlmConfig();
+	await seedAiConfig();
 
 	console.log("\n========================================");
 	console.log("  本地开发数据注入完成");

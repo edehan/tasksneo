@@ -855,8 +855,14 @@ export async function parseTaskDraft(
 
 // ─── Speech-to-Text ──────────────────────────────────────────────────────────
 
-export async function getSTTToken(token: string): Promise<{ token: string }> {
-  return apiRequest<{ token: string }>("/stt/token", { method: "POST" }, token);
+export async function getSTTToken(
+  token: string,
+): Promise<{ token: string; speechModel: string }> {
+  return apiRequest<{ token: string; speechModel: string }>(
+    "/stt/token",
+    { method: "POST" },
+    token,
+  );
 }
 
 // ─── AI Content Revision ─────────────────────────────────────────────────────

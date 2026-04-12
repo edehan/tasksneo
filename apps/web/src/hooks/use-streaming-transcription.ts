@@ -4,8 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { getSTTToken } from "@/lib/api";
 
-const STT_SPEECH_MODEL = "whisper-rt";
-
 export interface UseStreamingTranscriptionReturn {
   isConnecting: boolean;
   isStreaming: boolean;
@@ -98,13 +96,13 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
         }
         const sampleRate = Math.round(audioContext.sampleRate);
 
-        // Get temporary token from backend
-        const { token: sttToken } = await getSTTToken(authToken);
+        // Get temporary token and speech model from backend
+        const { token: sttToken, speechModel } = await getSTTToken(authToken);
         if (attemptId !== startAttemptRef.current) return;
 
         const params = new URLSearchParams({
           sample_rate: String(sampleRate),
-          speech_model: STT_SPEECH_MODEL,
+          speech_model: speechModel,
           token: sttToken,
         });
 

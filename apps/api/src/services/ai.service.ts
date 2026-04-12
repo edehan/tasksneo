@@ -1,13 +1,11 @@
 import { z } from "zod";
 
 import { AppError } from "../lib/errors.js";
-import { getConfigValue } from "./system-config.service.js";
+import { getConfigValues } from "./system-config.service.js";
 
 const ISO_8601_WITH_TZ_PATTERN =
 	/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/;
 const MAX_AI_ATTACHMENTS = 6;
-const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
-const MAX_INLINE_TEXT_ATTACHMENT_CHARS = 8_000;
 
 const timeOptionSchema = z.object({
 	startAt: z.string().nullable(),
@@ -19,6 +17,7 @@ const parseResultSchema = z.object({
 	timeOptions: z.array(timeOptionSchema).min(1).max(3),
 	allowLateSubmission: z.boolean().nullable(),
 	description: z.string().nullable(),
+	markdown: z.string(),
 });
 
 export interface ParseTimeOption {
@@ -33,28 +32,15 @@ interface ParseTaskResult {
 	description: string | null;
 }
 
-type GatewayAttachmentPart =
-	| {
-			type: "image_url";
-			image_url: {
-				url: string;
-				detail: "auto";
-			};
-	  }
-	| {
-			type: "file";
-			file: {
-				data: string;
-				media_type: "application/pdf";
-				filename: string;
-			};
-	  };
+type MessageContentPart =
+	| { type: "image"; source: { type: "url"; url: string } }
+	| { type: "document"; source: { type: "url"; url: string } }
+	| { type: "text"; text: string };
 
 export interface ParseAttachmentInput {
 	originalName: string;
 	mimeType: string | null;
-	bytes?: Buffer;
-	presignedUrl?: string;
+	presignedUrl: string;
 	sizeBytes?: number;
 }
 
@@ -67,6 +53,8 @@ export interface ParseTaskArtifacts {
 	structured: ParseTaskResult;
 	markdown: string | null;
 }
+
+// ─── Fallbacks (used when LLM is not configured or fails) ────────────────────
 
 function fallbackParse(text: string): ParseTaskResult {
 	const lines = text
@@ -89,6 +77,8 @@ function fallbackMarkdown(text: string): string {
 
 	return `# Task Draft\n\n${text.trim()}`;
 }
+
+// ─── Timezone helpers ────────────────────────────────────────────────────────
 
 function normalizeTimezone(input: string | null | undefined): string {
 	if (!input) {
@@ -132,6 +122,8 @@ export function buildParseTaskContext(
 	};
 }
 
+// ─── Datetime normalization ──────────────────────────────────────────────────
+
 function normalizeParsedDatetime(value: string | null): string | null {
 	if (!value) {
 		return null;
@@ -152,179 +144,104 @@ function normalizeParsedDatetime(value: string | null): string | null {
 	return trimmed;
 }
 
+// ─── Attachment helpers ──────────────────────────────────────────────────────
+
 function normalizeAttachmentMime(mimeType: string | null): string {
 	return (mimeType ?? "").trim().toLowerCase();
 }
 
-function isTextLikeMime(mimeType: string): boolean {
-	return (
-		mimeType.startsWith("text/") ||
-		mimeType === "application/json" ||
-		mimeType === "application/xml" ||
-		mimeType === "text/markdown"
-	);
-}
-
-function extractInlineAttachmentText(
+function toMessageContentPart(
 	attachment: ParseAttachmentInput,
-): string | null {
+): MessageContentPart | null {
 	const mimeType = normalizeAttachmentMime(attachment.mimeType);
 
-	if (!isTextLikeMime(mimeType) || !attachment.bytes) {
-		return null;
-	}
-
-	try {
-		const text = attachment.bytes.toString("utf8").trim();
-
-		if (!text) {
-			return null;
-		}
-
-		if (text.length <= MAX_INLINE_TEXT_ATTACHMENT_CHARS) {
-			return text;
-		}
-
-		return `${text.slice(0, MAX_INLINE_TEXT_ATTACHMENT_CHARS)}\n...(truncated)...`;
-	} catch {
-		return null;
-	}
-}
-
-function toGatewayAttachmentPart(
-	attachment: ParseAttachmentInput,
-): GatewayAttachmentPart | null {
-	const mimeType = normalizeAttachmentMime(attachment.mimeType);
-
-	if (!mimeType) {
-		return null;
-	}
-
-	// Skip oversized attachments (only check when bytes are available; URL-only
-	// attachments were already validated at upload time)
-	if (attachment.bytes && attachment.bytes.byteLength > MAX_ATTACHMENT_BYTES) {
+	if (!mimeType || !attachment.presignedUrl) {
 		return null;
 	}
 
 	if (mimeType.startsWith("image/")) {
-		const url =
-			attachment.presignedUrl ??
-			(attachment.bytes
-				? `data:${mimeType};base64,${attachment.bytes.toString("base64")}`
-				: null);
-
-		if (!url) return null;
-
 		return {
-			type: "image_url",
-			image_url: { url, detail: "auto" },
+			type: "image",
+			source: { type: "url", url: attachment.presignedUrl },
 		};
 	}
 
-	if (mimeType === "application/pdf" && attachment.bytes) {
+	if (mimeType === "application/pdf") {
 		return {
-			type: "file",
-			file: {
-				data: attachment.bytes.toString("base64"),
-				media_type: "application/pdf",
-				filename: attachment.originalName,
-			},
+			type: "document",
+			source: { type: "url", url: attachment.presignedUrl },
 		};
 	}
 
 	return null;
 }
 
-function buildAttachmentContextBlock(
+function buildUnsupportedAttachmentNote(
 	attachments: ParseAttachmentInput[],
 ): string {
-	if (attachments.length === 0) {
-		return "";
-	}
-
-	const lines = ["", "Attachment context:"];
-
-	for (const attachment of attachments.slice(0, MAX_AI_ATTACHMENTS)) {
-		const mimeType = normalizeAttachmentMime(attachment.mimeType) || "unknown";
-		const inlineText = extractInlineAttachmentText(attachment);
-
-		const size = attachment.bytes?.byteLength ?? attachment.sizeBytes ?? 0;
-		lines.push(`- ${attachment.originalName} (${mimeType}, ${size} bytes)`);
-
-		if (inlineText) {
-			lines.push(`  content:\n${inlineText}`);
-		}
-	}
-
-	lines.push(
-		"",
-		"If binary office files cannot be parsed from content, use filenames and user text context conservatively.",
-	);
-
-	return lines.join("\n");
-}
-
-function buildAttachmentFallbackNote(parts: GatewayAttachmentPart[]): string {
-	if (parts.length === 0) {
-		return "";
-	}
-
-	const lines = parts.map((part) => {
-		if (part.type === "image_url") {
-			return "- image attachment";
-		}
-
-		return `- pdf attachment: ${part.file.filename}`;
+	const unsupported = attachments.filter((att) => {
+		const mime = normalizeAttachmentMime(att.mimeType);
+		return (
+			mime &&
+			!mime.startsWith("image/") &&
+			mime !== "application/pdf"
+		);
 	});
 
-	return [
-		"",
-		"Attachment metadata (content may be unavailable with current provider route):",
-		...lines,
-	].join("\n");
+	if (unsupported.length === 0) {
+		return "";
+	}
+
+	const lines = unsupported.map(
+		(att) =>
+			`- ${att.originalName} (${normalizeAttachmentMime(att.mimeType) || "unknown"})`,
+	);
+
+	return `\nOther attached files (content not available, use filename as context):\n${lines.join("\n")}`;
 }
 
-function extractMessageText(content: unknown): string | null {
-	if (typeof content === "string") {
-		return content;
-	}
+// ─── Anthropic Messages API caller ──────────────────────────────────────────
 
-	if (!Array.isArray(content)) {
-		return null;
-	}
-
-	const texts = content
-		.map((item) => {
-			if (typeof item !== "object" || item === null) {
-				return null;
-			}
-
-			const maybeText = (item as { text?: unknown }).text;
-			return typeof maybeText === "string" ? maybeText : null;
-		})
-		.filter((value): value is string => Boolean(value));
-
-	if (texts.length === 0) {
-		return null;
-	}
-
-	return texts.join("\n");
-}
-
-async function callChatCompletions(args: {
+async function callMessages(args: {
 	baseUrl: string;
 	apiKey: string;
-	body: Record<string, unknown>;
-}) {
+	model: string;
+	system: string;
+	userContent: MessageContentPart[];
+	maxTokens?: number;
+	temperature?: number;
+	outputConfig?: Record<string, unknown>;
+}): Promise<string | null> {
+	const body: Record<string, unknown> = {
+		model: args.model,
+		max_tokens: args.maxTokens ?? 8192,
+		messages: [
+			{
+				role: "user",
+				content: args.userContent,
+			},
+		],
+		system: args.system,
+	};
+
+	if (args.temperature !== undefined) {
+		body.temperature = args.temperature;
+	}
+
+	if (args.outputConfig) {
+		body.output_config = args.outputConfig;
+	}
+
 	const response = await fetch(
-		`${args.baseUrl.replace(/\/$/, "")}/chat/completions`,
+		`${args.baseUrl.replace(/\/$/, "")}/messages`,
 		{
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
 				Authorization: `Bearer ${args.apiKey}`,
+				"anthropic-version": "2023-06-01",
 			},
-			body: JSON.stringify(args.body),
+			body: JSON.stringify(body),
 		},
 	);
 
@@ -333,56 +250,111 @@ async function callChatCompletions(args: {
 	}
 
 	const json = (await response.json()) as {
-		choices?: Array<{ message?: { content?: unknown } }>;
+		content?: Array<{ type: string; text?: string }>;
 	};
 
-	return extractMessageText(json.choices?.[0]?.message?.content);
+	return json.content?.find((b) => b.type === "text")?.text ?? null;
 }
 
-function getStructuredPrompt(basePrompt: string): string {
-	return `${basePrompt}
+// ─── Prompt builder ─────────────────────────────────────────────────────────
 
-Requirements:
-- Output strict JSON only.
-- Generate the title in the SAME LANGUAGE as the user's input text.
-- Datetime fields must be ISO 8601 with timezone offset or Z. Example: 2026-03-22T09:00:00+08:00
-- If the text has relative time (e.g. tomorrow, day after tomorrow, this Sunday evening), resolve it by the provided local datetime context.
-- If timezone is missing in user text, interpret it in the user's timezone and still output ISO with timezone.
-- timeOptions: an array of 1–3 possible start/due date interpretations.
-  - STRONGLY prefer returning exactly 1 option. Only return 2–3 when the user's input is genuinely ambiguous about dates (e.g. "next Friday or Saturday").
-  - Each option has startAt (nullable) and dueAt (nullable).
-- allowLateSubmission: boolean or null. Set to true/false only if the user explicitly mentions it; otherwise null.`;
+const PARSE_REQUIREMENTS = `
+## Structured fields
+
+- title: Concise task title. Same language as the input.
+- timeOptions: 1–3 deadline interpretations. Prefer exactly 1. Only return 2–3 when dates are genuinely ambiguous (e.g., "next Friday or Saturday"). Each has startAt and dueAt (nullable).
+- allowLateSubmission: true/false only if explicitly stated; otherwise null.
+- description: One-sentence task summary. Same language as the input.
+
+## Markdown document (markdown field)
+
+- Same language as the input.
+- Strictly follow the source content — do NOT invent requirements or details not present in the input or attachments.
+- If files are attached, incorporate their relevant content into the document.
+- Suggested structure (only include sections with content):
+  Title heading → Overview → Requirements → Timeline → Submission notes
+- Dates in the markdown must be written in natural, human-readable form (e.g., "Friday, April 18, 2026, 11:59 PM"). Do NOT use ISO 8601 format in the markdown.
+
+## Datetime rules (for structured fields only)
+
+- All startAt/dueAt values: ISO 8601 with timezone offset. Example: 2026-04-18T23:59:00+08:00
+- Resolve relative times ("tomorrow", "this Sunday") using the provided current datetime.
+- If the input omits timezone, use the user's timezone setting.`;
+
+function buildParseSystemPrompt(configuredBase: string): string {
+	const base = configuredBase.trim()
+		? configuredBase
+		: "You are a task parser for an educational platform. Teachers provide task descriptions (assignments, homework, project specs) as text, sometimes with attached files (PDFs, images). Extract structured metadata and produce a formatted markdown document.";
+
+	return `${base}\n${PARSE_REQUIREMENTS}`;
 }
 
-function getMarkdownPrompt(basePrompt: string): string {
-	return `${basePrompt}
+// ─── Structured output schema ───────────────────────────────────────────────
 
-Requirements:
-- Output only markdown.
-- Use the SAME LANGUAGE as the user's input text.
-- Strictly follow the user's content. Do NOT add information, details, or requirements that the user did not mention.
-- Organize into clear sections and bullet points.
-- Include timeline interpretation based on provided local datetime context.
-- Keep the writing concise and task-oriented.`;
+const PARSE_OUTPUT_SCHEMA = {
+	type: "object",
+	additionalProperties: false,
+	properties: {
+		title: { type: ["string", "null"] },
+		timeOptions: {
+			type: "array",
+			items: {
+				type: "object",
+				additionalProperties: false,
+				properties: {
+					startAt: { type: ["string", "null"] },
+					dueAt: { type: ["string", "null"] },
+				},
+				required: ["startAt", "dueAt"],
+			},
+		},
+		allowLateSubmission: { type: ["boolean", "null"] },
+		description: { type: ["string", "null"] },
+		markdown: { type: "string" },
+	},
+	required: [
+		"title",
+		"timeOptions",
+		"allowLateSubmission",
+		"description",
+		"markdown",
+	],
+} as const;
+
+// ─── LLM config loader ─────────────────────────────────────────────────────
+
+async function loadLlmConfig() {
+	const config = await getConfigValues([
+		"llm.provider",
+		"llm.base_url",
+		"llm.api_key",
+		"llm.model",
+		"llm.prompt_task_parse",
+	]);
+
+	const provider = config.get("llm.provider");
+	const baseUrl = config.get("llm.base_url");
+	const apiKey = config.get("llm.api_key");
+	const model = config.get("llm.model");
+	const promptBase = config.get("llm.prompt_task_parse");
+
+	if (!provider || !baseUrl || !apiKey || !model) {
+		return null;
+	}
+
+	return { baseUrl, apiKey, model, promptBase: promptBase ?? "" };
 }
+
+// ─── Main parse function ────────────────────────────────────────────────────
 
 export async function parseTaskContent(input: {
 	text: string;
 	context: ParseTaskContext;
 	attachments?: ParseAttachmentInput[];
 }): Promise<ParseTaskArtifacts> {
-	const provider = await getConfigValue("llm.provider");
-	const baseUrl = await getConfigValue("llm.base_url");
-	const apiKey = await getConfigValue("llm.api_key");
-	const model = await getConfigValue("llm.model");
-	const configuredStructuredPrompt = await getConfigValue(
-		"llm.prompt_task_parse_structured",
-	);
-	const configuredMarkdownPrompt = await getConfigValue(
-		"llm.prompt_task_parse_markdown",
-	);
+	const llm = await loadLlmConfig();
 
-	if (!provider || !baseUrl || !apiKey || !model) {
+	if (!llm) {
 		return {
 			structured: fallbackParse(input.text),
 			markdown: fallbackMarkdown(input.text),
@@ -390,162 +362,66 @@ export async function parseTaskContent(input: {
 	}
 
 	try {
-		const structuredPrompt = getStructuredPrompt(
-			configuredStructuredPrompt?.trim()
-				? configuredStructuredPrompt
-				: "Extract task fields into JSON schema {title,startAt,dueAt,description}.",
-		);
-		const markdownPrompt = getMarkdownPrompt(
-			configuredMarkdownPrompt?.trim()
-				? configuredMarkdownPrompt
-				: "Generate a markdown task brief from the provided text and files.",
-		);
+		const systemPrompt = buildParseSystemPrompt(llm.promptBase);
 
 		const limitedAttachments = (input.attachments ?? []).slice(
 			0,
 			MAX_AI_ATTACHMENTS,
 		);
-		const attachmentParts = limitedAttachments
-			.map(toGatewayAttachmentPart)
-			.filter((item): item is NonNullable<typeof item> => Boolean(item));
-		const attachmentContextText =
-			buildAttachmentContextBlock(limitedAttachments);
 
-		const userPromptText = [
-			`User timezone setting: ${input.context.userTimezone}`,
-			`Current local datetime (with weekday): ${input.context.localNowWithWeekday}`,
+		const attachmentParts = limitedAttachments
+			.map(toMessageContentPart)
+			.filter((p): p is NonNullable<typeof p> => Boolean(p));
+
+		const unsupportedNote =
+			buildUnsupportedAttachmentNote(limitedAttachments);
+
+		const userText = [
+			`Timezone: ${input.context.userTimezone}`,
+			`Now: ${input.context.localNowWithWeekday}`,
 			"",
-			"Task natural language input:",
+			"Task input:",
 			input.text,
-			attachmentContextText,
+			unsupportedNote,
 		]
 			.filter(Boolean)
 			.join("\n");
 
-		const textOnlyPrompt = `${userPromptText}${buildAttachmentFallbackNote(attachmentParts)}`;
-
-		const multimodalContent = [
+		const userContent: MessageContentPart[] = [
 			...attachmentParts,
-			{
-				type: "text",
-				text: userPromptText,
-			},
+			{ type: "text", text: userText },
 		];
-		const textOnlyContent = [
-			{
-				type: "text",
-				text: textOnlyPrompt,
+
+		const raw = await callMessages({
+			baseUrl: llm.baseUrl,
+			apiKey: llm.apiKey,
+			model: llm.model,
+			system: systemPrompt,
+			userContent,
+			temperature: 0,
+			outputConfig: {
+				format: {
+					type: "json_schema",
+					schema: PARSE_OUTPUT_SCHEMA,
+				},
 			},
-		];
-		const firstPassContent =
-			attachmentParts.length > 0 ? multimodalContent : textOnlyContent;
-
-		const runStructured = (content: unknown) =>
-			callChatCompletions({
-				baseUrl,
-				apiKey,
-				body: {
-					model,
-					temperature: 0,
-					messages: [
-						{
-							role: "system",
-							content: structuredPrompt,
-						},
-						{
-							role: "user",
-							content,
-						},
-					],
-					response_format: {
-						type: "json_schema",
-						json_schema: {
-							name: "task_parse_output",
-							strict: true,
-							schema: {
-								type: "object",
-								additionalProperties: false,
-								properties: {
-									title: { type: ["string", "null"] },
-									timeOptions: {
-										type: "array",
-										items: {
-											type: "object",
-											additionalProperties: false,
-											properties: {
-												startAt: { type: ["string", "null"] },
-												dueAt: { type: ["string", "null"] },
-											},
-											required: ["startAt", "dueAt"],
-										},
-									},
-									allowLateSubmission: { type: ["boolean", "null"] },
-									description: { type: ["string", "null"] },
-								},
-								required: [
-									"title",
-									"timeOptions",
-									"allowLateSubmission",
-									"description",
-								],
-							},
-						},
-					},
-				},
-			});
-
-		const runMarkdown = (content: unknown) =>
-			callChatCompletions({
-				baseUrl,
-				apiKey,
-				body: {
-					model,
-					temperature: 0.2,
-					messages: [
-						{
-							role: "system",
-							content: markdownPrompt,
-						},
-						{
-							role: "user",
-							content,
-						},
-					],
-				},
-			});
-
-		let [structuredRaw, markdownRaw] = await Promise.all([
-			runStructured(firstPassContent),
-			runMarkdown(firstPassContent),
-		]);
-
-		if (attachmentParts.length > 0 && !structuredRaw) {
-			structuredRaw = await runStructured(textOnlyContent);
-		}
-
-		if (attachmentParts.length > 0 && !markdownRaw) {
-			markdownRaw = await runMarkdown(textOnlyContent);
-		}
+		});
 
 		const fallback = fallbackParse(input.text);
 
-		if (!structuredRaw) {
+		if (!raw) {
 			return {
 				structured: fallback,
-				markdown: markdownRaw?.trim()
-					? markdownRaw.trim()
-					: fallbackMarkdown(input.text),
+				markdown: fallbackMarkdown(input.text),
 			};
 		}
 
-		const parsed = parseResultSchema.safeParse(JSON.parse(structuredRaw));
+		const parsed = parseResultSchema.safeParse(JSON.parse(raw));
 
 		if (!parsed.success) {
 			return {
 				structured: fallback,
-				markdown: markdownRaw?.trim()
-					? markdownRaw.trim()
-					: fallbackMarkdown(input.text),
+				markdown: fallbackMarkdown(input.text),
 			};
 		}
 
@@ -572,9 +448,7 @@ export async function parseTaskContent(input: {
 				allowLateSubmission: normalized.allowLateSubmission,
 				description: normalized.description ?? fallback.description,
 			},
-			markdown: markdownRaw?.trim()
-				? markdownRaw.trim()
-				: fallbackMarkdown(input.text),
+			markdown: parsed.data.markdown?.trim() || fallbackMarkdown(input.text),
 		};
 	} catch {
 		return {
@@ -614,12 +488,9 @@ export async function reviseTaskContent(input: {
 	instruction: string;
 	context: ParseTaskContext;
 }): Promise<ReviseContentResult> {
-	const provider = await getConfigValue("llm.provider");
-	const baseUrl = await getConfigValue("llm.base_url");
-	const apiKey = await getConfigValue("llm.api_key");
-	const model = await getConfigValue("llm.model");
+	const llm = await loadLlmConfig();
 
-	if (!provider || !baseUrl || !apiKey || !model) {
+	if (!llm) {
 		throw new AppError(
 			503,
 			"LLM_NOT_CONFIGURED",
@@ -634,10 +505,14 @@ Requirements:
 - Use the SAME LANGUAGE as the original content.
 - Strictly follow the user's modification instruction. Do NOT add information or make changes beyond what was requested.
 - Preserve the overall structure and formatting of the original content unless the instruction specifically asks to change it.
+- Dates must be in natural, human-readable form (e.g., "Friday, April 18, 2026, 11:59 PM"). Do NOT use ISO 8601 format.
 - If the instruction is unclear, make minimal, conservative changes.`;
 
-	const userPrompt = `User timezone: ${input.context.userTimezone}
-Current local datetime: ${input.context.localNowWithWeekday}
+	const userContent: MessageContentPart[] = [
+		{
+			type: "text",
+			text: `Timezone: ${input.context.userTimezone}
+Now: ${input.context.localNowWithWeekday}
 
 --- CURRENT CONTENT ---
 ${input.currentContent}
@@ -647,19 +522,17 @@ ${input.currentContent}
 ${input.instruction}
 --- END INSTRUCTION ---
 
-Please apply the modification and return the revised content.`;
-
-	const result = await callChatCompletions({
-		baseUrl,
-		apiKey,
-		body: {
-			model,
-			temperature: 0.2,
-			messages: [
-				{ role: "system", content: systemPrompt },
-				{ role: "user", content: userPrompt },
-			],
+Apply the modification and return the revised content.`,
 		},
+	];
+
+	const result = await callMessages({
+		baseUrl: llm.baseUrl,
+		apiKey: llm.apiKey,
+		model: llm.model,
+		system: systemPrompt,
+		userContent,
+		temperature: 0.2,
 	});
 
 	if (!result) {

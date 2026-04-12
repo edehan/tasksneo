@@ -93,8 +93,9 @@ const CONFIG_DEFAULTS = {
   "llm.base_url": "",
   "llm.api_key": "",
   "llm.model": "",
-  "llm.prompt_task_parse_structured": "",
-  "llm.prompt_task_parse_markdown": "",
+  "llm.prompt_task_parse": "",
+  "stt.api_key": "",
+  "stt.speech_model": "whisper-rt",
 };
 
 type ConfigKey = keyof typeof CONFIG_DEFAULTS;
@@ -169,16 +170,22 @@ const CONFIG_GROUPS: Array<{ title: string; fields: ConfigField[] }> = [
       { key: "llm.api_key", label: "API Key", type: "password" },
       { key: "llm.model", label: "Model", placeholder: "gpt-4o-mini" },
       {
-        key: "llm.prompt_task_parse_structured",
-        label: "Structured Parse Prompt",
+        key: "llm.prompt_task_parse",
+        label: "Task Parse Prompt",
         type: "textarea",
-        placeholder: "Prompt for strict JSON extraction",
+        placeholder:
+          "Base prompt for AI task parsing (role + context description)",
       },
+    ],
+  },
+  {
+    title: "Speech-to-Text",
+    fields: [
+      { key: "stt.api_key", label: "API Key", type: "password" },
       {
-        key: "llm.prompt_task_parse_markdown",
-        label: "Markdown Draft Prompt",
-        type: "textarea",
-        placeholder: "Prompt for markdown brief generation",
+        key: "stt.speech_model",
+        label: "Speech Model",
+        placeholder: "whisper-rt",
       },
     ],
   },
@@ -189,6 +196,7 @@ const SECRET_CONFIG_KEYS = new Set<ConfigKey>([
   "smtp.user",
   "smtp.password",
   "llm.api_key",
+  "stt.api_key",
 ]);
 const SECRET_MASK = "***";
 const SECRET_REENTER = "[re-enter value]";

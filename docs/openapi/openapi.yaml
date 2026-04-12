@@ -2384,6 +2384,10 @@ paths:
                   token:
                     type: string
                     description: AssemblyAI 临时 Token
+                  speechModel:
+                    type: string
+                    description: 语音识别模型名称
+                    example: whisper-rt
         '503':
           description: STT 服务未配置
 

@@ -3,11 +3,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { requireAuthUser } from "../lib/context.js";
 import { AppError } from "../lib/errors.js";
-import {
-	getObjectBuffer,
-	getPresignedUrl,
-	uploadObject,
-} from "../lib/storage.js";
+import { getPresignedUrl, uploadObject } from "../lib/storage.js";
 import { authMiddleware } from "../middleware/auth.js";
 import {
 	assertParseInput,
@@ -254,14 +250,26 @@ tasksRouter.post("/:taskId/parse", async (c) => {
 		throw new AppError(403, "FORBIDDEN", "Only class admin can parse task");
 	}
 
-	const membership = await prisma.classMember.findUnique({
-		where: {
-			classId_userId: {
-				classId: task.classId,
-				userId: authUser.userId,
+	// Membership check + attachment fetch in parallel (both need task.classId / task.id)
+	const [membership, attachments] = await Promise.all([
+		prisma.classMember.findUnique({
+			where: {
+				classId_userId: {
+					classId: task.classId,
+					userId: authUser.userId,
+				},
 			},
-		},
-	});
+		}),
+		prisma.attachment.findMany({
+			where: { taskId: task.id },
+			select: {
+				originalName: true,
+				mimeType: true,
+				fileKey: true,
+				sizeBytes: true,
+			},
+		}),
+	]);
 
 	if (
 		!membership ||
@@ -273,55 +281,16 @@ tasksRouter.post("/:taskId/parse", async (c) => {
 	const text = body.text ?? task.sourceText ?? "";
 	assertParseInput(text);
 
-	const attachments = await prisma.attachment.findMany({
-		where: { taskId: task.id },
-		select: {
-			originalName: true,
-			mimeType: true,
-			fileKey: true,
-			sizeBytes: true,
-		},
-	});
-
-	const attachmentPayload = [] as Array<{
-		originalName: string;
-		mimeType: string | null;
-		bytes?: Buffer;
-		presignedUrl?: string;
-		sizeBytes?: number;
-	}>;
-
-	for (const attachment of attachments) {
-		const mime = (attachment.mimeType ?? "").toLowerCase();
-
-		if (mime.startsWith("image/")) {
-			// Use presigned URL for images — avoids downloading to API memory
-			const presignedUrl = await getPresignedUrl(attachment.fileKey, 600);
-			attachmentPayload.push({
-				originalName: attachment.originalName,
-				mimeType: attachment.mimeType,
-				presignedUrl,
-				sizeBytes:
-					attachment.sizeBytes != null
-						? Number(attachment.sizeBytes)
-						: undefined,
-			});
-		} else {
-			// PDFs and text files: download bytes for base64 encoding
-			const bytes = await getObjectBuffer(attachment.fileKey);
-
-			if (!bytes) {
-				continue;
-			}
-
-			attachmentPayload.push({
-				originalName: attachment.originalName,
-				mimeType: attachment.mimeType,
-				bytes,
-				sizeBytes: bytes.byteLength,
-			});
-		}
-	}
+	// Generate presigned URLs in parallel — no byte downloads
+	const attachmentPayload = await Promise.all(
+		attachments.map(async (att) => ({
+			originalName: att.originalName,
+			mimeType: att.mimeType,
+			presignedUrl: await getPresignedUrl(att.fileKey, 600),
+			sizeBytes:
+				att.sizeBytes != null ? Number(att.sizeBytes) : undefined,
+		})),
+	);
 
 	const parsed = await parseTaskContent({
 		text,
@@ -331,18 +300,20 @@ tasksRouter.post("/:taskId/parse", async (c) => {
 
 	// Update task with first time option as default
 	const firstOption = parsed.structured.timeOptions[0];
-	await updateTask(task.id, authUser.userId, {
-		sourceText: text,
-		title: parsed.structured.title ?? undefined,
-		startAt: firstOption?.startAt ?? undefined,
-		dueAt: firstOption?.dueAt ?? undefined,
-		allowLateSubmission: parsed.structured.allowLateSubmission ?? undefined,
-		description: parsed.structured.description ?? undefined,
-	});
-
-	if (parsed.markdown) {
-		await setTaskDraftMarkdown(task.id, parsed.markdown);
-	}
+	await Promise.all([
+		updateTask(task.id, authUser.userId, {
+			sourceText: text,
+			title: parsed.structured.title ?? undefined,
+			startAt: firstOption?.startAt ?? undefined,
+			dueAt: firstOption?.dueAt ?? undefined,
+			allowLateSubmission:
+				parsed.structured.allowLateSubmission ?? undefined,
+			description: parsed.structured.description ?? undefined,
+		}),
+		parsed.markdown
+			? setTaskDraftMarkdown(task.id, parsed.markdown)
+			: Promise.resolve(),
+	]);
 
 	return c.json(
 		{

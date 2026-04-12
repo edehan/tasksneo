@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { requireAuthUser } from "../lib/context.js";
 import { AppError } from "../lib/errors.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { getConfigValues } from "../services/system-config.service.js";
 
 import type { AppVariables } from "../types/context.js";
 
@@ -12,7 +13,9 @@ sttRouter.use("*", authMiddleware);
 sttRouter.post("/token", async (c) => {
 	requireAuthUser(c);
 
-	const apiKey = process.env.ASSEMBLYAI_API_KEY;
+	const config = await getConfigValues(["stt.api_key", "stt.speech_model"]);
+	const apiKey = config.get("stt.api_key");
+	const speechModel = config.get("stt.speech_model") ?? "whisper-rt";
 
 	if (!apiKey) {
 		throw new AppError(
@@ -38,5 +41,5 @@ sttRouter.post("/token", async (c) => {
 
 	const data = (await response.json()) as { token: string };
 
-	return c.json({ token: data.token }, 200);
+	return c.json({ token: data.token, speechModel }, 200);
 });
