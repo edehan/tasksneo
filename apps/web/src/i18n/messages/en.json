@@ -136,25 +136,31 @@
     "alreadyHaveAccount": "Already have an account?",
     "signIn": "Sign in"
   },
-  "authBranding": {
-    "tagline": "Organize your classroom tasks with ease",
-    "feature1": "Create and manage class tasks effortlessly",
-    "feature2": "Invite students with a simple link",
-    "feature3": "Track submissions and grade efficiently",
-    "feature4": "Stay notified about deadlines and updates"
-  },
   "joinPage": {
     "title": "Join Class",
     "description": "You are about to join a class using an invite link.",
     "inviteCodeLabel": "Invite code",
     "joiningAs": "Joining as {name}",
+    "loadingPreview": "Loading class details...",
+    "descriptionFallback": "No class description yet.",
+    "schoolLabel": "School",
+    "schoolOpenToAll": "Open to all schools",
+    "memberCountLabel": "Members",
+    "memberCountValue": "{count} members",
+    "readyBadge": "Open",
+    "joinedBadge": "Joined",
+    "restrictedBadge": "Restricted",
+    "reviewHint": "Review the class details before you join.",
+    "alreadyJoinedHint": "You already belong to this class. You can open it directly.",
     "join": "Join Class",
+    "openClass": "Open Class",
     "cancel": "Cancel",
     "joining": "Joining...",
     "invalidInviteCode": "This invite code is invalid or has expired.",
     "alreadyMember": "You are already a member of this class.",
     "schoolMismatch": "This class is restricted to a school that does not match your account.",
     "joinFailed": "Failed to join class. Please try again.",
+    "loadPreviewFailed": "Failed to load class details. Please try again.",
     "goToDashboard": "Go to Dashboard"
   },
   "appSidebar": {

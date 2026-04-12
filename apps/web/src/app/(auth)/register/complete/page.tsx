@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ import {
   listSchools,
   verifyToken,
 } from "@/lib/api";
+import { readSafeNextParam, readWindowSearchParam } from "@/lib/search-params";
 
 function detectBrowserTimezone(): string {
   try {
@@ -43,13 +44,12 @@ function detectBrowserTimezone(): string {
 }
 
 function CompleteRegistrationInner() {
-  const searchParams = useSearchParams();
-  const token = searchParams.get("token");
-  const next = searchParams.get("next");
   const router = useRouter();
   const { setAuth } = useAuth();
   const t = useTranslations("authRegisterComplete");
 
+  const [token, setToken] = useState<string | null>(null);
+  const [next, setNext] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(true);
   const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -65,13 +65,17 @@ function CompleteRegistrationInner() {
   const detectedTimezone = detectBrowserTimezone();
 
   useEffect(() => {
-    if (!token) {
+    const searchToken = readWindowSearchParam("token");
+    setToken(searchToken);
+    setNext(readSafeNextParam());
+
+    if (!searchToken) {
       setError(t("missingVerificationToken"));
       setVerifying(false);
       return;
     }
 
-    verifyToken(token, "REGISTRATION")
+    verifyToken(searchToken, "REGISTRATION")
       .then((res) => {
         if (res.valid) {
           setVerifiedEmail(res.email);
@@ -83,7 +87,7 @@ function CompleteRegistrationInner() {
         setError(t("invalidOrExpiredLink"));
       })
       .finally(() => setVerifying(false));
-  }, [token, t]);
+  }, [t]);
 
   const loadSchools = useCallback(async () => {
     try {
@@ -125,8 +129,7 @@ function CompleteRegistrationInner() {
         timezone: detectedTimezone,
       });
       setAuth(res.token, res.user);
-      const dest = next && next.startsWith("/") ? next : "/dashboard";
-      router.replace(dest);
+      router.replace(next ?? "/dashboard");
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("registrationFailed");
@@ -270,17 +273,5 @@ function CompleteRegistrationInner() {
 }
 
 export default function CompleteRegistrationPage() {
-  return (
-    <Suspense
-      fallback={
-        <Card>
-          <CardContent className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
-          </CardContent>
-        </Card>
-      }
-    >
-      <CompleteRegistrationInner />
-    </Suspense>
-  );
+  return <CompleteRegistrationInner />;
 }

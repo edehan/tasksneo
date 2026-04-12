@@ -136,6 +136,33 @@
     "alreadyHaveAccount": "已有账号？",
     "signIn": "登录"
   },
+  "joinPage": {
+    "title": "加入班级",
+    "description": "你将通过邀请链接加入一个班级。",
+    "inviteCodeLabel": "邀请码",
+    "joiningAs": "以 {name} 身份加入",
+    "loadingPreview": "正在加载班级信息...",
+    "descriptionFallback": "这个班级暂时还没有描述。",
+    "schoolLabel": "学校",
+    "schoolOpenToAll": "面向所有学校",
+    "memberCountLabel": "成员数",
+    "memberCountValue": "{count} 人",
+    "readyBadge": "可加入",
+    "joinedBadge": "已加入",
+    "restrictedBadge": "受限",
+    "reviewHint": "你可以先确认班级信息，再决定是否加入。",
+    "alreadyJoinedHint": "你已经在这个班级里了，现在可以直接打开它。",
+    "join": "加入班级",
+    "openClass": "打开班级",
+    "cancel": "取消",
+    "joining": "加入中...",
+    "invalidInviteCode": "该邀请码无效或已过期。",
+    "alreadyMember": "你已经是这个班级的成员。",
+    "schoolMismatch": "该班级限制为特定学校加入，与你的账号信息不匹配。",
+    "joinFailed": "加入班级失败，请重试。",
+    "loadPreviewFailed": "加载班级信息失败，请重试。",
+    "goToDashboard": "前往仪表盘"
+  },
   "appSidebar": {
     "user": "用户",
     "settings": "设置",
@@ -464,7 +491,10 @@
     "classDeleted": "班级已删除",
     "failedDeleteClass": "删除班级失败",
     "deleteDialogTitle": "删除“{name}”？",
-    "deleteDialogDescription": "将永久删除该班级及其所有任务、提交和成员数据。此操作无法撤销。"
+    "deleteDialogDescription": "将永久删除该班级及其所有任务、提交和成员数据。此操作无法撤销。",
+    "copyInviteLinkTitle": "复制邀请链接",
+    "inviteLinkCopied": "邀请链接已复制",
+    "inviteLinkText": "{user} 邀请你加入 {class}\n{url}"
   },
   "taskListView": {
     "columns": {
@@ -843,7 +873,7 @@
     "failedLoad": "加载会话失败",
     "failedRevoke": "登出会话失败"
   },
-  
+
   "batchDownloadDialog": {
     "title": "下载提交内容",
     "description": "{count} 名学生有可下载内容",

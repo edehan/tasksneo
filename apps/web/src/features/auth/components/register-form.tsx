@@ -139,7 +139,7 @@ export function RegisterForm() {
             />
             <Label
               htmlFor="reg-terms"
-              className="text-sm leading-snug font-normal"
+              className="text-sm font-normal leading-snug"
             >
               {t("agreeTo")}{" "}
               <Link

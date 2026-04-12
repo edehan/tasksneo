@@ -136,6 +136,33 @@
     "alreadyHaveAccount": "すでにアカウントをお持ちですか？",
     "signIn": "サインイン"
   },
+  "joinPage": {
+    "title": "クラスに参加",
+    "description": "招待リンクを使ってクラスに参加しようとしています。",
+    "inviteCodeLabel": "招待コード",
+    "joiningAs": "{name} として参加",
+    "loadingPreview": "クラス情報を読み込んでいます...",
+    "descriptionFallback": "このクラスにはまだ説明がありません。",
+    "schoolLabel": "学校",
+    "schoolOpenToAll": "すべての学校",
+    "memberCountLabel": "メンバー数",
+    "memberCountValue": "{count}人",
+    "readyBadge": "参加可",
+    "joinedBadge": "参加済み",
+    "restrictedBadge": "制限あり",
+    "reviewHint": "参加前にクラス情報を確認できます。",
+    "alreadyJoinedHint": "このクラスにはすでに参加しています。そのまま開けます。",
+    "join": "クラスに参加",
+    "openClass": "クラスを開く",
+    "cancel": "キャンセル",
+    "joining": "参加中...",
+    "invalidInviteCode": "この招待コードは無効か、期限切れです。",
+    "alreadyMember": "すでにこのクラスのメンバーです。",
+    "schoolMismatch": "このクラスは、あなたのアカウントと一致しない学校に限定されています。",
+    "joinFailed": "クラスへの参加に失敗しました。もう一度お試しください。",
+    "loadPreviewFailed": "クラス情報の読み込みに失敗しました。もう一度お試しください。",
+    "goToDashboard": "ダッシュボードへ戻る"
+  },
   "appSidebar": {
     "user": "ユーザー",
     "settings": "設定",
@@ -464,7 +491,10 @@
     "classDeleted": "クラスを削除しました",
     "failedDeleteClass": "クラスの削除に失敗しました",
     "deleteDialogTitle": "「{name}」を削除しますか？",
-    "deleteDialogDescription": "クラス、すべての課題、提出、メンバーデータを完全に削除します。この操作は元に戻せません。"
+    "deleteDialogDescription": "クラス、すべての課題、提出、メンバーデータを完全に削除します。この操作は元に戻せません。",
+    "copyInviteLinkTitle": "招待リンクをコピー",
+    "inviteLinkCopied": "招待リンクをコピーしました",
+    "inviteLinkText": "{user} があなたを {class} に招待しています\n{url}"
   },
   "taskListView": {
     "columns": {

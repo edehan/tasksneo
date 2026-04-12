@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -19,17 +19,21 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiError } from "@/lib/api";
+import { readSafeNextParam } from "@/lib/search-params";
 
 export function LoginForm() {
   const { login } = useAuth();
   const t = useTranslations("authLogin");
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const next = searchParams.get("next");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [trustDevice, setTrustDevice] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [next, setNext] = useState<string | null>(null);
+
+  useEffect(() => {
+    setNext(readSafeNextParam());
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -38,8 +42,7 @@ export function LoginForm() {
     setSubmitting(true);
     try {
       await login(email, password, trustDevice);
-      const dest = next && next.startsWith("/") ? next : "/dashboard";
-      router.replace(dest);
+      router.replace(next ?? "/dashboard");
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t("loginFailed");
       toast.error(message);
@@ -100,7 +103,7 @@ export function LoginForm() {
             <div className="space-y-1 leading-none">
               <Label
                 htmlFor="trustDevice"
-                className="text-sm font-normal cursor-pointer"
+                className="cursor-pointer text-sm font-normal"
               >
                 {t("trustDevice")}
               </Label>
@@ -117,7 +120,11 @@ export function LoginForm() {
           <p className="text-sm text-muted-foreground">
             {t("noAccount")}{" "}
             <Link
-              href={next ? `/register?next=${encodeURIComponent(next)}` : "/register"}
+              href={
+                next
+                  ? `/register?next=${encodeURIComponent(next)}`
+                  : "/register"
+              }
               className="text-primary underline-offset-4 hover:underline"
             >
               {t("signUp")}
