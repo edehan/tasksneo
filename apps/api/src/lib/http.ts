@@ -43,6 +43,7 @@ export function toUserProfile(
 
 interface ClassSummarySource {
 	id: string;
+	publicId: string;
 	name: string;
 	description: string | null;
 	color: string;
@@ -62,6 +63,7 @@ export function toClassSummary(
 ) {
 	return {
 		id: classInfo.id,
+		publicId: classInfo.publicId,
 		name: classInfo.name,
 		description: classInfo.description,
 		color: classInfo.color,
@@ -103,7 +105,9 @@ interface TaskUserStateSource {
 
 interface TaskSummarySource {
 	id: string;
+	publicId: string;
 	classId: string | null;
+	class: { name: string; publicId?: string | null } | null;
 	title: string;
 	sourceText: string | null;
 	startAt: Date | null;
@@ -115,7 +119,6 @@ interface TaskSummarySource {
 	createdBy: string | null;
 	createdAt: Date;
 	updatedAt: Date;
-	class: { name: string } | null;
 }
 
 export function toTaskUserState(
@@ -141,7 +144,9 @@ export function toTaskSummary(
 ) {
 	return {
 		id: task.id,
+		publicId: task.publicId,
 		classId: task.classId,
+		classPublicId: task.class?.publicId ?? null,
 		className: task.class?.name ?? null,
 		title: task.title,
 		sourceText: task.sourceText,
@@ -232,6 +237,7 @@ export function toComment(comment: CommentSource) {
 
 interface SubmissionSource {
 	id: string;
+	publicId: string;
 	taskId: string;
 	userId: string;
 	firstSubmittedAt: Date;
@@ -247,6 +253,7 @@ interface SubmissionSource {
 export function toSubmission(submission: SubmissionSource) {
 	return {
 		id: submission.id,
+		publicId: submission.publicId,
 		taskId: submission.taskId,
 		userId: submission.userId,
 		firstSubmittedAt: submission.firstSubmittedAt.toISOString(),

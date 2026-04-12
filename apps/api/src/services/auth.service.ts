@@ -3,6 +3,10 @@ import bcrypt from "bcryptjs";
 
 import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
+import {
+	createUniquePublicId,
+	isUniqueConstraintError,
+} from "../lib/public-id.js";
 import { createBrowserSession } from "./session.service.js";
 import { assertRegistrationOpen } from "./system-config.service.js";
 
@@ -75,44 +79,77 @@ export async function createUserWithPersonalClass(
 
 	const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
 
-	const user = await prisma.$transaction(async (tx) => {
-		const createdUser = await tx.user.create({
-			data: {
-				email: input.email,
-				nickname: input.nickname ?? null,
-				schoolId: input.schoolId ?? null,
-				studentId: input.studentId ?? null,
-				...(input.timezone ? { timezone: input.timezone } : {}),
-			},
-		});
+	let user = null;
 
-		await tx.userCredential.create({
-			data: {
-				userId: createdUser.id,
-				provider: AuthProvider.LOCAL,
-				passwordHash,
-			},
-		});
+	for (let attempt = 0; attempt < 8; attempt += 1) {
+		const personalClassPublicId = await createUniquePublicId(
+			async (publicId) => {
+				const existing = await prisma.class.findUnique({
+					where: { publicId },
+					select: { id: true },
+				});
 
-		const personalClass = await tx.class.create({
-			data: {
-				name: PERSONAL_CLASS_NAME,
-				isPersonal: true,
-				inviteCode: null,
-				ownerId: createdUser.id,
+				return Boolean(existing);
 			},
-		});
+		);
 
-		await tx.classMember.create({
-			data: {
-				classId: personalClass.id,
-				userId: createdUser.id,
-				role: ClassRole.OWNER,
-			},
-		});
+		try {
+			user = await prisma.$transaction(async (tx) => {
+				const createdUser = await tx.user.create({
+					data: {
+						email: input.email,
+						nickname: input.nickname ?? null,
+						schoolId: input.schoolId ?? null,
+						studentId: input.studentId ?? null,
+						...(input.timezone ? { timezone: input.timezone } : {}),
+					},
+				});
 
-		return createdUser;
-	});
+				await tx.userCredential.create({
+					data: {
+						userId: createdUser.id,
+						provider: AuthProvider.LOCAL,
+						passwordHash,
+					},
+				});
+
+				const personalClass = await tx.class.create({
+					data: {
+						publicId: personalClassPublicId,
+						name: PERSONAL_CLASS_NAME,
+						isPersonal: true,
+						inviteCode: null,
+						ownerId: createdUser.id,
+					},
+				});
+
+				await tx.classMember.create({
+					data: {
+						classId: personalClass.id,
+						userId: createdUser.id,
+						role: ClassRole.OWNER,
+					},
+				});
+
+				return createdUser;
+			});
+			break;
+		} catch (error) {
+			if (isUniqueConstraintError(error, ["public_id", "publicId"])) {
+				continue;
+			}
+
+			throw error;
+		}
+	}
+
+	if (!user) {
+		throw new AppError(
+			500,
+			"PUBLIC_ID_GENERATION_FAILED",
+			"Failed to generate public id",
+		);
+	}
 
 	const fullUser = await prisma.user.findUnique({
 		where: { id: user.id },

@@ -3,6 +3,7 @@ import path from "node:path";
 import { AuthProvider, ClassRole, prisma } from "@taskflow/db";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
+import { createUniquePublicId } from "../src/lib/public-id.js";
 import { updateConfig } from "../src/services/system-config.service.js";
 
 const repoRoot = path.resolve(process.cwd(), "../..");
@@ -82,6 +83,15 @@ async function upsertClass(
 		description?: string;
 	},
 ) {
+	const publicId = await createUniquePublicId(async (candidate) => {
+		const existing = await prisma.class.findUnique({
+			where: { publicId: candidate },
+			select: { id: true },
+		});
+
+		return Boolean(existing);
+	});
+
 	return prisma.class.upsert({
 		where: {
 			inviteCode: input.inviteCode,
@@ -95,6 +105,7 @@ async function upsertClass(
 			description: input.description ?? `${input.name}（本地开发数据）`,
 		},
 		create: {
+			publicId,
 			name: input.name,
 			ownerId,
 			isPersonal: false,
@@ -156,6 +167,14 @@ async function ensurePersonalClass(user: {
 			})
 		: await prisma.class.create({
 				data: {
+					publicId: await createUniquePublicId(async (candidate) => {
+						const duplicate = await prisma.class.findUnique({
+							where: { publicId: candidate },
+							select: { id: true },
+						});
+
+						return Boolean(duplicate);
+					}),
 					name: className,
 					ownerId: user.id,
 					isPersonal: true,
@@ -209,6 +228,14 @@ async function upsertTask(input: {
 
 	return prisma.task.create({
 		data: {
+			publicId: await createUniquePublicId(async (candidate) => {
+				const duplicate = await prisma.task.findUnique({
+					where: { publicId: candidate },
+					select: { id: true },
+				});
+
+				return Boolean(duplicate);
+			}),
 			classId: input.classId,
 			title: input.title,
 			...data,
@@ -244,6 +271,14 @@ async function upsertSubmission(input: {
 			reviewNote: input.reviewNote ?? null,
 		},
 		create: {
+			publicId: await createUniquePublicId(async (candidate) => {
+				const duplicate = await prisma.submission.findUnique({
+					where: { publicId: candidate },
+					select: { id: true },
+				});
+
+				return Boolean(duplicate);
+			}),
 			taskId: input.taskId,
 			userId: input.userId,
 			content: input.content,

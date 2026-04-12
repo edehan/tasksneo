@@ -2,6 +2,10 @@ import { ClassRole, prisma } from "@taskflow/db";
 
 import { cacheDel, cacheGetOrSet, cacheKeys } from "../lib/cache.js";
 import { AppError } from "../lib/errors.js";
+import {
+	createUniquePublicId,
+	isUniqueConstraintError,
+} from "../lib/public-id.js";
 
 const TASK_STATS_TTL_SECONDS = 60;
 
@@ -9,6 +13,28 @@ interface TaskStats {
 	memberCount: number;
 	viewedCount: number;
 	submittedCount: number;
+}
+
+async function createUniqueTaskPublicId(): Promise<string> {
+	return createUniquePublicId(async (publicId) => {
+		const existing = await prisma.task.findUnique({
+			where: { publicId },
+			select: { id: true },
+		});
+
+		return Boolean(existing);
+	});
+}
+
+async function createUniqueSubmissionPublicId(): Promise<string> {
+	return createUniquePublicId(async (publicId) => {
+		const existing = await prisma.submission.findUnique({
+			where: { publicId },
+			select: { id: true },
+		});
+
+		return Boolean(existing);
+	});
 }
 
 async function loadTaskStats(
@@ -102,6 +128,7 @@ export async function assertTaskAccess(taskId: string, userId: string) {
 				select: {
 					id: true,
 					name: true,
+					publicId: true,
 				},
 			},
 		},
@@ -151,6 +178,7 @@ async function getTaskWithUserState(taskId: string, userId: string) {
 				class: {
 					select: {
 						name: true,
+						publicId: true,
 					},
 				},
 			},
@@ -196,6 +224,7 @@ export async function listClassTasks(classId: string, userId: string) {
 					class: {
 						select: {
 							name: true,
+							publicId: true,
 						},
 					},
 				},
@@ -269,14 +298,15 @@ export async function listMyTasks(userId: string) {
 					},
 				},
 			},
-			include: {
-				class: {
-					select: {
-						name: true,
-						color: true,
+				include: {
+					class: {
+						select: {
+							name: true,
+							color: true,
+							publicId: true,
+						},
 					},
 				},
-			},
 			orderBy: {
 				createdAt: "desc",
 			},
@@ -370,29 +400,52 @@ export async function createClassTask(
 	const membership = await getMembershipOrThrow(classId, userId);
 	requireOwnerOrAdmin(membership);
 
-	const task = await prisma.task.create({
-		data: {
-			classId,
-			createdBy: userId,
-			title: input.title,
-			description: input.description ?? null,
-			sourceText: input.sourceText ?? null,
-			startAt: parseDate(input.startAt) ?? new Date(),
-			dueAt: parseDate(input.dueAt),
-			allowLateSubmission: input.allowLateSubmission ?? true,
-			blockedBy: input.blockedBy ?? [],
-			isPublished: true,
-			publishedAt: new Date(),
-		},
-		include: {
-			class: {
-				select: {
-					name: true,
-					color: true,
+	let task = null;
+
+	for (let attempt = 0; attempt < 8; attempt += 1) {
+		try {
+			task = await prisma.task.create({
+				data: {
+					publicId: await createUniqueTaskPublicId(),
+					classId,
+					createdBy: userId,
+					title: input.title,
+					description: input.description ?? null,
+					sourceText: input.sourceText ?? null,
+					startAt: parseDate(input.startAt) ?? new Date(),
+					dueAt: parseDate(input.dueAt),
+					allowLateSubmission: input.allowLateSubmission ?? true,
+					blockedBy: input.blockedBy ?? [],
+					isPublished: true,
+					publishedAt: new Date(),
 				},
-			},
-		},
-	});
+				include: {
+					class: {
+						select: {
+							name: true,
+							color: true,
+							publicId: true,
+						},
+					},
+				},
+			});
+			break;
+		} catch (error) {
+			if (isUniqueConstraintError(error, ["public_id", "publicId"])) {
+				continue;
+			}
+
+			throw error;
+		}
+	}
+
+	if (!task) {
+		throw new AppError(
+			500,
+			"PUBLIC_ID_GENERATION_FAILED",
+			"Failed to generate public id",
+		);
+	}
 
 	const memberIds = await prisma.classMember.findMany({
 		where: { classId },
@@ -401,6 +454,7 @@ export async function createClassTask(
 
 	await enqueueTaskPublishedNotifications({
 		taskId: task.id,
+		taskPublicId: task.publicId,
 		classId,
 		className: task.class?.name ?? "",
 		classColor: task.class?.color ?? "#7B6CB0",
@@ -422,28 +476,51 @@ export async function createClassTaskDraft(
 
 	const title = input.title?.trim() || "Untitled Draft";
 
-	const task = await prisma.task.create({
-		data: {
-			classId,
-			createdBy: userId,
-			title,
-			description: input.description ?? null,
-			sourceText: input.sourceText ?? null,
-			startAt: parseDate(input.startAt) ?? new Date(),
-			dueAt: parseDate(input.dueAt),
-			allowLateSubmission: input.allowLateSubmission ?? true,
-			blockedBy: input.blockedBy ?? [],
-			isPublished: false,
-			publishedAt: null,
-		},
-		include: {
-			class: {
-				select: {
-					name: true,
+	let task = null;
+
+	for (let attempt = 0; attempt < 8; attempt += 1) {
+		try {
+			task = await prisma.task.create({
+				data: {
+					publicId: await createUniqueTaskPublicId(),
+					classId,
+					createdBy: userId,
+					title,
+					description: input.description ?? null,
+					sourceText: input.sourceText ?? null,
+					startAt: parseDate(input.startAt) ?? new Date(),
+					dueAt: parseDate(input.dueAt),
+					allowLateSubmission: input.allowLateSubmission ?? true,
+					blockedBy: input.blockedBy ?? [],
+					isPublished: false,
+					publishedAt: null,
 				},
-			},
-		},
-	});
+				include: {
+					class: {
+						select: {
+							name: true,
+							publicId: true,
+						},
+					},
+				},
+			});
+			break;
+		} catch (error) {
+			if (isUniqueConstraintError(error, ["public_id", "publicId"])) {
+				continue;
+			}
+
+			throw error;
+		}
+	}
+
+	if (!task) {
+		throw new AppError(
+			500,
+			"PUBLIC_ID_GENERATION_FAILED",
+			"Failed to generate public id",
+		);
+	}
 
 	return toTaskSummary(task, null);
 }
@@ -460,7 +537,7 @@ export async function findMyClassDraft(classId: string, userId: string) {
 			deletedAt: null,
 		},
 		include: {
-			class: { select: { name: true } },
+			class: { select: { name: true, publicId: true } },
 			attachments: true,
 		},
 		orderBy: { createdAt: "desc" },
@@ -608,6 +685,7 @@ export async function publishTask(
 
 	await enqueueTaskPublishedNotifications({
 		taskId: updatedTask.id,
+		taskPublicId: updatedTask.publicId,
 		classId: task.classId,
 		className: updatedTask.class?.name ?? "",
 		classColor: updatedTask.class?.color ?? "#7B6CB0",
@@ -779,7 +857,7 @@ export async function listTaskSubmissions(taskId: string, userId: string) {
 }
 
 export async function getSubmissionById(submissionId: string, userId: string) {
-	const submission = await prisma.submission.findUnique({
+		const submission = await prisma.submission.findUnique({
 		where: { id: submissionId },
 		include: { attachments: true },
 	});
@@ -884,18 +962,35 @@ async function ensureSubmission(taskId: string, userId: string) {
 		return existingSubmission.id;
 	}
 
-	const submission = await prisma.submission.create({
-		data: {
-			taskId,
-			userId,
-		},
-		select: {
-			id: true,
-		},
-	});
-	await cacheDel(cacheKeys.taskStats(taskId));
+	for (let attempt = 0; attempt < 8; attempt += 1) {
+		try {
+			const submission = await prisma.submission.create({
+				data: {
+					publicId: await createUniqueSubmissionPublicId(),
+					taskId,
+					userId,
+				},
+				select: {
+					id: true,
+				},
+			});
+			await cacheDel(cacheKeys.taskStats(taskId));
 
-	return submission.id;
+			return submission.id;
+		} catch (error) {
+			if (isUniqueConstraintError(error, ["public_id", "publicId"])) {
+				continue;
+			}
+
+			throw error;
+		}
+	}
+
+	throw new AppError(
+		500,
+		"PUBLIC_ID_GENERATION_FAILED",
+		"Failed to generate public id",
+	);
 }
 
 async function markTaskSubmissionTouched(taskId: string, userId: string) {

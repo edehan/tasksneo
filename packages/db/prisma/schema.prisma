@@ -114,6 +114,7 @@ enum NotifChannel {
 
 model Class {
   id          String   @id @default(uuid())
+  publicId    String   @unique @map("public_id")
   name        String
   description String?
   color       String   @default("#6366f1")
@@ -162,6 +163,7 @@ enum ClassRole {
 
 model Task {
   id                   String    @id @default(uuid())
+  publicId             String    @unique @map("public_id")
   title                String
   description          String?
   sourceText           String?   @map("source_text")
@@ -210,6 +212,7 @@ model TaskUserState {
 
 model Submission {
   id               String    @id @default(uuid())
+  publicId         String    @unique @map("public_id")
   firstSubmittedAt DateTime  @default(now()) @map("first_submitted_at") @db.Timestamptz
   lastUpdatedAt    DateTime  @updatedAt @map("last_updated_at") @db.Timestamptz
   content          String?

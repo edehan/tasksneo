@@ -9,6 +9,10 @@ import {
 } from "../lib/cache.js";
 import { AppError } from "../lib/errors.js";
 import { toClassMember, toClassSummary } from "../lib/http.js";
+import {
+	createUniquePublicId,
+	isUniqueConstraintError,
+} from "../lib/public-id.js";
 import { removeObject } from "../lib/storage.js";
 import {
 	getMembershipOrThrow,
@@ -57,6 +61,17 @@ async function createUniqueInviteCode(): Promise<string> {
 	);
 }
 
+async function createUniqueClassPublicId(): Promise<string> {
+	return createUniquePublicId(async (publicId) => {
+		const existing = await prisma.class.findUnique({
+			where: { publicId },
+			select: { id: true },
+		});
+
+		return Boolean(existing);
+	});
+}
+
 async function getClassById(classId: string) {
 	return prisma.class.findUnique({
 		where: { id: classId },
@@ -95,8 +110,6 @@ export async function listMyClasses(userId: string) {
 }
 
 export async function createClass(userId: string, input: CreateClassInput) {
-	const inviteCode = await createUniqueInviteCode();
-
 	if (input.schoolId) {
 		const school = await prisma.school.findUnique({
 			where: { id: input.schoolId },
@@ -107,43 +120,72 @@ export async function createClass(userId: string, input: CreateClassInput) {
 		}
 	}
 
-	const classInfo = await prisma.$transaction(async (tx) => {
-		const createdClass = await tx.class.create({
-			data: {
-				name: input.name,
-				description: input.description ?? null,
-				color: input.color ?? DEFAULT_CLASS_COLOR,
-				schoolId: input.schoolId ?? null,
-				ownerId: userId,
-				inviteCode,
-			},
-		});
+	for (let attempt = 0; attempt < 8; attempt += 1) {
+		const [inviteCode, publicId] = await Promise.all([
+			createUniqueInviteCode(),
+			createUniqueClassPublicId(),
+		]);
 
-		await tx.classMember.create({
-			data: {
-				classId: createdClass.id,
-				userId,
-				role: ClassRole.OWNER,
-			},
-		});
-
-		return tx.class.findUnique({
-			where: { id: createdClass.id },
-			include: {
-				_count: {
-					select: {
-						members: true,
+		try {
+			const classInfo = await prisma.$transaction(async (tx) => {
+				const createdClass = await tx.class.create({
+					data: {
+						publicId,
+						name: input.name,
+						description: input.description ?? null,
+						color: input.color ?? DEFAULT_CLASS_COLOR,
+						schoolId: input.schoolId ?? null,
+						ownerId: userId,
+						inviteCode,
 					},
-				},
-			},
-		});
-	});
+				});
 
-	if (!classInfo) {
-		throw new AppError(500, "CLASS_CREATE_FAILED", "Failed to create class");
+				await tx.classMember.create({
+					data: {
+						classId: createdClass.id,
+						userId,
+						role: ClassRole.OWNER,
+					},
+				});
+
+				return tx.class.findUnique({
+					where: { id: createdClass.id },
+					include: {
+						_count: {
+							select: {
+								members: true,
+							},
+						},
+					},
+				});
+			});
+
+			if (!classInfo) {
+				throw new AppError(
+					500,
+					"CLASS_CREATE_FAILED",
+					"Failed to create class",
+				);
+			}
+
+			return toClassSummary(classInfo, ClassRole.OWNER);
+		} catch (error) {
+			if (
+				isUniqueConstraintError(error, [
+					"public_id",
+					"publicId",
+					"invite_code",
+					"inviteCode",
+				])
+			) {
+				continue;
+			}
+
+			throw error;
+		}
 	}
 
-	return toClassSummary(classInfo, ClassRole.OWNER);
+	throw new AppError(500, "CLASS_CREATE_FAILED", "Failed to create class");
 }
 
 export async function joinClass(userId: string, inviteCode: string) {
@@ -223,6 +265,7 @@ const CLASS_DETAIL_TTL_SECONDS = 300;
 
 interface ClassDetailCacheEntry {
 	id: string;
+	publicId: string;
 	name: string;
 	description: string | null;
 	color: string;
@@ -244,6 +287,7 @@ export async function getClassDetail(classId: string, userId: string) {
 			if (!row) return null;
 			return {
 				id: row.id,
+				publicId: row.publicId,
 				name: row.name,
 				description: row.description,
 				color: row.color,
@@ -321,6 +365,38 @@ export async function refreshInviteCode(classId: string, userId: string) {
 
 	return {
 		inviteCode: updatedClass.inviteCode,
+	};
+}
+
+export async function getClassInvitePreview(inviteCode: string) {
+	const cls = await prisma.class.findUnique({
+		where: { inviteCode },
+		select: {
+			id: true,
+			publicId: true,
+			name: true,
+			description: true,
+			color: true,
+			isPersonal: true,
+			school: {
+				select: {
+					name: true,
+				},
+			},
+		},
+	});
+
+	if (!cls || cls.isPersonal) {
+		throw new AppError(404, "INVITE_CODE_NOT_FOUND", "Invite code not found");
+	}
+
+	return {
+		id: cls.id,
+		publicId: cls.publicId,
+		name: cls.name,
+		description: cls.description,
+		color: cls.color,
+		schoolName: cls.school?.name ?? null,
 	};
 }
 

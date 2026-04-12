@@ -327,8 +327,10 @@ describe("TaskFlow API e2e", () => {
 		expect(createClassRes.response.status).toBe(201);
 
 		const classId = (createClassRes.body as { id: string }).id;
+		const classPublicId = (createClassRes.body as { publicId: string }).publicId;
 		const inviteCode = (createClassRes.body as { inviteCode: string })
 			.inviteCode;
+		expect(classPublicId).toMatch(/^[A-Za-z0-9]{8}$/);
 
 		const classesList = await app.request("/classes", {
 			headers: authHeader(ownerToken),
@@ -347,6 +349,14 @@ describe("TaskFlow API e2e", () => {
 		expect(refreshInvite.response.status).toBe(200);
 		const activeInviteCode = (refreshInvite.body as { inviteCode: string })
 			.inviteCode;
+
+		const invitePreview = await app.request(
+			`/classes/invite/${activeInviteCode}`,
+		);
+		expect(invitePreview.status).toBe(200);
+		expect(
+			((await json(invitePreview)) as { publicId: string }).publicId,
+		).toBe(classPublicId);
 
 		const outsiderJoinFail = await requestJson(app, "/classes/join", {
 			method: "POST",
@@ -369,7 +379,7 @@ describe("TaskFlow API e2e", () => {
 		});
 		expect(duplicateJoin.response.status).toBe(409);
 
-		const classDetail = await app.request(`/classes/${classId}`, {
+		const classDetail = await app.request(`/classes/${classPublicId}`, {
 			headers: authHeader(memberToken),
 		});
 		expect(classDetail.status).toBe(200);
@@ -447,6 +457,8 @@ describe("TaskFlow API e2e", () => {
 		expect(createTaskRes.response.status).toBe(201);
 
 		const taskId = (createTaskRes.body as { id: string }).id;
+		const taskPublicId = (createTaskRes.body as { publicId: string }).publicId;
+		expect(taskPublicId).toMatch(/^[A-Za-z0-9]{8}$/);
 
 		const createDraftRes = await requestJson(
 			app,
@@ -461,6 +473,8 @@ describe("TaskFlow API e2e", () => {
 		);
 		expect(createDraftRes.response.status).toBe(201);
 		const draftTaskId = (createDraftRes.body as { id: string }).id;
+		const draftTaskPublicId = (createDraftRes.body as { publicId: string })
+			.publicId;
 
 		const listTasks = await app.request(`/classes/${classId}/tasks`, {
 			headers: authHeader(memberToken),
@@ -469,9 +483,12 @@ describe("TaskFlow API e2e", () => {
 		const listTaskBody = (await json(listTasks)) as Array<{ id: string }>;
 		expect(listTaskBody.some((task) => task.id === draftTaskId)).toBe(false);
 
-		const memberGetDraftTask = await app.request(`/tasks/${draftTaskId}`, {
+		const memberGetDraftTask = await app.request(
+			`/tasks/${draftTaskPublicId}`,
+			{
 			headers: authHeader(memberToken),
-		});
+			},
+		);
 		expect(memberGetDraftTask.status).toBe(404);
 
 		const parseDraftTask = await requestJson(
@@ -507,7 +524,7 @@ describe("TaskFlow API e2e", () => {
 		expect(publishDraftTask.response.status).toBe(200);
 
 		const memberGetPublishedDraftTask = await app.request(
-			`/tasks/${draftTaskId}`,
+			`/tasks/${draftTaskPublicId}`,
 			{ headers: authHeader(memberToken) },
 		);
 		expect(memberGetPublishedDraftTask.status).toBe(200);
@@ -519,7 +536,7 @@ describe("TaskFlow API e2e", () => {
 		});
 		expect(parseTask.response.status).toBe(200);
 
-		const getTask = await app.request(`/tasks/${taskId}`, {
+		const getTask = await app.request(`/tasks/${taskPublicId}`, {
 			headers: authHeader(ownerToken),
 		});
 		expect(getTask.status).toBe(200);
@@ -716,15 +733,18 @@ describe("TaskFlow API e2e", () => {
 		expect(mySubmissionRes.status).toBe(200);
 		const mySubmissionBody = (await json(mySubmissionRes)) as {
 			id: string;
+			publicId: string;
 			content: string | null;
 			attachments: Array<{ fileKey: string }>;
 		};
 		const submissionId = mySubmissionBody.id;
+		const submissionPublicId = mySubmissionBody.publicId;
+		expect(submissionPublicId).toMatch(/^[A-Za-z0-9]{8}$/);
 		expect(mySubmissionBody.content).toBe("My first answer");
 		expect(mySubmissionBody.attachments.length).toBe(1);
 
 		const submissionDetailRes = await app.request(
-			`/tasks/${taskId}/submissions/${submissionId}`,
+			`/tasks/${taskPublicId}/submissions/${submissionPublicId}`,
 			{
 				headers: authHeader(ownerToken),
 			},

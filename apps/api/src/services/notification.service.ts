@@ -12,6 +12,7 @@ const NOTIF_PREFS_TTL_SECONDS = 900; // 15 min
 interface TaskNotificationPayload {
 	userId: string;
 	taskId: string;
+	taskPublicId: string;
 	classId: string;
 	className: string;
 	classColor: string;
@@ -31,6 +32,7 @@ interface AnnouncementNotificationPayload {
 interface CommentNotificationPayload {
 	userId: string;
 	taskId: string;
+	taskPublicId: string;
 	type: "TASK_COMMENT";
 	className: string;
 	classColor: string;
@@ -125,6 +127,7 @@ async function getEnabledChannels(userId: string): Promise<NotifChannel[]> {
 
 export async function enqueueTaskPublishedNotifications(params: {
 	taskId: string;
+	taskPublicId: string;
 	classId: string;
 	className: string;
 	classColor: string;
@@ -139,6 +142,7 @@ export async function enqueueTaskPublishedNotifications(params: {
 		const payload: TaskNotificationPayload = {
 			userId,
 			taskId: params.taskId,
+			taskPublicId: params.taskPublicId,
 			classId: params.classId,
 			className: params.className,
 			classColor: params.classColor,
@@ -174,6 +178,7 @@ export async function enqueueTaskPublishedNotifications(params: {
 			const payload: TaskNotificationPayload = {
 				userId,
 				taskId: params.taskId,
+				taskPublicId: params.taskPublicId,
 				classId: params.classId,
 				className: params.className,
 				classColor: params.classColor,
@@ -191,6 +196,7 @@ export async function enqueueTaskPublishedNotifications(params: {
 
 export async function enqueueCommentNotifications(params: {
 	taskId: string;
+	taskPublicId: string;
 	classId: string;
 	className: string;
 	taskTitle: string;
@@ -246,6 +252,7 @@ export async function enqueueCommentNotifications(params: {
 		const payload: CommentNotificationPayload = {
 			userId,
 			taskId: params.taskId,
+			taskPublicId: params.taskPublicId,
 			type: "TASK_COMMENT",
 			className: params.className,
 			classColor,
@@ -346,7 +353,8 @@ function buildCommentHtml(
 	appTitle: string,
 ) {
 	const accentColor = payload.classColor || "#7B6CB0";
-	const taskUrl = `${baseUrl}/dashboard`;
+	const taskRouteId = payload.taskPublicId || payload.taskId;
+	const taskUrl = `${baseUrl}/tasks/${taskRouteId}?section=discussion`;
 	const unsubscribeUrl = `${baseUrl}/settings/notifications`;
 	const safeTitle = escapeHtml(appTitle);
 	const contentHtml = escapeHtml(payload.commentContent).replace(/\n/g, "<br>");
@@ -407,7 +415,8 @@ function buildHtml(
 
 	const dueText = formatDueAt(payload.dueAt, timezone);
 	const accentColor = payload.classColor || "#7B6CB0";
-	const taskUrl = `${baseUrl}/dashboard`;
+	const taskRouteId = payload.taskPublicId || payload.taskId;
+	const taskUrl = `${baseUrl}/tasks/${taskRouteId}`;
 	const unsubscribeUrl = `${baseUrl}/settings/notifications`;
 	const safeTitle = escapeHtml(appTitle);
 
@@ -485,24 +494,28 @@ async function sendWebhook(
 				content: payload.content,
 			};
 		} else if (payload.type === "TASK_COMMENT") {
+			const taskRouteId = payload.taskPublicId || payload.taskId;
 			body = {
 				type: payload.type,
 				taskId: payload.taskId,
+				taskPublicId: payload.taskPublicId,
 				taskTitle: payload.taskTitle,
 				className: payload.className,
 				commentAuthorName: payload.commentAuthorName,
 				commentContent: payload.commentContent,
 				isReply: payload.isReply,
-				url: `${baseUrl}/dashboard`,
+				url: `${baseUrl}/tasks/${taskRouteId}?section=discussion`,
 			};
 		} else {
+			const taskRouteId = payload.taskPublicId || payload.taskId;
 			body = {
 				type: payload.type,
 				taskId: payload.taskId,
+				taskPublicId: payload.taskPublicId,
 				taskTitle: payload.taskTitle,
 				className: payload.className,
 				dueAt: formatDueAt(payload.dueAt, timezone),
-				url: `${baseUrl}/dashboard`,
+				url: `${baseUrl}/tasks/${taskRouteId}`,
 			};
 		}
 
@@ -637,6 +650,7 @@ export interface NotificationItemResult {
 	id: string;
 	type: string;
 	taskId: string | null;
+	taskPublicId: string | null;
 	classId: string | null;
 	taskTitle: string;
 	className: string;
@@ -660,6 +674,7 @@ function toNotificationItem(job: {
 		id: job.id,
 		type,
 		taskId: job.taskId,
+		taskPublicId: (p?.taskPublicId as string) ?? null,
 		classId: (p?.classId as string) ?? null,
 		taskTitle: (p?.taskTitle as string) ?? "",
 		className: (p?.className as string) ?? "",

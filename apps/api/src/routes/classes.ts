@@ -7,6 +7,7 @@ import {
 	createClass,
 	deleteClass,
 	getClassDetail,
+	getClassInvitePreview,
 	joinClass,
 	listClassMembers,
 	listMyClasses,
@@ -16,6 +17,7 @@ import {
 	updateClass,
 	updateMemberRole,
 } from "../services/class.service.js";
+import { resolveClassId } from "../services/resource-id.service.js";
 import {
 	createClassTask,
 	createClassTaskDraft,
@@ -26,11 +28,11 @@ import {
 import type { AppVariables } from "../types/context.js";
 
 const classIdParamSchema = z.object({
-	classId: z.string().uuid(),
+	classId: z.string().trim().min(1),
 });
 
 const memberParamSchema = z.object({
-	classId: z.string().uuid(),
+	classId: z.string().trim().min(1),
 	userId: z.string().uuid(),
 });
 
@@ -87,6 +89,12 @@ const createTaskDraftBodySchema = z.object({
 
 export const classesRouter = new Hono<{ Variables: AppVariables }>();
 
+classesRouter.get("/invite/:inviteCode", async (c) => {
+	const inviteCode = c.req.param("inviteCode").trim();
+	const preview = await getClassInvitePreview(inviteCode);
+	return c.json(preview, 200);
+});
+
 classesRouter.use("*", authMiddleware);
 
 classesRouter.get("/", async (c) => {
@@ -112,7 +120,8 @@ classesRouter.post("/join", async (c) => {
 classesRouter.get("/:classId", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = classIdParamSchema.parse(c.req.param());
-	const classInfo = await getClassDetail(params.classId, authUser.userId);
+	const classId = await resolveClassId(params.classId);
+	const classInfo = await getClassDetail(classId, authUser.userId);
 	return c.json(classInfo, 200);
 });
 
@@ -120,21 +129,24 @@ classesRouter.patch("/:classId", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = classIdParamSchema.parse(c.req.param());
 	const body = updateClassBodySchema.parse(await c.req.json());
-	const classInfo = await updateClass(params.classId, authUser.userId, body);
+	const classId = await resolveClassId(params.classId);
+	const classInfo = await updateClass(classId, authUser.userId, body);
 	return c.json(classInfo, 200);
 });
 
 classesRouter.delete("/:classId", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = classIdParamSchema.parse(c.req.param());
-	await deleteClass(params.classId, authUser.userId);
+	const classId = await resolveClassId(params.classId);
+	await deleteClass(classId, authUser.userId);
 	return c.body(null, 204);
 });
 
 classesRouter.post("/:classId/invite-code", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = classIdParamSchema.parse(c.req.param());
-	const result = await refreshInviteCode(params.classId, authUser.userId);
+	const classId = await resolveClassId(params.classId);
+	const result = await refreshInviteCode(classId, authUser.userId);
 	return c.json(result, 200);
 });
 
@@ -142,8 +154,9 @@ classesRouter.post("/:classId/transfer", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = classIdParamSchema.parse(c.req.param());
 	const body = transferBodySchema.parse(await c.req.json());
+	const classId = await resolveClassId(params.classId);
 	const classInfo = await transferOwnership(
-		params.classId,
+		classId,
 		authUser.userId,
 		body.newOwnerId,
 	);
@@ -153,14 +166,16 @@ classesRouter.post("/:classId/transfer", async (c) => {
 classesRouter.get("/:classId/members", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = classIdParamSchema.parse(c.req.param());
-	const members = await listClassMembers(params.classId, authUser.userId);
+	const classId = await resolveClassId(params.classId);
+	const members = await listClassMembers(classId, authUser.userId);
 	return c.json(members, 200);
 });
 
 classesRouter.get("/:classId/tasks", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = classIdParamSchema.parse(c.req.param());
-	const tasks = await listClassTasks(params.classId, authUser.userId);
+	const classId = await resolveClassId(params.classId);
+	const tasks = await listClassTasks(classId, authUser.userId);
 	return c.json(tasks, 200);
 });
 
@@ -168,14 +183,16 @@ classesRouter.post("/:classId/tasks", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = classIdParamSchema.parse(c.req.param());
 	const body = createTaskBodySchema.parse(await c.req.json());
-	const task = await createClassTask(params.classId, authUser.userId, body);
+	const classId = await resolveClassId(params.classId);
+	const task = await createClassTask(classId, authUser.userId, body);
 	return c.json(task, 201);
 });
 
 classesRouter.get("/:classId/tasks/drafts/mine", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = classIdParamSchema.parse(c.req.param());
-	const draft = await findMyClassDraft(params.classId, authUser.userId);
+	const classId = await resolveClassId(params.classId);
+	const draft = await findMyClassDraft(classId, authUser.userId);
 	return c.json({ draft }, 200);
 });
 
@@ -183,8 +200,9 @@ classesRouter.post("/:classId/tasks/drafts", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = classIdParamSchema.parse(c.req.param());
 	const body = createTaskDraftBodySchema.parse(await c.req.json());
+	const classId = await resolveClassId(params.classId);
 	const task = await createClassTaskDraft(
-		params.classId,
+		classId,
 		authUser.userId,
 		body,
 	);
@@ -195,8 +213,9 @@ classesRouter.patch("/:classId/members/:userId", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = memberParamSchema.parse(c.req.param());
 	const body = updateMemberRoleSchema.parse(await c.req.json());
+	const classId = await resolveClassId(params.classId);
 	const member = await updateMemberRole(
-		params.classId,
+		classId,
 		authUser.userId,
 		params.userId,
 		body.role,
@@ -207,6 +226,7 @@ classesRouter.patch("/:classId/members/:userId", async (c) => {
 classesRouter.delete("/:classId/members/:userId", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = memberParamSchema.parse(c.req.param());
-	await removeMember(params.classId, authUser.userId, params.userId);
+	const classId = await resolveClassId(params.classId);
+	await removeMember(classId, authUser.userId, params.userId);
 	return c.body(null, 204);
 });

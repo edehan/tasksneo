@@ -79,7 +79,7 @@ export function registerSubmissionTools(
 			description:
 				"List all student submissions for a task. Supports filtering by status. Returns student info alongside submission data. Each row includes an attachments array with fileKey values — use download_attachments to fetch download URLs for specific files, or pass the submissionId to download all of a student's files at once.\n\nFor auto-grading: first call with filter='exemplary' to get the reference submission (score + reviewNote). If no exemplary submission exists, the user must set one manually in the web UI before batch grading can proceed. Then call with filter='ungraded' to get submissions needing grades.",
 			inputSchema: {
-				taskId: z.string().uuid().describe("Task ID"),
+				taskId: z.string().min(1).describe("Task UUID or public ID"),
 				filter: z
 					.enum([
 						"all",
@@ -135,8 +135,11 @@ export function registerSubmissionTools(
 			description:
 				"Get full details of a specific submission including content text and attachment metadata.\n\nAttachments include a fileKey for each file. To read student-uploaded files (for grading), call download_attachments with this submissionId + taskId — it returns presigned URLs for all files, which you can fetch with your HTTP download tools.",
 			inputSchema: {
-				taskId: z.string().uuid().describe("Task ID"),
-				submissionId: z.string().uuid().describe("Submission ID"),
+					taskId: z.string().min(1).describe("Task UUID or public ID"),
+					submissionId: z
+						.string()
+						.min(1)
+						.describe("Submission UUID or public ID"),
 			},
 			annotations: {
 				readOnlyHint: true,
@@ -164,8 +167,11 @@ export function registerSubmissionTools(
 			description:
 				"Set a score and/or review note on a student submission. Both fields are optional so you can set them independently.\n\nAuto-grading workflow: Before batch-grading, at least one exemplary submission must exist for this task. Use list_submissions with filter='exemplary' to check. If none exist, tell the user to visit the submission list in the web UI and manually grade + mark one submission as exemplary first. Then use the exemplary submission's score and reviewNote as the reference standard for grading the rest.",
 			inputSchema: {
-				taskId: z.string().uuid().describe("Task ID"),
-				submissionId: z.string().uuid().describe("Submission ID"),
+					taskId: z.string().min(1).describe("Task UUID or public ID"),
+					submissionId: z
+						.string()
+						.min(1)
+						.describe("Submission UUID or public ID"),
 				score: z
 					.string()
 					.nullable()
@@ -206,8 +212,11 @@ export function registerSubmissionTools(
 			description:
 				"Toggle the exemplary status of a submission. Requirements: submission must have a score and a review note of at least 30 characters before marking as exemplary.",
 			inputSchema: {
-				taskId: z.string().uuid().describe("Task ID"),
-				submissionId: z.string().uuid().describe("Submission ID"),
+					taskId: z.string().min(1).describe("Task UUID or public ID"),
+					submissionId: z
+						.string()
+						.min(1)
+						.describe("Submission UUID or public ID"),
 			},
 			annotations: {
 				readOnlyHint: false,

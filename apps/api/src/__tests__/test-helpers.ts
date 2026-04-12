@@ -64,7 +64,49 @@ export async function resetDatabase() {
       ) THEN
         ALTER TABLE attachments ADD COLUMN is_visible BOOLEAN NOT NULL DEFAULT true;
       END IF;
+
+      IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'classes' AND column_name = 'public_id'
+      ) THEN
+        ALTER TABLE classes ADD COLUMN public_id VARCHAR(8);
+      END IF;
+
+      IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'tasks' AND column_name = 'public_id'
+      ) THEN
+        ALTER TABLE tasks ADD COLUMN public_id VARCHAR(8);
+      END IF;
+
+      IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'submissions' AND column_name = 'public_id'
+      ) THEN
+        ALTER TABLE submissions ADD COLUMN public_id VARCHAR(8);
+      END IF;
     END $$;
+  `);
+
+	await prisma.$executeRawUnsafe(`
+    CREATE UNIQUE INDEX IF NOT EXISTS classes_public_id_key
+      ON classes(public_id)
+      WHERE public_id IS NOT NULL;
+  `);
+
+	await prisma.$executeRawUnsafe(`
+    CREATE UNIQUE INDEX IF NOT EXISTS tasks_public_id_key
+      ON tasks(public_id)
+      WHERE public_id IS NOT NULL;
+  `);
+
+	await prisma.$executeRawUnsafe(`
+    CREATE UNIQUE INDEX IF NOT EXISTS submissions_public_id_key
+      ON submissions(public_id)
+      WHERE public_id IS NOT NULL;
   `);
 
 	await prisma.$executeRawUnsafe(`

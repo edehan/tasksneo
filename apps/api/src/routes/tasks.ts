@@ -44,6 +44,10 @@ import {
 	getTaskDraftMarkdown,
 	setTaskDraftMarkdown,
 } from "../services/task-draft-cache.service.js";
+import {
+	resolveSubmissionId,
+	resolveTaskId,
+} from "../services/resource-id.service.js";
 
 import type { AppVariables } from "../types/context.js";
 
@@ -52,12 +56,12 @@ const parseSchema = z.object({
 });
 
 const taskIdParamSchema = z.object({
-	taskId: z.string().uuid(),
+	taskId: z.string().trim().min(1),
 });
 
 const gradeParamSchema = z.object({
-	taskId: z.string().uuid(),
-	submissionId: z.string().uuid(),
+	taskId: z.string().trim().min(1),
+	submissionId: z.string().trim().min(1),
 });
 
 const updateTaskBodySchema = z.object({
@@ -214,7 +218,8 @@ tasksRouter.post("/parse", async (c) => {
 tasksRouter.get("/:taskId", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
-	const task = await getTaskDetail(params.taskId, authUser.userId);
+	const taskId = await resolveTaskId(params.taskId);
+	const task = await getTaskDetail(taskId, authUser.userId);
 	return c.json(task, 200);
 });
 
@@ -222,7 +227,8 @@ tasksRouter.patch("/:taskId", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
 	const body = updateTaskBodySchema.parse(await c.req.json());
-	const task = await updateTask(params.taskId, authUser.userId, body);
+	const taskId = await resolveTaskId(params.taskId);
+	const task = await updateTask(taskId, authUser.userId, body);
 	return c.json(task, 200);
 });
 
@@ -230,6 +236,7 @@ tasksRouter.post("/:taskId/parse", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
 	const body = parseDraftTaskBodySchema.parse(await c.req.json());
+	const taskId = await resolveTaskId(params.taskId);
 
 	const [user, task] = await Promise.all([
 		prisma.user.findUnique({
@@ -237,7 +244,7 @@ tasksRouter.post("/:taskId/parse", async (c) => {
 			select: { timezone: true },
 		}),
 		prisma.task.findUnique({
-			where: { id: params.taskId },
+			where: { id: taskId },
 			select: {
 				id: true,
 				classId: true,
@@ -362,6 +369,7 @@ tasksRouter.post("/:taskId/revise", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
 	const body = reviseBodySchema.parse(await c.req.json());
+	const taskId = await resolveTaskId(params.taskId);
 
 	const [user, task] = await Promise.all([
 		prisma.user.findUnique({
@@ -369,7 +377,7 @@ tasksRouter.post("/:taskId/revise", async (c) => {
 			select: { timezone: true },
 		}),
 		prisma.task.findUnique({
-			where: { id: params.taskId },
+			where: { id: taskId },
 			select: { id: true, classId: true },
 		}),
 	]);
@@ -410,9 +418,10 @@ tasksRouter.post("/:taskId/revise", async (c) => {
 tasksRouter.get("/:taskId/draft-markdown", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
+	const taskId = await resolveTaskId(params.taskId);
 
 	const task = await prisma.task.findUnique({
-		where: { id: params.taskId },
+		where: { id: taskId },
 		select: {
 			id: true,
 			classId: true,
@@ -459,22 +468,25 @@ tasksRouter.post("/:taskId/publish", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
 	const body = updateTaskBodySchema.parse(await c.req.json());
-	const task = await publishTask(params.taskId, authUser.userId, body);
-	await deleteTaskDraftMarkdown(params.taskId);
+	const taskId = await resolveTaskId(params.taskId);
+	const task = await publishTask(taskId, authUser.userId, body);
+	await deleteTaskDraftMarkdown(taskId);
 	return c.json(task, 200);
 });
 
 tasksRouter.delete("/:taskId", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
-	await deleteTask(params.taskId, authUser.userId);
+	const taskId = await resolveTaskId(params.taskId);
+	await deleteTask(taskId, authUser.userId);
 	return c.body(null, 204);
 });
 
 tasksRouter.post("/:taskId/view", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
-	await markTaskViewed(params.taskId, authUser.userId);
+	const taskId = await resolveTaskId(params.taskId);
+	await markTaskViewed(taskId, authUser.userId);
 	return c.body(null, 204);
 });
 
@@ -482,21 +494,24 @@ tasksRouter.patch("/:taskId/state", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
 	const body = updateStateSchema.parse(await c.req.json());
-	const state = await updateTaskUserState(params.taskId, authUser.userId, body);
+	const taskId = await resolveTaskId(params.taskId);
+	const state = await updateTaskUserState(taskId, authUser.userId, body);
 	return c.json(state, 200);
 });
 
 tasksRouter.get("/:taskId/submissions", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
-	const rows = await listTaskSubmissions(params.taskId, authUser.userId);
+	const taskId = await resolveTaskId(params.taskId);
+	const rows = await listTaskSubmissions(taskId, authUser.userId);
 	return c.json(rows, 200);
 });
 
 tasksRouter.get("/:taskId/submissions/me", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
-	const submission = await getMySubmission(params.taskId, authUser.userId);
+	const taskId = await resolveTaskId(params.taskId);
+	const submission = await getMySubmission(taskId, authUser.userId);
 
 	if (!submission) {
 		return c.body(null, 204);
@@ -509,8 +524,9 @@ tasksRouter.put("/:taskId/submissions/me", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
 	const body = upsertSubmissionBodySchema.parse(await c.req.json());
+	const taskId = await resolveTaskId(params.taskId);
 	const submission = await upsertMySubmissionContent(
-		params.taskId,
+		taskId,
 		authUser.userId,
 		body.content,
 	);
@@ -521,9 +537,13 @@ tasksRouter.patch("/:taskId/submissions/:submissionId/grade", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = gradeParamSchema.parse(c.req.param());
 	const body = gradeBodySchema.parse(await c.req.json());
+	const [taskId, submissionId] = await Promise.all([
+		resolveTaskId(params.taskId),
+		resolveSubmissionId(params.submissionId),
+	]);
 	const submission = await gradeSubmission(
-		params.taskId,
-		params.submissionId,
+		taskId,
+		submissionId,
 		authUser.userId,
 		body,
 	);
@@ -533,7 +553,8 @@ tasksRouter.patch("/:taskId/submissions/:submissionId/grade", async (c) => {
 tasksRouter.get("/:taskId/submissions/export", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
-	const csv = await exportTaskSubmissionsCsv(params.taskId, authUser.userId);
+	const taskId = await resolveTaskId(params.taskId);
+	const csv = await exportTaskSubmissionsCsv(taskId, authUser.userId);
 
 	c.header("Content-Type", "text/csv; charset=utf-8");
 	c.header(
@@ -547,9 +568,13 @@ tasksRouter.get("/:taskId/submissions/export", async (c) => {
 tasksRouter.get("/:taskId/submissions/:submissionId", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = gradeParamSchema.parse(c.req.param());
+	const [taskId, submissionId] = await Promise.all([
+		resolveTaskId(params.taskId),
+		resolveSubmissionId(params.submissionId),
+	]);
 	const submission = await getTaskSubmissionDetail(
-		params.taskId,
-		params.submissionId,
+		taskId,
+		submissionId,
 		authUser.userId,
 	);
 	return c.json(submission, 200);
@@ -558,6 +583,7 @@ tasksRouter.get("/:taskId/submissions/:submissionId", async (c) => {
 tasksRouter.post("/:taskId/attachments", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
+	const taskId = await resolveTaskId(params.taskId);
 	const formData = await c.req.formData();
 	const isVisible = parseFormBoolean(
 		formData.get("isVisible"),
@@ -568,10 +594,10 @@ tasksRouter.post("/:taskId/attachments", async (c) => {
 	const records = await parseFilesFromFormData(
 		formData,
 		"tasks",
-		params.taskId,
+		taskId,
 	);
 	const attachments = await addTaskAttachments(
-		params.taskId,
+		taskId,
 		authUser.userId,
 		records,
 		isVisible,
@@ -583,6 +609,7 @@ tasksRouter.post("/:taskId/attachments", async (c) => {
 tasksRouter.post("/:taskId/submissions/me/attachments", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
+	const taskId = await resolveTaskId(params.taskId);
 	const formData = await c.req.formData();
 	const records = await parseFilesFromFormData(
 		formData,
@@ -590,7 +617,7 @@ tasksRouter.post("/:taskId/submissions/me/attachments", async (c) => {
 		authUser.userId,
 	);
 	const attachments = await addSubmissionAttachments(
-		params.taskId,
+		taskId,
 		authUser.userId,
 		records,
 	);
@@ -601,9 +628,13 @@ tasksRouter.post("/:taskId/submissions/me/attachments", async (c) => {
 tasksRouter.patch("/:taskId/submissions/:submissionId/exemplary", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = gradeParamSchema.parse(c.req.param());
+	const [taskId, submissionId] = await Promise.all([
+		resolveTaskId(params.taskId),
+		resolveSubmissionId(params.submissionId),
+	]);
 	const submission = await toggleExemplary(
-		params.taskId,
-		params.submissionId,
+		taskId,
+		submissionId,
 		authUser.userId,
 	);
 	return c.json(submission, 200);
@@ -612,7 +643,8 @@ tasksRouter.patch("/:taskId/submissions/:submissionId/exemplary", async (c) => {
 tasksRouter.post("/:taskId/submissions/rename", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
-	await renameTaskSubmissionAttachments(params.taskId, authUser.userId);
+	const taskId = await resolveTaskId(params.taskId);
+	await renameTaskSubmissionAttachments(taskId, authUser.userId);
 	return c.body(null, 204);
 });
 
@@ -626,7 +658,8 @@ const createCommentSchema = z.object({
 tasksRouter.get("/:taskId/comments", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
-	const comments = await listTaskComments(params.taskId, authUser.userId);
+	const taskId = await resolveTaskId(params.taskId);
+	const comments = await listTaskComments(taskId, authUser.userId);
 	return c.json({ comments });
 });
 
@@ -634,8 +667,9 @@ tasksRouter.post("/:taskId/comments", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
 	const body = createCommentSchema.parse(await c.req.json());
+	const taskId = await resolveTaskId(params.taskId);
 	const comment = await createComment(
-		params.taskId,
+		taskId,
 		authUser.userId,
 		body.content,
 		body.replyToId,

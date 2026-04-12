@@ -77,6 +77,7 @@ export async function createComment(
 	if (task.classId && classMembership) {
 		void enqueueCommentNotifications({
 			taskId,
+			taskPublicId: task.publicId,
 			classId: task.classId,
 			className: task.class?.name ?? "",
 			taskTitle: task.title,

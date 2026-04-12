@@ -31,7 +31,10 @@ export function registerTaskTools(
 			description:
 				"List all tasks in a specific class. Returns task summaries with submission statistics.",
 			inputSchema: {
-				classId: z.string().uuid().describe("Class ID to list tasks from"),
+					classId: z
+						.string()
+						.min(1)
+						.describe("Class UUID or public ID to list tasks from"),
 			},
 			annotations: {
 				readOnlyHint: true,
@@ -56,7 +59,7 @@ export function registerTaskTools(
 			description:
 				"Get full details of a task including description, attachments metadata, and submission statistics.\n\nAttachments in the response include a fileKey for each file. To download attachments, call the download_attachments tool with this taskId (fetches all task files at once) or with specific fileKeys[].",
 			inputSchema: {
-				taskId: z.string().uuid().describe("Task ID"),
+					taskId: z.string().min(1).describe("Task UUID or public ID"),
 			},
 			annotations: {
 				readOnlyHint: true,
@@ -81,7 +84,10 @@ export function registerTaskTools(
 			description:
 				"Create a new draft task in a class. The task starts unpublished — use publish_task separately to make it visible.\n\nIMPORTANT: Before calling publish_task, you MUST present the full task details (title, description, dates) to the user and get their explicit confirmation. Publishing notifies all students immediately and cannot be undone.",
 			inputSchema: {
-				classId: z.string().uuid().describe("Class ID to create the task in"),
+					classId: z
+						.string()
+						.min(1)
+						.describe("Class UUID or public ID to create the task in"),
 				title: z
 					.string()
 					.optional()
@@ -127,7 +133,7 @@ export function registerTaskTools(
 			description:
 				"Update fields on an existing task (draft or published). Only provided fields are changed.",
 			inputSchema: {
-				taskId: z.string().uuid().describe("Task ID"),
+					taskId: z.string().min(1).describe("Task UUID or public ID"),
 				title: z.string().optional().describe("New title"),
 				description: z
 					.string()
@@ -172,7 +178,10 @@ export function registerTaskTools(
 			description:
 				"Publish a draft task, making it visible to all class members. Students will be notified immediately.\n\nIMPORTANT: You MUST confirm with the user before calling this. Show them the task title, description, start/due dates and ask for explicit approval. Verify that startAt (if set) is before dueAt. This action cannot be undone.",
 			inputSchema: {
-				taskId: z.string().uuid().describe("Task ID of the draft to publish"),
+					taskId: z
+						.string()
+						.min(1)
+						.describe("Task UUID or public ID of the draft to publish"),
 				title: z.string().optional().describe("Override title at publish time"),
 				description: z
 					.string()
@@ -213,7 +222,7 @@ export function registerTaskTools(
 			description:
 				"Delete a task. Tasks with submissions are soft-deleted (hidden); tasks without submissions are permanently removed.",
 			inputSchema: {
-				taskId: z.string().uuid().describe("Task ID to delete"),
+					taskId: z.string().min(1).describe("Task UUID or public ID to delete"),
 			},
 			annotations: {
 				readOnlyHint: false,
