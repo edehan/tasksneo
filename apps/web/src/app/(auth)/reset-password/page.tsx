@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,13 +17,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiError, resetPassword, verifyToken } from "@/lib/api";
+import { readWindowSearchParam } from "@/lib/search-params";
 
-function ResetPasswordInner() {
-  const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+export default function ResetPasswordPage() {
   const router = useRouter();
   const t = useTranslations("authResetPassword");
 
+  const [token, setToken] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(true);
   const [verifiedEmail, setVerifiedEmail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -33,13 +33,16 @@ function ResetPasswordInner() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!token) {
+    const searchToken = readWindowSearchParam("token");
+    setToken(searchToken);
+
+    if (!searchToken) {
       setError(t("missingResetToken"));
       setVerifying(false);
       return;
     }
 
-    verifyToken(token, "PASSWORD_RESET")
+    verifyToken(searchToken, "PASSWORD_RESET")
       .then((res) => {
         if (res.valid) {
           setVerifiedEmail(res.email);
@@ -51,7 +54,7 @@ function ResetPasswordInner() {
         setError(t("invalidOrExpiredLink"));
       })
       .finally(() => setVerifying(false));
-  }, [token, t]);
+  }, [t]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -65,9 +68,6 @@ function ResetPasswordInner() {
     setSubmitting(true);
     try {
       await resetPassword(token, password);
-      // After reset, all prior sessions are revoked server-side. The user
-      // must log in again with the new password — we do NOT auto-login to
-      // avoid re-binding the freshly-killed token cache to this browser.
       toast.success(t("passwordResetSuccess"));
       router.replace("/login");
     } catch (err) {
@@ -156,21 +156,5 @@ function ResetPasswordInner() {
         </CardFooter>
       </form>
     </Card>
-  );
-}
-
-export default function ResetPasswordPage() {
-  return (
-    <Suspense
-      fallback={
-        <Card>
-          <CardContent className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
-          </CardContent>
-        </Card>
-      }
-    >
-      <ResetPasswordInner />
-    </Suspense>
   );
 }

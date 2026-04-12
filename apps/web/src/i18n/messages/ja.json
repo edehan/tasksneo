@@ -136,6 +136,28 @@
     "alreadyHaveAccount": "すでにアカウントをお持ちですか？",
     "signIn": "サインイン"
   },
+  "joinPage": {
+    "title": "クラスに参加",
+    "description": "招待リンクを使ってクラスに参加しようとしています。",
+    "inviteCodeLabel": "招待コード",
+    "joiningAs": "{name} として参加",
+    "loadingPreview": "クラス情報を読み込んでいます...",
+    "descriptionFallback": "このクラスにはまだ説明がありません。",
+    "schoolLabel": "学校",
+    "schoolOpenToAll": "すべての学校",
+    "memberCountLabel": "メンバー数",
+    "memberCountValue": "{count}人",
+    "reviewHint": "参加前にクラス情報を確認できます。",
+    "alreadyJoinedHint": "このクラスにはすでに参加しています。そのまま開けます。",
+    "join": "クラスに参加",
+    "openClass": "クラスを開く",
+    "joining": "参加中...",
+    "invalidInviteCode": "この招待コードは無効か、期限切れです。",
+    "schoolMismatch": "このクラスは、あなたのアカウントと一致しない学校に限定されています。",
+    "joinFailed": "クラスへの参加に失敗しました。もう一度お試しください。",
+    "loadPreviewFailed": "クラス情報の読み込みに失敗しました。もう一度お試しください。",
+    "goToDashboard": "ダッシュボードへ戻る"
+  },
   "appSidebar": {
     "user": "ユーザー",
     "settings": "設定",
@@ -464,7 +486,10 @@
     "classDeleted": "クラスを削除しました",
     "failedDeleteClass": "クラスの削除に失敗しました",
     "deleteDialogTitle": "「{name}」を削除しますか？",
-    "deleteDialogDescription": "クラス、すべての課題、提出、メンバーデータを完全に削除します。この操作は元に戻せません。"
+    "deleteDialogDescription": "クラス、すべての課題、提出、メンバーデータを完全に削除します。この操作は元に戻せません。",
+    "copyInviteLinkTitle": "招待リンクをコピー",
+    "inviteLinkCopied": "招待リンクをコピーしました",
+    "inviteLinkText": "{user} があなたを {class} に招待しています\n{url}"
   },
   "taskListView": {
     "columns": {
@@ -571,6 +596,9 @@
     "editorPlaceholder": "Markdownで内容を入力...",
     "uploading": "アップロード中...",
     "dropOrClickUpload": "ファイルをドロップ、またはクリックしてアップロード",
+    "manageAttachments": "ファイル管理",
+    "attachmentsPanel": "添付とアップロード ({count})",
+    "attachmentsSheetDescription": "ファイルをアップロードし、表示設定を管理したり、本文に画像を挿入できます。",
     "footer": {
       "wordCount": "{count}語",
       "markdownSupported": "Markdown対応",
@@ -589,7 +617,6 @@
       "placeholder": "変更したい内容を入力...",
       "voiceInput": "音声入力",
       "connecting": "接続中...",
-      "recording": "録音中...",
       "stop": "停止",
       "submit": "リライト",
       "submitting": "リライト中..."
@@ -613,10 +640,7 @@
       },
       "cancel": "キャンセル",
       "confirm": "延長",
-      "error": {
-        "invalidAmount": "有効な数値を入力してください",
-        "mustExtend": "新しい締切は現在の締切より後である必要があります"
-      }
+      "error": {}
     }
   },
   "attachmentSidebar": {
@@ -680,7 +704,6 @@
     "editBody": "本文を編集 →",
     "record": "Record",
     "connecting": "接続中...",
-    "recording": "Recording...",
     "stopRecording": "Stop"
   },
   "submissionsListPage": {
@@ -768,7 +791,6 @@
     "create": "作成",
     "secretKey": "シークレットキー",
     "keyWontShowAgain": "このキーは再表示されません。今すぐコピーしてください。",
-    "configSnippet": "クイックセットアップ（Claude Code）",
     "copy": "コピー",
     "done": "完了",
     "revokeTitle": "キーを無効化",
@@ -792,24 +814,14 @@
     "createDescription": "後で識別できるようにキーに名前を付けてください。",
     "installCommandsHeading": "新しいキーでインストール",
     "installCommandsHint": "以下からクライアントを選んでコマンドを実行してください。キーはコマンド内に自動挿入されています。",
-    "guidesHeading": "AIツールを接続",
-    "guidesIntro": "まずキーを作成してコピーし、以下のいずれかのセットアップコマンドをターミナルで実行してください。",
     "claudeCode": {
       "name": "Claude Code",
-      "tagline": "ターミナルで使える Anthropic のAIコーディングアシスタント",
-      "step1": "新しいキーを作成してコピーする",
-      "step2": "コマンドをターミナルに貼り付けて実行する",
-      "step3": "Claude Code を開くと TaskFlow ツールが利用可能になります"
+      "tagline": "ターミナルで使える Anthropic のAIコーディングアシスタント"
     },
     "openClaw": {
       "name": "OpenClaw",
-      "tagline": "オープンソースの自律型AIエージェント",
-      "step1": "新しいキーを作成してコピーする",
-      "step2": "コマンドをターミナルに貼り付けて実行する",
-      "step3": "OpenClaw を再起動して TaskFlow サーバーを読み込む"
-    },
-    "steps": "手順",
-    "command": "コマンド"
+      "tagline": "オープンソースの自律型AIエージェント"
+    }
   },
   "settingsSessions": {
     "title": "アクティブなセッション",
@@ -882,10 +894,8 @@
   "commentSection": {
     "title": "ディスカッション",
     "placeholder": "コメントを書く...",
-    "send": "送信",
     "reply": "返信",
     "replyingTo": "{name} に返信中",
-    "cancelReply": "キャンセル",
     "noComments": "まだコメントはありません。最初のコメントを投稿しましょう。",
     "failedToLoad": "コメントの読み込みに失敗しました",
     "failedToSend": "コメントの送信に失敗しました",

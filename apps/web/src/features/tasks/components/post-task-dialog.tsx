@@ -561,7 +561,7 @@ export function PostTaskDialog({
                     ? "border-destructive bg-destructive/10 text-destructive"
                     : isConnecting
                       ? "border-border bg-muted text-foreground"
-                    : "border-border text-muted-foreground hover:bg-surface-subtle hover:text-foreground"
+                      : "border-border text-muted-foreground hover:bg-surface-subtle hover:text-foreground"
                 }`}
               >
                 {isStreaming ? (
@@ -574,7 +574,11 @@ export function PostTaskDialog({
                   </>
                 ) : isConnecting ? (
                   <>
-                    <Loader2 size={13} strokeWidth={2} className="animate-spin" />
+                    <Loader2
+                      size={13}
+                      strokeWidth={2}
+                      className="animate-spin"
+                    />
                     {t("connecting")}
                   </>
                 ) : (

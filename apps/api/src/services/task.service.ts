@@ -645,40 +645,37 @@ export async function deleteTask(taskId: string, userId: string) {
 export async function markTaskViewed(taskId: string, userId: string) {
 	await assertTaskAccess(taskId, userId);
 
-	const existing = await prisma.taskUserState.findUnique({
+	const viewedAt = new Date();
+
+	const updated = await prisma.taskUserState.updateMany({
 		where: {
-			taskId_userId: {
-				taskId,
-				userId,
-			},
+			taskId,
+			userId,
+			viewedAt: null,
+		},
+		data: {
+			viewedAt,
 		},
 	});
 
-	if (!existing) {
-		await prisma.taskUserState.create({
-			data: {
-				taskId,
-				userId,
-				viewedAt: new Date(),
-				tags: [],
-			},
-		});
+	if (updated.count > 0) {
 		await cacheDel(cacheKeys.taskStats(taskId));
 		return;
 	}
 
-	if (!existing.viewedAt) {
-		await prisma.taskUserState.update({
-			where: {
-				taskId_userId: {
-					taskId,
-					userId,
-				},
+	const created = await prisma.taskUserState.createMany({
+		data: [
+			{
+				taskId,
+				userId,
+				viewedAt,
+				tags: [],
 			},
-			data: {
-				viewedAt: new Date(),
-			},
-		});
+		],
+		skipDuplicates: true,
+	});
+
+	if (created.count > 0) {
 		await cacheDel(cacheKeys.taskStats(taskId));
 	}
 }

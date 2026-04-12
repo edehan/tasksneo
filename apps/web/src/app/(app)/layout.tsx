@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { AppHeader } from "@/components/app-header";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -14,15 +14,16 @@ import { useClassAccent } from "@/hooks/use-class-accent";
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { token, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   // Set class accent color based on current route
   useClassAccent();
 
   useEffect(() => {
     if (!loading && !token) {
-      router.replace("/login");
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     }
-  }, [loading, token, router]);
+  }, [loading, token, router, pathname]);
 
   if (loading || !token) {
     return (

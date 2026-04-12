@@ -4,8 +4,8 @@ import { getLocale, getMessages } from "next-intl/server";
 
 import { AuthProvider } from "@/components/auth-provider";
 import { LocaleProvider } from "@/components/locale-provider";
+import { RouteAwareToaster } from "@/components/route-aware-toaster";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/sonner";
 import { type AppLocale, toHtmlLang } from "@/i18n/locale";
 
 import "./globals.css";
@@ -36,11 +36,7 @@ export default async function RootLayout({
   return (
     <html lang={toHtmlLang(locale)} suppressHydrationWarning>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `if("serviceWorker"in navigator){navigator.serviceWorker.register("/sw.js")}`,
-          }}
-        />
+        <script src="/register-sw.js" />
       </head>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased text-sm leading-relaxed">
         <NextIntlClientProvider locale={locale} messages={messages}>
@@ -48,7 +44,7 @@ export default async function RootLayout({
             <LocaleProvider>
               <AuthProvider>
                 {children}
-                <Toaster richColors position="top-right" />
+                <RouteAwareToaster />
               </AuthProvider>
             </LocaleProvider>
           </ThemeProvider>

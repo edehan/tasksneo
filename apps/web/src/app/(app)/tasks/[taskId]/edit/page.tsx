@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
@@ -19,6 +19,7 @@ import {
 export default function EditTaskPage() {
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname();
   const { token, loading: authLoading } = useAuth();
   const t = useTranslations("taskEditorPage");
 
@@ -61,9 +62,9 @@ export default function EditTaskPage() {
     if (!authLoading && token) {
       void loadData();
     } else if (!authLoading && !token) {
-      router.replace("/login");
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     }
-  }, [authLoading, token, loadData, router]);
+  }, [authLoading, token, loadData, router, pathname]);
 
   if (authLoading || loading) {
     return (

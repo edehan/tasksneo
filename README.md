@@ -17,7 +17,7 @@
 
 ### 功能类
 - [x] 任务的前置任务关联功能
-- [] (推迟)docx等文件解析 https://awslabs.github.io/mcp/servers/document-loader-mcp-server
+- [x] docx等文件解析，doc ppt尚不支持
 - [x] 文件下载器
 - [x] MCP
 - [x] 完善通知系统 

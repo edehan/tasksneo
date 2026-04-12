@@ -11,8 +11,8 @@ import {
 } from "react";
 import type { UserProfile } from "@/lib/api";
 import {
-  getMe,
   login as apiLogin,
+  getMe,
   logoutApi,
   subscribeToAuthExpired,
 } from "@/lib/api";
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return subscribeToAuthExpired(() => {
       clearAuthState();
       if (pathname !== "/login") {
-        router.replace("/login");
+        router.replace(`/login?next=${encodeURIComponent(pathname)}`);
       }
     });
   }, [clearAuthState, pathname, router]);

@@ -7,6 +7,7 @@ import {
 	createClass,
 	deleteClass,
 	getClassDetail,
+	getJoinClassPreview,
 	joinClass,
 	listClassMembers,
 	listMyClasses,
@@ -54,6 +55,10 @@ const updateClassBodySchema = z.object({
 });
 
 const joinClassBodySchema = z.object({
+	inviteCode: z.string().trim().min(1),
+});
+
+const joinClassPreviewParamSchema = z.object({
 	inviteCode: z.string().trim().min(1),
 });
 
@@ -107,6 +112,13 @@ classesRouter.post("/join", async (c) => {
 	const body = joinClassBodySchema.parse(await c.req.json());
 	const joinedClass = await joinClass(authUser.userId, body.inviteCode);
 	return c.json(joinedClass, 200);
+});
+
+classesRouter.get("/join-preview/:inviteCode", async (c) => {
+	const authUser = requireAuthUser(c);
+	const params = joinClassPreviewParamSchema.parse(c.req.param());
+	const preview = await getJoinClassPreview(authUser.userId, params.inviteCode);
+	return c.json(preview, 200);
 });
 
 classesRouter.get("/:classId", async (c) => {

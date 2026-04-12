@@ -28,6 +28,24 @@ export interface CreateClassInput {
 	schoolId?: string | null;
 }
 
+export type JoinClassPreviewStatus =
+	| "JOINABLE"
+	| "ALREADY_MEMBER"
+	| "SCHOOL_MISMATCH";
+
+export interface JoinClassPreview {
+	id: string;
+	name: string;
+	description: string | null;
+	color: string;
+	schoolId: string | null;
+	schoolName: string | null;
+	inviteCode: string;
+	memberCount: number;
+	status: JoinClassPreviewStatus;
+	myRole: ClassRole | null;
+}
+
 function generateInviteCode(length: number): string {
 	const bytes = randomBytes(length);
 	let result = "";
@@ -150,6 +168,11 @@ export async function joinClass(userId: string, inviteCode: string) {
 	const targetClass = await prisma.class.findUnique({
 		where: { inviteCode },
 		include: {
+			school: {
+				select: {
+					name: true,
+				},
+			},
 			_count: {
 				select: {
 					members: true,
@@ -177,14 +200,6 @@ export async function joinClass(userId: string, inviteCode: string) {
 		throw new AppError(401, "UNAUTHORIZED", "User not found");
 	}
 
-	if (targetClass.schoolId && user.schoolId !== targetClass.schoolId) {
-		throw new AppError(
-			403,
-			"SCHOOL_MISMATCH",
-			"Your school does not match class restriction",
-		);
-	}
-
 	const existingMembership = await prisma.classMember.findUnique({
 		where: {
 			classId_userId: {
@@ -196,6 +211,14 @@ export async function joinClass(userId: string, inviteCode: string) {
 
 	if (existingMembership) {
 		throw new AppError(409, "ALREADY_MEMBER", "You are already a class member");
+	}
+
+	if (targetClass.schoolId && user.schoolId !== targetClass.schoolId) {
+		throw new AppError(
+			403,
+			"SCHOOL_MISMATCH",
+			"Your school does not match class restriction",
+		);
 	}
 
 	await prisma.classMember.create({
@@ -217,6 +240,79 @@ export async function joinClass(userId: string, inviteCode: string) {
 	}
 
 	return toClassSummary(joinedClass, ClassRole.MEMBER);
+}
+
+export async function getJoinClassPreview(
+	userId: string,
+	inviteCode: string,
+): Promise<JoinClassPreview> {
+	const targetClass = await prisma.class.findUnique({
+		where: { inviteCode },
+		include: {
+			school: {
+				select: {
+					name: true,
+				},
+			},
+			_count: {
+				select: {
+					members: true,
+				},
+			},
+		},
+	});
+
+	if (!targetClass) {
+		throw new AppError(404, "INVITE_CODE_NOT_FOUND", "Invite code not found");
+	}
+
+	if (targetClass.isPersonal) {
+		throw new AppError(403, "FORBIDDEN", "Cannot join personal class");
+	}
+
+	const user = await prisma.user.findUnique({
+		where: { id: userId },
+		select: {
+			schoolId: true,
+		},
+	});
+
+	if (!user) {
+		throw new AppError(401, "UNAUTHORIZED", "User not found");
+	}
+
+	const existingMembership = await prisma.classMember.findUnique({
+		where: {
+			classId_userId: {
+				classId: targetClass.id,
+				userId,
+			},
+		},
+		select: {
+			role: true,
+		},
+	});
+
+	let status: JoinClassPreviewStatus = "JOINABLE";
+
+	if (existingMembership) {
+		status = "ALREADY_MEMBER";
+	} else if (targetClass.schoolId && user.schoolId !== targetClass.schoolId) {
+		status = "SCHOOL_MISMATCH";
+	}
+
+	return {
+		id: targetClass.id,
+		name: targetClass.name,
+		description: targetClass.description,
+		color: targetClass.color,
+		schoolId: targetClass.schoolId,
+		schoolName: targetClass.school?.name ?? null,
+		inviteCode: targetClass.inviteCode ?? inviteCode,
+		memberCount: targetClass._count.members,
+		status,
+		myRole: existingMembership?.role ?? null,
+	};
 }
 
 const CLASS_DETAIL_TTL_SECONDS = 300;

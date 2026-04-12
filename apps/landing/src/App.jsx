@@ -66,7 +66,10 @@ function resolvePreferredLocale() {
 }
 
 function prefersDarkMode() {
-	if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+	if (
+		typeof window === "undefined" ||
+		typeof window.matchMedia !== "function"
+	) {
 		return false;
 	}
 	return window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -451,7 +454,12 @@ const GANTT_TASKS_BY_LOCALE = {
 		{ title: "Algorithm Assignment", color: "#8B7355", start: 15, width: 20 },
 		{ title: "Sculpture Portfolio", color: "#B07090", start: 8, width: 25 },
 		{ title: "Calculus Problem Set", color: "#5B8C6A", start: 20, width: 15 },
-		{ title: "Circuit Experiment Notes", color: "#7B6CB0", start: 12, width: 24 },
+		{
+			title: "Circuit Experiment Notes",
+			color: "#7B6CB0",
+			start: 12,
+			width: 24,
+		},
 		{ title: "Reading Reflection", color: "#C4785B", start: 25, width: 14 },
 		{ title: "WWII Documentary Notes", color: "#5886A5", start: 18, width: 20 },
 	],
@@ -510,7 +518,8 @@ export default function LandingPage() {
 	const GANTT_TASKS = GANTT_TASKS_BY_LOCALE[locale];
 	const DAYS = DAYS_BY_LOCALE[locale];
 	const theme = THEMES[isDark ? "dark" : "light"];
-	const { bg, textPrimary, textSecondary, textMuted, borderColor, cardBg } = theme;
+	const { bg, textPrimary, textSecondary, textMuted, borderColor, cardBg } =
+		theme;
 	const sansFont =
 		locale === "zh" ? "'Noto Sans SC', sans-serif" : "'DM Sans', sans-serif";
 	const serifFont =
@@ -582,7 +591,7 @@ export default function LandingPage() {
 			setAiDone(true);
 		}, 1600);
 		setAiExample((p) => (p + 1) % AI_EXAMPLES.length);
-	}, []);
+	}, [AI_EXAMPLES.length]);
 
 	const ganttOffset = ganttScroll.progress * (isMobile ? -200 : -520);
 
@@ -795,7 +804,7 @@ export default function LandingPage() {
 						margin: "0 auto",
 						display: "flex",
 						flexDirection: isMobile ? "column" : "row",
-						alignItems: isMobile ? "center" : "center",
+						alignItems: "center",
 						gap: isMobile ? 40 : 60,
 						textAlign: isMobile ? "center" : "left",
 					}}
@@ -1472,8 +1481,14 @@ export default function LandingPage() {
 								style={{ display: "flex", flexDirection: "column", gap: 14 }}
 							>
 								{[
-									t("自然语言自动转换为结构化任务", "Natural language becomes structured tasks"),
-									t("智能识别日期、时长和班级", "Smart extraction of dates, duration, and class"),
+									t(
+										"自然语言自动转换为结构化任务",
+										"Natural language becomes structured tasks",
+									),
+									t(
+										"智能识别日期、时长和班级",
+										"Smart extraction of dates, duration, and class",
+									),
 									t("支持 12 种语言", "Supports 12 languages"),
 								].map((t, i) => (
 									<div
@@ -1570,7 +1585,10 @@ export default function LandingPage() {
 										lineHeight: 1.3,
 									}}
 								>
-									{t("每项任务，清晰排列在时间轴上。", "Every task, arranged with clarity on the timeline.")}
+									{t(
+										"每项任务，清晰排列在时间轴上。",
+										"Every task, arranged with clarity on the timeline.",
+									)}
 								</h2>
 							</Reveal>
 						</div>
@@ -1781,7 +1799,10 @@ export default function LandingPage() {
 									marginBottom: 20,
 								}}
 							>
-								{t("无缝连接你已有的工具。", "Connect gracefully with tools you already use.")}
+								{t(
+									"无缝连接你已有的工具。",
+									"Connect gracefully with tools you already use.",
+								)}
 							</h2>
 						</Reveal>
 						<Reveal delay={0.12}>
@@ -1801,7 +1822,8 @@ export default function LandingPage() {
 										<strong style={{ color: textPrimary }}>
 											MCP（模型上下文协议）
 										</strong>
-										，TaskNeo 与你现有的工具栈原生对话。任务、截止日期和反馈在各平台间自动流转。
+										，TaskNeo
+										与你现有的工具栈原生对话。任务、截止日期和反馈在各平台间自动流转。
 									</>
 								) : (
 									<>
@@ -1809,7 +1831,9 @@ export default function LandingPage() {
 										<strong style={{ color: textPrimary }}>
 											MCP (Model Context Protocol)
 										</strong>
-										, TaskNeo speaks natively with your current stack. Tasks, deadlines, and feedback flow between tools in near real time.
+										, TaskNeo speaks natively with your current stack. Tasks,
+										deadlines, and feedback flow between tools in near real
+										time.
 									</>
 								)}
 							</p>
@@ -1859,7 +1883,10 @@ export default function LandingPage() {
 								{[
 									{
 										Icon: FeatureIcons.Workflow,
-										title: t("自动规划任务工作流", "Auto-orchestrated task workflows"),
+										title: t(
+											"自动规划任务工作流",
+											"Auto-orchestrated task workflows",
+										),
 										desc: t(
 											"AI 根据一段描述自动生成任务序列和依赖关系。",
 											"AI turns a brief description into sequenced tasks and dependencies.",
@@ -1875,7 +1902,10 @@ export default function LandingPage() {
 									},
 									{
 										Icon: FeatureIcons.Sync,
-										title: t("全平台双向同步", "Bi-directional sync across platforms"),
+										title: t(
+											"全平台双向同步",
+											"Bi-directional sync across platforms",
+										),
 										desc: t(
 											"Notion、Slack 或飞书中的变更即时同步回来。",
 											"Changes from Notion, Slack, or Feishu echo back instantly.",
@@ -1991,15 +2021,18 @@ export default function LandingPage() {
 										const isHov = hoveredIntg === i;
 										return (
 											<div key={i} style={{ position: "relative" }}>
-												<div
+												<button
+													type="button"
 													onClick={() =>
 														setHoveredIntg(hoveredIntg === i ? null : i)
 													}
 													style={{
+														appearance: "none",
+														WebkitAppearance: "none",
+														border: `1.5px solid ${isHov ? activeColor : borderColor}`,
+														background: cardBg,
 														padding: "14px 8px",
 														borderRadius: 12,
-														background: cardBg,
-														border: `1.5px solid ${isHov ? activeColor : borderColor}`,
 														display: "flex",
 														flexDirection: "column",
 														alignItems: "center",
@@ -2029,7 +2062,7 @@ export default function LandingPage() {
 													>
 														{intg.name}
 													</span>
-												</div>
+												</button>
 												{isHov && (
 													<div
 														style={{

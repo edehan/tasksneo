@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { SessionKind, prisma } from "@taskflow/db";
+import { prisma, SessionKind } from "@taskflow/db";
 
 import {
 	processSessionCleanupQueue,
@@ -156,7 +156,9 @@ export async function loadSessionByToken(
  * Debouncing is based on the DB-backed lastSeenAt we loaded for this request,
  * so revocation remains correct even if Redis is unavailable.
  */
-export async function touchSession(session: CachedSession): Promise<CachedSession> {
+export async function touchSession(
+	session: CachedSession,
+): Promise<CachedSession> {
 	if (session.kind === SessionKind.MCP) {
 		return session;
 	}
@@ -190,7 +192,9 @@ export async function touchSession(session: CachedSession): Promise<CachedSessio
 // ── Revocation ──────────────────────────────────────────────────────────────
 
 export async function revokeSession(sessionId: string): Promise<void> {
-	await prisma.session.delete({ where: { id: sessionId } }).catch(() => undefined);
+	await prisma.session
+		.delete({ where: { id: sessionId } })
+		.catch(() => undefined);
 }
 
 /**

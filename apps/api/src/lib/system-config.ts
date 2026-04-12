@@ -67,6 +67,7 @@ export const SECRET_CONFIG_KEYS = new Set([
 	"smtp.user",
 	"smtp.password",
 	"llm.api_key",
+	"stt.api_key",
 ]);
 
 export function isSecretConfigKey(key: string): boolean {

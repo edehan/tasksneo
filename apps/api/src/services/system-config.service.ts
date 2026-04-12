@@ -13,10 +13,14 @@ const DEFAULT_CONFIG: Record<string, string> = {
 	"auth.registration_open": "true",
 	"notif.before_due_hours": "24,2",
 	"smtp.from_name": "TaskNeo",
+	"llm.prompt_task_parse":
+		"You are a task parser for an educational platform. Teachers provide task descriptions (assignments, homework, project specs) as text, sometimes with attached files (PDFs, images). Extract structured metadata and produce a formatted markdown document.",
+	// Legacy keys kept for backward compatibility
 	"llm.prompt_task_parse_structured":
 		"Extract task fields into JSON schema {title,startAt,dueAt,description}.",
 	"llm.prompt_task_parse_markdown":
 		"Generate a markdown task brief from the provided text and files.",
+	"stt.speech_model": "whisper-rt",
 };
 
 const ALLOWED_CONFIG_KEYS = new Set([
@@ -34,8 +38,11 @@ const ALLOWED_CONFIG_KEYS = new Set([
 	"llm.base_url",
 	"llm.api_key",
 	"llm.model",
+	"llm.prompt_task_parse",
 	"llm.prompt_task_parse_structured",
 	"llm.prompt_task_parse_markdown",
+	"stt.api_key",
+	"stt.speech_model",
 ]);
 
 function decodeSecretForAdminView(value: string) {
@@ -79,6 +86,41 @@ export async function getConfigValue(key: string): Promise<string | null> {
 	}
 
 	return isSecretConfigKey(key) ? decryptConfigValue(row.value) : row.value;
+}
+
+export async function getConfigValues(
+	keys: string[],
+): Promise<Map<string, string | null>> {
+	const validKeys = keys.filter(
+		(key) => ALLOWED_CONFIG_KEYS.has(key) || key in DEFAULT_CONFIG,
+	);
+
+	const rows = await prisma.systemConfig.findMany({
+		where: { key: { in: validKeys } },
+	});
+
+	const rowMap = new Map(rows.map((r) => [r.key, r.value]));
+	const result = new Map<string, string | null>();
+
+	for (const key of keys) {
+		if (!ALLOWED_CONFIG_KEYS.has(key) && !(key in DEFAULT_CONFIG)) {
+			result.set(key, null);
+			continue;
+		}
+
+		const dbValue = rowMap.get(key);
+
+		if (dbValue === undefined) {
+			result.set(key, DEFAULT_CONFIG[key] ?? null);
+		} else {
+			result.set(
+				key,
+				isSecretConfigKey(key) ? decryptConfigValue(dbValue) : dbValue,
+			);
+		}
+	}
+
+	return result;
 }
 
 export async function assertRegistrationOpen() {

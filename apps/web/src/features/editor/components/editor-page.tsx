@@ -793,7 +793,10 @@ export function EditorPage({
         </div>
       </footer>
 
-      <Sheet open={showMobileAttachments} onOpenChange={setShowMobileAttachments}>
+      <Sheet
+        open={showMobileAttachments}
+        onOpenChange={setShowMobileAttachments}
+      >
         <SheetContent
           side="bottom"
           className="max-h-[80dvh] rounded-t-[24px] px-0 pb-0"
@@ -937,7 +940,7 @@ export function EditorPage({
                     ? "border-destructive bg-destructive/10 text-destructive"
                     : rewriteConnecting
                       ? "border-border bg-muted text-foreground"
-                    : "border-border text-muted-foreground hover:bg-surface-subtle hover:text-foreground"
+                      : "border-border text-muted-foreground hover:bg-surface-subtle hover:text-foreground"
                 }`}
               >
                 {rewriteStreaming ? (

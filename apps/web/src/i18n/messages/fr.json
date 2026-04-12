@@ -136,6 +136,28 @@
     "alreadyHaveAccount": "Vous avez deja un compte ?",
     "signIn": "Se connecter"
   },
+  "joinPage": {
+    "title": "Rejoindre la classe",
+    "description": "Vous allez rejoindre une classe a l'aide d'un lien d'invitation.",
+    "inviteCodeLabel": "Code d'invitation",
+    "joiningAs": "Connexion en tant que {name}",
+    "loadingPreview": "Chargement des details de la classe...",
+    "descriptionFallback": "Aucune description pour cette classe.",
+    "schoolLabel": "Ecole",
+    "schoolOpenToAll": "Toutes les ecoles",
+    "memberCountLabel": "Membres",
+    "memberCountValue": "{count} membres",
+    "reviewHint": "Verifiez les details de la classe avant de la rejoindre.",
+    "alreadyJoinedHint": "Vous faites deja partie de cette classe. Vous pouvez l'ouvrir directement.",
+    "join": "Rejoindre la classe",
+    "openClass": "Ouvrir la classe",
+    "joining": "Connexion...",
+    "invalidInviteCode": "Ce code d'invitation est invalide ou a expire.",
+    "schoolMismatch": "Cette classe est reservee a un etablissement qui ne correspond pas a votre compte.",
+    "joinFailed": "Impossible de rejoindre la classe. Veuillez reessayer.",
+    "loadPreviewFailed": "Impossible de charger les details de la classe. Veuillez reessayer.",
+    "goToDashboard": "Aller au tableau de bord"
+  },
   "appSidebar": {
     "user": "Utilisateur",
     "settings": "Parametres",
@@ -464,7 +486,10 @@
     "classDeleted": "Classe supprimee",
     "failedDeleteClass": "Echec de la suppression de la classe",
     "deleteDialogTitle": "Supprimer « {name} » ?",
-    "deleteDialogDescription": "Cette action supprimera definitivement la classe, y compris toutes les taches, soumissions et donnees membres. Action irreversible."
+    "deleteDialogDescription": "Cette action supprimera definitivement la classe, y compris toutes les taches, soumissions et donnees membres. Action irreversible.",
+    "copyInviteLinkTitle": "Copier le lien d'invitation",
+    "inviteLinkCopied": "Lien d'invitation copie",
+    "inviteLinkText": "{user} vous invite a rejoindre {class}\n{url}"
   },
   "taskListView": {
     "columns": {
@@ -571,6 +596,9 @@
     "editorPlaceholder": "Ecrivez votre contenu en Markdown...",
     "uploading": "Televersement...",
     "dropOrClickUpload": "Deposez des fichiers ou cliquez pour televerser",
+    "manageAttachments": "Gerer les fichiers",
+    "attachmentsPanel": "Pieces jointes et televersement ({count})",
+    "attachmentsSheetDescription": "Televersez des fichiers, gerez la visibilite ou inserez des images dans le contenu.",
     "footer": {
       "wordCount": "{count} {count, plural, one {mot} other {mots}}",
       "markdownSupported": "Markdown pris en charge",
@@ -589,7 +617,6 @@
       "placeholder": "Decrivez les modifications souhaitees...",
       "voiceInput": "Saisie vocale",
       "connecting": "Connexion...",
-      "recording": "Enregistrement...",
       "stop": "Arreter",
       "submit": "Reecrire",
       "submitting": "Reecriture..."
@@ -613,10 +640,7 @@
       },
       "cancel": "Annuler",
       "confirm": "Prolonger",
-      "error": {
-        "invalidAmount": "Veuillez entrer un nombre valide",
-        "mustExtend": "La nouvelle echeance doit etre posterieure a l'actuelle"
-      }
+      "error": {}
     }
   },
   "attachmentSidebar": {
@@ -680,7 +704,6 @@
     "editBody": "Modifier le contenu →",
     "record": "Record",
     "connecting": "Connexion...",
-    "recording": "Recording...",
     "stopRecording": "Stop"
   },
   "submissionsListPage": {
@@ -768,7 +791,6 @@
     "create": "Créer",
     "secretKey": "Clé secrète",
     "keyWontShowAgain": "Cette clé ne sera plus affichée. Copiez-la maintenant.",
-    "configSnippet": "Configuration rapide (Claude Code)",
     "copy": "Copier",
     "done": "Terminé",
     "revokeTitle": "Révoquer la clé",
@@ -792,24 +814,14 @@
     "createDescription": "Donnez un nom à votre clé pour l'identifier plus tard.",
     "installCommandsHeading": "Installer avec votre nouvelle clé",
     "installCommandsHint": "Choisissez un client ci-dessous et exécutez la commande. Votre clé est déjà injectée.",
-    "guidesHeading": "Connectez votre outil IA",
-    "guidesIntro": "Créez et copiez d'abord une clé, puis exécutez l'une des commandes d'installation ci-dessous dans votre terminal.",
     "claudeCode": {
       "name": "Claude Code",
-      "tagline": "Assistant de code IA d'Anthropic dans votre terminal",
-      "step1": "Créez et copiez une nouvelle clé",
-      "step2": "Collez la commande dans votre terminal",
-      "step3": "Ouvrez Claude Code, les outils TaskFlow seront disponibles"
+      "tagline": "Assistant de code IA d'Anthropic dans votre terminal"
     },
     "openClaw": {
       "name": "OpenClaw",
-      "tagline": "Agent IA autonome open source",
-      "step1": "Créez et copiez une nouvelle clé",
-      "step2": "Collez la commande dans votre terminal",
-      "step3": "Redémarrez OpenClaw pour charger le serveur TaskFlow"
-    },
-    "steps": "Étapes",
-    "command": "Commande"
+      "tagline": "Agent IA autonome open source"
+    }
   },
   "settingsSessions": {
     "title": "Sessions actives",
@@ -882,10 +894,8 @@
   "commentSection": {
     "title": "Discussion",
     "placeholder": "Ecrire un commentaire...",
-    "send": "Envoyer",
     "reply": "Repondre",
     "replyingTo": "Reponse a {name}",
-    "cancelReply": "Annuler",
     "noComments": "Aucun commentaire pour l'instant. Lancez la discussion !",
     "failedToLoad": "Echec du chargement des commentaires",
     "failedToSend": "Echec de l'envoi du commentaire",

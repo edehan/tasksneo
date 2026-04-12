@@ -1,4 +1,4 @@
-FROM node:22-bookworm-slim
+FROM node:22.22.2-trixie-slim
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1

@@ -1,10 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { PageTransition } from "@/components/page-transition";
+import { readSafeNextParam } from "@/lib/search-params";
 
 export default function AuthLayout({
   children,
@@ -13,12 +14,19 @@ export default function AuthLayout({
 }) {
   const { token, loading } = useAuth();
   const router = useRouter();
+  const [next, setNext] = useState<string | null>(null);
+  const [searchReady, setSearchReady] = useState(false);
 
   useEffect(() => {
-    if (!loading && token) {
-      router.replace("/dashboard");
+    setNext(readSafeNextParam());
+    setSearchReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!loading && token && searchReady) {
+      router.replace(next ?? "/dashboard");
     }
-  }, [loading, token, router]);
+  }, [loading, token, router, next, searchReady]);
 
   if (loading || token) {
     return (
@@ -30,7 +38,7 @@ export default function AuthLayout({
 
   return (
     <div className="relative flex min-h-screen items-center justify-center px-4 py-12">
-      <div className="absolute top-4 right-4">
+      <div className="absolute right-4 top-4">
         <LocaleSwitcher />
       </div>
       <PageTransition className="w-full max-w-md">{children}</PageTransition>

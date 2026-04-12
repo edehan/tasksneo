@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Copy, Loader2, RefreshCw } from "lucide-react";
+import { ArrowLeft, Copy, Link2, Loader2, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -58,7 +58,7 @@ export function ClassSettingsPage() {
   const t = useTranslations("classSettings");
   const params = useParams();
   const router = useRouter();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const classId = params?.classId as string;
 
   const [cls, setCls] = useState<ClassSummary | null>(null);
@@ -155,6 +155,21 @@ export function ClassSettingsPage() {
     if (!inviteCode) return;
     navigator.clipboard.writeText(inviteCode).then(
       () => toast.success(t("inviteCodeCopied")),
+      () => toast.error(t("failedCopy")),
+    );
+  }
+
+  function handleCopyInviteLink() {
+    if (!inviteCode || !cls) return;
+    const userName = user?.nickname || user?.email || "";
+    const url = `${window.location.origin}/join/${inviteCode}`;
+    const text = t("inviteLinkText", {
+      user: userName,
+      class: cls.name,
+      url,
+    });
+    navigator.clipboard.writeText(text).then(
+      () => toast.success(t("inviteLinkCopied")),
       () => toast.error(t("failedCopy")),
     );
   }
@@ -311,6 +326,15 @@ export function ClassSettingsPage() {
             title={t("copyInviteCodeTitle")}
           >
             <Copy className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleCopyInviteLink}
+            disabled={!inviteCode}
+            title={t("copyInviteLinkTitle")}
+          >
+            <Link2 className="h-4 w-4" />
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>

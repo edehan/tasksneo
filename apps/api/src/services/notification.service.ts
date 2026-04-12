@@ -346,7 +346,7 @@ function buildCommentHtml(
 	appTitle: string,
 ) {
 	const accentColor = payload.classColor || "#7B6CB0";
-	const taskUrl = `${baseUrl}/dashboard`;
+	const taskUrl = `${baseUrl}/tasks/${encodeURIComponent(payload.taskId)}`;
 	const unsubscribeUrl = `${baseUrl}/settings/notifications`;
 	const safeTitle = escapeHtml(appTitle);
 	const contentHtml = escapeHtml(payload.commentContent).replace(/\n/g, "<br>");
@@ -407,7 +407,7 @@ function buildHtml(
 
 	const dueText = formatDueAt(payload.dueAt, timezone);
 	const accentColor = payload.classColor || "#7B6CB0";
-	const taskUrl = `${baseUrl}/dashboard`;
+	const taskUrl = `${baseUrl}/tasks/${encodeURIComponent(payload.taskId)}`;
 	const unsubscribeUrl = `${baseUrl}/settings/notifications`;
 	const safeTitle = escapeHtml(appTitle);
 
@@ -493,7 +493,7 @@ async function sendWebhook(
 				commentAuthorName: payload.commentAuthorName,
 				commentContent: payload.commentContent,
 				isReply: payload.isReply,
-				url: `${baseUrl}/dashboard`,
+				url: `${baseUrl}/tasks/${encodeURIComponent(payload.taskId)}`,
 			};
 		} else {
 			body = {
@@ -502,7 +502,7 @@ async function sendWebhook(
 				taskTitle: payload.taskTitle,
 				className: payload.className,
 				dueAt: formatDueAt(payload.dueAt, timezone),
-				url: `${baseUrl}/dashboard`,
+				url: `${baseUrl}/tasks/${encodeURIComponent(payload.taskId)}`,
 			};
 		}
 

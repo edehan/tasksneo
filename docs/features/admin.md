@@ -55,10 +55,16 @@ Authorization: Bearer <ADMIN_TOKEN>
 | `llm.base_url` | API 端点地址 |
 | `llm.api_key` | API 密钥（加密存储） |
 | `llm.model` | 模型名称，如 `gpt-4o-mini` |
-| `llm.prompt_task_parse_structured` | 任务结构化解析提示词（管理员可调） |
-| `llm.prompt_task_parse_markdown` | 任务 Markdown 梳理提示词（管理员可调） |
+| `llm.prompt_task_parse` | 任务解析基础提示词（角色和上下文描述，管理员可调） |
 
-### 4. 注册开关
+### 4. 语音识别配置
+
+| 键 | 说明 |
+|---|---|
+| `stt.api_key` | AssemblyAI API 密钥（加密存储） |
+| `stt.speech_model` | 语音识别模型，默认 `whisper-rt` |
+
+### 5. 注册开关
 
 | 键 | 值 |
 |---|---|
@@ -66,7 +72,7 @@ Authorization: Bearer <ADMIN_TOKEN>
 
 值为 `'false'` 时，`/auth/register` 接口返回 403，拒绝新用户自助注册。
 
-### 5. 通知配置
+### 6. 通知配置
 
 | 键 | 说明 |
 |---|---|

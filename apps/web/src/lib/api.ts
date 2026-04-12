@@ -80,6 +80,24 @@ export interface ClassSummary {
   createdAt: string;
 }
 
+export type JoinClassPreviewStatus =
+  | "JOINABLE"
+  | "ALREADY_MEMBER"
+  | "SCHOOL_MISMATCH";
+
+export interface JoinClassPreview {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string;
+  schoolId: string | null;
+  schoolName: string | null;
+  inviteCode: string;
+  memberCount: number;
+  status: JoinClassPreviewStatus;
+  myRole: "OWNER" | "ADMIN" | "MEMBER" | null;
+}
+
 export interface ClassMember {
   userId: string;
   nickname: string | null;
@@ -584,11 +602,7 @@ export async function revokeSession(
 }
 
 export async function revokeOtherSessions(token: string): Promise<void> {
-  return apiRequest<void>(
-    "/users/me/sessions",
-    { method: "DELETE" },
-    token,
-  );
+  return apiRequest<void>("/users/me/sessions", { method: "DELETE" }, token);
 }
 
 // ── Account ────────────────────────────────────────────────────────────────
@@ -645,6 +659,17 @@ export async function joinClass(
   return apiRequest<ClassSummary>(
     "/classes/join",
     { method: "POST", body: JSON.stringify({ inviteCode }) },
+    token,
+  );
+}
+
+export async function getJoinClassPreview(
+  token: string,
+  inviteCode: string,
+): Promise<JoinClassPreview> {
+  return apiRequest<JoinClassPreview>(
+    `/classes/join-preview/${encodeURIComponent(inviteCode)}`,
+    {},
     token,
   );
 }
@@ -830,8 +855,14 @@ export async function parseTaskDraft(
 
 // ─── Speech-to-Text ──────────────────────────────────────────────────────────
 
-export async function getSTTToken(token: string): Promise<{ token: string }> {
-  return apiRequest<{ token: string }>("/stt/token", { method: "POST" }, token);
+export async function getSTTToken(
+  token: string,
+): Promise<{ token: string; speechModel: string }> {
+  return apiRequest<{ token: string; speechModel: string }>(
+    "/stt/token",
+    { method: "POST" },
+    token,
+  );
 }
 
 // ─── AI Content Revision ─────────────────────────────────────────────────────
@@ -1222,6 +1253,26 @@ export async function getAdminStorageStatus(
   token: string,
 ): Promise<StorageStatus> {
   return apiRequest<StorageStatus>("/admin/storage-status", {}, token);
+}
+
+export interface AdminMetricsRoute {
+  route: string;
+  count: number;
+  errors: number;
+  p50_ms: number;
+  p95_ms: number;
+  p99_ms: number;
+}
+
+export interface AdminMetrics {
+  uptime_s: number;
+  requests_total: number;
+  requests_by_status: Record<string, number>;
+  routes: AdminMetricsRoute[];
+}
+
+export async function getAdminMetrics(token: string): Promise<AdminMetrics> {
+  return apiRequest<AdminMetrics>("/admin/metrics", {}, token);
 }
 
 export async function getAdminConfig(
