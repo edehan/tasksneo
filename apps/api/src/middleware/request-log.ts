@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { MiddlewareHandler } from "hono";
 
 import { rootLogger } from "../lib/logger.js";
+import { recordRequest } from "../lib/metrics.js";
 import type { AppVariables } from "../types/context.js";
 
 const INCOMING_ID_MAX_LEN = 128;
@@ -60,5 +61,7 @@ export const requestLogMiddleware: MiddlewareHandler<{
 		} else {
 			logger.info(fields, "request");
 		}
+
+		recordRequest({ route, status, duration_ms });
 	}
 };
