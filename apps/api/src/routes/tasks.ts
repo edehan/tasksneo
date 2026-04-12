@@ -279,7 +279,7 @@ tasksRouter.post("/:taskId/parse", async (c) => {
 	}
 
 	const text = body.text ?? task.sourceText ?? "";
-	assertParseInput(text);
+	assertParseInput(text, { attachmentCount: attachments.length });
 
 	// Generate presigned URLs in parallel — no byte downloads
 	const attachmentPayload = await Promise.all(

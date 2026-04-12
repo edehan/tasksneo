@@ -487,6 +487,48 @@ describe("TaskFlow API e2e", () => {
 		);
 		expect(parseDraftTask.response.status).toBe(200);
 
+		const draftTaskWithAttachmentRes = await requestJson(
+			app,
+			`/classes/${classId}/tasks/drafts`,
+			{
+				method: "POST",
+				headers: authHeader(ownerToken),
+				body: JSON.stringify({ sourceText: null }),
+			},
+		);
+		expect(draftTaskWithAttachmentRes.response.status).toBe(201);
+		const draftTaskWithAttachmentId = (
+			draftTaskWithAttachmentRes.body as { id: string }
+		).id;
+
+		const draftAttachmentForm = new FormData();
+		draftAttachmentForm.append(
+			"files",
+			new File([Buffer.from("draft-only-attachment")], "draft-only.txt", {
+				type: "text/plain",
+			}),
+		);
+		const draftAttachmentRes = await app.request(
+			`/tasks/${draftTaskWithAttachmentId}/attachments`,
+			{
+				method: "POST",
+				headers: authHeader(ownerToken),
+				body: draftAttachmentForm,
+			},
+		);
+		expect(draftAttachmentRes.status).toBe(201);
+
+		const parseDraftTaskWithAttachmentOnly = await requestJson(
+			app,
+			`/tasks/${draftTaskWithAttachmentId}/parse`,
+			{
+				method: "POST",
+				headers: authHeader(ownerToken),
+				body: JSON.stringify({}),
+			},
+		);
+		expect(parseDraftTaskWithAttachmentOnly.response.status).toBe(200);
+
 		const draftMarkdown = await app.request(
 			`/tasks/${draftTaskId}/draft-markdown`,
 			{
