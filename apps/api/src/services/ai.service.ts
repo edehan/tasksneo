@@ -463,9 +463,17 @@ export async function parseTaskDescription(
 	return result.structured;
 }
 
-export function assertParseInput(text: string) {
-	if (!text.trim()) {
-		throw new AppError(400, "INVALID_PARSE_INPUT", "text is required");
+export function assertParseInput(
+	text: string,
+	options?: { attachmentCount?: number },
+) {
+	const attachmentCount = options?.attachmentCount ?? 0;
+	if (!text.trim() && attachmentCount === 0) {
+		throw new AppError(
+			400,
+			"INVALID_PARSE_INPUT",
+			"text or attachments is required",
+		);
 	}
 }
 
