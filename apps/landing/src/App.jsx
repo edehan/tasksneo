@@ -804,7 +804,7 @@ export default function LandingPage() {
 						margin: "0 auto",
 						display: "flex",
 						flexDirection: isMobile ? "column" : "row",
-						alignItems: isMobile ? "center" : "center",
+						alignItems: "center",
 						gap: isMobile ? 40 : 60,
 						textAlign: isMobile ? "center" : "left",
 					}}
@@ -2021,15 +2021,18 @@ export default function LandingPage() {
 										const isHov = hoveredIntg === i;
 										return (
 											<div key={i} style={{ position: "relative" }}>
-												<div
+												<button
+													type="button"
 													onClick={() =>
 														setHoveredIntg(hoveredIntg === i ? null : i)
 													}
 													style={{
+														appearance: "none",
+														WebkitAppearance: "none",
+														border: `1.5px solid ${isHov ? activeColor : borderColor}`,
+														background: cardBg,
 														padding: "14px 8px",
 														borderRadius: 12,
-														background: cardBg,
-														border: `1.5px solid ${isHov ? activeColor : borderColor}`,
 														display: "flex",
 														flexDirection: "column",
 														alignItems: "center",
@@ -2059,7 +2062,7 @@ export default function LandingPage() {
 													>
 														{intg.name}
 													</span>
-												</div>
+												</button>
 												{isHov && (
 													<div
 														style={{
