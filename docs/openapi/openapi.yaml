@@ -269,7 +269,7 @@ components:
       properties:
         token:
           type: string
-          description: Opaque MCP session token (format: tfses_<random>)
+          description: "Opaque MCP session token (format: tfses_<random>)"
         user:
           $ref: '#/components/schemas/UserProfile'
 

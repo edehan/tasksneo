@@ -136,6 +136,27 @@
     "alreadyHaveAccount": "Already have an account?",
     "signIn": "Sign in"
   },
+  "authBranding": {
+    "tagline": "Organize your classroom tasks with ease",
+    "feature1": "Create and manage class tasks effortlessly",
+    "feature2": "Invite students with a simple link",
+    "feature3": "Track submissions and grade efficiently",
+    "feature4": "Stay notified about deadlines and updates"
+  },
+  "joinPage": {
+    "title": "Join Class",
+    "description": "You are about to join a class using an invite link.",
+    "inviteCodeLabel": "Invite code",
+    "joiningAs": "Joining as {name}",
+    "join": "Join Class",
+    "cancel": "Cancel",
+    "joining": "Joining...",
+    "invalidInviteCode": "This invite code is invalid or has expired.",
+    "alreadyMember": "You are already a member of this class.",
+    "schoolMismatch": "This class is restricted to a school that does not match your account.",
+    "joinFailed": "Failed to join class. Please try again.",
+    "goToDashboard": "Go to Dashboard"
+  },
   "appSidebar": {
     "user": "User",
     "settings": "Settings",
@@ -464,7 +485,10 @@
     "classDeleted": "Class deleted",
     "failedDeleteClass": "Failed to delete class",
     "deleteDialogTitle": "Delete \"{name}\"?",
-    "deleteDialogDescription": "This will permanently delete the class, including all tasks, submissions, and member data. This action cannot be undone."
+    "deleteDialogDescription": "This will permanently delete the class, including all tasks, submissions, and member data. This action cannot be undone.",
+    "copyInviteLinkTitle": "Copy invite link",
+    "inviteLinkCopied": "Invite link copied",
+    "inviteLinkText": "{user} invites you to join {class}\n{url}"
   },
   "taskListView": {
     "columns": {

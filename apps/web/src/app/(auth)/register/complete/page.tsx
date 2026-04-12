@@ -45,6 +45,7 @@ function detectBrowserTimezone(): string {
 function CompleteRegistrationInner() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
+  const next = searchParams.get("next");
   const router = useRouter();
   const { setAuth } = useAuth();
   const t = useTranslations("authRegisterComplete");
@@ -124,7 +125,8 @@ function CompleteRegistrationInner() {
         timezone: detectedTimezone,
       });
       setAuth(res.token, res.user);
-      router.replace("/dashboard");
+      const dest = next && next.startsWith("/") ? next : "/dashboard";
+      router.replace(dest);
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("registrationFailed");

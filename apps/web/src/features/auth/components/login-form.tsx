@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -24,6 +24,8 @@ export function LoginForm() {
   const { login } = useAuth();
   const t = useTranslations("authLogin");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [trustDevice, setTrustDevice] = useState(false);
@@ -36,7 +38,8 @@ export function LoginForm() {
     setSubmitting(true);
     try {
       await login(email, password, trustDevice);
-      router.replace("/dashboard");
+      const dest = next && next.startsWith("/") ? next : "/dashboard";
+      router.replace(dest);
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t("loginFailed");
       toast.error(message);
@@ -114,7 +117,7 @@ export function LoginForm() {
           <p className="text-sm text-muted-foreground">
             {t("noAccount")}{" "}
             <Link
-              href="/register"
+              href={next ? `/register?next=${encodeURIComponent(next)}` : "/register"}
               className="text-primary underline-offset-4 hover:underline"
             >
               {t("signUp")}

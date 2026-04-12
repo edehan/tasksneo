@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return subscribeToAuthExpired(() => {
       clearAuthState();
       if (pathname !== "/login") {
-        router.replace("/login");
+        router.replace(`/login?next=${encodeURIComponent(pathname)}`);
       }
     });
   }, [clearAuthState, pathname, router]);
