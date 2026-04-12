@@ -1,8 +1,12 @@
+import { prisma } from "@taskflow/db";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 import { getCacheStats } from "./lib/cache.js";
+import { AppError } from "./lib/errors.js";
+import { getRedisClient } from "./lib/redis.js";
 import { errorHandler } from "./middleware/error.js";
+import { requestLogMiddleware } from "./middleware/request-log.js";
 import { adminRouter } from "./routes/admin.js";
 import { authRouter } from "./routes/auth.js";
 import { classesRouter } from "./routes/classes.js";
@@ -35,6 +39,7 @@ export function createApp(options?: { startWorker?: boolean }) {
 	const app = new Hono<{ Variables: AppVariables }>();
 
 	app.onError(errorHandler);
+	app.use("*", requestLogMiddleware);
 	app.use(
 		"*",
 		cors({
@@ -52,6 +57,39 @@ export function createApp(options?: { startWorker?: boolean }) {
 
 	app.get("/health", (c) => c.json({ status: "ok" }, 200));
 	app.get("/health/cache", (c) => c.json(getCacheStats(), 200));
+	app.get("/health/ready", async (c) => {
+		const checks: Record<string, "ok" | string> = {};
+		let healthy = true;
+
+		try {
+			await prisma.$queryRaw`SELECT 1`;
+			checks.postgres = "ok";
+		} catch (err) {
+			healthy = false;
+			checks.postgres =
+				err instanceof Error ? err.message : "unknown postgres error";
+		}
+
+		try {
+			const pong = await getRedisClient().ping();
+			checks.redis = pong === "PONG" ? "ok" : `unexpected: ${pong}`;
+			if (checks.redis !== "ok") healthy = false;
+		} catch (err) {
+			healthy = false;
+			checks.redis =
+				err instanceof Error ? err.message : "unknown redis error";
+		}
+
+		if (!healthy) {
+			throw new AppError(
+				503,
+				"DEP_UNHEALTHY",
+				`Dependency unhealthy: ${JSON.stringify(checks)}`,
+			);
+		}
+
+		return c.json({ status: "ok", checks }, 200);
+	});
 	app.route("/auth", authRouter);
 	app.route("/users", usersRouter);
 	app.route("/schools", schoolsRouter);

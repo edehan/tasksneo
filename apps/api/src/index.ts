@@ -1,9 +1,13 @@
 import { serve } from "@hono/node-server";
 
 import { app } from "./app.js";
+import { instrumentPrisma } from "./lib/db-instrument.js";
 import { loadEnv } from "./lib/env.js";
+import { rootLogger } from "./lib/logger.js";
 
 const env = loadEnv();
+
+instrumentPrisma(rootLogger);
 
 serve(
 	{
@@ -12,6 +16,9 @@ serve(
 		port: env.listenPort,
 	},
 	(info) => {
-		console.log(`TaskNeo API listening on http://${info.address}:${info.port}`);
+		rootLogger.info(
+			{ address: info.address, port: info.port },
+			"api_listening",
+		);
 	},
 );

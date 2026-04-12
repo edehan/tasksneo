@@ -1044,6 +1044,64 @@ components:
 paths:
 
   # ══════════════════════════════════════════════════════
+  # HEALTH
+  # ══════════════════════════════════════════════════════
+
+  /health:
+    get:
+      tags: [Health]
+      summary: Liveness probe
+      description: |
+        返回常量 200，仅用于 Docker 的 liveness 检查，不访问任何依赖。
+        想确认 Postgres / Redis 是否可用请走 `/health/ready`。
+      responses:
+        '200':
+          description: Always ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+                required: [status]
+
+  /health/ready:
+    get:
+      tags: [Health]
+      summary: Readiness probe with dependency checks
+      description: |
+        依次检查 Postgres (`SELECT 1`) 和 Redis (`PING`)。
+        任一项失败返回 503，响应体里的 `checks` 字段写明是哪个依赖挂了。
+        适合放到 reverse proxy / k8s readiness / 外部监控上。
+      responses:
+        '200':
+          description: 所有依赖健康
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+                  checks:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    example:
+                      postgres: ok
+                      redis: ok
+                required: [status, checks]
+        '503':
+          description: 某个依赖不健康
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ══════════════════════════════════════════════════════
   # AUTH
   # ══════════════════════════════════════════════════════
 
@@ -3383,6 +3441,78 @@ paths:
                   - useSSL
                   - region
                   - connected
+
+  /admin/metrics:
+    get:
+      tags: [Admin]
+      summary: 获取进程内请求指标
+      description: |
+        返回当前 API 进程自启动以来累计的请求指标：总请求数、按状态码聚合、
+        按路由的 count / p50 / p95 / p99 / errors。分位数来自每条路由最近
+        500 条请求的固定大小环形缓冲，全部在进程内存中计算，不触达磁盘或
+        外部存储。进程重启后清零。
+      security:
+        - adminAuth: []
+      responses:
+        '200':
+          description: 指标快照
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uptime_s:
+                    type: integer
+                    description: 进程启动至今的秒数
+                  requests_total:
+                    type: integer
+                    description: 累计请求数
+                  requests_by_status:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                    description: |
+                      按状态码（精确，如 "200" "503"）以及按状态段（"2xx" "5xx"）聚合的计数。
+                    example:
+                      "2xx": 1243
+                      "4xx": 18
+                      "5xx": 2
+                      "200": 1240
+                      "201": 3
+                      "404": 15
+                      "503": 2
+                  routes:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        route:
+                          type: string
+                          description: Hono routePath 模板（不含 path params 值）
+                          example: "/tasks/:taskId"
+                        count:
+                          type: integer
+                        errors:
+                          type: integer
+                          description: 状态码 >= 500 的请求数
+                        p50_ms:
+                          type: integer
+                        p95_ms:
+                          type: integer
+                        p99_ms:
+                          type: integer
+                      required:
+                        - route
+                        - count
+                        - errors
+                        - p50_ms
+                        - p95_ms
+                        - p99_ms
+                required:
+                  - uptime_s
+                  - requests_total
+                  - requests_by_status
+                  - routes
 
   /admin/schools/{schoolId}:
     parameters:

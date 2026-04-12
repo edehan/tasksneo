@@ -1,4 +1,5 @@
 import type { SessionKind } from "@taskflow/db";
+import type { Logger } from "pino";
 
 export interface AuthUser {
 	userId: string;
@@ -17,4 +18,6 @@ export interface AppVariables {
 	authUser?: AuthUser;
 	authSession?: AuthSession;
 	isAdmin?: boolean;
+	requestId?: string;
+	logger?: Logger;
 }
