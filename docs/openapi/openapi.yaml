@@ -1044,6 +1044,64 @@ components:
 paths:
 
   # ══════════════════════════════════════════════════════
+  # HEALTH
+  # ══════════════════════════════════════════════════════
+
+  /health:
+    get:
+      tags: [Health]
+      summary: Liveness probe
+      description: |
+        返回常量 200，仅用于 Docker 的 liveness 检查，不访问任何依赖。
+        想确认 Postgres / Redis 是否可用请走 `/health/ready`。
+      responses:
+        '200':
+          description: Always ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+                required: [status]
+
+  /health/ready:
+    get:
+      tags: [Health]
+      summary: Readiness probe with dependency checks
+      description: |
+        依次检查 Postgres (`SELECT 1`) 和 Redis (`PING`)。
+        任一项失败返回 503，响应体里的 `checks` 字段写明是哪个依赖挂了。
+        适合放到 reverse proxy / k8s readiness / 外部监控上。
+      responses:
+        '200':
+          description: 所有依赖健康
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+                  checks:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    example:
+                      postgres: ok
+                      redis: ok
+                required: [status, checks]
+        '503':
+          description: 某个依赖不健康
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ══════════════════════════════════════════════════════
   # AUTH
   # ══════════════════════════════════════════════════════
 
