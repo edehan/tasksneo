@@ -54,6 +54,20 @@ function diffDays(a: Date, b: Date): number {
   return (b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24);
 }
 
+function getEffectiveStartDate(task: TaskWithClass): Date {
+  return task.startAt ? new Date(task.startAt) : new Date(task.createdAt);
+}
+
+function getEffectiveEndDate(task: TaskWithClass, startDate: Date): Date {
+  return task.dueAt
+    ? new Date(task.dueAt)
+    : new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+}
+
+function getEffectiveStartLabel(task: TaskWithClass): string {
+  return task.startAt ?? task.createdAt;
+}
+
 function formatShortDate(iso: string, locale: string): string {
   const d = new Date(iso);
   const month = d.toLocaleString(locale, { month: "short" });
@@ -84,10 +98,10 @@ function computeTimelineRange(tasks: TaskWithClass[]): {
   latest.setDate(latest.getDate() + MIN_SPAN_DAYS);
 
   for (const task of tasks) {
-    const taskStart = task.startAt
-      ? startOfDay(new Date(task.startAt))
-      : startOfDay(new Date(task.createdAt));
-    const taskEnd = task.dueAt ? startOfDay(new Date(task.dueAt)) : taskStart;
+    const taskStart = startOfDay(getEffectiveStartDate(task));
+    const taskEnd = task.dueAt
+      ? startOfDay(new Date(task.dueAt))
+      : startOfDay(getEffectiveEndDate(task, taskStart));
 
     if (taskStart < earliest) earliest = new Date(taskStart);
     if (taskEnd > latest) latest = new Date(taskEnd);
@@ -148,12 +162,8 @@ function computeBarGeometries(
   const map = new Map<string, BarGeometry>();
   for (let i = 0; i < sortedTasks.length; i++) {
     const task = sortedTasks[i];
-    const barStartDate = task.startAt
-      ? new Date(task.startAt)
-      : new Date(task.createdAt);
-    const barEndDate = task.dueAt
-      ? new Date(task.dueAt)
-      : new Date(barStartDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const barStartDate = getEffectiveStartDate(task);
+    const barEndDate = getEffectiveEndDate(task, barStartDate);
 
     const startOffset = diffDays(timelineStart, barStartDate);
     const endOffset = diffDays(timelineStart, barEndDate);
@@ -515,12 +525,9 @@ export function TaskGanttView({
                 const submitted = isSubmitted(task);
                 const overdue = !submitted && isOverdue(task);
 
-                const barStartDate = task.startAt
-                  ? new Date(task.startAt)
-                  : new Date(task.createdAt);
-                const barEndDate = task.dueAt
-                  ? new Date(task.dueAt)
-                  : new Date(barStartDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+                const barStartDate = getEffectiveStartDate(task);
+                const barEndDate = getEffectiveEndDate(task, barStartDate);
+                const startLabelIso = getEffectiveStartLabel(task);
 
                 const startOffset = diffDays(timelineStart, barStartDate);
                 const endOffset = diffDays(timelineStart, barEndDate);
@@ -528,7 +535,8 @@ export function TaskGanttView({
                 const barLeft = Math.max(0, startOffset) * dayWidth;
                 const barRight = Math.min(totalDays, endOffset) * dayWidth;
                 const barWidth = Math.max(barRight - barLeft, dayWidth * 0.5);
-                const barDays = endOffset - Math.max(0, startOffset);
+                const startLabelWidth = Math.max(0, barLeft - 4);
+                const shouldShowStartLabel = startLabelWidth >= 44;
 
                 // Submission progress: submittedCount / (memberCount - 1), owner excluded
                 const eligible = Math.max(task.memberCount - 1, 1);
@@ -613,21 +621,21 @@ export function TaskGanttView({
                     {/* Desktop: date labels outside the bar */}
                     {!isMobile && (
                       <>
-                        {/* Start date — left of bar, only for bars >= 2 days */}
-                        {task.startAt && barDays >= 2 && (
+                        {/* Start date — left of bar when there is enough room */}
+                        {shouldShowStartLabel && (
                           <span
                             className="pointer-events-none absolute flex items-center justify-end overflow-hidden font-sans text-muted-foreground"
                             style={{
                               top: 0,
                               bottom: 0,
                               left: 0,
-                              width: Math.max(0, barLeft - 4),
+                              width: startLabelWidth,
                               fontSize: 10,
                               fontWeight: 500,
                               whiteSpace: "nowrap",
                             }}
                           >
-                            {formatShortDate(task.startAt, locale)}
+                            {formatShortDate(startLabelIso, locale)}
                           </span>
                         )}
                         {/* Due date — right of bar */}
