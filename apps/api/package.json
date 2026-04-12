@@ -12,15 +12,15 @@
 	},
 	"dependencies": {
 		"@axiomhq/pino": "^1.6.0",
-		"@hono/node-server": "^1.19.11",
+		"@hono/node-server": "^1.19.13",
 		"@taskflow/db": "workspace:*",
 		"assemblyai": "^4.29.0",
 		"bcryptjs": "^3.0.3",
 		"bull": "^4.16.5",
-		"hono": "^4.12.8",
+		"hono": "^4.12.12",
 		"ioredis": "^5.10.1",
 		"minio": "^8.0.7",
-		"nodemailer": "^8.0.4",
+		"nodemailer": "^8.0.5",
 		"pino": "^9.14.0",
 		"zod": "^4.3.6"
 	},
