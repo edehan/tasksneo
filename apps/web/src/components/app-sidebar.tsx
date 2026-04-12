@@ -52,6 +52,8 @@ import { useAvatarUrl } from "@/hooks/use-avatar-url";
 import { type AppLocale, SUPPORTED_LOCALES } from "@/i18n/locale";
 import type { ClassSummary } from "@/lib/api";
 import { listClasses } from "@/lib/api";
+import { buildLoginHref, getCurrentPathWithQuery } from "@/lib/auth-redirect";
+import { classPath } from "@/lib/routes";
 
 export function AppSidebar() {
   const { token, user, logout } = useAuth();
@@ -220,7 +222,7 @@ export function AppSidebar() {
                   <DropdownMenuItem
                     onClick={async () => {
                       await logout();
-                      router.push("/login");
+                      router.push(buildLoginHref(getCurrentPathWithQuery()));
                     }}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
@@ -283,9 +285,9 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    isActive={pathname === `/classes/${personalClass.id}`}
+                    isActive={pathname === classPath(personalClass)}
                   >
-                    <Link href={`/classes/${personalClass.id}`}>
+                    <Link href={classPath(personalClass)}>
                       <BookOpen className="h-4 w-4" />
                       <span>{t("personalSpace")}</span>
                     </Link>
@@ -320,9 +322,9 @@ export function AppSidebar() {
                     <SidebarMenuItem key={cls.id}>
                       <SidebarMenuButton
                         asChild
-                        isActive={pathname.startsWith(`/classes/${cls.id}`)}
+                        isActive={pathname.startsWith(classPath(cls))}
                       >
-                        <Link href={`/classes/${cls.id}`}>
+                        <Link href={classPath(cls)}>
                           <span
                             className="h-2 w-2 shrink-0 rounded-sm"
                             style={{ backgroundColor: cls.color || "#8B7355" }}
@@ -355,9 +357,9 @@ export function AppSidebar() {
                     <SidebarMenuItem key={cls.id}>
                       <SidebarMenuButton
                         asChild
-                        isActive={pathname.startsWith(`/classes/${cls.id}`)}
+                        isActive={pathname.startsWith(classPath(cls))}
                       >
-                        <Link href={`/classes/${cls.id}`}>
+                        <Link href={classPath(cls)}>
                           <span
                             className="h-2 w-2 shrink-0 rounded-sm"
                             style={{ backgroundColor: cls.color || "#8B7355" }}

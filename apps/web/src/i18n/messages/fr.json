@@ -449,7 +449,9 @@
     "inviteCode": "Code d'invitation",
     "inviteCodeHint": "Partagez ce code avec les etudiants pour rejoindre la classe.",
     "copyInviteCodeTitle": "Copier le code d'invitation",
+    "copyInviteLinkTitle": "Copier le lien d'invitation",
     "inviteCodeCopied": "Code d'invitation copie",
+    "inviteLinkCopied": "Lien d'invitation copie",
     "failedCopy": "Echec de la copie",
     "refreshInviteCodeTitle": "Regenerer le code d'invitation",
     "inviteCodeRefreshed": "Code d'invitation regenere",
@@ -465,6 +467,18 @@
     "failedDeleteClass": "Echec de la suppression de la classe",
     "deleteDialogTitle": "Supprimer « {name} » ?",
     "deleteDialogDescription": "Cette action supprimera definitivement la classe, y compris toutes les taches, soumissions et donnees membres. Action irreversible."
+  },
+  "joinInvitePage": {
+    "inviteLabel": "Invitation a la classe",
+    "invalidTitle": "Invitation introuvable",
+    "invalidDescription": "Ce lien d'invitation est invalide ou n'est plus disponible.",
+    "noDescription": "Aucune description de classe n'est disponible.",
+    "inviteCode": "Code d'invitation",
+    "school": "Ecole",
+    "joining": "Connexion...",
+    "joinNow": "Rejoindre la classe",
+    "joinedSuccess": "{name} rejoint",
+    "failedJoin": "Impossible de rejoindre la classe. Veuillez reessayer."
   },
   "taskListView": {
     "columns": {

@@ -16,6 +16,7 @@ import {
   logoutApi,
   subscribeToAuthExpired,
 } from "@/lib/api";
+import { buildLoginHref, getCurrentPathWithQuery } from "@/lib/auth-redirect";
 
 const TOKEN_KEY = "taskflow_token";
 
@@ -68,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return subscribeToAuthExpired(() => {
       clearAuthState();
       if (pathname !== "/login") {
-        router.replace("/login");
+        router.replace(buildLoginHref(getCurrentPathWithQuery()));
       }
     });
   }, [clearAuthState, pathname, router]);

@@ -55,7 +55,11 @@ interface PostTaskDialogProps {
   themeColor: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEditBody: (data: { taskId: string; title: string }) => void;
+  onEditBody: (data: {
+    taskId: string;
+    taskPublicId: string | null;
+    title: string;
+  }) => void;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -163,7 +167,9 @@ export function PostTaskDialog({
 
   // Draft tracking
   const [draftId, setDraftId] = useState<string | null>(null);
+  const [draftPublicId, setDraftPublicId] = useState<string | null>(null);
   const draftIdRef = useRef<string | null>(null);
+  const draftPublicIdRef = useRef<string | null>(null);
 
   // UI state
   const [expanded, setExpanded] = useState(false);
@@ -213,6 +219,10 @@ export function PostTaskDialog({
     draftIdRef.current = draftId;
   }, [draftId]);
 
+  useEffect(() => {
+    draftPublicIdRef.current = draftPublicId;
+  }, [draftPublicId]);
+
   // ─── Load existing draft on dialog open ─────────────────────────────────
 
   useEffect(() => {
@@ -222,7 +232,9 @@ export function PostTaskDialog({
       .then((draft) => {
         if (!draft) return;
         setDraftId(draft.id);
+        setDraftPublicId(draft.publicId);
         draftIdRef.current = draft.id;
+        draftPublicIdRef.current = draft.publicId;
         setTitle(draft.title || "");
         setRawText(draft.sourceText || "");
         if (draft.startAt) setStartAt(new Date(draft.startAt));
@@ -277,7 +289,9 @@ export function PostTaskDialog({
       blockedBy,
     });
     setDraftId(draft.id);
+    setDraftPublicId(draft.publicId);
     draftIdRef.current = draft.id;
+    draftPublicIdRef.current = draft.publicId;
     return draft.id;
   }, [token, classId, title, rawText, startAt, dueAt, allowLate, blockedBy, t]);
 
@@ -293,7 +307,9 @@ export function PostTaskDialog({
     setAttachments([]);
     setUploading(false);
     setDraftId(null);
+    setDraftPublicId(null);
     draftIdRef.current = null;
+    draftPublicIdRef.current = null;
     setExpanded(false);
     setParsing(false);
     setParsed(false);
@@ -427,6 +443,7 @@ export function PostTaskDialog({
     setSubmitting(true);
     try {
       let taskId: string;
+      let taskPublicId: string | null;
 
       const taskData = {
         title: title.trim(),
@@ -439,16 +456,24 @@ export function PostTaskDialog({
 
       if (draftIdRef.current) {
         // Draft already exists — update it with latest form state
-        await updateTask(token, draftIdRef.current, taskData);
+        const updated = await updateTask(token, draftIdRef.current, taskData);
         taskId = draftIdRef.current;
+        taskPublicId = updated.publicId;
+        setDraftPublicId(updated.publicId);
+        draftPublicIdRef.current = updated.publicId;
       } else {
         // Create new draft
         const draft = await createTaskDraft(token, classId, taskData);
         taskId = draft.id;
+        taskPublicId = draft.publicId;
+        setDraftId(draft.id);
+        setDraftPublicId(draft.publicId);
+        draftIdRef.current = draft.id;
+        draftPublicIdRef.current = draft.publicId;
       }
 
       onOpenChange(false);
-      onEditBody({ taskId, title: title.trim() });
+      onEditBody({ taskId, taskPublicId, title: title.trim() });
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("toast.failedCreateDraft");

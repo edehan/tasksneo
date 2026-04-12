@@ -16,6 +16,12 @@ import {
 } from "@/features/tasks/lib/task-detail-status";
 import type { ClassSummary, TaskDetail } from "@/lib/api";
 import { deleteTask, getClass, getTask, markTaskViewed } from "@/lib/api";
+import {
+  classPath,
+  taskEditPath,
+  taskSubmitPath,
+  taskSubmissionsPath,
+} from "@/lib/routes";
 
 type SidebarSection = "attachments" | "discussion" | undefined;
 
@@ -117,7 +123,7 @@ export function TaskDetailPage() {
     <div className="mx-auto flex w-full max-w-[1200px] flex-col px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
       <button
         type="button"
-        onClick={() => router.push(`/classes/${task.classId}`)}
+        onClick={() => router.push(classPath(task.classId, task.classPublicId))}
         className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft size={14} strokeWidth={2} />
@@ -180,7 +186,7 @@ export function TaskDetailPage() {
                     <>
                       <button
                         type="button"
-                        onClick={() => router.push(`/tasks/${task.id}/edit`)}
+                        onClick={() => router.push(taskEditPath(task))}
                         className="rounded-lg border border-border bg-transparent px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors duration-100 hover:bg-secondary hover:text-foreground"
                       >
                         {t("actions.editTask")}
@@ -195,7 +201,9 @@ export function TaskDetailPage() {
                             setDeleting(true);
                             try {
                               await deleteTask(token, task.id);
-                              router.push(`/classes/${task.classId}`);
+                              router.push(
+                                classPath(task.classId, task.classPublicId),
+                              );
                             } catch {
                               setDeleting(false);
                             }
@@ -210,7 +218,7 @@ export function TaskDetailPage() {
                       <button
                         type="button"
                         onClick={() =>
-                          router.push(`/tasks/${task.id}/submissions`)
+                          router.push(taskSubmissionsPath(task))
                         }
                         className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium text-white shadow-sm transition-colors duration-100"
                         style={{ backgroundColor: accentColor }}
@@ -225,9 +233,9 @@ export function TaskDetailPage() {
                       {t("actions.submitted")}
                     </span>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => router.push(`/tasks/${task.id}/submit`)}
+                      <button
+                        type="button"
+                      onClick={() => router.push(taskSubmitPath(task))}
                       className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium text-white shadow-sm transition-colors duration-100"
                       style={{ backgroundColor: accentColor }}
                     >

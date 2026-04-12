@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { AppHeader } from "@/components/app-header";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -10,19 +10,24 @@ import { TimezonePrompt } from "@/components/timezone-prompt";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { GlobalSearchProvider } from "@/features/search/global-search";
 import { useClassAccent } from "@/hooks/use-class-accent";
+import { buildLoginHref } from "@/lib/auth-redirect";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { token, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   // Set class accent color based on current route
   useClassAccent();
 
   useEffect(() => {
     if (!loading && !token) {
-      router.replace("/login");
+      const query = searchParams.toString();
+      const next = `${pathname}${query ? `?${query}` : ""}`;
+      router.replace(buildLoginHref(next));
     }
-  }, [loading, token, router]);
+  }, [loading, token, pathname, router, searchParams]);
 
   if (loading || !token) {
     return (

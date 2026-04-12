@@ -2,13 +2,14 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { classPath } from "@/lib/routes";
 
 export default function NewTaskRoute() {
   const params = useParams();
   const router = useRouter();
 
   useEffect(() => {
-    router.replace(`/classes/${params?.classId}`);
+    router.replace(classPath(params?.classId as string));
   }, [params?.classId, router]);
 
   return null;

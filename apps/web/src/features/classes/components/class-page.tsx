@@ -24,6 +24,7 @@ import {
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
 import type { ClassSummary } from "@/lib/api";
 import { getClass, listClassTasks, listMembers } from "@/lib/api";
+import { classMembersPath, classSettingsPath, taskEditPath } from "@/lib/routes";
 
 function deriveDisplayStatus(
   task: TaskWithClass,
@@ -171,7 +172,7 @@ export function ClassPage() {
         <div className="flex flex-wrap items-center gap-2 xl:shrink-0 xl:justify-end">
           <button
             type="button"
-            onClick={() => router.push(`/classes/${classId}/members`)}
+            onClick={() => router.push(classMembersPath(cls))}
             className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
             title={t("members")}
           >
@@ -181,7 +182,7 @@ export function ClassPage() {
             <>
               <button
                 type="button"
-                onClick={() => router.push(`/classes/${classId}/settings`)}
+                onClick={() => router.push(classSettingsPath(cls))}
                 className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
                 title={t("settings")}
               >
@@ -273,9 +274,9 @@ export function ClassPage() {
           themeColor={cls.color || "#8B7355"}
           open={postTaskOpen}
           onOpenChange={setPostTaskOpen}
-          onEditBody={({ taskId }) => {
+          onEditBody={({ taskId, taskPublicId }) => {
             void loadData();
-            router.push(`/tasks/${taskId}/edit`);
+            router.push(taskEditPath(taskId, taskPublicId));
           }}
         />
       )}

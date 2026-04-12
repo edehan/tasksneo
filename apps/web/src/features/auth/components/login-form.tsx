@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -19,11 +19,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiError } from "@/lib/api";
+import { normalizeNextPath } from "@/lib/auth-redirect";
 
 export function LoginForm() {
   const { login } = useAuth();
   const t = useTranslations("authLogin");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [trustDevice, setTrustDevice] = useState(false);
@@ -36,7 +38,7 @@ export function LoginForm() {
     setSubmitting(true);
     try {
       await login(email, password, trustDevice);
-      router.replace("/dashboard");
+      router.replace(normalizeNextPath(searchParams.get("next")));
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t("loginFailed");
       toast.error(message);

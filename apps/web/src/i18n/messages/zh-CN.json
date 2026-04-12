@@ -449,7 +449,9 @@
     "inviteCode": "邀请码",
     "inviteCodeHint": "将此邀请码分享给学生以加入班级。",
     "copyInviteCodeTitle": "复制邀请码",
+    "copyInviteLinkTitle": "复制邀请链接",
     "inviteCodeCopied": "邀请码已复制",
+    "inviteLinkCopied": "邀请链接已复制",
     "failedCopy": "复制失败",
     "refreshInviteCodeTitle": "刷新邀请码",
     "inviteCodeRefreshed": "邀请码已刷新",
@@ -465,6 +467,18 @@
     "failedDeleteClass": "删除班级失败",
     "deleteDialogTitle": "删除“{name}”？",
     "deleteDialogDescription": "将永久删除该班级及其所有任务、提交和成员数据。此操作无法撤销。"
+  },
+  "joinInvitePage": {
+    "inviteLabel": "班级邀请",
+    "invalidTitle": "邀请不存在",
+    "invalidDescription": "这个邀请链接无效或已失效。",
+    "noDescription": "这个班级还没有描述。",
+    "inviteCode": "邀请码",
+    "school": "学校",
+    "joining": "加入中...",
+    "joinNow": "加入班级",
+    "joinedSuccess": "已加入 {name}",
+    "failedJoin": "加入班级失败，请稍后再试。"
   },
   "taskListView": {
     "columns": {

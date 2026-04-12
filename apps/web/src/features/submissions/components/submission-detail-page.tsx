@@ -32,6 +32,7 @@ import {
   listSubmissions,
   toggleExemplary,
 } from "@/lib/api";
+import { submissionPath, taskSubmissionsPath } from "@/lib/routes";
 
 // ─── File size formatting ────────────────────────────────────────────────────
 
@@ -58,6 +59,7 @@ export function SubmissionDetailPage() {
   const [allRows, setAllRows] = useState<SubmissionListRow[]>([]);
   const [taskTitle, setTaskTitle] = useState<string>("");
   const [taskId, setTaskId] = useState<string | null>(null);
+  const [taskPublicId, setTaskPublicId] = useState<string | null>(null);
   const [_classId, setClassId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -100,6 +102,7 @@ export function SubmissionDetailPage() {
       setCls(classData);
       setClassId(taskData.classId);
       setTaskTitle(taskData.title);
+      setTaskPublicId(taskData.publicId);
       setAllRows(submissionRows);
 
       // Initialize grading form with existing values
@@ -120,8 +123,8 @@ export function SubmissionDetailPage() {
 
   const studentRow = useMemo(() => {
     if (!submission) return null;
-    return allRows.find((r) => r.submission?.id === submissionId) ?? null;
-  }, [allRows, submission, submissionId]);
+    return allRows.find((r) => r.submission?.id === submission.id) ?? null;
+  }, [allRows, submission]);
 
   // ─── Prev/Next navigation ──────────────────────────────────────────────────
 
@@ -131,8 +134,11 @@ export function SubmissionDetailPage() {
   );
 
   const currentIndex = useMemo(
-    () => submittedRows.findIndex((r) => r.submission?.id === submissionId),
-    [submittedRows, submissionId],
+    () =>
+      submission
+        ? submittedRows.findIndex((r) => r.submission?.id === submission.id)
+        : -1,
+    [submittedRows, submission],
   );
 
   const prevSubmission =
@@ -144,7 +150,7 @@ export function SubmissionDetailPage() {
 
   function navigateTo(row: SubmissionListRow) {
     if (!row.submission) return;
-    router.push(`/submissions/${row.submission.id}`);
+    router.push(submissionPath(row.submission));
   }
 
   // ─── Save grade ─────────────────────────────────────────────────────────────
@@ -258,7 +264,11 @@ export function SubmissionDetailPage() {
       <div className="mb-6 flex items-center justify-between">
         <button
           type="button"
-          onClick={() => router.push(`/tasks/${taskId}/submissions`)}
+          onClick={() =>
+            taskId
+              ? router.push(taskSubmissionsPath(taskId, taskPublicId))
+              : undefined
+          }
           className="flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors duration-100 hover:text-foreground"
         >
           <ArrowLeft size={14} strokeWidth={2} />

@@ -62,6 +62,7 @@ import {
   transferOwnership,
   updateMemberRole,
 } from "@/lib/api";
+import { classPath } from "@/lib/routes";
 
 function getRoleBadge(
   role: ClassMember["role"],
@@ -244,7 +245,7 @@ export function MembersPage() {
   return (
     <div className="p-8 max-w-[960px] mx-auto">
       <Link
-        href={`/classes/${classId}`}
+        href={classPath(cls)}
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground mb-3"
       >
         <ArrowLeft size={14} strokeWidth={2} />

@@ -32,6 +32,12 @@ import {
   listSubmissions,
   listTaskComments,
 } from "@/lib/api";
+import {
+  classMembersPath,
+  classPath,
+  submissionPath,
+  taskPath,
+} from "@/lib/routes";
 
 export type SearchResultKind =
   | "class"
@@ -89,7 +95,9 @@ interface SearchableDocument extends SearchDocument {
 
 interface IndexedTaskRecord {
   id: string;
+  publicId: string;
   classId: string;
+  classPublicId: string | null;
   className: string;
   classColor: string;
   manageable: boolean;
@@ -162,26 +170,6 @@ function upsertDocument(
   map.set(document.id, document);
 }
 
-function classRoute(classId: string): string {
-  return `/classes/${classId}`;
-}
-
-function taskRoute(
-  taskId: string,
-  section?: "attachments" | "discussion",
-): string {
-  if (!section) return `/tasks/${taskId}`;
-  return `/tasks/${taskId}?section=${section}`;
-}
-
-function submissionRoute(submissionId: string): string {
-  return `/submissions/${submissionId}`;
-}
-
-function memberRoute(classId: string): string {
-  return `/classes/${classId}/members`;
-}
-
 function getSearchCacheKey(userId: string): string {
   return `${SEARCH_CACHE_KEY_PREFIX}:${userId}`;
 }
@@ -223,7 +211,7 @@ function toClassDocument(cls: ClassSummary): SearchDocument {
   return {
     id: `class:${cls.id}`,
     kind: "class",
-    route: classRoute(cls.id),
+    route: classPath(cls),
     title: cls.name,
     subtitle: cls.description ?? "",
     content: [cls.description, cls.myRole, String(cls.memberCount)]
@@ -240,7 +228,7 @@ function toTaskDocument(record: IndexedTaskRecord): SearchDocument {
   return {
     id: `task:${record.id}`,
     kind: "task",
-    route: taskRoute(record.id),
+    route: taskPath(record),
     title: record.task.title,
     subtitle: record.className,
     content: record.task.sourceText ?? "",
@@ -260,7 +248,7 @@ function toMemberDocument(
   return {
     id: `member:${cls.id}:${member.userId}`,
     kind: "member",
-    route: memberRoute(cls.id),
+    route: classMembersPath(cls),
     title: displayName,
     subtitle: cls.name,
     content: [member.role, member.joinedAt].join(" "),
@@ -288,7 +276,9 @@ function mergeTaskRecord(
 
   taskMap.set(task.id, {
     id: task.id,
+    publicId: task.publicId,
     classId: task.classId,
+    classPublicId: task.classPublicId,
     className: nextClassName,
     classColor: nextClassColor,
     manageable: existing?.manageable || manageable,
@@ -431,7 +421,7 @@ function buildEnrichedTaskDocument(
   return {
     id: `task:${detail.id}`,
     kind: "task",
-    route: taskRoute(detail.id),
+    route: taskPath(detail),
     title: detail.title,
     subtitle: record.className,
     content: [
@@ -456,7 +446,7 @@ function buildAttachmentDocuments(
   return detail.attachments.map((attachment) => ({
     id: `attachment:${detail.id}:${attachment.id}`,
     kind: "attachment",
-    route: taskRoute(detail.id, "attachments"),
+    route: taskPath(detail, { section: "attachments" }),
     title: attachment.originalName ?? attachment.fileKey,
     subtitle: `${detail.title} • ${record.className}`,
     content: [attachment.renamedFile, attachment.mimeType, attachment.fileKey]
@@ -479,7 +469,7 @@ function buildCommentDocuments(
     return {
       id: `comment:${record.id}:${comment.id}`,
       kind: "comment",
-      route: taskRoute(record.id, "discussion"),
+      route: taskPath(record, { section: "discussion" }),
       title: authorName,
       subtitle: `${record.task.title} • ${record.className}`,
       content: comment.content,
@@ -509,7 +499,7 @@ function buildSubmissionDocuments(
       {
         id: `submission:${record.id}:${row.submission.id}`,
         kind: "submission",
-        route: submissionRoute(row.submission.id),
+        route: submissionPath(row.submission),
         title: displayName,
         subtitle: `${record.task.title} • ${record.className}`,
         content: [

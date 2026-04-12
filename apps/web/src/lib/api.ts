@@ -68,6 +68,7 @@ export interface School {
 
 export interface ClassSummary {
   id: string;
+  publicId: string;
   name: string;
   description: string | null;
   color: string;
@@ -97,7 +98,9 @@ export interface TaskUserState {
 
 export interface TaskSummary {
   id: string;
+  publicId: string;
   classId: string;
+  classPublicId: string | null;
   className: string;
   title: string;
   sourceText: string | null;
@@ -157,6 +160,7 @@ export interface ParseDraftTaskResponse extends ParseTaskResponse {
 
 export interface SubmissionSummary {
   id: string;
+  publicId: string;
   taskId: string;
   userId: string;
   firstSubmittedAt: string;
@@ -195,8 +199,13 @@ export interface NotificationPref {
 
 export interface NotificationItem {
   id: string;
-  type: "TASK_PUBLISHED" | "TASK_DUE_REMINDER" | "SITE_ANNOUNCEMENT";
+  type:
+    | "TASK_PUBLISHED"
+    | "TASK_DUE_REMINDER"
+    | "TASK_COMMENT"
+    | "SITE_ANNOUNCEMENT";
   taskId: string | null;
+  taskPublicId: string | null;
   classId: string | null;
   taskTitle: string;
   className: string;
@@ -263,6 +272,15 @@ export interface AdminAnnouncement {
 export interface AdminUpdateUserInput {
   isActive?: boolean;
   password?: string;
+}
+
+export interface ClassInvitePreview {
+  id: string;
+  publicId: string;
+  name: string;
+  description: string | null;
+  color: string;
+  schoolName: string | null;
 }
 
 // ─── Core Request Function ───────────────────────────────────────────────────
@@ -646,6 +664,14 @@ export async function joinClass(
     "/classes/join",
     { method: "POST", body: JSON.stringify({ inviteCode }) },
     token,
+  );
+}
+
+export async function getClassInvitePreview(
+  inviteCode: string,
+): Promise<ClassInvitePreview> {
+  return apiRequest<ClassInvitePreview>(
+    `/classes/invite/${encodeURIComponent(inviteCode)}`,
   );
 }
 

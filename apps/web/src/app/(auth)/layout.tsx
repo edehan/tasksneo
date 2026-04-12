@@ -1,10 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { PageTransition } from "@/components/page-transition";
+import { normalizeNextPath } from "@/lib/auth-redirect";
 
 export default function AuthLayout({
   children,
@@ -13,12 +14,13 @@ export default function AuthLayout({
 }) {
   const { token, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!loading && token) {
-      router.replace("/dashboard");
+      router.replace(normalizeNextPath(searchParams.get("next")));
     }
-  }, [loading, token, router]);
+  }, [loading, token, router, searchParams]);
 
   if (loading || token) {
     return (

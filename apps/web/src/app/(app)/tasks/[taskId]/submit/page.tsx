@@ -16,6 +16,7 @@ import {
   getTask,
   type TaskDetail,
 } from "@/lib/api";
+import { redirectToLogin } from "@/lib/auth-redirect";
 
 export default function SubmitTaskPage() {
   const params = useParams();
@@ -72,7 +73,7 @@ export default function SubmitTaskPage() {
     if (!authLoading && token) {
       void loadData();
     } else if (!authLoading && !token) {
-      router.replace("/login");
+      redirectToLogin(router);
     }
   }, [authLoading, token, loadData, router]);
 

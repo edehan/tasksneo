@@ -28,6 +28,7 @@ import {
   listClasses,
   updatePassword,
 } from "@/lib/api";
+import { redirectToLogin } from "@/lib/auth-redirect";
 
 export default function AccountPage() {
   const { token, user, logout } = useAuth();
@@ -108,7 +109,7 @@ export default function AccountPage() {
       await deleteAccount(token);
       toast.success(t("accountDeleted"));
       await logout();
-      router.push("/login");
+      redirectToLogin(router);
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("failedDeleteAccount");

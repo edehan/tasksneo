@@ -449,7 +449,9 @@
     "inviteCode": "Invite Code",
     "inviteCodeHint": "Share this code with students so they can join the class.",
     "copyInviteCodeTitle": "Copy invite code",
+    "copyInviteLinkTitle": "Copy invite link",
     "inviteCodeCopied": "Invite code copied",
+    "inviteLinkCopied": "Invite link copied",
     "failedCopy": "Failed to copy",
     "refreshInviteCodeTitle": "Refresh invite code",
     "inviteCodeRefreshed": "Invite code refreshed",
@@ -465,6 +467,18 @@
     "failedDeleteClass": "Failed to delete class",
     "deleteDialogTitle": "Delete \"{name}\"?",
     "deleteDialogDescription": "This will permanently delete the class, including all tasks, submissions, and member data. This action cannot be undone."
+  },
+  "joinInvitePage": {
+    "inviteLabel": "Class Invite",
+    "invalidTitle": "Invite not found",
+    "invalidDescription": "This invite link is invalid or no longer available.",
+    "noDescription": "No class description provided.",
+    "inviteCode": "Invite code",
+    "school": "School",
+    "joining": "Joining...",
+    "joinNow": "Join Class",
+    "joinedSuccess": "Joined {name}",
+    "failedJoin": "Failed to join class. Please try again."
   },
   "taskListView": {
     "columns": {

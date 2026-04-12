@@ -449,7 +449,9 @@
     "inviteCode": "招待コード",
     "inviteCodeHint": "このコードを学生に共有するとクラスに参加できます。",
     "copyInviteCodeTitle": "招待コードをコピー",
+    "copyInviteLinkTitle": "招待リンクをコピー",
     "inviteCodeCopied": "招待コードをコピーしました",
+    "inviteLinkCopied": "招待リンクをコピーしました",
     "failedCopy": "コピーに失敗しました",
     "refreshInviteCodeTitle": "招待コードを更新",
     "inviteCodeRefreshed": "招待コードを更新しました",
@@ -465,6 +467,18 @@
     "failedDeleteClass": "クラスの削除に失敗しました",
     "deleteDialogTitle": "「{name}」を削除しますか？",
     "deleteDialogDescription": "クラス、すべての課題、提出、メンバーデータを完全に削除します。この操作は元に戻せません。"
+  },
+  "joinInvitePage": {
+    "inviteLabel": "クラス招待",
+    "invalidTitle": "招待が見つかりません",
+    "invalidDescription": "この招待リンクは無効か、すでに利用できません。",
+    "noDescription": "クラスの説明はまだありません。",
+    "inviteCode": "招待コード",
+    "school": "学校",
+    "joining": "参加中...",
+    "joinNow": "クラスに参加",
+    "joinedSuccess": "{name} に参加しました",
+    "failedJoin": "クラスへの参加に失敗しました。もう一度お試しください。"
   },
   "taskListView": {
     "columns": {

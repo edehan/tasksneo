@@ -15,6 +15,7 @@ import {
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
 import type { TaskDetail } from "@/lib/api";
 import { deleteTask, getTask, markTaskViewed } from "@/lib/api";
+import { taskEditPath, taskSubmitPath, taskSubmissionsPath } from "@/lib/routes";
 
 interface TaskDetailOverlayProps {
   task: TaskWithClass;
@@ -236,7 +237,7 @@ export function TaskDetailOverlay({
                         type="button"
                         onClick={() => {
                           onClose();
-                          router.push(`/tasks/${task.id}/edit`);
+                          router.push(taskEditPath(task));
                         }}
                         className="rounded-lg border border-border bg-transparent px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors duration-100 hover:bg-secondary hover:text-foreground"
                       >
@@ -268,7 +269,7 @@ export function TaskDetailOverlay({
                         type="button"
                         onClick={() => {
                           onClose();
-                          router.push(`/tasks/${task.id}/submissions`);
+                          router.push(taskSubmissionsPath(task));
                         }}
                         className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium text-white shadow-sm transition-colors duration-100"
                         style={{ backgroundColor: task.classColor }}
@@ -290,7 +291,7 @@ export function TaskDetailOverlay({
                           onSubmit(task);
                         } else {
                           onClose();
-                          router.push(`/tasks/${task.id}/submit`);
+                          router.push(taskSubmitPath(task));
                         }
                       }}
                       className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium text-white shadow-sm transition-colors duration-100"

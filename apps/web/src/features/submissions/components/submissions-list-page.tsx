@@ -25,6 +25,7 @@ import {
   listSubmissions,
   toggleExemplary,
 } from "@/lib/api";
+import { classPath, submissionPath } from "@/lib/routes";
 import { BatchDownloadDialog } from "./batch-download-dialog";
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -209,7 +210,11 @@ export function SubmissionsListPage() {
       {/* ── Back button ─────────────────────────────────────────────────── */}
       <button
         type="button"
-        onClick={() => router.push(`/classes/${task?.classId ?? ""}`)}
+        onClick={() =>
+          task
+            ? router.push(classPath(task.classId, task.classPublicId))
+            : undefined
+        }
         className="mb-6 flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors duration-100 hover:text-foreground"
       >
         <ArrowLeft size={14} strokeWidth={2} />
@@ -430,7 +435,9 @@ export function SubmissionsListPage() {
                         <button
                           type="button"
                           onClick={() =>
-                            router.push(`/submissions/${row.submission?.id}`)
+                            row.submission
+                              ? router.push(submissionPath(row.submission))
+                              : undefined
                           }
                           className="inline-flex items-center gap-1.5 rounded-[8px] px-3 py-1.5 text-[12px] font-medium text-white transition-colors duration-100"
                           style={{ backgroundColor: accentColor }}

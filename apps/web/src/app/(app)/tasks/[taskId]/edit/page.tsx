@@ -15,6 +15,7 @@ import {
   getTaskDraftMarkdown,
   type TaskDetail,
 } from "@/lib/api";
+import { redirectToLogin } from "@/lib/auth-redirect";
 
 export default function EditTaskPage() {
   const params = useParams();
@@ -61,7 +62,7 @@ export default function EditTaskPage() {
     if (!authLoading && token) {
       void loadData();
     } else if (!authLoading && !token) {
-      router.replace("/login");
+      redirectToLogin(router);
     }
   }, [authLoading, token, loadData, router]);
 

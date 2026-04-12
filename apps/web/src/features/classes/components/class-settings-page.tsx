@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Copy, Loader2, RefreshCw } from "lucide-react";
+import { ArrowLeft, Copy, Link2, Loader2, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -40,6 +40,7 @@ import {
   refreshInviteCode,
   updateClass,
 } from "@/lib/api";
+import { classPath, joinClassPath } from "@/lib/routes";
 
 const PRESET_COLORS = [
   "#5B8C6A",
@@ -58,7 +59,7 @@ export function ClassSettingsPage() {
   const t = useTranslations("classSettings");
   const params = useParams();
   const router = useRouter();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const classId = params?.classId as string;
 
   const [cls, setCls] = useState<ClassSummary | null>(null);
@@ -159,6 +160,22 @@ export function ClassSettingsPage() {
     );
   }
 
+  function handleCopyInviteLink() {
+    if (!inviteCode) return;
+
+    const origin =
+      typeof window === "undefined" ? "" : window.location.origin.replace(/\/$/, "");
+    const inviteUrl = `${origin}${joinClassPath(inviteCode)}`;
+    const message = user?.nickname
+      ? `${user.nickname}邀请你加入${cls?.name ?? ""}班级 ${inviteUrl}`.trim()
+      : `邀请你加入${cls?.name ?? ""}班级 ${inviteUrl}`.trim();
+
+    navigator.clipboard.writeText(message).then(
+      () => toast.success(t("inviteLinkCopied")),
+      () => toast.error(t("failedCopy")),
+    );
+  }
+
   if (loading) {
     return (
       <div className="p-8 max-w-[640px] mx-auto">
@@ -187,7 +204,7 @@ export function ClassSettingsPage() {
     <div className="p-8 max-w-[640px] mx-auto">
       <div className="mb-8">
         <Link
-          href={`/classes/${classId}`}
+          href={classPath(cls)}
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground mb-3"
         >
           <ArrowLeft size={14} strokeWidth={2} />
@@ -311,6 +328,15 @@ export function ClassSettingsPage() {
             title={t("copyInviteCodeTitle")}
           >
             <Copy className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleCopyInviteLink}
+            disabled={!inviteCode}
+            title={t("copyInviteLinkTitle")}
+          >
+            <Link2 className="h-4 w-4" />
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>

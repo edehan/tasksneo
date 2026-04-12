@@ -19,6 +19,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from "@/lib/api";
+import { taskPath } from "@/lib/routes";
 
 const POLL_INTERVAL = 60_000;
 
@@ -114,6 +115,18 @@ export function NotificationBell() {
 
     setOpen(false);
     if (item.type !== "SITE_ANNOUNCEMENT") {
+      const routeId = item.taskPublicId || item.taskId;
+      if (routeId) {
+        router.push(
+          taskPath(routeId, {
+            publicId: item.taskPublicId ?? undefined,
+            ...(item.type === "TASK_COMMENT"
+              ? { section: "discussion" as const }
+              : {}),
+          }),
+        );
+        return;
+      }
       router.push("/dashboard");
     }
   }
