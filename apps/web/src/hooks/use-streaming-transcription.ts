@@ -75,7 +75,9 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
 
       try {
         // Get microphone access first so we know the real browser sample rate.
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
         if (attemptId !== startAttemptRef.current) {
           for (const track of stream.getTracks()) {
             track.stop();

@@ -1015,7 +1015,8 @@ describe("Session lifecycle", () => {
 		// Drive the reset flow through the service to sidestep the email dispatch —
 		// createVerificationToken is internal, so we drop a row directly.
 		const user = await prisma.user.findUniqueOrThrow({ where: { email } });
-		const resetToken = "test-reset-token-" + Math.random().toString(36).slice(2);
+		const resetToken =
+			"test-reset-token-" + Math.random().toString(36).slice(2);
 		await prisma.emailVerificationToken.create({
 			data: {
 				email,

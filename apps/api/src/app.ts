@@ -76,8 +76,7 @@ export function createApp(options?: { startWorker?: boolean }) {
 			if (checks.redis !== "ok") healthy = false;
 		} catch (err) {
 			healthy = false;
-			checks.redis =
-				err instanceof Error ? err.message : "unknown redis error";
+			checks.redis = err instanceof Error ? err.message : "unknown redis error";
 		}
 
 		if (!healthy) {

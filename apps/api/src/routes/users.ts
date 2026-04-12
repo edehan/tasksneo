@@ -16,16 +16,16 @@ import {
 	revokeMcpKey,
 } from "../services/mcp-key.service.js";
 import {
-	listUserSessions,
-	revokeAllBrowserSessions,
-	revokeSession,
-} from "../services/session.service.js";
-import {
 	getUnreadNotificationCount,
 	listMyNotifications,
 	markAllNotificationsRead,
 	markNotificationRead,
 } from "../services/notification.service.js";
+import {
+	listUserSessions,
+	revokeAllBrowserSessions,
+	revokeSession,
+} from "../services/session.service.js";
 import {
 	deleteMyAccount,
 	getMyProfile,

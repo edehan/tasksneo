@@ -287,8 +287,7 @@ tasksRouter.post("/:taskId/parse", async (c) => {
 			originalName: att.originalName,
 			mimeType: att.mimeType,
 			presignedUrl: await getPresignedUrl(att.fileKey, 600),
-			sizeBytes:
-				att.sizeBytes != null ? Number(att.sizeBytes) : undefined,
+			sizeBytes: att.sizeBytes != null ? Number(att.sizeBytes) : undefined,
 		})),
 	);
 
@@ -306,8 +305,7 @@ tasksRouter.post("/:taskId/parse", async (c) => {
 			title: parsed.structured.title ?? undefined,
 			startAt: firstOption?.startAt ?? undefined,
 			dueAt: firstOption?.dueAt ?? undefined,
-			allowLateSubmission:
-				parsed.structured.allowLateSubmission ?? undefined,
+			allowLateSubmission: parsed.structured.allowLateSubmission ?? undefined,
 			description: parsed.structured.description ?? undefined,
 		}),
 		parsed.markdown

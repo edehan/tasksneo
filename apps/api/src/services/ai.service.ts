@@ -181,11 +181,7 @@ function buildUnsupportedAttachmentNote(
 ): string {
 	const unsupported = attachments.filter((att) => {
 		const mime = normalizeAttachmentMime(att.mimeType);
-		return (
-			mime &&
-			!mime.startsWith("image/") &&
-			mime !== "application/pdf"
-		);
+		return mime && !mime.startsWith("image/") && mime !== "application/pdf";
 	});
 
 	if (unsupported.length === 0) {
@@ -232,18 +228,15 @@ async function callMessages(args: {
 		body.output_config = args.outputConfig;
 	}
 
-	const response = await fetch(
-		`${args.baseUrl.replace(/\/$/, "")}/messages`,
-		{
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${args.apiKey}`,
-				"anthropic-version": "2023-06-01",
-			},
-			body: JSON.stringify(body),
+	const response = await fetch(`${args.baseUrl.replace(/\/$/, "")}/messages`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${args.apiKey}`,
+			"anthropic-version": "2023-06-01",
 		},
-	);
+		body: JSON.stringify(body),
+	});
 
 	if (!response.ok) {
 		return null;
@@ -373,8 +366,7 @@ export async function parseTaskContent(input: {
 			.map(toMessageContentPart)
 			.filter((p): p is NonNullable<typeof p> => Boolean(p));
 
-		const unsupportedNote =
-			buildUnsupportedAttachmentNote(limitedAttachments);
+		const unsupportedNote = buildUnsupportedAttachmentNote(limitedAttachments);
 
 		const userText = [
 			`Timezone: ${input.context.userTimezone}`,

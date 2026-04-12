@@ -134,9 +134,7 @@ export async function scheduleSessionCleanupCron() {
 	);
 }
 
-export function processSessionCleanupQueue(
-	processor: () => Promise<void>,
-) {
+export function processSessionCleanupQueue(processor: () => Promise<void>) {
 	const q = getQueue();
 
 	q.process(SESSION_CLEANUP_JOB_NAME, async () => {

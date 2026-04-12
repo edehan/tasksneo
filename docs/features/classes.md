@@ -30,7 +30,7 @@
 
 1. 已登录用户提交：班级名称（必填）、描述（选填）、颜色（选填，默认 `#6366f1`）、学校限制（选填）。
 2. 后端创建 `classes` 表记录。
-3. 后端生成随机邀请码（如使用 `nanoid(10)`），写入 `inviteCode` 字段。
+3. 后端使用 `node:crypto` 生成 10 位随机邀请码（字符集为 `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`），写入 `inviteCode` 字段。
 4. 后端在 `class_members` 中插入一条创建者的记录，`role = OWNER`。
 5. 返回创建的班级信息，包含邀请码。
 

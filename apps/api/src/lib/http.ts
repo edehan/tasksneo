@@ -18,8 +18,9 @@ export function getClientIp(c: Context): string | null {
 		if (first) return first;
 	}
 	// @hono/node-server exposes the raw incoming message via c.env.incoming.
-	const incoming = (c.env as { incoming?: { socket?: { remoteAddress?: string } } } | undefined)
-		?.incoming;
+	const incoming = (
+		c.env as { incoming?: { socket?: { remoteAddress?: string } } } | undefined
+	)?.incoming;
 	return incoming?.socket?.remoteAddress ?? null;
 }
 

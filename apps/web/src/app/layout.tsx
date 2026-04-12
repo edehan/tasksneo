@@ -36,11 +36,7 @@ export default async function RootLayout({
   return (
     <html lang={toHtmlLang(locale)} suppressHydrationWarning>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `if("serviceWorker"in navigator){navigator.serviceWorker.register("/sw.js")}`,
-          }}
-        />
+        <script src="/register-sw.js" />
       </head>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased text-sm leading-relaxed">
         <NextIntlClientProvider locale={locale} messages={messages}>

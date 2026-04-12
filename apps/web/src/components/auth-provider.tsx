@@ -11,8 +11,8 @@ import {
 } from "react";
 import type { UserProfile } from "@/lib/api";
 import {
-  getMe,
   login as apiLogin,
+  getMe,
   logoutApi,
   subscribeToAuthExpired,
 } from "@/lib/api";

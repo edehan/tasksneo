@@ -38,8 +38,5 @@ export function instrumentPrisma(logger: Logger): void {
 		logger.error({ target: e.target, message: e.message }, "prisma_error");
 	});
 
-	logger.info(
-		{ slowQueryMs, logParams },
-		"prisma_instrumented",
-	);
+	logger.info({ slowQueryMs, logParams }, "prisma_instrumented");
 }
