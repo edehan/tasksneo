@@ -16,6 +16,9 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: monorepoRoot,
   },
+  env: {
+    INSTRUMENTATION_SCRIPT_URLS: process.env.INSTRUMENTATION_SCRIPT_URLS || "",
+  },
 };
 
 export default withNextIntl(nextConfig);
