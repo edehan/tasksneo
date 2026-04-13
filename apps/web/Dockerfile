@@ -1,21 +1,35 @@
-FROM node:22.22.2-trixie-slim
+FROM node:22.22.2-trixie-slim AS builder
 
-ENV NODE_ENV=production
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
 ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN corepack enable
 
 WORKDIR /app
 
-COPY apps/api/package.json apps/api/package.json
-COPY node_modules node_modules
-COPY apps/web/node_modules apps/web/node_modules
-COPY apps/web/package.json apps/web/package.json
-COPY apps/web/components.json apps/web/components.json
-COPY apps/web/tsconfig.json apps/web/tsconfig.json
-COPY apps/web/postcss.config.mjs apps/web/postcss.config.mjs
-COPY apps/web/next.config.ts apps/web/next.config.ts
-COPY apps/web/.next apps/web/.next
-COPY apps/web/public apps/web/public
+# Install dependencies using only manifests first for better Docker layer caching.
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/web/package.json ./apps/web/
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --filter web...
 
-WORKDIR /app/apps/web
+# Copy source and build the Next.js standalone output.
+COPY apps/web ./apps/web
+RUN pnpm --filter web run build
 
-CMD ["node", "node_modules/next/dist/bin/next", "start", "--hostname", "0.0.0.0", "--port", "3000"]
+FROM node:22.22.2-trixie-slim AS runner
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
+
+WORKDIR /app
+
+COPY --from=builder /app/apps/web/.next/standalone ./
+COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder /app/apps/web/public ./apps/web/public
+
+EXPOSE 3000
+
+CMD ["node", "server.js"]
