@@ -54,14 +54,14 @@ export default async function RootLayout({
     <html lang={toHtmlLang(locale)} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased text-sm leading-relaxed">
         <Script src="/register-sw.js" strategy="afterInteractive" />
-        {instrumentationScriptUrls.map((src) => (
+        {instrumentationScriptUrls.length > 0 && (
           <Script
-            key={src}
-            src={src}
+            id="instrumentation-loader"
+            src="/instrumentation-loader.js"
             strategy="afterInteractive"
-            crossOrigin="anonymous"
+            data-urls={instrumentationScriptUrls.join(",")}
           />
-        ))}
+        )}
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>
             <LocaleProvider>
