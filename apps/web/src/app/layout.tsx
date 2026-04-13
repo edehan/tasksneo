@@ -55,7 +55,12 @@ export default async function RootLayout({
       <body className="min-h-screen bg-background font-sans text-foreground antialiased text-sm leading-relaxed">
         <Script src="/register-sw.js" strategy="afterInteractive" />
         {instrumentationScriptUrls.map((src) => (
-          <Script key={src} src={src} strategy="afterInteractive" />
+          <Script
+            key={src}
+            src={src}
+            strategy="afterInteractive"
+            crossOrigin="anonymous"
+          />
         ))}
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>
