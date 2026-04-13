@@ -31,7 +31,7 @@ export function TaskDetailOverlay({
 }: TaskDetailOverlayProps) {
   const t = useTranslations("taskDetailOverlay");
   const locale = useLocale();
-  const { token } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const [taskDetail, setTaskDetail] = useState<TaskDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,14 +62,13 @@ export function TaskDetailOverlay({
   // ─── Load full task detail ──────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!token) return;
+    if (!user) return;
 
     let cancelled = false;
 
     async function load() {
       try {
-        // biome-ignore lint/style/noNonNullAssertion: token checked before effect runs
-        const detail = await getTask(token!, task.id);
+        const detail = await getTask(task.id);
         if (!cancelled) {
           setTaskDetail(detail);
         }
@@ -87,16 +86,16 @@ export function TaskDetailOverlay({
     return () => {
       cancelled = true;
     };
-  }, [token, task.id]);
+  }, [user, task.id]);
 
   // ─── Mark as viewed (fire-and-forget) ───────────────────────────────────────
 
   useEffect(() => {
-    if (!token) return;
-    void markTaskViewed(token, task.id).catch(() => {
+    if (!user) return;
+    void markTaskViewed(task.id).catch(() => {
       // Silently ignore
     });
-  }, [token, task.id]);
+  }, [user, task.id]);
 
   // ─── Escape key ─────────────────────────────────────────────────────────────
 
@@ -247,11 +246,11 @@ export function TaskDetailOverlay({
                           type="button"
                           disabled={deleting}
                           onClick={async () => {
-                            if (!token) return;
+                            if (!user) return;
                             if (!confirm(t("confirmDelete"))) return;
                             setDeleting(true);
                             try {
-                              await deleteTask(token, task.id);
+                              await deleteTask(task.id);
                               onClose();
                             } catch {
                               setDeleting(false);
@@ -316,7 +315,6 @@ export function TaskDetailOverlay({
                 <MarkdownPreview
                   content={bodyContent}
                   accentColor={task.classColor}
-                  authToken={token ?? undefined}
                 />
               ) : (
                 <p className="text-sm italic text-text-muted-soft">

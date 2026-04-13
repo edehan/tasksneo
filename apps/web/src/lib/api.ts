@@ -56,7 +56,6 @@ export interface UserProfile {
 }
 
 export interface AuthResponse {
-  token: string;
   user: UserProfile;
 }
 
@@ -292,7 +291,6 @@ export function getApiBaseUrl(): string {
 export async function apiRequest<T>(
   path: string,
   init: RequestInit = {},
-  token?: string | null,
 ): Promise<T> {
   const headers = new Headers(init.headers ?? {});
 
@@ -304,13 +302,10 @@ export async function apiRequest<T>(
     headers.set("Content-Type", "application/json");
   }
 
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
     ...init,
     headers,
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -329,7 +324,7 @@ export async function apiRequest<T>(
       // Keep fallback message when response body is not JSON.
     }
 
-    if (token && (response.status === 401 || AUTH_ERROR_CODES.has(errorCode))) {
+    if (response.status === 401 || AUTH_ERROR_CODES.has(errorCode)) {
       emitAuthExpired();
     }
 
@@ -360,8 +355,8 @@ export async function login(
   });
 }
 
-export async function logoutApi(token: string): Promise<void> {
-  return apiRequest<void>("/auth/logout", { method: "POST" }, token);
+export async function logoutApi(): Promise<void> {
+  return apiRequest<void>("/auth/logout", { method: "POST" });
 }
 
 export async function register(
@@ -413,108 +408,86 @@ export async function requestPasswordReset(
 export async function resetPassword(
   token: string,
   password: string,
-): Promise<{ message: string }> {
-  return apiRequest<{ message: string }>("/auth/reset-password", {
-    method: "POST",
-    body: JSON.stringify({ token, password }),
-  });
+): Promise<{ message: string; user: UserProfile }> {
+  return apiRequest<{ message: string; user: UserProfile }>(
+    "/auth/reset-password",
+    {
+      method: "POST",
+      body: JSON.stringify({ token, password }),
+    },
+  );
 }
 
 export async function requestEmailChange(
-  authToken: string,
   newEmail: string,
   captchaToken?: string | null,
 ): Promise<{ message: string }> {
-  return apiRequest<{ message: string }>(
-    "/users/me/email/change",
-    {
-      method: "POST",
-      body: JSON.stringify({
-        email: newEmail,
-        ...(captchaToken ? { captchaToken } : {}),
-      }),
-    },
-    authToken,
-  );
+  return apiRequest<{ message: string }>("/users/me/email/change", {
+    method: "POST",
+    body: JSON.stringify({
+      email: newEmail,
+      ...(captchaToken ? { captchaToken } : {}),
+    }),
+  });
 }
 
 export async function confirmEmailChange(
-  authToken: string,
   verificationToken: string,
 ): Promise<UserProfile> {
-  return apiRequest<UserProfile>(
-    "/users/me/email/confirm",
-    { method: "POST", body: JSON.stringify({ token: verificationToken }) },
-    authToken,
-  );
+  return apiRequest<UserProfile>("/users/me/email/confirm", {
+    method: "POST",
+    body: JSON.stringify({ token: verificationToken }),
+  });
 }
 
 // ─── Users ───────────────────────────────────────────────────────────────────
 
-export async function getMe(token: string): Promise<UserProfile> {
-  return apiRequest<UserProfile>("/users/me", {}, token);
+export async function getMe(): Promise<UserProfile> {
+  return apiRequest<UserProfile>("/users/me", {});
 }
 
-export async function updateProfile(
-  token: string,
-  input: {
-    nickname?: string | null;
-    schoolId?: string | null;
-    studentId?: string | null;
-    timezone?: string;
-  },
-): Promise<UserProfile> {
-  return apiRequest<UserProfile>(
-    "/users/me",
-    { method: "PATCH", body: JSON.stringify(input) },
-    token,
-  );
+export async function updateProfile(input: {
+  nickname?: string | null;
+  schoolId?: string | null;
+  studentId?: string | null;
+  timezone?: string;
+}): Promise<UserProfile> {
+  return apiRequest<UserProfile>("/users/me", {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
 }
 
 export async function updatePassword(
-  token: string,
   currentPassword: string,
   newPassword: string,
 ): Promise<void> {
-  return apiRequest<void>(
-    "/users/me/password",
-    {
-      method: "PATCH",
-      body: JSON.stringify({ currentPassword, newPassword }),
-    },
-    token,
-  );
+  return apiRequest<void>("/users/me/password", {
+    method: "PATCH",
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
 }
 
-export async function getNotificationPrefs(
-  token: string,
-): Promise<NotificationPref[]> {
-  return apiRequest<NotificationPref[]>(
-    "/users/me/notification-prefs",
-    {},
-    token,
-  );
+export async function getNotificationPrefs(): Promise<NotificationPref[]> {
+  return apiRequest<NotificationPref[]>("/users/me/notification-prefs", {});
 }
 
-export async function upsertNotificationPref(
-  token: string,
-  input: {
-    channel: "EMAIL" | "WEBHOOK" | "TELEGRAM";
-    address: string;
-    isEnabled?: boolean;
-  },
-): Promise<NotificationPref> {
-  return apiRequest<NotificationPref>(
-    "/users/me/notification-prefs",
-    { method: "PUT", body: JSON.stringify(input) },
-    token,
-  );
+export async function upsertNotificationPref(input: {
+  channel: "EMAIL" | "WEBHOOK" | "TELEGRAM";
+  address: string;
+  isEnabled?: boolean;
+}): Promise<NotificationPref> {
+  return apiRequest<NotificationPref>("/users/me/notification-prefs", {
+    method: "PUT",
+    body: JSON.stringify(input),
+  });
 }
 
-export async function listMyNotifications(
-  token: string,
-  params?: { limit?: number; cursor?: string; unreadOnly?: boolean },
-): Promise<NotificationListResponse> {
+export async function listMyNotifications(params?: {
+  limit?: number;
+  cursor?: string;
+  unreadOnly?: boolean;
+}): Promise<NotificationListResponse> {
   const query = new URLSearchParams();
   if (params?.limit) query.set("limit", String(params.limit));
   if (params?.cursor) query.set("cursor", params.cursor);
@@ -523,105 +496,78 @@ export async function listMyNotifications(
   return apiRequest<NotificationListResponse>(
     `/users/me/notifications${qs ? `?${qs}` : ""}`,
     {},
-    token,
   );
 }
 
-export async function markNotificationRead(
-  token: string,
-  id: string,
-): Promise<void> {
-  return apiRequest<void>(
-    `/users/me/notifications/${id}/read`,
-    { method: "PATCH" },
-    token,
-  );
+export async function markNotificationRead(id: string): Promise<void> {
+  return apiRequest<void>(`/users/me/notifications/${id}/read`, {
+    method: "PATCH",
+  });
 }
 
-export async function markAllNotificationsRead(token: string): Promise<void> {
-  return apiRequest<void>(
-    "/users/me/notifications/read-all",
-    { method: "POST" },
-    token,
-  );
+export async function markAllNotificationsRead(): Promise<void> {
+  return apiRequest<void>("/users/me/notifications/read-all", {
+    method: "POST",
+  });
 }
 
-export async function getUnreadNotificationCount(
-  token: string,
-): Promise<{ unreadCount: number }> {
+export async function getUnreadNotificationCount(): Promise<{
+  unreadCount: number;
+}> {
   return apiRequest<{ unreadCount: number }>(
     "/users/me/notifications/unread-count",
     {},
-    token,
   );
 }
 
 // ── MCP keys ───────────────────────────────────────────────────────────────
 
-export async function listMcpKeys(token: string): Promise<McpKeyInfo[]> {
-  return apiRequest<McpKeyInfo[]>("/users/me/mcp-keys", {}, token);
+export async function listMcpKeys(): Promise<McpKeyInfo[]> {
+  return apiRequest<McpKeyInfo[]>("/users/me/mcp-keys", {});
 }
 
-export async function createMcpKey(
-  token: string,
-  name: string,
-): Promise<McpKeyCreated> {
-  return apiRequest<McpKeyCreated>(
-    "/users/me/mcp-keys",
-    { method: "POST", body: JSON.stringify({ name }) },
-    token,
-  );
+export async function createMcpKey(name: string): Promise<McpKeyCreated> {
+  return apiRequest<McpKeyCreated>("/users/me/mcp-keys", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
 }
 
-export async function revokeMcpKey(
-  token: string,
-  keyId: string,
-): Promise<McpKeyInfo> {
-  return apiRequest<McpKeyInfo>(
-    `/users/me/mcp-keys/${keyId}`,
-    { method: "DELETE" },
-    token,
-  );
+export async function revokeMcpKey(keyId: string): Promise<McpKeyInfo> {
+  return apiRequest<McpKeyInfo>(`/users/me/mcp-keys/${keyId}`, {
+    method: "DELETE",
+  });
 }
 
 // ── Sessions ───────────────────────────────────────────────────────────────
 
-export async function listSessions(token: string): Promise<SessionInfo[]> {
-  return apiRequest<SessionInfo[]>("/users/me/sessions", {}, token);
+export async function listSessions(): Promise<SessionInfo[]> {
+  return apiRequest<SessionInfo[]>("/users/me/sessions", {});
 }
 
-export async function revokeSession(
-  token: string,
-  sessionId: string,
-): Promise<void> {
-  return apiRequest<void>(
-    `/users/me/sessions/${sessionId}`,
-    { method: "DELETE" },
-    token,
-  );
+export async function revokeSession(sessionId: string): Promise<void> {
+  return apiRequest<void>(`/users/me/sessions/${sessionId}`, {
+    method: "DELETE",
+  });
 }
 
-export async function revokeOtherSessions(token: string): Promise<void> {
-  return apiRequest<void>("/users/me/sessions", { method: "DELETE" }, token);
+export async function revokeOtherSessions(): Promise<void> {
+  return apiRequest<void>("/users/me/sessions", { method: "DELETE" });
 }
 
 // ── Account ────────────────────────────────────────────────────────────────
 
-export async function deleteAccount(token: string): Promise<void> {
-  return apiRequest<void>("/users/me/delete", { method: "POST" }, token);
+export async function deleteAccount(): Promise<void> {
+  return apiRequest<void>("/users/me/delete", { method: "POST" });
 }
 
-export async function uploadAvatar(
-  token: string,
-  file: File,
-): Promise<AttachmentMeta> {
+export async function uploadAvatar(file: File): Promise<AttachmentMeta> {
   const formData = new FormData();
   formData.append("file", file);
-  return apiRequest<AttachmentMeta>(
-    "/users/me/avatar",
-    { method: "POST", body: formData },
-    token,
-  );
+  return apiRequest<AttachmentMeta>("/users/me/avatar", {
+    method: "POST",
+    body: formData,
+  });
 }
 
 // ─── Schools ─────────────────────────────────────────────────────────────────
@@ -632,136 +578,102 @@ export async function listSchools(): Promise<School[]> {
 
 // ─── Classes ─────────────────────────────────────────────────────────────────
 
-export async function listClasses(token: string): Promise<ClassSummary[]> {
-  return apiRequest<ClassSummary[]>("/classes", {}, token);
+export async function listClasses(): Promise<ClassSummary[]> {
+  return apiRequest<ClassSummary[]>("/classes", {});
 }
 
-export async function createClass(
-  token: string,
-  input: {
-    name: string;
-    description?: string | null;
-    color?: string;
-    schoolId?: string | null;
-  },
-): Promise<ClassSummary> {
-  return apiRequest<ClassSummary>(
-    "/classes",
-    { method: "POST", body: JSON.stringify(input) },
-    token,
-  );
+export async function createClass(input: {
+  name: string;
+  description?: string | null;
+  color?: string;
+  schoolId?: string | null;
+}): Promise<ClassSummary> {
+  return apiRequest<ClassSummary>("/classes", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
-export async function joinClass(
-  token: string,
-  inviteCode: string,
-): Promise<ClassSummary> {
-  return apiRequest<ClassSummary>(
-    "/classes/join",
-    { method: "POST", body: JSON.stringify({ inviteCode }) },
-    token,
-  );
+export async function joinClass(inviteCode: string): Promise<ClassSummary> {
+  return apiRequest<ClassSummary>("/classes/join", {
+    method: "POST",
+    body: JSON.stringify({ inviteCode }),
+  });
 }
 
 export async function getJoinClassPreview(
-  token: string,
   inviteCode: string,
 ): Promise<JoinClassPreview> {
   return apiRequest<JoinClassPreview>(
     `/classes/join-preview/${encodeURIComponent(inviteCode)}`,
     {},
-    token,
   );
 }
 
-export async function getClass(
-  token: string,
-  classId: string,
-): Promise<ClassSummary> {
-  return apiRequest<ClassSummary>(`/classes/${classId}`, {}, token);
+export async function getClass(classId: string): Promise<ClassSummary> {
+  return apiRequest<ClassSummary>(`/classes/${classId}`, {});
 }
 
 export async function updateClass(
-  token: string,
   classId: string,
   input: { name?: string; description?: string | null; color?: string },
 ): Promise<ClassSummary> {
-  return apiRequest<ClassSummary>(
-    `/classes/${classId}`,
-    { method: "PATCH", body: JSON.stringify(input) },
-    token,
-  );
+  return apiRequest<ClassSummary>(`/classes/${classId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
 }
 
-export async function deleteClass(
-  token: string,
-  classId: string,
-): Promise<void> {
-  return apiRequest<void>(`/classes/${classId}`, { method: "DELETE" }, token);
+export async function deleteClass(classId: string): Promise<void> {
+  return apiRequest<void>(`/classes/${classId}`, { method: "DELETE" });
 }
 
 export async function refreshInviteCode(
-  token: string,
   classId: string,
 ): Promise<{ inviteCode: string }> {
-  return apiRequest<{ inviteCode: string }>(
-    `/classes/${classId}/invite-code`,
-    { method: "POST" },
-    token,
-  );
+  return apiRequest<{ inviteCode: string }>(`/classes/${classId}/invite-code`, {
+    method: "POST",
+  });
 }
 
 export async function transferOwnership(
-  token: string,
   classId: string,
   newOwnerId: string,
 ): Promise<ClassSummary> {
-  return apiRequest<ClassSummary>(
-    `/classes/${classId}/transfer`,
-    { method: "POST", body: JSON.stringify({ newOwnerId }) },
-    token,
-  );
+  return apiRequest<ClassSummary>(`/classes/${classId}/transfer`, {
+    method: "POST",
+    body: JSON.stringify({ newOwnerId }),
+  });
 }
 
-export async function listMembers(
-  token: string,
-  classId: string,
-): Promise<ClassMember[]> {
-  return apiRequest<ClassMember[]>(`/classes/${classId}/members`, {}, token);
+export async function listMembers(classId: string): Promise<ClassMember[]> {
+  return apiRequest<ClassMember[]>(`/classes/${classId}/members`, {});
 }
 
 export async function updateMemberRole(
-  token: string,
   classId: string,
   userId: string,
   role: "ADMIN" | "MEMBER",
 ): Promise<ClassMember> {
-  return apiRequest<ClassMember>(
-    `/classes/${classId}/members/${userId}`,
-    { method: "PATCH", body: JSON.stringify({ role }) },
-    token,
-  );
+  return apiRequest<ClassMember>(`/classes/${classId}/members/${userId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ role }),
+  });
 }
 
 export async function removeMember(
-  token: string,
   classId: string,
   userId: string,
 ): Promise<void> {
-  return apiRequest<void>(
-    `/classes/${classId}/members/${userId}`,
-    { method: "DELETE" },
-    token,
-  );
+  return apiRequest<void>(`/classes/${classId}/members/${userId}`, {
+    method: "DELETE",
+  });
 }
 
 // ─── Tasks ───────────────────────────────────────────────────────────────────
 
-export async function listClassTasks(
-  token: string,
-  classId: string,
-): Promise<TaskSummary[]> {
-  return apiRequest<TaskSummary[]>(`/classes/${classId}/tasks`, {}, token);
+export async function listClassTasks(classId: string): Promise<TaskSummary[]> {
+  return apiRequest<TaskSummary[]>(`/classes/${classId}/tasks`, {});
 }
 
 interface DraftWithAttachments extends TaskSummary {
@@ -769,13 +681,11 @@ interface DraftWithAttachments extends TaskSummary {
 }
 
 export async function getMyClassDraft(
-  token: string,
   classId: string,
 ): Promise<DraftWithAttachments | null> {
   const res = await apiRequest<{ draft: DraftWithAttachments | null }>(
     `/classes/${classId}/tasks/drafts/mine`,
     {},
-    token,
   );
   return res.draft;
 }
@@ -784,12 +694,11 @@ export interface MyTaskSummary extends TaskSummary {
   classColor: string | null;
 }
 
-export async function listMyTasks(token: string): Promise<MyTaskSummary[]> {
-  return apiRequest<MyTaskSummary[]>("/tasks/mine", {}, token);
+export async function listMyTasks(): Promise<MyTaskSummary[]> {
+  return apiRequest<MyTaskSummary[]>("/tasks/mine", {});
 }
 
 export async function createTask(
-  token: string,
   classId: string,
   input: {
     title: string;
@@ -800,15 +709,13 @@ export async function createTask(
     blockedBy?: string[];
   },
 ): Promise<TaskDetail> {
-  return apiRequest<TaskDetail>(
-    `/classes/${classId}/tasks`,
-    { method: "POST", body: JSON.stringify(input) },
-    token,
-  );
+  return apiRequest<TaskDetail>(`/classes/${classId}/tasks`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
 export async function createTaskDraft(
-  token: string,
   classId: string,
   input: {
     title?: string;
@@ -820,49 +727,38 @@ export async function createTaskDraft(
     blockedBy?: string[];
   } = {},
 ): Promise<TaskSummary> {
-  return apiRequest<TaskSummary>(
-    `/classes/${classId}/tasks/drafts`,
-    { method: "POST", body: JSON.stringify(input) },
-    token,
-  );
+  return apiRequest<TaskSummary>(`/classes/${classId}/tasks/drafts`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
-export async function parseTask(
-  token: string,
-  text: string,
-): Promise<ParseTaskResponse> {
-  return apiRequest<ParseTaskResponse>(
-    "/tasks/parse",
-    { method: "POST", body: JSON.stringify({ text }) },
-    token,
-  );
+export async function parseTask(text: string): Promise<ParseTaskResponse> {
+  return apiRequest<ParseTaskResponse>("/tasks/parse", {
+    method: "POST",
+    body: JSON.stringify({ text }),
+  });
 }
 
 export async function parseTaskDraft(
-  token: string,
   taskId: string,
   text?: string,
 ): Promise<ParseDraftTaskResponse> {
-  return apiRequest<ParseDraftTaskResponse>(
-    `/tasks/${taskId}/parse`,
-    {
-      method: "POST",
-      body: JSON.stringify(text ? { text } : {}),
-    },
-    token,
-  );
+  return apiRequest<ParseDraftTaskResponse>(`/tasks/${taskId}/parse`, {
+    method: "POST",
+    body: JSON.stringify(text ? { text } : {}),
+  });
 }
 
 // ─── Speech-to-Text ──────────────────────────────────────────────────────────
 
-export async function getSTTToken(
-  token: string,
-): Promise<{ token: string; speechModel: string }> {
-  return apiRequest<{ token: string; speechModel: string }>(
-    "/stt/token",
-    { method: "POST" },
-    token,
-  );
+export async function getSTTToken(): Promise<{
+  token: string;
+  speechModel: string;
+}> {
+  return apiRequest<{ token: string; speechModel: string }>("/stt/token", {
+    method: "POST",
+  });
 }
 
 // ─── AI Content Revision ─────────────────────────────────────────────────────
@@ -872,41 +768,30 @@ export interface ReviseResponse {
 }
 
 export async function reviseTaskContent(
-  token: string,
   taskId: string,
   currentContent: string,
   instruction: string,
 ): Promise<ReviseResponse> {
-  return apiRequest<ReviseResponse>(
-    `/tasks/${taskId}/revise`,
-    {
-      method: "POST",
-      body: JSON.stringify({ currentContent, instruction }),
-    },
-    token,
-  );
+  return apiRequest<ReviseResponse>(`/tasks/${taskId}/revise`, {
+    method: "POST",
+    body: JSON.stringify({ currentContent, instruction }),
+  });
 }
 
 export async function getTaskDraftMarkdown(
-  token: string,
   taskId: string,
 ): Promise<{ markdown: string | null }> {
   return apiRequest<{ markdown: string | null }>(
     `/tasks/${taskId}/draft-markdown`,
     {},
-    token,
   );
 }
 
-export async function getTask(
-  token: string,
-  taskId: string,
-): Promise<TaskDetail> {
-  return apiRequest<TaskDetail>(`/tasks/${taskId}`, {}, token);
+export async function getTask(taskId: string): Promise<TaskDetail> {
+  return apiRequest<TaskDetail>(`/tasks/${taskId}`, {});
 }
 
 export async function updateTask(
-  token: string,
   taskId: string,
   input: {
     title?: string;
@@ -918,15 +803,13 @@ export async function updateTask(
     blockedBy?: string[];
   },
 ): Promise<TaskDetail> {
-  return apiRequest<TaskDetail>(
-    `/tasks/${taskId}`,
-    { method: "PATCH", body: JSON.stringify(input) },
-    token,
-  );
+  return apiRequest<TaskDetail>(`/tasks/${taskId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
 }
 
 export async function publishTaskDraft(
-  token: string,
   taskId: string,
   input: {
     title?: string;
@@ -938,34 +821,28 @@ export async function publishTaskDraft(
     blockedBy?: string[];
   },
 ): Promise<TaskSummary> {
-  return apiRequest<TaskSummary>(
-    `/tasks/${taskId}/publish`,
-    { method: "POST", body: JSON.stringify(input) },
-    token,
-  );
+  return apiRequest<TaskSummary>(`/tasks/${taskId}/publish`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
-export async function deleteTask(token: string, taskId: string): Promise<void> {
-  return apiRequest<void>(`/tasks/${taskId}`, { method: "DELETE" }, token);
+export async function deleteTask(taskId: string): Promise<void> {
+  return apiRequest<void>(`/tasks/${taskId}`, { method: "DELETE" });
 }
 
-export async function markTaskViewed(
-  token: string,
-  taskId: string,
-): Promise<void> {
-  return apiRequest<void>(`/tasks/${taskId}/view`, { method: "POST" }, token);
+export async function markTaskViewed(taskId: string): Promise<void> {
+  return apiRequest<void>(`/tasks/${taskId}/view`, { method: "POST" });
 }
 
 export async function updateTaskState(
-  token: string,
   taskId: string,
   input: { tags?: string[]; sortOrder?: number },
 ): Promise<TaskUserState> {
-  return apiRequest<TaskUserState>(
-    `/tasks/${taskId}/state`,
-    { method: "PATCH", body: JSON.stringify(input) },
-    token,
-  );
+  return apiRequest<TaskUserState>(`/tasks/${taskId}/state`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
 }
 
 // ─── Comments ───────────────────────────────────────────────────────────────
@@ -984,96 +861,70 @@ export interface TaskComment {
   replyTo: { id: string; nickname: string | null } | null;
 }
 
-export async function listTaskComments(
-  token: string,
-  taskId: string,
-): Promise<TaskComment[]> {
+export async function listTaskComments(taskId: string): Promise<TaskComment[]> {
   const res = await apiRequest<{ comments: TaskComment[] }>(
     `/tasks/${taskId}/comments`,
     {},
-    token,
   );
   return res.comments;
 }
 
 export async function createTaskComment(
-  token: string,
   taskId: string,
   content: string,
   replyToId?: string | null,
 ): Promise<TaskComment> {
-  return apiRequest<TaskComment>(
-    `/tasks/${taskId}/comments`,
-    {
-      method: "POST",
-      body: JSON.stringify({ content, replyToId: replyToId ?? null }),
-    },
-    token,
-  );
+  return apiRequest<TaskComment>(`/tasks/${taskId}/comments`, {
+    method: "POST",
+    body: JSON.stringify({ content, replyToId: replyToId ?? null }),
+  });
 }
 
 // ─── Submissions ─────────────────────────────────────────────────────────────
 
 export async function listSubmissions(
-  token: string,
   taskId: string,
 ): Promise<SubmissionListRow[]> {
-  return apiRequest<SubmissionListRow[]>(
-    `/tasks/${taskId}/submissions`,
-    {},
-    token,
-  );
+  return apiRequest<SubmissionListRow[]>(`/tasks/${taskId}/submissions`, {});
 }
 
 export async function getMySubmission(
-  token: string,
   taskId: string,
 ): Promise<SubmissionDetail | null> {
   const result = await apiRequest<SubmissionDetail | undefined>(
     `/tasks/${taskId}/submissions/me`,
     {},
-    token,
   );
   return result ?? null;
 }
 
 export async function getSubmission(
-  token: string,
   taskId: string,
   submissionId: string,
 ): Promise<SubmissionDetail> {
   return apiRequest<SubmissionDetail>(
     `/tasks/${taskId}/submissions/${submissionId}`,
     {},
-    token,
   );
 }
 
 export async function getSubmissionById(
-  token: string,
   submissionId: string,
 ): Promise<SubmissionDetail> {
-  return apiRequest<SubmissionDetail>(
-    `/submissions/${submissionId}`,
-    {},
-    token,
-  );
+  return apiRequest<SubmissionDetail>(`/submissions/${submissionId}`, {});
 }
 
 export async function upsertMySubmission(
-  token: string,
   taskId: string,
   content: string | null,
 ): Promise<SubmissionDetail> {
-  return apiRequest<SubmissionDetail>(
-    `/tasks/${taskId}/submissions/me`,
-    { method: "PUT", body: JSON.stringify({ content }) },
-    token,
-  );
+  return apiRequest<SubmissionDetail>(`/tasks/${taskId}/submissions/me`, {
+    method: "PUT",
+    body: JSON.stringify({ content }),
+  });
 }
 
 export async function gradeSubmission(
-  token: string,
   taskId: string,
   submissionId: string,
   input: { score?: string | null; reviewNote?: string | null },
@@ -1081,31 +932,23 @@ export async function gradeSubmission(
   return apiRequest<SubmissionDetail>(
     `/tasks/${taskId}/submissions/${submissionId}/grade`,
     { method: "PATCH", body: JSON.stringify(input) },
-    token,
   );
 }
 
 export async function toggleExemplary(
-  token: string,
   taskId: string,
   submissionId: string,
 ): Promise<SubmissionDetail> {
   return apiRequest<SubmissionDetail>(
     `/tasks/${taskId}/submissions/${submissionId}/exemplary`,
     { method: "PATCH" },
-    token,
   );
 }
 
-export async function exportSubmissionsCsv(
-  token: string,
-  taskId: string,
-): Promise<string> {
-  const headers = new Headers();
-  headers.set("Authorization", `Bearer ${token}`);
+export async function exportSubmissionsCsv(taskId: string): Promise<string> {
   const response = await fetch(
     `${getApiBaseUrl()}/tasks/${taskId}/submissions/export`,
-    { headers },
+    { credentials: "include" },
   );
   if (!response.ok) {
     throw new ApiError("Export failed", "EXPORT_ERROR", response.status);
@@ -1113,21 +956,15 @@ export async function exportSubmissionsCsv(
   return response.text();
 }
 
-export async function batchRenameSubmissions(
-  token: string,
-  taskId: string,
-): Promise<void> {
-  return apiRequest<void>(
-    `/tasks/${taskId}/submissions/rename`,
-    { method: "POST" },
-    token,
-  );
+export async function batchRenameSubmissions(taskId: string): Promise<void> {
+  return apiRequest<void>(`/tasks/${taskId}/submissions/rename`, {
+    method: "POST",
+  });
 }
 
 // ─── Attachments ─────────────────────────────────────────────────────────────
 
 export async function uploadTaskAttachment(
-  token: string,
   taskId: string,
   file: File,
   options?: { isVisible?: boolean },
@@ -1141,13 +978,11 @@ export async function uploadTaskAttachment(
   const result = await apiRequest<AttachmentMeta[]>(
     `/tasks/${taskId}/attachments`,
     { method: "POST", body: formData },
-    token,
   );
   return result[0];
 }
 
 export async function uploadSubmissionAttachment(
-  token: string,
   taskId: string,
   file: File,
 ): Promise<AttachmentMeta> {
@@ -1157,7 +992,6 @@ export async function uploadSubmissionAttachment(
   const result = await apiRequest<AttachmentMeta[]>(
     `/tasks/${taskId}/submissions/me/attachments`,
     { method: "POST", body: formData },
-    token,
   );
   return result[0];
 }
@@ -1166,26 +1000,16 @@ export function getFileUrl(fileKey: string): string {
   return `${getApiBaseUrl()}/files/${fileKey}`;
 }
 
-export async function getPresignedFileUrl(
-  token: string,
-  fileKey: string,
-): Promise<string> {
-  const res = await apiRequest<{ url: string }>(
-    `/files/${fileKey}/url`,
-    {},
-    token,
-  );
+export async function getPresignedFileUrl(fileKey: string): Promise<string> {
+  const res = await apiRequest<{ url: string }>(`/files/${fileKey}/url`, {});
   return res.url;
 }
 
-export async function downloadFile(
-  token: string,
-  fileKey: string,
-): Promise<string> {
+export async function downloadFile(fileKey: string): Promise<string> {
   // GET /files/:fileKey returns a 302 redirect to presigned URL.
   // We fetch with auth, follow the redirect, and return the final blob URL.
   const res = await fetch(`${getApiBaseUrl()}/files/${fileKey}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    credentials: "include",
   });
   if (!res.ok) {
     throw new ApiError(
@@ -1198,12 +1022,9 @@ export async function downloadFile(
   return URL.createObjectURL(blob);
 }
 
-export async function downloadFileBlob(
-  token: string,
-  fileKey: string,
-): Promise<Blob> {
+export async function downloadFileBlob(fileKey: string): Promise<Blob> {
   const res = await fetch(`${getApiBaseUrl()}/files/${fileKey}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    credentials: "include",
   });
   if (!res.ok) {
     throw new ApiError(
@@ -1215,27 +1036,20 @@ export async function downloadFileBlob(
   return res.blob();
 }
 
-export async function deleteAttachment(
-  token: string,
-  attachmentId: string,
-): Promise<void> {
-  return apiRequest<void>(
-    `/files/attachments/${attachmentId}`,
-    { method: "DELETE" },
-    token,
-  );
+export async function deleteAttachment(attachmentId: string): Promise<void> {
+  return apiRequest<void>(`/files/attachments/${attachmentId}`, {
+    method: "DELETE",
+  });
 }
 
 export async function updateAttachmentVisibility(
-  token: string,
   attachmentId: string,
   isVisible: boolean,
 ): Promise<AttachmentMeta> {
-  return apiRequest<AttachmentMeta>(
-    `/files/attachments/${attachmentId}`,
-    { method: "PATCH", body: JSON.stringify({ isVisible }) },
-    token,
-  );
+  return apiRequest<AttachmentMeta>(`/files/attachments/${attachmentId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ isVisible }),
+  });
 }
 
 // ─── Admin (kept for admin panel) ────────────────────────────────────────────
@@ -1249,10 +1063,8 @@ export interface StorageStatus {
   error?: string;
 }
 
-export async function getAdminStorageStatus(
-  token: string,
-): Promise<StorageStatus> {
-  return apiRequest<StorageStatus>("/admin/storage-status", {}, token);
+export async function getAdminStorageStatus(): Promise<StorageStatus> {
+  return apiRequest<StorageStatus>("/admin/storage-status", {});
 }
 
 export interface AdminMetricsRoute {
@@ -1271,124 +1083,83 @@ export interface AdminMetrics {
   routes: AdminMetricsRoute[];
 }
 
-export async function getAdminMetrics(token: string): Promise<AdminMetrics> {
-  return apiRequest<AdminMetrics>("/admin/metrics", {}, token);
+export async function getAdminMetrics(): Promise<AdminMetrics> {
+  return apiRequest<AdminMetrics>("/admin/metrics", {});
 }
 
-export async function getAdminConfig(
-  token: string,
-): Promise<Record<string, string>> {
-  return apiRequest<Record<string, string>>("/admin/config", {}, token);
+export async function getAdminConfig(): Promise<Record<string, string>> {
+  return apiRequest<Record<string, string>>("/admin/config", {});
 }
 
 export async function patchAdminConfig(
-  token: string,
   entries: Record<string, string>,
 ): Promise<Record<string, string>> {
-  return apiRequest<Record<string, string>>(
-    "/admin/config",
-    {
-      method: "PATCH",
-      body: JSON.stringify(entries),
-    },
-    token,
-  );
+  return apiRequest<Record<string, string>>("/admin/config", {
+    method: "PATCH",
+    body: JSON.stringify(entries),
+  });
 }
 
-export async function sendAdminTestEmail(
-  token: string,
-  to: string,
-): Promise<void> {
-  return apiRequest<void>(
-    "/admin/config/test-email",
-    {
-      method: "POST",
-      body: JSON.stringify({ to }),
-    },
-    token,
-  );
+export async function sendAdminTestEmail(to: string): Promise<void> {
+  return apiRequest<void>("/admin/config/test-email", {
+    method: "POST",
+    body: JSON.stringify({ to }),
+  });
 }
 
-export async function listAdminUsers(token: string): Promise<UserProfile[]> {
-  return apiRequest<UserProfile[]>("/admin/users", {}, token);
+export async function listAdminUsers(): Promise<UserProfile[]> {
+  return apiRequest<UserProfile[]>("/admin/users", {});
 }
 
 export async function patchAdminUser(
-  token: string,
   userId: string,
   input: AdminUpdateUserInput,
 ): Promise<UserProfile> {
-  return apiRequest<UserProfile>(
-    `/admin/users/${userId}`,
-    {
-      method: "PATCH",
-      body: JSON.stringify(input),
-    },
-    token,
-  );
+  return apiRequest<UserProfile>(`/admin/users/${userId}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
 }
 
-export async function listAdminSchools(token: string): Promise<AdminSchool[]> {
-  return apiRequest<AdminSchool[]>("/admin/schools", {}, token);
+export async function listAdminSchools(): Promise<AdminSchool[]> {
+  return apiRequest<AdminSchool[]>("/admin/schools", {});
 }
 
-export async function createAdminSchool(
-  token: string,
-  name: string,
-): Promise<AdminSchool> {
-  return apiRequest<AdminSchool>(
-    "/admin/schools",
-    {
-      method: "POST",
-      body: JSON.stringify({ name }),
-    },
-    token,
-  );
+export async function createAdminSchool(name: string): Promise<AdminSchool> {
+  return apiRequest<AdminSchool>("/admin/schools", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
 }
 
-export async function deleteAdminSchool(
-  token: string,
-  schoolId: string,
-): Promise<void> {
-  return apiRequest<void>(
-    `/admin/schools/${schoolId}`,
-    {
-      method: "DELETE",
-    },
-    token,
-  );
+export async function deleteAdminSchool(schoolId: string): Promise<void> {
+  return apiRequest<void>(`/admin/schools/${schoolId}`, {
+    method: "DELETE",
+  });
 }
 
 // ── Admin Announcements ──────────────────────────────────────────────────────
 
-export async function listAdminAnnouncements(
-  token: string,
-): Promise<AdminAnnouncement[]> {
-  return apiRequest<AdminAnnouncement[]>("/admin/announcements", {}, token);
+export async function listAdminAnnouncements(): Promise<AdminAnnouncement[]> {
+  return apiRequest<AdminAnnouncement[]>("/admin/announcements", {});
 }
 
-export async function createAdminAnnouncement(
-  token: string,
-  input: {
-    title: string;
-    content: string;
-    publishMode?: "immediate" | "delayed";
-  },
-): Promise<AdminAnnouncement> {
-  return apiRequest<AdminAnnouncement>(
-    "/admin/announcements",
-    { method: "POST", body: JSON.stringify(input) },
-    token,
-  );
+export async function createAdminAnnouncement(input: {
+  title: string;
+  content: string;
+  publishMode?: "immediate" | "delayed";
+}): Promise<AdminAnnouncement> {
+  return apiRequest<AdminAnnouncement>("/admin/announcements", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
 export async function cancelAdminAnnouncement(
-  token: string,
   announcementId: string,
 ): Promise<AdminAnnouncement> {
   return apiRequest<AdminAnnouncement>(
     `/admin/announcements/${announcementId}/cancel`,
     { method: "POST" },
-    token,
   );
 }

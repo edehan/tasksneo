@@ -128,8 +128,9 @@ function CompleteRegistrationInner() {
         studentId: schoolId ? studentId : undefined,
         timezone: detectedTimezone,
       });
-      setAuth(res.token, res.user);
+      setAuth(res.user);
       router.replace(next ?? "/dashboard");
+      router.refresh();
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("registrationFailed");

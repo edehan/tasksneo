@@ -2,9 +2,8 @@
 
 import { BookOpen, UserPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
-import { useAuth } from "@/components/auth-provider";
 import { CreateClassDialog } from "@/components/create-class-dialog";
 import { Button } from "@/components/ui/button";
 import { JoinClassDialog } from "@/features/classes/components/join-class-dialog";
@@ -22,8 +21,8 @@ import {
   ViewSwitcher,
 } from "@/features/tasks/components/view-switcher";
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
-import type { ClassSummary } from "@/lib/api";
-import { listClasses, listMyTasks } from "@/lib/api";
+import type { ClassSummary, MyTaskSummary } from "@/lib/api";
+import { useClassesQuery, useMyTasksQuery } from "@/lib/web-data";
 
 function deriveDisplayStatus(
   task: TaskWithClass,
@@ -37,12 +36,16 @@ function deriveDisplayStatus(
   return "not-started";
 }
 
-export function DashboardPage() {
+interface DashboardPageProps {
+  initialClasses: ClassSummary[];
+  initialTasks: MyTaskSummary[];
+}
+
+export function DashboardPage({
+  initialClasses,
+  initialTasks,
+}: DashboardPageProps) {
   const t = useTranslations("dashboardPage");
-  const { token } = useAuth();
-  const [classes, setClasses] = useState<ClassSummary[]>([]);
-  const [tasks, setTasks] = useState<TaskWithClass[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<TaskWithClass | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("gantt");
   const [dayWidth, setDayWidth] = useState(DEFAULT_DAY_WIDTH);
@@ -52,31 +55,25 @@ export function DashboardPage() {
     overdue: false,
     showSubmitted: false,
   });
-
-  const loadData = useCallback(async () => {
-    if (!token) return;
-    try {
-      const [classList, myTasks] = await Promise.all([
-        listClasses(token),
-        listMyTasks(token),
-      ]);
-      setClasses(classList);
-      setTasks(
-        myTasks.map((t) => ({
-          ...t,
-          classColor: t.classColor || "#8B7355",
-        })),
-      );
-    } catch {
-      // Failed to load
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
+  const {
+    data: classes = initialClasses,
+    isLoading: classesLoading,
+    mutate: mutateClasses,
+  } = useClassesQuery({ fallbackData: initialClasses });
+  const {
+    data: myTasks = initialTasks,
+    isLoading: tasksLoading,
+    mutate: mutateTasks,
+  } = useMyTasksQuery({ fallbackData: initialTasks });
+  const tasks = useMemo(
+    () =>
+      myTasks.map((task) => ({
+        ...task,
+        classColor: task.classColor || "#8B7355",
+      })),
+    [myTasks],
+  );
+  const isLoading = classesLoading || tasksLoading;
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
@@ -132,9 +129,9 @@ export function DashboardPage() {
     return Array.from(seen.values());
   }, [tasks]);
 
-  const isEmpty = !loading && tasks.length === 0;
+  const isEmpty = !isLoading && tasks.length === 0;
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="w-full px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
         <div className="h-8 w-48 bg-muted animate-pulse rounded mb-2" />
@@ -171,11 +168,11 @@ export function DashboardPage() {
                 {t("empty.joinClass")}
               </Button>
             }
-            onJoined={() => void loadData()}
+            onJoined={() => void Promise.all([mutateClasses(), mutateTasks()])}
           />
           <CreateClassDialog
             trigger={<Button>{t("empty.createClass")}</Button>}
-            onCreated={() => void loadData()}
+            onCreated={() => void Promise.all([mutateClasses(), mutateTasks()])}
           />
         </div>
       </div>

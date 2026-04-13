@@ -147,7 +147,7 @@ export function PostTaskDialog({
 }: PostTaskDialogProps) {
   const t = useTranslations("postTaskDialog");
   const locale = useLocale();
-  const { token } = useAuth();
+  const { user } = useAuth();
 
   // Form state
   const [rawText, setRawText] = useState("");
@@ -216,9 +216,9 @@ export function PostTaskDialog({
   // ─── Load existing draft on dialog open ─────────────────────────────────
 
   useEffect(() => {
-    if (!open || !token || draftId) return;
+    if (!open || !user || draftId) return;
 
-    getMyClassDraft(token, classId)
+    getMyClassDraft(classId)
       .then((draft) => {
         if (!draft) return;
         setDraftId(draft.id);
@@ -236,16 +236,16 @@ export function PostTaskDialog({
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, token, classId, draftId]);
+  }, [open, user, classId, draftId]);
 
   // ─── Load class tasks for prerequisites ─────────────────────────────────
 
   useEffect(() => {
-    if (!open || !token) return;
-    listClassTasks(token, classId)
+    if (!open || !user) return;
+    listClassTasks(classId)
       .then((tasks) => setClassTasks(tasks.filter((t) => t.id !== draftId)))
       .catch(() => {});
-  }, [open, token, classId, draftId]);
+  }, [open, user, classId, draftId]);
 
   // If dialog is closed externally (overlay click / ESC / parent state change),
   // force-stop streaming so browser recording indicator is cleared.
@@ -266,9 +266,9 @@ export function PostTaskDialog({
 
   const ensureDraft = useCallback(async (): Promise<string> => {
     if (draftIdRef.current) return draftIdRef.current;
-    if (!token) throw new Error(t("errors.notAuthenticated"));
+    if (!user) throw new Error(t("errors.notAuthenticated"));
 
-    const draft = await createTaskDraft(token, classId, {
+    const draft = await createTaskDraft(classId, {
       title: title.trim() || t("untitledTask"),
       sourceText: rawText.trim() || null,
       startAt: startAt ? startAt.toISOString() : null,
@@ -279,7 +279,7 @@ export function PostTaskDialog({
     setDraftId(draft.id);
     draftIdRef.current = draft.id;
     return draft.id;
-  }, [token, classId, title, rawText, startAt, dueAt, allowLate, blockedBy, t]);
+  }, [user, classId, title, rawText, startAt, dueAt, allowLate, blockedBy, t]);
 
   // ─── Reset ─────────────────────────────────────────────────────────────
 
@@ -326,7 +326,7 @@ export function PostTaskDialog({
   }
 
   async function handleAiParse() {
-    if (!token || parsing || parsed) return;
+    if (!user || parsing || parsed) return;
 
     const hasText = rawText.trim().length > 0;
     const hasAttachments = attachments.length > 0;
@@ -336,11 +336,7 @@ export function PostTaskDialog({
     try {
       const taskId = await ensureDraft();
 
-      const result = await parseTaskDraft(
-        token,
-        taskId,
-        rawText.trim() || undefined,
-      );
+      const result = await parseTaskDraft(taskId, rawText.trim() || undefined);
 
       if (result.title) setTitle(result.title);
       if (result.allowLateSubmission !== null) {
@@ -370,7 +366,7 @@ export function PostTaskDialog({
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
-    if (!files || files.length === 0 || !token) return;
+    if (!files || files.length === 0 || !user) return;
     const fileArray = Array.from(files);
     e.target.value = "";
 
@@ -380,7 +376,7 @@ export function PostTaskDialog({
       const visibleAttachments: AttachmentMeta[] = [];
 
       for (const file of fileArray) {
-        const visible = await uploadTaskAttachment(token, taskId, file, {
+        const visible = await uploadTaskAttachment(taskId, file, {
           isVisible: true,
         });
         visibleAttachments.push(visible);
@@ -388,7 +384,7 @@ export function PostTaskDialog({
         if (isDocxFile(file)) {
           try {
             const hiddenMarkdown = await convertDocxToMarkdownFile(file);
-            await uploadTaskAttachment(token, taskId, hiddenMarkdown, {
+            await uploadTaskAttachment(taskId, hiddenMarkdown, {
               isVisible: false,
             });
           } catch (err) {
@@ -417,7 +413,7 @@ export function PostTaskDialog({
   // ─── Submit (Create/Update Draft → Edit Body) ──────────────────────────
 
   async function handleEditBody() {
-    if (!token) return;
+    if (!user) return;
     if (!formValid) {
       setAttempted(true);
       setExpanded(true);
@@ -439,11 +435,11 @@ export function PostTaskDialog({
 
       if (draftIdRef.current) {
         // Draft already exists — update it with latest form state
-        await updateTask(token, draftIdRef.current, taskData);
+        await updateTask(draftIdRef.current, taskData);
         taskId = draftIdRef.current;
       } else {
         // Create new draft
-        const draft = await createTaskDraft(token, classId, taskData);
+        const draft = await createTaskDraft(classId, taskData);
         taskId = draft.id;
       }
 
@@ -461,9 +457,9 @@ export function PostTaskDialog({
   // ─── Clear draft ────────────────────────────────────────────────────────
 
   async function handleClear() {
-    if (draftIdRef.current && token) {
+    if (draftIdRef.current && user) {
       try {
-        await deleteTask(token, draftIdRef.current);
+        await deleteTask(draftIdRef.current);
       } catch {
         /* draft may already be deleted */
       }
@@ -551,8 +547,8 @@ export function PostTaskDialog({
                 onClick={() => {
                   if (isStreaming || isConnecting) {
                     stopStreaming();
-                  } else if (token) {
-                    void startStreaming(token);
+                  } else if (user) {
+                    void startStreaming();
                   }
                 }}
                 disabled={uploading || parsing}

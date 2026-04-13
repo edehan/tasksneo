@@ -39,7 +39,7 @@ function formatRelativeTime(dateStr: string, justNowLabel: string): string {
 
 export function CommentSection({ taskId, accentColor }: CommentSectionProps) {
   const t = useTranslations("commentSection");
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const accent = accentColor ?? "var(--class-accent)";
 
   const [comments, setComments] = useState<TaskComment[]>([]);
@@ -60,9 +60,9 @@ export function CommentSection({ taskId, accentColor }: CommentSectionProps) {
 
   // Fetch comments on mount
   useEffect(() => {
-    if (!token) return;
+    if (!user) return;
     setLoading(true);
-    listTaskComments(token, taskId)
+    listTaskComments(taskId)
       .then((data) => {
         setComments(data);
         // Scroll to bottom after render
@@ -70,20 +70,15 @@ export function CommentSection({ taskId, accentColor }: CommentSectionProps) {
       })
       .catch(() => toast.error(t("failedToLoad")))
       .finally(() => setLoading(false));
-  }, [token, taskId, t, scrollToBottom]);
+  }, [user, taskId, t, scrollToBottom]);
 
   async function handleSend() {
     const trimmed = content.trim();
-    if (!trimmed || !token || !user) return;
+    if (!trimmed || !user) return;
 
     setSending(true);
     try {
-      const comment = await createTaskComment(
-        token,
-        taskId,
-        trimmed,
-        replyTo?.id,
-      );
+      const comment = await createTaskComment(taskId, trimmed, replyTo?.id);
       setComments((prev) => [...prev, comment]);
       setContent("");
       setReplyTo(null);

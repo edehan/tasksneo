@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,6 +23,7 @@ import { readWindowSearchParam } from "@/lib/search-params";
 export default function ResetPasswordPage() {
   const router = useRouter();
   const t = useTranslations("authResetPassword");
+  const { setAuth } = useAuth();
 
   const [token, setToken] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(true);
@@ -67,9 +69,11 @@ export default function ResetPasswordPage() {
 
     setSubmitting(true);
     try {
-      await resetPassword(token, password);
+      const result = await resetPassword(token, password);
+      setAuth(result.user);
       toast.success(t("passwordResetSuccess"));
-      router.replace("/login");
+      router.replace("/dashboard");
+      router.refresh();
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("passwordResetFailed");

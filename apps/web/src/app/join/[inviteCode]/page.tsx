@@ -44,7 +44,7 @@ function PreviewBanner({
 export default function JoinPage() {
   const params = useParams();
   const router = useRouter();
-  const { token, user, loading } = useAuth();
+  const { user, loading } = useAuth();
   const t = useTranslations("joinPage");
   const inviteCodeParam = params?.inviteCode;
   const inviteCode = typeof inviteCodeParam === "string" ? inviteCodeParam : "";
@@ -55,19 +55,17 @@ export default function JoinPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!loading && !token) {
+    if (!loading && !user) {
       router.replace(
         `/login?next=${encodeURIComponent(`/join/${inviteCode}`)}`,
       );
     }
-  }, [inviteCode, loading, router, token]);
+  }, [inviteCode, loading, router, user]);
 
   useEffect(() => {
-    if (!token || !inviteCode) {
+    if (!user || !inviteCode) {
       return;
     }
-
-    const authToken = token;
 
     let cancelled = false;
 
@@ -76,7 +74,7 @@ export default function JoinPage() {
       setError(null);
 
       try {
-        const nextPreview = await getJoinClassPreview(authToken, inviteCode);
+        const nextPreview = await getJoinClassPreview(inviteCode);
         if (!cancelled) {
           setPreview(nextPreview);
         }
@@ -113,9 +111,9 @@ export default function JoinPage() {
     return () => {
       cancelled = true;
     };
-  }, [inviteCode, t, token]);
+  }, [inviteCode, t, user]);
 
-  if (loading || !token) {
+  if (loading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
@@ -128,9 +126,7 @@ export default function JoinPage() {
   const isSchoolMismatch = preview?.status === "SCHOOL_MISMATCH";
 
   async function handlePrimaryAction() {
-    if (!token) return;
-
-    const authToken = token;
+    if (!user) return;
 
     if (preview?.status === "ALREADY_MEMBER") {
       router.replace(`/classes/${preview.id}`);
@@ -145,7 +141,7 @@ export default function JoinPage() {
     setError(null);
 
     try {
-      const cls = await joinClass(authToken, inviteCode);
+      const cls = await joinClass(inviteCode);
       router.replace(`/classes/${cls.id}`);
     } catch (err) {
       if (err instanceof ApiError) {

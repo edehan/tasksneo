@@ -1,50 +1,36 @@
-"use client";
-
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { AppHeader } from "@/components/app-header";
 import { AppSidebar } from "@/components/app-sidebar";
-import { useAuth } from "@/components/auth-provider";
 import { PageTransition } from "@/components/page-transition";
+import { SWRProvider } from "@/components/swr-provider";
 import { TimezonePrompt } from "@/components/timezone-prompt";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { GlobalSearchProvider } from "@/features/search/global-search";
-import { useClassAccent } from "@/hooks/use-class-accent";
+import { getServerClasses } from "@/lib/server-api";
+import { webDataKeys } from "@/lib/web-data-keys";
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { token, loading } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  // Set class accent color based on current route
-  useClassAccent();
-
-  useEffect(() => {
-    if (!loading && !token) {
-      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
-    }
-  }, [loading, token, router, pathname]);
-
-  if (loading || !token) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
-      </div>
-    );
-  }
+export default async function AppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const classes = await getServerClasses();
 
   return (
     <SidebarProvider>
-      <GlobalSearchProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <AppHeader />
-          <TimezonePrompt />
-          <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
-            <PageTransition>{children}</PageTransition>
-          </main>
-        </SidebarInset>
-      </GlobalSearchProvider>
+      <SWRProvider
+        fallbackEntries={[{ key: webDataKeys.classes(), data: classes }]}
+      >
+        <GlobalSearchProvider initialClasses={classes}>
+          <AppSidebar initialClasses={classes} />
+          <SidebarInset>
+            <AppHeader />
+            <TimezonePrompt />
+            <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
+              <PageTransition>{children}</PageTransition>
+            </main>
+          </SidebarInset>
+        </GlobalSearchProvider>
+      </SWRProvider>
     </SidebarProvider>
   );
 }

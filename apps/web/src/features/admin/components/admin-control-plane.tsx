@@ -321,14 +321,12 @@ export function AdminControlPlane() {
         adminAnnouncements,
         initialMetrics,
       ] = await Promise.all([
-        getAdminConfig(adminToken),
-        listAdminUsers(adminToken),
-        listAdminSchools(adminToken),
-        getAdminStorageStatus(adminToken).catch(() => null),
-        listAdminAnnouncements(adminToken).catch(
-          () => [] as AdminAnnouncement[],
-        ),
-        getAdminMetrics(adminToken).catch(() => null),
+        getAdminConfig(),
+        listAdminUsers(),
+        listAdminSchools(),
+        getAdminStorageStatus().catch(() => null),
+        listAdminAnnouncements().catch(() => [] as AdminAnnouncement[]),
+        getAdminMetrics().catch(() => null),
       ]);
 
       const normalized = normalizeConfig(config);
@@ -348,7 +346,7 @@ export function AdminControlPlane() {
     if (!token) return;
     setMetricsLoading(true);
     try {
-      const snapshot = await getAdminMetrics(token);
+      const snapshot = await getAdminMetrics();
       setMetrics(snapshot);
     } catch (error) {
       toast.error(`Failed to load metrics: ${getErrorMessage(error)}`);
@@ -414,7 +412,7 @@ export function AdminControlPlane() {
 
     setConfigSaving(true);
     try {
-      const nextConfig = await patchAdminConfig(token, changes);
+      const nextConfig = await patchAdminConfig(changes);
       const normalized = normalizeConfig(nextConfig);
       setConfigInitial(normalized);
       setConfigForm(normalized);
@@ -438,7 +436,7 @@ export function AdminControlPlane() {
 
     setTestEmailSending(true);
     try {
-      await sendAdminTestEmail(token, recipient);
+      await sendAdminTestEmail(recipient);
       toast.success("Test email sent.");
     } catch (error) {
       toast.error(`Test email failed: ${getErrorMessage(error)}`);
@@ -453,7 +451,7 @@ export function AdminControlPlane() {
     }
     setUpdatingUserId(user.id);
     try {
-      const updated = await patchAdminUser(token, user.id, {
+      const updated = await patchAdminUser(user.id, {
         isActive: !user.isActive,
       });
       setUsers((prev) =>
@@ -483,7 +481,7 @@ export function AdminControlPlane() {
 
     setPasswordSaving(true);
     try {
-      await patchAdminUser(token, passwordUser.id, { password: nextPassword });
+      await patchAdminUser(passwordUser.id, { password: nextPassword });
       toast.success(`Password reset for ${passwordUser.email}.`);
       setPasswordUser(null);
       setNewPassword("");
@@ -506,7 +504,7 @@ export function AdminControlPlane() {
 
     setSchoolCreating(true);
     try {
-      const created = await createAdminSchool(token, name);
+      const created = await createAdminSchool(name);
       setSchools((prev) =>
         [...prev, created].sort((a, b) => a.name.localeCompare(b.name)),
       );
@@ -526,7 +524,7 @@ export function AdminControlPlane() {
 
     setSchoolDeletingId(schoolToDelete.id);
     try {
-      await deleteAdminSchool(token, schoolToDelete.id);
+      await deleteAdminSchool(schoolToDelete.id);
       setSchools((prev) =>
         prev.filter((school) => school.id !== schoolToDelete.id),
       );
@@ -552,7 +550,7 @@ export function AdminControlPlane() {
 
     setAnnouncementCreating(true);
     try {
-      const created = await createAdminAnnouncement(token, {
+      const created = await createAdminAnnouncement({
         title,
         content,
         publishMode,
@@ -576,7 +574,7 @@ export function AdminControlPlane() {
     if (!token) return;
     setCancellingId(id);
     try {
-      const updated = await cancelAdminAnnouncement(token, id);
+      const updated = await cancelAdminAnnouncement(id);
       setAnnouncements((prev) =>
         prev.map((a) => (a.id === updated.id ? updated : a)),
       );
@@ -908,7 +906,7 @@ export function AdminControlPlane() {
                       if (!token) return;
                       setStorageChecking(true);
                       try {
-                        const status = await getAdminStorageStatus(token);
+                        const status = await getAdminStorageStatus();
                         setStorageStatus(status);
                         if (status.connected) {
                           toast.success("Storage connection OK.");

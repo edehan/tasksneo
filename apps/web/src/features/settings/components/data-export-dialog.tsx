@@ -38,7 +38,7 @@ export function DataExportDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useTranslations("dataExportDialog");
-  const { token } = useAuth();
+  const { user } = useAuth();
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [progress, setProgress] = useState({ completed: 0, total: 0 });
@@ -52,10 +52,10 @@ export function DataExportDialog({
   // ── Gather data when dialog opens ────────────────────────────────────
 
   const loadSummary = useCallback(async () => {
-    if (!token) return;
+    if (!user) return;
     setLoadingSummary(true);
     try {
-      const data = await gatherData(token, () => {});
+      const data = await gatherData(() => {});
       gatheredRef.current = data;
       setSummary(computeSummary(data));
     } catch {
@@ -63,7 +63,7 @@ export function DataExportDialog({
     } finally {
       setLoadingSummary(false);
     }
-  }, [token]);
+  }, [user]);
 
   useEffect(() => {
     if (open) {
@@ -79,13 +79,13 @@ export function DataExportDialog({
   // ── Export handler ────────────────────────────────────────────────────
 
   async function handleExport() {
-    if (!token) return;
+    if (!user) return;
 
     try {
       // If we didn't pre-gather (error during summary), gather now
       let data = gatheredRef.current;
       if (!data) {
-        data = await gatherData(token, (p: ExportProgress) => {
+        data = await gatherData((p: ExportProgress) => {
           setPhase(p.phase);
           setProgress({ completed: p.completed, total: p.total });
           if (p.detail) setDetail(p.detail);
@@ -93,15 +93,11 @@ export function DataExportDialog({
         gatheredRef.current = data;
       }
 
-      const result = await exportFromGatheredData(
-        token,
-        data,
-        (p: ExportProgress) => {
-          setPhase(p.phase);
-          setProgress({ completed: p.completed, total: p.total });
-          if (p.detail) setDetail(p.detail);
-        },
-      );
+      const result = await exportFromGatheredData(data, (p: ExportProgress) => {
+        setPhase(p.phase);
+        setProgress({ completed: p.completed, total: p.total });
+        if (p.detail) setDetail(p.detail);
+      });
 
       setPhase("done");
 

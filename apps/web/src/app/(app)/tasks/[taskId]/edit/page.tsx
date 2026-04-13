@@ -20,7 +20,7 @@ export default function EditTaskPage() {
   const params = useParams();
   const router = useRouter();
   const pathname = usePathname();
-  const { token, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const t = useTranslations("taskEditorPage");
 
   const taskId = params?.taskId as string;
@@ -32,19 +32,19 @@ export default function EditTaskPage() {
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
-    if (!token || !taskId) return;
+    if (!user || !taskId) return;
 
     setLoading(true);
     setError(null);
 
     try {
       const [taskData, mdData] = await Promise.all([
-        getTask(token, taskId),
-        getTaskDraftMarkdown(token, taskId).catch(() => ({
+        getTask(taskId),
+        getTaskDraftMarkdown(taskId).catch(() => ({
           markdown: null as string | null,
         })),
       ]);
-      const classData = await getClass(token, taskData.classId);
+      const classData = await getClass(taskData.classId);
 
       setTask(taskData);
       setCls(classData);
@@ -56,15 +56,15 @@ export default function EditTaskPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, taskId, t]);
+  }, [user, taskId, t]);
 
   useEffect(() => {
-    if (!authLoading && token) {
+    if (!authLoading && user) {
       void loadData();
-    } else if (!authLoading && !token) {
+    } else if (!authLoading && !user) {
       router.replace(`/login?next=${encodeURIComponent(pathname)}`);
     }
-  }, [authLoading, token, loadData, router, pathname]);
+  }, [authLoading, user, loadData, router, pathname]);
 
   if (authLoading || loading) {
     return (

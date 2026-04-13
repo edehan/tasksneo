@@ -12,26 +12,27 @@ import {
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { useAuth } from "@/components/auth-provider";
 import { MarkdownPreview } from "@/features/editor/components/markdown-preview";
 import type {
   ClassSummary,
   SubmissionDetail,
   SubmissionListRow,
+  TaskDetail,
 } from "@/lib/api";
 import {
   ApiError,
   downloadFile,
-  getClass,
-  getSubmissionById,
-  getTask,
   gradeSubmission,
-  listSubmissions,
   toggleExemplary,
 } from "@/lib/api";
+import {
+  useClassQuery,
+  useTaskQuery,
+  useTaskSubmissionsQuery,
+} from "@/lib/web-data";
 
 // ─── File size formatting ────────────────────────────────────────────────────
 
@@ -44,22 +45,29 @@ function formatFileSize(bytes: number | null): string {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function SubmissionDetailPage() {
+interface SubmissionDetailPageProps {
+  initialSubmission: SubmissionDetail | null;
+  initialTask: TaskDetail | null;
+  initialClass: ClassSummary | null;
+  initialRows: SubmissionListRow[];
+}
+
+export function SubmissionDetailPage({
+  initialSubmission,
+  initialTask,
+  initialClass,
+  initialRows,
+}: SubmissionDetailPageProps) {
   const t = useTranslations("submissionDetailPage");
   const locale = useLocale();
   const params = useParams();
   const router = useRouter();
-  const { token } = useAuth();
 
   const submissionId = params?.submissionId as string;
 
-  const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
-  const [cls, setCls] = useState<ClassSummary | null>(null);
-  const [allRows, setAllRows] = useState<SubmissionListRow[]>([]);
-  const [taskTitle, setTaskTitle] = useState<string>("");
-  const [taskId, setTaskId] = useState<string | null>(null);
-  const [_classId, setClassId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [submission, setSubmission] = useState<SubmissionDetail | null>(
+    initialSubmission,
+  );
 
   // Grading form state
   const [score, setScore] = useState("");
@@ -81,40 +89,30 @@ export function SubmissionDetailPage() {
     return dateFormatter.format(new Date(iso));
   }
 
-  // ─── Load data ──────────────────────────────────────────────────────────────
-
-  const loadData = useCallback(async () => {
-    if (!token || !submissionId) return;
-    try {
-      const submissionData = await getSubmissionById(token, submissionId);
-      const resolvedTaskId = submissionData.taskId;
-      setTaskId(resolvedTaskId);
-
-      const [taskData, submissionRows] = await Promise.all([
-        getTask(token, resolvedTaskId),
-        listSubmissions(token, resolvedTaskId),
-      ]);
-      const classData = await getClass(token, taskData.classId);
-
-      setSubmission(submissionData);
-      setCls(classData);
-      setClassId(taskData.classId);
-      setTaskTitle(taskData.title);
-      setAllRows(submissionRows);
-
-      // Initialize grading form with existing values
-      setScore(submissionData.score ?? "");
-      setReviewNote(submissionData.reviewNote ?? "");
-    } catch {
-      toast.error(t("toast.failedLoadSubmission"));
-    } finally {
-      setLoading(false);
-    }
-  }, [token, submissionId, t]);
+  const currentTaskId =
+    submission?.taskId ?? initialSubmission?.taskId ?? initialTask?.id ?? null;
+  const { data: task, isLoading: taskLoading } = useTaskQuery(currentTaskId, {
+    fallbackData: initialTask ?? undefined,
+  });
+  const { data: cls, isLoading: classLoading } = useClassQuery(
+    task?.classId ?? initialTask?.classId,
+    {
+      fallbackData: initialClass ?? undefined,
+    },
+  );
+  const {
+    data: allRows = initialRows,
+    isLoading: rowsLoading,
+    mutate: mutateRows,
+  } = useTaskSubmissionsQuery(task?.id ?? initialTask?.id, {
+    fallbackData: initialRows,
+  });
 
   useEffect(() => {
-    void loadData();
-  }, [loadData]);
+    setSubmission(initialSubmission);
+    setScore(initialSubmission?.score ?? "");
+    setReviewNote(initialSubmission?.reviewNote ?? "");
+  }, [initialSubmission]);
 
   // ─── Student info from row list ─────────────────────────────────────────────
 
@@ -150,14 +148,23 @@ export function SubmissionDetailPage() {
   // ─── Save grade ─────────────────────────────────────────────────────────────
 
   async function handleSaveGrade() {
-    if (!token || !taskId || !submissionId) return;
+    if (!currentTaskId || !submissionId) return;
     setSaving(true);
     try {
-      const updated = await gradeSubmission(token, taskId, submissionId, {
+      const updated = await gradeSubmission(currentTaskId, submissionId, {
         score: score.trim() || null,
         reviewNote: reviewNote.trim() || null,
       });
       setSubmission(updated);
+      await mutateRows(
+        (prev = initialRows) =>
+          prev.map((row) =>
+            row.submission?.id === submissionId
+              ? { ...row, submission: updated }
+              : row,
+          ),
+        false,
+      );
       toast.success(t("toast.gradeSaved"));
     } catch {
       toast.error(t("toast.failedSaveGrade"));
@@ -169,11 +176,20 @@ export function SubmissionDetailPage() {
   // ─── Toggle exemplary ───────────────────────────────────────────────────────
 
   async function handleToggleExemplary() {
-    if (!token || !taskId || !submissionId) return;
+    if (!currentTaskId || !submissionId) return;
     setTogglingExemplary(true);
     try {
-      const updated = await toggleExemplary(token, taskId, submissionId);
+      const updated = await toggleExemplary(currentTaskId, submissionId);
       setSubmission(updated);
+      await mutateRows(
+        (prev = initialRows) =>
+          prev.map((row) =>
+            row.submission?.id === submissionId
+              ? { ...row, submission: updated }
+              : row,
+          ),
+        false,
+      );
       toast.success(
         updated.isExemplary
           ? t("toast.markedExemplary")
@@ -197,9 +213,8 @@ export function SubmissionDetailPage() {
     originalName: string;
     url?: string;
   }) {
-    if (!token) return;
     try {
-      const blobUrl = await downloadFile(token, att.fileKey);
+      const blobUrl = await downloadFile(att.fileKey);
       const link = document.createElement("a");
       link.href = blobUrl;
       link.download = att.originalName;
@@ -216,7 +231,7 @@ export function SubmissionDetailPage() {
 
   // ─── Loading state ─────────────────────────────────────────────────────────
 
-  if (loading) {
+  if (taskLoading || classLoading || rowsLoading) {
     return (
       <div className="mx-auto max-w-[960px] p-8">
         {/* Back button skeleton */}
@@ -248,6 +263,7 @@ export function SubmissionDetailPage() {
   }
 
   const accentColor = cls.color || "#7B6CB0";
+  const taskTitle = task?.title ?? initialTask?.title ?? "";
   const displayName =
     studentRow?.nickname || studentRow?.studentId || t("student");
   const attachments = submission.attachments ?? [];
@@ -258,7 +274,11 @@ export function SubmissionDetailPage() {
       <div className="mb-6 flex items-center justify-between">
         <button
           type="button"
-          onClick={() => router.push(`/tasks/${taskId}/submissions`)}
+          onClick={() =>
+            router.push(
+              `/tasks/${currentTaskId ?? submission.taskId}/submissions`,
+            )
+          }
           className="flex items-center gap-1.5 text-[13px] text-muted-foreground transition-colors duration-100 hover:text-foreground"
         >
           <ArrowLeft size={14} strokeWidth={2} />
@@ -344,7 +364,6 @@ export function SubmissionDetailPage() {
             <MarkdownPreview
               content={submission.content}
               accentColor={accentColor}
-              authToken={token ?? undefined}
             />
           ) : (
             <p className="text-sm italic text-text-muted-soft">

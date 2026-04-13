@@ -58,7 +58,7 @@ export function ClassSettingsPage() {
   const t = useTranslations("classSettings");
   const params = useParams();
   const router = useRouter();
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const classId = params?.classId as string;
 
   const [cls, setCls] = useState<ClassSummary | null>(null);
@@ -76,10 +76,10 @@ export function ClassSettingsPage() {
   const [inviteCode, setInviteCode] = useState("");
 
   const loadData = useCallback(async () => {
-    if (!token || !classId) return;
+    if (!user || !classId) return;
     try {
       const [classData, schoolList] = await Promise.all([
-        getClass(token, classId),
+        getClass(classId),
         listSchools(),
       ]);
       setCls(classData);
@@ -94,17 +94,17 @@ export function ClassSettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, classId, t]);
+  }, [user, classId, t]);
 
   useEffect(() => {
     void loadData();
   }, [loadData]);
 
   async function handleSave() {
-    if (!token || !classId || !name.trim()) return;
+    if (!user || !classId || !name.trim()) return;
     setSaving(true);
     try {
-      const updated = await updateClass(token, classId, {
+      const updated = await updateClass(classId, {
         name: name.trim(),
         description: description.trim() || null,
         color,
@@ -121,10 +121,10 @@ export function ClassSettingsPage() {
   }
 
   async function handleRefreshInviteCode() {
-    if (!token || !classId) return;
+    if (!user || !classId) return;
     setRefreshing(true);
     try {
-      const result = await refreshInviteCode(token, classId);
+      const result = await refreshInviteCode(classId);
       setInviteCode(result.inviteCode);
       toast.success(t("inviteCodeRefreshed"));
     } catch (err) {
@@ -137,10 +137,10 @@ export function ClassSettingsPage() {
   }
 
   async function handleDelete() {
-    if (!token || !classId) return;
+    if (!user || !classId) return;
     setDeleting(true);
     try {
-      await deleteClass(token, classId);
+      await deleteClass(classId);
       toast.success(t("classDeleted"));
       router.push("/dashboard");
     } catch (err) {
@@ -283,8 +283,8 @@ export function ClassSettingsPage() {
           onValueChange={(val) => {
             const newSchoolId = val === "none" ? null : val;
             setSchoolId(newSchoolId);
-            if (token && classId) {
-              updateClass(token, classId, {
+            if (user && classId) {
+              updateClass(classId, {
                 name: name.trim(),
                 description: description.trim() || null,
                 color,

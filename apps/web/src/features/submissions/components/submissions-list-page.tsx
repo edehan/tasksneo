@@ -13,35 +13,37 @@ import {
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useAuth } from "@/components/auth-provider";
 import type { ClassSummary, SubmissionListRow, TaskDetail } from "@/lib/api";
+import { ApiError, exportSubmissionsCsv, toggleExemplary } from "@/lib/api";
 import {
-  ApiError,
-  exportSubmissionsCsv,
-  getClass,
-  getTask,
-  listSubmissions,
-  toggleExemplary,
-} from "@/lib/api";
+  useClassQuery,
+  useTaskQuery,
+  useTaskSubmissionsQuery,
+} from "@/lib/web-data";
 import { BatchDownloadDialog } from "./batch-download-dialog";
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function SubmissionsListPage() {
+interface SubmissionsListPageProps {
+  initialTask: TaskDetail | null;
+  initialClass: ClassSummary | null;
+  initialRows: SubmissionListRow[];
+}
+
+export function SubmissionsListPage({
+  initialTask,
+  initialClass,
+  initialRows,
+}: SubmissionsListPageProps) {
   const t = useTranslations("submissionsListPage");
   const locale = useLocale();
   const params = useParams();
   const router = useRouter();
-  const { token } = useAuth();
 
   const taskId = params?.taskId as string;
 
-  const [task, setTask] = useState<TaskDetail | null>(null);
-  const [cls, setCls] = useState<ClassSummary | null>(null);
-  const [rows, setRows] = useState<SubmissionListRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
 
@@ -58,29 +60,22 @@ export function SubmissionsListPage() {
     return dateFormatter.format(new Date(iso));
   }
 
-  // ─── Load data ──────────────────────────────────────────────────────────────
-
-  const loadData = useCallback(async () => {
-    if (!token || !taskId) return;
-    try {
-      const [taskData, submissionRows] = await Promise.all([
-        getTask(token, taskId),
-        listSubmissions(token, taskId),
-      ]);
-      const classData = await getClass(token, taskData.classId);
-      setTask(taskData);
-      setCls(classData);
-      setRows(submissionRows);
-    } catch {
-      toast.error(t("toast.failedLoadSubmissions"));
-    } finally {
-      setLoading(false);
-    }
-  }, [token, taskId, t]);
-
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
+  const { data: task, isLoading: taskLoading } = useTaskQuery(taskId, {
+    fallbackData: initialTask ?? undefined,
+  });
+  const { data: cls, isLoading: classLoading } = useClassQuery(
+    task?.classId ?? initialTask?.classId,
+    {
+      fallbackData: initialClass ?? undefined,
+    },
+  );
+  const {
+    data: rows = initialRows,
+    isLoading: rowsLoading,
+    mutate: mutateRows,
+  } = useTaskSubmissionsQuery(taskId, {
+    fallbackData: initialRows,
+  });
 
   // ─── Derived stats ─────────────────────────────────────────────────────────
 
@@ -107,10 +102,10 @@ export function SubmissionsListPage() {
   // ─── CSV export ─────────────────────────────────────────────────────────────
 
   async function handleExport() {
-    if (!token || !taskId) return;
+    if (!taskId) return;
     setExporting(true);
     try {
-      const csv = await exportSubmissionsCsv(token, taskId);
+      const csv = await exportSubmissionsCsv(taskId);
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -136,21 +131,23 @@ export function SubmissionsListPage() {
     e: React.MouseEvent,
   ) {
     e.stopPropagation();
-    if (!token || !taskId) return;
+    if (!taskId) return;
     try {
-      const updated = await toggleExemplary(token, taskId, submissionId);
-      setRows((prev) =>
-        prev.map((row) =>
-          row.submission?.id === submissionId
-            ? {
-                ...row,
-                submission: {
-                  ...row.submission,
-                  isExemplary: updated.isExemplary,
-                },
-              }
-            : row,
-        ),
+      const updated = await toggleExemplary(taskId, submissionId);
+      await mutateRows(
+        (prev = initialRows) =>
+          prev.map((row) =>
+            row.submission?.id === submissionId
+              ? {
+                  ...row,
+                  submission: {
+                    ...row.submission,
+                    isExemplary: updated.isExemplary,
+                  },
+                }
+              : row,
+          ),
+        false,
       );
       toast.success(
         updated.isExemplary
@@ -168,7 +165,7 @@ export function SubmissionsListPage() {
 
   // ─── Loading state ─────────────────────────────────────────────────────────
 
-  if (loading) {
+  if (taskLoading || classLoading || rowsLoading) {
     return (
       <div className="mx-auto max-w-[960px] p-8">
         {/* Back button skeleton */}

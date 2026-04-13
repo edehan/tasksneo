@@ -17,7 +17,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useSWRConfig } from "swr";
 import { useAuth } from "@/components/auth-provider";
 import { CreateClassDialog } from "@/components/create-class-dialog";
 import { useAppLocale } from "@/components/locale-provider";
@@ -51,33 +52,29 @@ import { JoinClassDialog } from "@/features/classes/components/join-class-dialog
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
 import { type AppLocale, SUPPORTED_LOCALES } from "@/i18n/locale";
 import type { ClassSummary } from "@/lib/api";
-import { listClasses } from "@/lib/api";
+import { useClassesQuery } from "@/lib/web-data";
+import { webDataKeys } from "@/lib/web-data-keys";
 
-export function AppSidebar() {
-  const { token, user, logout } = useAuth();
+interface AppSidebarProps {
+  initialClasses: ClassSummary[];
+}
+
+export function AppSidebar({ initialClasses }: AppSidebarProps) {
+  const { user, logout } = useAuth();
   const t = useTranslations("appSidebar");
   const { theme, resolvedTheme, setTheme } = useTheme();
   const { locale, setLocale } = useAppLocale();
   const pathname = usePathname();
   const router = useRouter();
-  const [classes, setClasses] = useState<ClassSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const loadClasses = useCallback(async () => {
-    if (!token) return;
-    try {
-      const data = await listClasses(token);
-      setClasses(data);
-    } catch {
-      // Silently fail — sidebar is non-critical
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
+  const { mutate: globalMutate } = useSWRConfig();
+  const { data: classes = [], isLoading: loading } = useClassesQuery({
+    fallbackData: initialClasses,
+  });
+  const [themeMounted, setThemeMounted] = useState(false);
 
   useEffect(() => {
-    void loadClasses();
-  }, [loadClasses]);
+    setThemeMounted(true);
+  }, []);
 
   const personalClass = classes.find((c) => c.isPersonal);
   const managedClasses = classes.filter(
@@ -90,7 +87,15 @@ export function AppSidebar() {
   const displayName = user?.nickname || user?.email || t("user");
   const initials = displayName.slice(0, 2).toUpperCase();
   const avatarUrl = useAvatarUrl(user?.email, 64);
-  const effectiveTheme = resolvedTheme ?? "light";
+  const currentTheme = themeMounted ? (theme ?? "system") : "system";
+  const effectiveTheme = themeMounted ? (resolvedTheme ?? "light") : "light";
+
+  async function refreshClasses() {
+    await Promise.all([
+      globalMutate(webDataKeys.classes()),
+      globalMutate(webDataKeys.myTasks()),
+    ]);
+  }
 
   return (
     <Sidebar>
@@ -138,9 +143,9 @@ export function AppSidebar() {
                   </DropdownMenuItem>
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
-                      {theme === "dark" ? (
+                      {currentTheme === "dark" ? (
                         <Moon className="mr-2 h-4 w-4" />
-                      ) : theme === "light" ? (
+                      ) : currentTheme === "light" ? (
                         <Sun className="mr-2 h-4 w-4" />
                       ) : (
                         <Monitor className="mr-2 h-4 w-4" />
@@ -152,7 +157,7 @@ export function AppSidebar() {
                         <DropdownMenuItem onClick={() => setTheme("light")}>
                           <Sun className="mr-2 h-4 w-4" />
                           {t("light")}
-                          {theme === "light" && (
+                          {currentTheme === "light" && (
                             <span className="ml-auto text-xs text-muted-foreground">
                               &#10003;
                             </span>
@@ -161,7 +166,7 @@ export function AppSidebar() {
                         <DropdownMenuItem onClick={() => setTheme("dark")}>
                           <Moon className="mr-2 h-4 w-4" />
                           {t("dark")}
-                          {theme === "dark" && (
+                          {currentTheme === "dark" && (
                             <span className="ml-auto text-xs text-muted-foreground">
                               &#10003;
                             </span>
@@ -170,7 +175,7 @@ export function AppSidebar() {
                         <DropdownMenuItem onClick={() => setTheme("system")}>
                           <Monitor className="mr-2 h-4 w-4" />
                           {t("system")}
-                          {theme === "system" && (
+                          {currentTheme === "system" && (
                             <span className="ml-auto text-xs text-muted-foreground">
                               &#10003;
                             </span>
@@ -404,7 +409,7 @@ export function AppSidebar() {
                     <span>{t("joinClass")}</span>
                   </SidebarMenuButton>
                 }
-                onJoined={() => void loadClasses()}
+                onJoined={() => void refreshClasses()}
               />
               <CreateClassDialog
                 trigger={
@@ -413,7 +418,7 @@ export function AppSidebar() {
                     <span>{t("create")}</span>
                   </SidebarMenuButton>
                 }
-                onCreated={() => void loadClasses()}
+                onCreated={() => void refreshClasses()}
               />
             </div>
           </SidebarMenuItem>

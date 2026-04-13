@@ -3,7 +3,8 @@
 import { Bell, Clock, Info, Megaphone } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { useSWRConfig } from "swr";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,14 +14,12 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { NotificationItem } from "@/lib/api";
+import { markAllNotificationsRead, markNotificationRead } from "@/lib/api";
 import {
-  getUnreadNotificationCount,
-  listMyNotifications,
-  markAllNotificationsRead,
-  markNotificationRead,
-} from "@/lib/api";
-
-const POLL_INTERVAL = 60_000;
+  useNotificationsCountQuery,
+  useNotificationsListQuery,
+} from "@/lib/web-data";
+import { webDataKeys } from "@/lib/web-data-keys";
 
 function timeAgo(
   dateStr: string,
@@ -38,75 +37,87 @@ function timeAgo(
 }
 
 export function NotificationBell() {
-  const { token } = useAuth();
+  const { user } = useAuth();
   const t = useTranslations("notificationBell");
   const router = useRouter();
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [items, setItems] = useState<NotificationItem[]>([]);
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const fetchCount = useCallback(async () => {
-    if (!token) return;
-    try {
-      const res = await getUnreadNotificationCount(token);
-      setUnreadCount(res.unreadCount);
-    } catch {
-      // Silently fail — badge is non-critical
-    }
-  }, [token]);
-
-  // Poll unread count
-  useEffect(() => {
-    void fetchCount();
-    intervalRef.current = setInterval(() => void fetchCount(), POLL_INTERVAL);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [fetchCount]);
-
-  // Fetch items when popover opens
-  useEffect(() => {
-    if (!open || !token) return;
-    setLoading(true);
-    listMyNotifications(token, { limit: 10 })
-      .then((res) => {
-        setItems(res.items);
-        setUnreadCount(res.unreadCount);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [open, token]);
+  const { mutate: globalMutate } = useSWRConfig();
+  const { data: countData } = useNotificationsCountQuery({
+    fallbackData: { unreadCount: 0 },
+    refreshInterval: user ? 60_000 : 0,
+  });
+  const {
+    data: listData,
+    isLoading: loading,
+    mutate: mutateNotifications,
+  } = useNotificationsListQuery(10, {
+    enabled: open && !!user,
+    revalidateOnMount: open && !!user,
+  });
+  const unreadCount = listData?.unreadCount ?? countData?.unreadCount ?? 0;
+  const items = listData?.items ?? [];
 
   async function handleMarkAllRead() {
-    if (!token) return;
+    if (!user) return;
     try {
-      await markAllNotificationsRead(token);
-      setItems((prev) =>
-        prev.map((item) => ({
-          ...item,
-          readAt: item.readAt ?? new Date().toISOString(),
-        })),
-      );
-      setUnreadCount(0);
+      await markAllNotificationsRead();
+      await Promise.all([
+        mutateNotifications(
+          (prev) =>
+            prev
+              ? {
+                  ...prev,
+                  unreadCount: 0,
+                  items: prev.items.map((item) => ({
+                    ...item,
+                    readAt: item.readAt ?? new Date().toISOString(),
+                  })),
+                }
+              : prev,
+          false,
+        ),
+        globalMutate(
+          webDataKeys.notificationsCount(),
+          { unreadCount: 0 },
+          false,
+        ),
+      ]);
     } catch {
       // Silently fail
     }
   }
 
   async function handleClickItem(item: NotificationItem) {
-    if (!token) return;
+    if (!user) return;
 
     if (!item.readAt) {
       try {
-        await markNotificationRead(token, item.id);
-        setItems((prev) =>
-          prev.map((n) =>
-            n.id === item.id ? { ...n, readAt: new Date().toISOString() } : n,
+        await markNotificationRead(item.id);
+        await Promise.all([
+          mutateNotifications(
+            (prev) =>
+              prev
+                ? {
+                    ...prev,
+                    unreadCount: Math.max(0, prev.unreadCount - 1),
+                    items: prev.items.map((notification) =>
+                      notification.id === item.id
+                        ? {
+                            ...notification,
+                            readAt: new Date().toISOString(),
+                          }
+                        : notification,
+                    ),
+                  }
+                : prev,
+            false,
           ),
-        );
-        setUnreadCount((c) => Math.max(0, c - 1));
+          globalMutate(
+            webDataKeys.notificationsCount(),
+            { unreadCount: Math.max(0, unreadCount - 1) },
+            false,
+          ),
+        ]);
       } catch {
         // Continue navigation even if mark-read fails
       }

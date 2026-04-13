@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { verifyCaptcha } from "../lib/captcha.js";
 import { requireAuthSession, requireAuthUser } from "../lib/context.js";
+import { clearSessionCookie } from "../lib/cookie.js";
 import { uploadObject } from "../lib/storage.js";
 import { authMiddleware } from "../middleware/auth.js";
 import {
@@ -135,6 +136,7 @@ usersRouter.delete("/me/sessions", async (c) => {
 
 usersRouter.delete("/me/sessions/:sessionId", async (c) => {
 	const authUser = requireAuthUser(c);
+	const currentSession = requireAuthSession(c);
 	const sessionId = c.req.param("sessionId");
 
 	// Make sure the target session belongs to this user before revoking.
@@ -144,6 +146,9 @@ usersRouter.delete("/me/sessions/:sessionId", async (c) => {
 		return c.json({ error: "Session not found", code: "NOT_FOUND" }, 404);
 	}
 	await revokeSession(sessionId);
+	if (sessionId === currentSession.id) {
+		clearSessionCookie(c);
+	}
 	return c.body(null, 204);
 });
 
@@ -211,6 +216,7 @@ usersRouter.post("/me/notifications/read-all", async (c) => {
 usersRouter.post("/me/delete", async (c) => {
 	const authUser = requireAuthUser(c);
 	await deleteMyAccount(authUser.userId);
+	clearSessionCookie(c);
 	return c.body(null, 204);
 });
 
