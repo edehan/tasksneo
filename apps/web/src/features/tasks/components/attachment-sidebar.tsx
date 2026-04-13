@@ -106,7 +106,7 @@ export function AttachmentSidebar({
   onInsertImage,
 }: AttachmentSidebarProps) {
   const t = useTranslations("attachmentSidebar");
-  const { token } = useAuth();
+  const { user } = useAuth();
   const accent = accentColor ?? "var(--class-accent)";
   const [downloading, setDownloading] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(
@@ -119,11 +119,11 @@ export function AttachmentSidebar({
     : attachments;
 
   async function handleDownload(att: AttachmentMeta) {
-    if (!token) return;
+    if (!user) return;
 
     setDownloading(att.id);
     try {
-      const blobUrl = await downloadFile(token, att.fileKey);
+      const blobUrl = await downloadFile(att.fileKey);
       const link = document.createElement("a");
       link.href = blobUrl;
       link.download = att.originalName ?? att.fileKey;

@@ -12,13 +12,11 @@ import {
 import type { UserProfile } from "@/lib/api";
 import {
   login as apiLogin,
-  COOKIE_AUTH_PLACEHOLDER,
   logoutApi,
   subscribeToAuthExpired,
 } from "@/lib/api";
 
 interface AuthContextValue {
-  token: string | null;
   user: UserProfile | null;
   loading: boolean;
   login: (
@@ -26,7 +24,7 @@ interface AuthContextValue {
     password: string,
     trustDevice?: boolean,
   ) => Promise<void>;
-  setAuth: (token: string, user: UserProfile) => void;
+  setAuth: (user: UserProfile) => void;
   logout: () => Promise<void>;
   updateUser: (user: UserProfile) => void;
 }
@@ -41,18 +39,14 @@ interface AuthProviderProps {
 
 export function AuthProvider({
   initialUser,
-  initialHasSessionCookie = false,
+  initialHasSessionCookie: _initialHasSessionCookie = false,
   children,
 }: AuthProviderProps) {
   const [user, setUser] = useState<UserProfile | null>(initialUser);
-  const [token, setToken] = useState<string | null>(
-    initialUser || initialHasSessionCookie ? COOKIE_AUTH_PLACEHOLDER : null,
-  );
   const router = useRouter();
   const pathname = usePathname();
 
   const clearAuthState = useCallback(() => {
-    setToken(null);
     setUser(null);
   }, []);
 
@@ -68,37 +62,33 @@ export function AuthProvider({
   const login = useCallback(
     async (email: string, password: string, trustDevice?: boolean) => {
       const res = await apiLogin(email, password, trustDevice);
-      setToken(COOKIE_AUTH_PLACEHOLDER);
       setUser(res.user);
       router.refresh();
     },
     [router],
   );
 
-  const setAuth = useCallback((_: string, newUser: UserProfile) => {
-    setToken(COOKIE_AUTH_PLACEHOLDER);
+  const setAuth = useCallback((newUser: UserProfile) => {
     setUser(newUser);
   }, []);
 
   const logout = useCallback(async () => {
     try {
-      await logoutApi(token);
+      await logoutApi();
     } catch {
       // Ignore best-effort revoke failures; clear local state regardless.
     }
     clearAuthState();
     router.push("/login");
     router.refresh();
-  }, [clearAuthState, router, token]);
+  }, [clearAuthState, router]);
 
   const updateUser = useCallback((u: UserProfile) => {
     setUser(u);
-    setToken(COOKIE_AUTH_PLACEHOLDER);
   }, []);
 
   const value = useMemo(
     () => ({
-      token,
       user,
       loading: false,
       login,
@@ -106,7 +96,7 @@ export function AuthProvider({
       logout,
       updateUser,
     }),
-    [token, user, login, setAuth, logout, updateUser],
+    [user, login, setAuth, logout, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -104,7 +104,7 @@ export function MembersPage() {
   const t = useTranslations("classMembers");
   const locale = useLocale();
   const params = useParams();
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const classId = params?.classId as string;
 
   const [cls, setCls] = useState<ClassSummary | null>(null);
@@ -118,11 +118,11 @@ export function MembersPage() {
   const [transferring, setTransferring] = useState(false);
 
   const loadData = useCallback(async () => {
-    if (!token || !classId) return;
+    if (!user || !classId) return;
     try {
       const [classData, memberList] = await Promise.all([
-        getClass(token, classId),
-        listMembers(token, classId),
+        getClass(classId),
+        listMembers(classId),
       ]);
       setCls(classData);
       setMembers(memberList);
@@ -131,7 +131,7 @@ export function MembersPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, classId, t]);
+  }, [user, classId, t]);
 
   useEffect(() => {
     void loadData();
@@ -145,10 +145,10 @@ export function MembersPage() {
     memberId: string,
     newRole: "ADMIN" | "MEMBER",
   ) {
-    if (!token || !classId) return;
+    if (!user || !classId) return;
     setActionLoading(memberId);
     try {
-      await updateMemberRole(token, classId, memberId, newRole);
+      await updateMemberRole(classId, memberId, newRole);
       toast.success(
         t("toast.roleUpdated", {
           role: newRole === "ADMIN" ? t("roles.admin") : t("roles.member"),
@@ -165,10 +165,10 @@ export function MembersPage() {
   }
 
   async function handleRemove(memberId: string, memberName: string) {
-    if (!token || !classId) return;
+    if (!user || !classId) return;
     setActionLoading(memberId);
     try {
-      await removeMember(token, classId, memberId);
+      await removeMember(classId, memberId);
       toast.success(t("toast.memberRemoved", { name: memberName }));
       await loadData();
     } catch (err) {
@@ -181,10 +181,10 @@ export function MembersPage() {
   }
 
   async function handleLeave() {
-    if (!token || !classId || !user) return;
+    if (!user || !classId || !user) return;
     setActionLoading(user.id);
     try {
-      await removeMember(token, classId, user.id);
+      await removeMember(classId, user.id);
       toast.success(t("toast.leftClass"));
       window.location.href = "/dashboard";
     } catch (err) {
@@ -196,10 +196,10 @@ export function MembersPage() {
   }
 
   async function handleTransfer() {
-    if (!token || !classId || !transferTarget) return;
+    if (!user || !classId || !transferTarget) return;
     setTransferring(true);
     try {
-      await transferOwnership(token, classId, transferTarget);
+      await transferOwnership(classId, transferTarget);
       toast.success(t("toast.ownershipTransferred"));
       setTransferOpen(false);
       setTransferTarget("");

@@ -34,7 +34,7 @@ export function SubmissionsListPage() {
   const locale = useLocale();
   const params = useParams();
   const router = useRouter();
-  const { token } = useAuth();
+  const { user } = useAuth();
 
   const taskId = params?.taskId as string;
 
@@ -61,13 +61,13 @@ export function SubmissionsListPage() {
   // ─── Load data ──────────────────────────────────────────────────────────────
 
   const loadData = useCallback(async () => {
-    if (!token || !taskId) return;
+    if (!user || !taskId) return;
     try {
       const [taskData, submissionRows] = await Promise.all([
-        getTask(token, taskId),
-        listSubmissions(token, taskId),
+        getTask(taskId),
+        listSubmissions(taskId),
       ]);
-      const classData = await getClass(token, taskData.classId);
+      const classData = await getClass(taskData.classId);
       setTask(taskData);
       setCls(classData);
       setRows(submissionRows);
@@ -76,7 +76,7 @@ export function SubmissionsListPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, taskId, t]);
+  }, [user, taskId, t]);
 
   useEffect(() => {
     void loadData();
@@ -107,10 +107,10 @@ export function SubmissionsListPage() {
   // ─── CSV export ─────────────────────────────────────────────────────────────
 
   async function handleExport() {
-    if (!token || !taskId) return;
+    if (!user || !taskId) return;
     setExporting(true);
     try {
-      const csv = await exportSubmissionsCsv(token, taskId);
+      const csv = await exportSubmissionsCsv(taskId);
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -136,9 +136,9 @@ export function SubmissionsListPage() {
     e: React.MouseEvent,
   ) {
     e.stopPropagation();
-    if (!token || !taskId) return;
+    if (!user || !taskId) return;
     try {
-      const updated = await toggleExemplary(token, taskId, submissionId);
+      const updated = await toggleExemplary(taskId, submissionId);
       setRows((prev) =>
         prev.map((row) =>
           row.submission?.id === submissionId

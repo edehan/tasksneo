@@ -13,7 +13,7 @@ function VerifyEmailInner() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const router = useRouter();
-  const { token: authToken, updateUser } = useAuth();
+  const { updateUser } = useAuth();
   const t = useTranslations("settingsVerifyEmail");
 
   const [status, setStatus] = useState<"loading" | "success" | "error">(
@@ -22,16 +22,16 @@ function VerifyEmailInner() {
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    if (!token || !authToken) {
+    if (!token) {
       setErrorMessage(t("missingTokenOrNotSignedIn"));
       setStatus("error");
       return;
     }
 
-    confirmEmailChange(authToken, token)
+    confirmEmailChange(token)
       .then(async () => {
         // Refresh user data to reflect new email
-        const updated = await getMe(authToken);
+        const updated = await getMe();
         updateUser(updated);
         setStatus("success");
         toast.success(t("emailAddressUpdated"));
@@ -42,7 +42,7 @@ function VerifyEmailInner() {
         );
         setStatus("error");
       });
-  }, [token, authToken, updateUser, t]);
+  }, [token, updateUser, t]);
 
   if (status === "loading") {
     return (

@@ -84,7 +84,6 @@ async function parallelBatch<T, R>(
 // ─── Gather ─────────────────────────────────────────────────────────────────
 
 export async function gatherData(
-  token: string,
   onProgress: ExportProgressCallback,
 ): Promise<GatheredData> {
   onProgress({
@@ -94,8 +93,8 @@ export async function gatherData(
     detail: "Fetching profile...",
   });
 
-  const profile = await getMe(token);
-  const classes = await listClasses(token);
+  const profile = await getMe();
+  const classes = await listClasses();
 
   onProgress({
     phase: "gathering",
@@ -109,7 +108,7 @@ export async function gatherData(
   const classTaskMap = new Map<string, TaskSummary[]>();
 
   const taskLists = await parallelBatch(nonPersonalClasses, 5, async (cls) => {
-    const tasks = await listClassTasks(token, cls.id);
+    const tasks = await listClassTasks(cls.id);
     return { classId: cls.id, tasks };
   });
 
@@ -135,7 +134,7 @@ export async function gatherData(
     10,
     async ({ task, className }) => {
       try {
-        const sub = await getMySubmission(token, task.id);
+        const sub = await getMySubmission(task.id);
         if (sub) return { submission: sub, className, taskTitle: task.title };
       } catch {
         // Skip failed
@@ -176,7 +175,7 @@ export async function gatherData(
     10,
     async ({ taskSummary, className }) => {
       try {
-        const detail = await getTask(token, taskSummary.id);
+        const detail = await getTask(taskSummary.id);
         return { task: detail, className };
       } catch {
         return null;
@@ -355,7 +354,6 @@ function buildMetadataJson(data: GatheredData) {
 // ─── Main export function ───────────────────────────────────────────────────
 
 export async function exportFromGatheredData(
-  token: string,
   data: GatheredData,
   onProgress: ExportProgressCallback,
 ): Promise<{ skippedCount: number }> {
@@ -372,7 +370,6 @@ export async function exportFromGatheredData(
 
   if (downloadTasks.length > 0) {
     const results = await downloadAllWithConcurrency(
-      token,
       downloadTasks,
       5,
       (completed, total) => {

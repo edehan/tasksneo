@@ -141,7 +141,7 @@ function formatLastSeen(
 }
 
 export default function SessionsPage() {
-  const { token } = useAuth();
+  const { user } = useAuth();
   const t = useTranslations("settingsSessions");
 
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
@@ -152,26 +152,26 @@ export default function SessionsPage() {
   const [busy, setBusy] = useState(false);
 
   const loadSessions = useCallback(async () => {
-    if (!token) return;
+    if (!user) return;
     try {
-      const result = await listSessions(token);
+      const result = await listSessions();
       setSessions(result);
     } catch {
       toast.error(t("failedLoad"));
     } finally {
       setLoading(false);
     }
-  }, [token, t]);
+  }, [user, t]);
 
   useEffect(() => {
     void loadSessions();
   }, [loadSessions]);
 
   async function handleRevoke() {
-    if (!token || !revokeTarget) return;
+    if (!user || !revokeTarget) return;
     setBusy(true);
     try {
-      await revokeSession(token, revokeTarget.id);
+      await revokeSession(revokeTarget.id);
       setSessions((prev) => prev.filter((s) => s.id !== revokeTarget.id));
       toast.success(t("revoked"));
     } catch (err) {
@@ -184,10 +184,10 @@ export default function SessionsPage() {
   }
 
   async function handleRevokeOthers() {
-    if (!token) return;
+    if (!user) return;
     setBusy(true);
     try {
-      await revokeOtherSessions(token);
+      await revokeOtherSessions();
       setSessions((prev) => prev.filter((s) => s.isCurrent));
       toast.success(t("revokedOthers"));
     } catch (err) {

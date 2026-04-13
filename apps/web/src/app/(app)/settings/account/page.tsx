@@ -30,7 +30,7 @@ import {
 } from "@/lib/api";
 
 export default function AccountPage() {
-  const { token, user, logout } = useAuth();
+  const { user, logout } = useAuth();
   const t = useTranslations("settingsAccount");
   const router = useRouter();
 
@@ -53,9 +53,9 @@ export default function AccountPage() {
   const [loadingClasses, setLoadingClasses] = useState(true);
 
   const checkOwnership = useCallback(async () => {
-    if (!token) return;
+    if (!user) return;
     try {
-      const classes = await listClasses(token);
+      const classes = await listClasses();
       const owned = classes.filter(
         (c) => c.myRole === "OWNER" && !c.isPersonal,
       );
@@ -65,7 +65,7 @@ export default function AccountPage() {
     } finally {
       setLoadingClasses(false);
     }
-  }, [token]);
+  }, [user]);
 
   useEffect(() => {
     void checkOwnership();
@@ -73,7 +73,7 @@ export default function AccountPage() {
 
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
-    if (!token) return;
+    if (!user) return;
 
     if (newPassword !== confirmPassword) {
       toast.error(t("newPasswordsDoNotMatch"));
@@ -87,7 +87,7 @@ export default function AccountPage() {
 
     setChangingPassword(true);
     try {
-      await updatePassword(token, currentPassword, newPassword);
+      await updatePassword(currentPassword, newPassword);
       toast.success(t("passwordUpdated"));
       setCurrentPassword("");
       setNewPassword("");
@@ -102,10 +102,10 @@ export default function AccountPage() {
   }
 
   async function handleDeleteAccount() {
-    if (!token) return;
+    if (!user) return;
     setDeleting(true);
     try {
-      await deleteAccount(token);
+      await deleteAccount();
       toast.success(t("accountDeleted"));
       await logout();
       router.push("/login");

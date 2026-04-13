@@ -48,7 +48,7 @@ export function CreateClassDialog({
   trigger,
   onCreated,
 }: CreateClassDialogProps) {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const t = useTranslations("createClassDialog");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -96,11 +96,11 @@ export function CreateClassDialog({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!token || !name.trim()) return;
+    if (!user || !name.trim()) return;
 
     setLoading(true);
     try {
-      const cls = await createClass(token, {
+      const cls = await createClass({
         name: name.trim(),
         color,
         schoolId:

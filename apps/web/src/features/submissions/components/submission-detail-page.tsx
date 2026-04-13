@@ -49,7 +49,7 @@ export function SubmissionDetailPage() {
   const locale = useLocale();
   const params = useParams();
   const router = useRouter();
-  const { token } = useAuth();
+  const { user } = useAuth();
 
   const submissionId = params?.submissionId as string;
 
@@ -84,17 +84,17 @@ export function SubmissionDetailPage() {
   // ─── Load data ──────────────────────────────────────────────────────────────
 
   const loadData = useCallback(async () => {
-    if (!token || !submissionId) return;
+    if (!user || !submissionId) return;
     try {
-      const submissionData = await getSubmissionById(token, submissionId);
+      const submissionData = await getSubmissionById(submissionId);
       const resolvedTaskId = submissionData.taskId;
       setTaskId(resolvedTaskId);
 
       const [taskData, submissionRows] = await Promise.all([
-        getTask(token, resolvedTaskId),
-        listSubmissions(token, resolvedTaskId),
+        getTask(resolvedTaskId),
+        listSubmissions(resolvedTaskId),
       ]);
-      const classData = await getClass(token, taskData.classId);
+      const classData = await getClass(taskData.classId);
 
       setSubmission(submissionData);
       setCls(classData);
@@ -110,7 +110,7 @@ export function SubmissionDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, submissionId, t]);
+  }, [user, submissionId, t]);
 
   useEffect(() => {
     void loadData();
@@ -150,10 +150,10 @@ export function SubmissionDetailPage() {
   // ─── Save grade ─────────────────────────────────────────────────────────────
 
   async function handleSaveGrade() {
-    if (!token || !taskId || !submissionId) return;
+    if (!user || !taskId || !submissionId) return;
     setSaving(true);
     try {
-      const updated = await gradeSubmission(token, taskId, submissionId, {
+      const updated = await gradeSubmission(taskId, submissionId, {
         score: score.trim() || null,
         reviewNote: reviewNote.trim() || null,
       });
@@ -169,10 +169,10 @@ export function SubmissionDetailPage() {
   // ─── Toggle exemplary ───────────────────────────────────────────────────────
 
   async function handleToggleExemplary() {
-    if (!token || !taskId || !submissionId) return;
+    if (!user || !taskId || !submissionId) return;
     setTogglingExemplary(true);
     try {
-      const updated = await toggleExemplary(token, taskId, submissionId);
+      const updated = await toggleExemplary(taskId, submissionId);
       setSubmission(updated);
       toast.success(
         updated.isExemplary
@@ -197,9 +197,9 @@ export function SubmissionDetailPage() {
     originalName: string;
     url?: string;
   }) {
-    if (!token) return;
+    if (!user) return;
     try {
-      const blobUrl = await downloadFile(token, att.fileKey);
+      const blobUrl = await downloadFile(att.fileKey);
       const link = document.createElement("a");
       link.href = blobUrl;
       link.download = att.originalName;
@@ -344,7 +344,6 @@ export function SubmissionDetailPage() {
             <MarkdownPreview
               content={submission.content}
               accentColor={accentColor}
-              authToken={token ?? undefined}
             />
           ) : (
             <p className="text-sm italic text-text-muted-soft">

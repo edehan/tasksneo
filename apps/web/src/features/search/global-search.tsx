@@ -373,20 +373,20 @@ function searchDocuments(
   );
 }
 
-async function loadImmediateSnapshot(token: string): Promise<{
+async function loadImmediateSnapshot(): Promise<{
   docs: SearchDocument[];
   taskRecords: IndexedTaskRecord[];
 }> {
-  const classes = await listClasses(token);
+  const classes = await listClasses();
   const managedClasses = classes.filter(
     (cls) => cls.myRole === "OWNER" || cls.myRole === "ADMIN",
   );
   const classMap = new Map(classes.map((cls) => [cls.id, cls]));
 
   const [myTasks, managedTaskLists, memberLists] = await Promise.all([
-    listMyTasks(token),
-    Promise.all(managedClasses.map((cls) => listClassTasks(token, cls.id))),
-    Promise.all(managedClasses.map((cls) => listMembers(token, cls.id))),
+    listMyTasks(),
+    Promise.all(managedClasses.map((cls) => listClassTasks(cls.id))),
+    Promise.all(managedClasses.map((cls) => listMembers(cls.id))),
   ]);
 
   const taskMap = new Map<string, IndexedTaskRecord>();
@@ -538,14 +538,13 @@ function buildSubmissionDocuments(
 }
 
 async function enrichTaskRecord(
-  token: string,
   record: IndexedTaskRecord,
 ): Promise<SearchDocument[]> {
   const [detailResult, commentsResult, submissionsResult] = await Promise.all([
-    getTask(token, record.id),
-    listTaskComments(token, record.id).catch(() => [] as TaskComment[]),
+    getTask(record.id),
+    listTaskComments(record.id).catch(() => [] as TaskComment[]),
     record.manageable
-      ? listSubmissions(token, record.id).catch(() => [] as SubmissionListRow[])
+      ? listSubmissions(record.id).catch(() => [] as SubmissionListRow[])
       : Promise.resolve([] as SubmissionListRow[]),
   ]);
 
@@ -562,7 +561,7 @@ export function GlobalSearchProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [documents, setDocuments] = useState<SearchDocument[]>([]);
@@ -610,7 +609,7 @@ export function GlobalSearchProvider({
 
   const runRefresh = useCallback(
     async (mode: RefreshMode) => {
-      if (!token || !user?.id) return;
+      if (!user || !user?.id) return;
 
       const generation = refreshGenerationRef.current + 1;
       refreshGenerationRef.current = generation;
@@ -620,7 +619,7 @@ export function GlobalSearchProvider({
       }
 
       try {
-        const snapshot = await loadImmediateSnapshot(token);
+        const snapshot = await loadImmediateSnapshot();
         if (refreshGenerationRef.current !== generation) return;
 
         startTransition(() => {
@@ -650,7 +649,7 @@ export function GlobalSearchProvider({
 
           const enrichedBatches = await Promise.all(
             batch.map((record) =>
-              enrichTaskRecord(token, record).catch(
+              enrichTaskRecord(record).catch(
                 () => [] as SearchDocument[],
               ),
             ),
@@ -682,7 +681,7 @@ export function GlobalSearchProvider({
         }
       }
     },
-    [token, user?.id],
+    [user, user?.id],
   );
 
   const refresh = useCallback(async () => {
@@ -690,7 +689,7 @@ export function GlobalSearchProvider({
   }, [runRefresh]);
 
   useEffect(() => {
-    if (!token || !user?.id) {
+    if (!user || !user?.id) {
       refreshGenerationRef.current += 1;
       setDocuments([]);
       setPhase("idle");
@@ -698,10 +697,10 @@ export function GlobalSearchProvider({
       cacheHydratedRef.current = false;
       return;
     }
-  }, [token, user?.id]);
+  }, [user, user?.id]);
 
   useEffect(() => {
-    if (!open || !token || !user?.id) return;
+    if (!open || !user || !user?.id) return;
 
     const cached = readSearchCache(user.id);
     const hasFreshCache =
@@ -719,7 +718,7 @@ export function GlobalSearchProvider({
     }
 
     void runRefresh(cached ? "lightweight" : "full");
-  }, [open, phase, runRefresh, token, user?.id]);
+  }, [open, phase, runRefresh, user, user?.id]);
 
   const value = useMemo<GlobalSearchContextValue>(
     () => ({

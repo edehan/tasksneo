@@ -54,7 +54,7 @@ import type { ClassSummary } from "@/lib/api";
 import { listClasses } from "@/lib/api";
 
 export function AppSidebar() {
-  const { token, user, logout } = useAuth();
+  const { user, logout } = useAuth();
   const t = useTranslations("appSidebar");
   const { theme, resolvedTheme, setTheme } = useTheme();
   const { locale, setLocale } = useAppLocale();
@@ -64,16 +64,16 @@ export function AppSidebar() {
   const [loading, setLoading] = useState(true);
 
   const loadClasses = useCallback(async () => {
-    if (!token) return;
+    if (!user) return;
     try {
-      const data = await listClasses(token);
+      const data = await listClasses();
       setClasses(data);
     } catch {
       // Silently fail — sidebar is non-critical
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [user]);
 
   useEffect(() => {
     void loadClasses();

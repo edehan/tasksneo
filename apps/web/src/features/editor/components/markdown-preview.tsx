@@ -11,7 +11,6 @@ interface MarkdownPreviewProps {
   content: string;
   className?: string;
   accentColor?: string;
-  authToken?: string;
 }
 
 // ─── Authenticated image loader ───────────────────────────────────────────
@@ -19,13 +18,11 @@ interface MarkdownPreviewProps {
 function AuthImage({
   src,
   alt,
-  token,
   failedLoadLabel,
   loadingLabel,
 }: {
   src: string;
   alt: string;
-  token: string;
   failedLoadLabel: string;
   loadingLabel: string;
 }) {
@@ -41,10 +38,10 @@ function AuthImage({
     }
     const fileKey = src.slice(apiBase.length);
 
-    getPresignedFileUrl(token, fileKey)
+    getPresignedFileUrl(fileKey)
       .then((url) => setImageUrl(url))
       .catch(() => setError(true));
-  }, [src, token]);
+  }, [src]);
 
   if (error) {
     return (
@@ -75,7 +72,6 @@ export function MarkdownPreview({
   content,
   className,
   accentColor,
-  authToken,
 }: MarkdownPreviewProps) {
   const t = useTranslations("markdownPreview");
   const accent = accentColor ?? "var(--class-accent)";
@@ -183,12 +179,11 @@ export function MarkdownPreview({
     img: ({ src, alt }) => {
       const srcStr = typeof src === "string" ? src : undefined;
       const apiBase = getFileUrl("");
-      if (authToken && srcStr?.startsWith(apiBase)) {
+      if (srcStr?.startsWith(apiBase)) {
         return (
           <AuthImage
             src={srcStr}
             alt={alt ?? ""}
-            token={authToken}
             failedLoadLabel={t("failedLoadImage")}
             loadingLabel={t("loadingImage")}
           />

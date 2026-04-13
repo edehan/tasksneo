@@ -26,7 +26,6 @@ type ProgressCallback = (completed: number, total: number) => void;
 // ─── Concurrent download pool ───────────────────────────────────────────────
 
 export async function downloadAllWithConcurrency(
-  token: string,
   tasks: DownloadTask[],
   concurrency: number,
   onProgress: ProgressCallback,
@@ -40,7 +39,7 @@ export async function downloadAllWithConcurrency(
       const idx = nextIndex++;
       const task = tasks[idx];
       try {
-        const blob = await downloadFileBlob(token, task.fileKey);
+        const blob = await downloadFileBlob(task.fileKey);
         results[idx] = { task, blob, error: null };
       } catch (err) {
         results[idx] = {

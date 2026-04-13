@@ -95,7 +95,7 @@ function groupTimezones(timezones: string[]): Record<string, string[]> {
 }
 
 export default function ProfilePage() {
-  const { token, user, updateUser } = useAuth();
+  const { user, updateUser } = useAuth();
   const t = useTranslations("settingsProfile");
   const avatarUrl = useAvatarUrl(user?.email, 160);
 
@@ -142,10 +142,10 @@ export default function ProfilePage() {
   }, [user]);
 
   async function handleSave() {
-    if (!token) return;
+    if (!user) return;
     setSaving(true);
     try {
-      const updated = await updateProfile(token, {
+      const updated = await updateProfile({
         nickname: nickname.trim() || null,
         schoolId,
         studentId: schoolId ? studentId.trim() || null : null,
@@ -221,7 +221,7 @@ export default function ProfilePage() {
             disabled
             className="opacity-60"
           />
-          <ChangeEmailDialog token={token} />
+          <ChangeEmailDialog />
         </div>
       </div>
 
@@ -308,7 +308,7 @@ export default function ProfilePage() {
   );
 }
 
-function ChangeEmailDialog({ token }: { token: string | null }) {
+function ChangeEmailDialog() {
   const t = useTranslations("settingsProfile.changeEmail");
   const [open, setOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
@@ -328,11 +328,11 @@ function ChangeEmailDialog({ token }: { token: string | null }) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!token || !newEmail) return;
+    if (!newEmail) return;
 
     setSubmitting(true);
     try {
-      await requestEmailChange(token, newEmail, captchaToken);
+      await requestEmailChange(newEmail, captchaToken);
       setSent(true);
     } catch (err) {
       const message =

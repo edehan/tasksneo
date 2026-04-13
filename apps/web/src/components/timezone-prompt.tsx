@@ -90,7 +90,7 @@ function formatOffset(tz: string): string {
 }
 
 export function TimezonePrompt() {
-  const { token, user, updateUser } = useAuth();
+  const { user, updateUser } = useAuth();
   const t = useTranslations("timezonePrompt");
   const [visible, setVisible] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -119,10 +119,10 @@ export function TimezonePrompt() {
   }, [user]);
 
   const handleUpdate = useCallback(async () => {
-    if (!token || !browserTz) return;
+    if (!user || !browserTz) return;
     setUpdating(true);
     try {
-      const updated = await updateProfile(token, { timezone: browserTz });
+      const updated = await updateProfile({ timezone: browserTz });
       updateUser(updated);
       setVisible(false);
       localStorage.removeItem(DISMISS_KEY);
@@ -133,7 +133,7 @@ export function TimezonePrompt() {
     } finally {
       setUpdating(false);
     }
-  }, [token, browserTz, updateUser, t]);
+  }, [user, browserTz, updateUser, t]);
 
   const handleDismiss = useCallback(() => {
     if (user && browserTz) {

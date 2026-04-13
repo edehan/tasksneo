@@ -239,7 +239,7 @@ export function BatchDownloadDialog({
   accentColor,
 }: BatchDownloadDialogProps) {
   const t = useTranslations("batchDownloadDialog");
-  const { token } = useAuth();
+  const { user } = useAuth();
 
   // Filter to eligible rows: submitted with attachments or content
   const eligibleRows = useMemo(
@@ -336,7 +336,7 @@ export function BatchDownloadDialog({
   // ── Download handler ──────────────────────────────────────────────────
 
   const handleDownload = useCallback(async () => {
-    if (!token || selected.size === 0) return;
+    if (!user || selected.size === 0) return;
 
     setDownloading(true);
     setPhase("downloading");
@@ -375,7 +375,6 @@ export function BatchDownloadDialog({
       if (downloadTasks.length > 0) {
         setProgress({ completed: 0, total: downloadTasks.length });
         results = await downloadAllWithConcurrency(
-          token,
           downloadTasks,
           5,
           (completed, total) => setProgress({ completed, total }),
@@ -432,7 +431,7 @@ export function BatchDownloadDialog({
       setProgress({ completed: 0, total: 0 });
     }
   }, [
-    token,
+    user,
     selected,
     eligibleRows,
     folderOrder,

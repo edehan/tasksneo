@@ -70,7 +70,7 @@ export default function ResetPasswordPage() {
     setSubmitting(true);
     try {
       const result = await resetPassword(token, password);
-      setAuth("", result.user);
+      setAuth(result.user);
       toast.success(t("passwordResetSuccess"));
       router.replace("/dashboard");
       router.refresh();

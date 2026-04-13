@@ -14,16 +14,16 @@ const DEFAULT_ACCENT = "#7B6CB0";
  */
 export function useClassAccent(): string {
   const params = useParams();
-  const { token } = useAuth();
+  const { user } = useAuth();
   const [accent, setAccent] = useState(DEFAULT_ACCENT);
 
   const classId = typeof params?.classId === "string" ? params.classId : null;
 
   const updateAccent = useCallback(
     async (id: string) => {
-      if (!token) return;
+      if (!user) return;
       try {
-        const cls = await getClass(token, id);
+        const cls = await getClass(id);
         const color = cls.color || DEFAULT_ACCENT;
         setAccent(color);
         document.documentElement.style.setProperty("--class-accent", color);
@@ -31,15 +31,15 @@ export function useClassAccent(): string {
         // fallback to default
       }
     },
-    [token],
+    [user],
   );
 
   useEffect(() => {
     if (classId) {
       void updateAccent(classId);
-    } else if (token) {
+    } else if (user) {
       // Use personal space color as fallback on non-class pages (e.g. /dashboard)
-      void listClasses(token)
+      void listClasses()
         .then((classes) => {
           const personal = classes.find((c) => c.isPersonal);
           const color = personal?.color || DEFAULT_ACCENT;
@@ -60,7 +60,7 @@ export function useClassAccent(): string {
         DEFAULT_ACCENT,
       );
     }
-  }, [classId, token, updateAccent]);
+  }, [classId, user, updateAccent]);
 
   return accent;
 }

@@ -41,7 +41,7 @@ export function ClassPage() {
   const t = useTranslations("classPage");
   const params = useParams();
   const router = useRouter();
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const classId = params?.classId as string;
 
   const [cls, setCls] = useState<ClassSummary | null>(null);
@@ -60,12 +60,12 @@ export function ClassPage() {
   });
 
   const loadData = useCallback(async () => {
-    if (!token || !classId) return;
+    if (!user || !classId) return;
     try {
       const [classData, classTasks, members] = await Promise.all([
-        getClass(token, classId),
-        listClassTasks(token, classId),
-        listMembers(token, classId),
+        getClass(classId),
+        listClassTasks(classId),
+        listMembers(classId),
       ]);
       setCls(classData);
       setTasks(
@@ -86,7 +86,7 @@ export function ClassPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, classId, user?.id]);
+  }, [user, classId, user?.id]);
 
   useEffect(() => {
     void loadData();

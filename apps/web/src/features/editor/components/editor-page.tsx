@@ -93,7 +93,7 @@ export function EditorPage({
   initialDueAt,
 }: EditorPageProps) {
   const t = useTranslations("editorPage");
-  const { token } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   const [content, setContent] = useState(initialContent ?? "");
@@ -187,7 +187,7 @@ export function EditorPage({
   // ─── File upload ──────────────────────────────────────────────────────────
 
   async function uploadFiles(files: File[]) {
-    if (!token || files.length === 0) return;
+    if (!user || files.length === 0) return;
 
     setUploading(true);
     try {
@@ -195,7 +195,7 @@ export function EditorPage({
         mode === "publish" ? uploadTaskAttachment : uploadSubmissionAttachment;
 
       const results = await Promise.all(
-        files.map((f) => uploadFn(token, taskId, f)),
+        files.map((f) => uploadFn(taskId, f)),
       );
 
       setAttachments((prev) => [...prev, ...results]);
@@ -233,9 +233,9 @@ export function EditorPage({
   }
 
   async function handleRemoveAttachment(att: AttachmentMeta) {
-    if (!token) return;
+    if (!user) return;
     try {
-      await deleteAttachment(token, att.id);
+      await deleteAttachment(att.id);
       setAttachments((prev) => prev.filter((a) => a.id !== att.id));
       toast.success(t("toast.attachmentRemoved"));
     } catch (err) {
@@ -248,11 +248,9 @@ export function EditorPage({
   }
 
   async function handleToggleAttachmentVisibility(att: AttachmentMeta) {
-    if (!token || mode !== "publish") return;
+    if (!user || mode !== "publish") return;
     try {
-      const updated = await updateAttachmentVisibility(
-        token,
-        att.id,
+      const updated = await updateAttachmentVisibility(att.id,
         !att.isVisible,
       );
       setAttachments((prev) =>
@@ -306,16 +304,16 @@ export function EditorPage({
   async function handleImageFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
-    if (!file || !token) return;
+    if (!file || !user) return;
 
     setUploading(true);
     try {
       const att =
         mode === "publish"
-          ? await uploadTaskAttachment(token, taskId, file, {
+          ? await uploadTaskAttachment(taskId, file, {
               isVisible: false,
             })
-          : await uploadSubmissionAttachment(token, taskId, file);
+          : await uploadSubmissionAttachment(taskId, file);
       setAttachments((prev) => [...prev, att]);
 
       insertImageMarkdown({
@@ -353,16 +351,14 @@ export function EditorPage({
   }, [rewriteTranscript]);
 
   async function handleRewriteSubmit() {
-    if (!token || !rewriteInstruction.trim() || revising) return;
+    if (!user || !rewriteInstruction.trim() || revising) return;
 
     setRevising(true);
     try {
       // Save current content for undo
       setContentHistory((prev) => [...prev, content]);
 
-      const result = await reviseTaskContent(
-        token,
-        taskId,
+      const result = await reviseTaskContent(taskId,
         content,
         rewriteInstruction.trim(),
       );
@@ -415,13 +411,13 @@ export function EditorPage({
   }
 
   async function handleExtendDeadline() {
-    if (!token || !dueAt) return;
+    if (!user || !dueAt) return;
     const newDueAt = getExtendedDate();
     if (!newDueAt || newDueAt <= dueAt) return;
 
     setExtending(true);
     try {
-      await updateTask(token, taskId, { dueAt: newDueAt.toISOString() });
+      await updateTask(taskId, { dueAt: newDueAt.toISOString() });
       setDueAt(newDueAt);
       setShowExtendDialog(false);
       toast.success(t("toast.deadlineExtended"));
@@ -446,24 +442,24 @@ export function EditorPage({
   }
 
   async function doSubmitOrPublish() {
-    if (!token) return;
+    if (!user) return;
 
     setSubmitting(true);
     try {
       if (mode === "publish") {
         if (isAlreadyPublished) {
-          await updateTask(token, taskId, {
+          await updateTask(taskId, {
             description: content || null,
           });
           toast.success(t("toast.changesSaved"));
         } else {
-          await publishTaskDraft(token, taskId, {
+          await publishTaskDraft(taskId, {
             description: content || null,
           });
           toast.success(t("toast.taskPublished"));
         }
       } else {
-        await upsertMySubmission(token, taskId, content || null);
+        await upsertMySubmission(taskId, content || null);
         toast.success(t("toast.submissionSaved"));
       }
       router.back();
@@ -674,7 +670,6 @@ export function EditorPage({
               <MarkdownPreview
                 content={content}
                 accentColor={accentColor}
-                authToken={token ?? undefined}
               />
             </div>
           ) : (
@@ -930,8 +925,8 @@ export function EditorPage({
                 onClick={() => {
                   if (rewriteStreaming || rewriteConnecting) {
                     rewriteStopStreaming();
-                  } else if (token) {
-                    void rewriteStartStreaming(token);
+                  } else if (user) {
+                    void rewriteStartStreaming();
                   }
                 }}
                 disabled={revising}

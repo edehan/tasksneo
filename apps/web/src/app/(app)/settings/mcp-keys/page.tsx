@@ -142,7 +142,7 @@ function GuideCard({
 }
 
 export default function McpKeysPage() {
-  const { token } = useAuth();
+  const { user } = useAuth();
   const t = useTranslations("settingsMcpKeys");
 
   const [keys, setKeys] = useState<McpKeyInfo[]>([]);
@@ -160,26 +160,26 @@ export default function McpKeysPage() {
   const [revoking, setRevoking] = useState(false);
 
   const loadKeys = useCallback(async () => {
-    if (!token) return;
+    if (!user) return;
     try {
-      const result = await listMcpKeys(token);
+      const result = await listMcpKeys();
       setKeys(result);
     } catch {
       toast.error(t("failedLoad"));
     } finally {
       setLoading(false);
     }
-  }, [token, t]);
+  }, [user, t]);
 
   useEffect(() => {
     void loadKeys();
   }, [loadKeys]);
 
   async function handleCreate() {
-    if (!token || !keyName.trim()) return;
+    if (!user || !keyName.trim()) return;
     setCreating(true);
     try {
-      const result = await createMcpKey(token, keyName.trim());
+      const result = await createMcpKey(keyName.trim());
       setCreatedKey(result);
       setKeys((prev) => [result, ...prev]);
       setKeyName("");
@@ -192,10 +192,10 @@ export default function McpKeysPage() {
   }
 
   async function handleRevoke() {
-    if (!token || !revokeTarget) return;
+    if (!user || !revokeTarget) return;
     setRevoking(true);
     try {
-      await revokeMcpKey(token, revokeTarget.id);
+      await revokeMcpKey(revokeTarget.id);
       setKeys((prev) =>
         prev.map((k) =>
           k.id === revokeTarget.id

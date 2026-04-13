@@ -39,7 +39,7 @@ function deriveDisplayStatus(
 
 export function DashboardPage() {
   const t = useTranslations("dashboardPage");
-  const { token } = useAuth();
+  const { user } = useAuth();
   const [classes, setClasses] = useState<ClassSummary[]>([]);
   const [tasks, setTasks] = useState<TaskWithClass[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,11 +54,11 @@ export function DashboardPage() {
   });
 
   const loadData = useCallback(async () => {
-    if (!token) return;
+    if (!user) return;
     try {
       const [classList, myTasks] = await Promise.all([
-        listClasses(token),
-        listMyTasks(token),
+        listClasses(),
+        listMyTasks(),
       ]);
       setClasses(classList);
       setTasks(
@@ -72,7 +72,7 @@ export function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [user]);
 
   useEffect(() => {
     void loadData();

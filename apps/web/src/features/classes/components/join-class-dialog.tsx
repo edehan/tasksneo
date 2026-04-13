@@ -25,7 +25,7 @@ interface JoinClassDialogProps {
 }
 
 export function JoinClassDialog({ trigger, onJoined }: JoinClassDialogProps) {
-  const { token } = useAuth();
+  const { user } = useAuth();
   const t = useTranslations("joinClassDialog");
   const [open, setOpen] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
@@ -34,13 +34,13 @@ export function JoinClassDialog({ trigger, onJoined }: JoinClassDialogProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!token || !inviteCode.trim()) return;
+    if (!user || !inviteCode.trim()) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const cls = await joinClass(token, inviteCode.trim());
+      const cls = await joinClass(inviteCode.trim());
       toast.success(t("joinedToast", { name: cls.name }));
       setOpen(false);
       setInviteCode("");

@@ -128,7 +128,7 @@ function CompleteRegistrationInner() {
         studentId: schoolId ? studentId : undefined,
         timezone: detectedTimezone,
       });
-      setAuth("", res.user);
+      setAuth(res.user);
       router.replace(next ?? "/dashboard");
       router.refresh();
     } catch (err) {
