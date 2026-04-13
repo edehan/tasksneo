@@ -336,9 +336,7 @@ export function PostTaskDialog({
     try {
       const taskId = await ensureDraft();
 
-      const result = await parseTaskDraft(taskId,
-        rawText.trim() || undefined,
-      );
+      const result = await parseTaskDraft(taskId, rawText.trim() || undefined);
 
       if (result.title) setTitle(result.title);
       if (result.allowLateSubmission !== null) {

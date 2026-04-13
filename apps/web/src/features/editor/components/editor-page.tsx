@@ -194,9 +194,7 @@ export function EditorPage({
       const uploadFn =
         mode === "publish" ? uploadTaskAttachment : uploadSubmissionAttachment;
 
-      const results = await Promise.all(
-        files.map((f) => uploadFn(taskId, f)),
-      );
+      const results = await Promise.all(files.map((f) => uploadFn(taskId, f)));
 
       setAttachments((prev) => [...prev, ...results]);
       toast.success(t("toast.uploadedFiles", { count: results.length }));
@@ -250,9 +248,7 @@ export function EditorPage({
   async function handleToggleAttachmentVisibility(att: AttachmentMeta) {
     if (!user || mode !== "publish") return;
     try {
-      const updated = await updateAttachmentVisibility(att.id,
-        !att.isVisible,
-      );
+      const updated = await updateAttachmentVisibility(att.id, !att.isVisible);
       setAttachments((prev) =>
         prev.map((item) => (item.id === updated.id ? updated : item)),
       );
@@ -358,7 +354,8 @@ export function EditorPage({
       // Save current content for undo
       setContentHistory((prev) => [...prev, content]);
 
-      const result = await reviseTaskContent(taskId,
+      const result = await reviseTaskContent(
+        taskId,
         content,
         rewriteInstruction.trim(),
       );
@@ -667,10 +664,7 @@ export function EditorPage({
           {/* Content */}
           {preview ? (
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 md:px-8 md:py-7">
-              <MarkdownPreview
-                content={content}
-                accentColor={accentColor}
-              />
+              <MarkdownPreview content={content} accentColor={accentColor} />
             </div>
           ) : (
             <textarea

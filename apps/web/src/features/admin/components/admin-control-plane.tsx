@@ -325,9 +325,7 @@ export function AdminControlPlane() {
         listAdminUsers(),
         listAdminSchools(),
         getAdminStorageStatus().catch(() => null),
-        listAdminAnnouncements().catch(
-          () => [] as AdminAnnouncement[],
-        ),
+        listAdminAnnouncements().catch(() => [] as AdminAnnouncement[]),
         getAdminMetrics().catch(() => null),
       ]);
 

@@ -78,11 +78,7 @@ export function CommentSection({ taskId, accentColor }: CommentSectionProps) {
 
     setSending(true);
     try {
-      const comment = await createTaskComment(
-        taskId,
-        trimmed,
-        replyTo?.id,
-      );
+      const comment = await createTaskComment(taskId, trimmed, replyTo?.id);
       setComments((prev) => [...prev, comment]);
       setContent("");
       setReplyTo(null);

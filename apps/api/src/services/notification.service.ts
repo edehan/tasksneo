@@ -6,7 +6,6 @@ import {
 } from "../lib/queue.js";
 import { getConfigValue } from "./system-config.service.js";
 
-
 interface TaskNotificationPayload {
 	userId: string;
 	taskId: string;
@@ -115,7 +114,6 @@ async function batchCreateAndEnqueueJobs(rows: JobRow[]): Promise<void> {
 		),
 	);
 }
-
 
 export async function enqueueTaskPublishedNotifications(params: {
 	taskId: string;

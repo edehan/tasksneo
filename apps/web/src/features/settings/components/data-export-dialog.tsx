@@ -93,14 +93,11 @@ export function DataExportDialog({
         gatheredRef.current = data;
       }
 
-      const result = await exportFromGatheredData(
-        data,
-        (p: ExportProgress) => {
-          setPhase(p.phase);
-          setProgress({ completed: p.completed, total: p.total });
-          if (p.detail) setDetail(p.detail);
-        },
-      );
+      const result = await exportFromGatheredData(data, (p: ExportProgress) => {
+        setPhase(p.phase);
+        setProgress({ completed: p.completed, total: p.total });
+        if (p.detail) setDetail(p.detail);
+      });
 
       setPhase("done");
 

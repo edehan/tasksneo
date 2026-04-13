@@ -64,152 +64,149 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
     }
   }, []);
 
-  const startStreaming = useCallback(
-    async () => {
-      if (isStreaming || isConnecting) return;
+  const startStreaming = useCallback(async () => {
+    if (isStreaming || isConnecting) return;
 
-      const attemptId = startAttemptRef.current + 1;
-      startAttemptRef.current = attemptId;
-      setIsConnecting(true);
-      setPartialText("");
+    const attemptId = startAttemptRef.current + 1;
+    startAttemptRef.current = attemptId;
+    setIsConnecting(true);
+    setPartialText("");
 
-      try {
-        // Get microphone access first so we know the real browser sample rate.
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
-        if (attemptId !== startAttemptRef.current) {
-          for (const track of stream.getTracks()) {
-            track.stop();
-          }
-          return;
+    try {
+      // Get microphone access first so we know the real browser sample rate.
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+      if (attemptId !== startAttemptRef.current) {
+        for (const track of stream.getTracks()) {
+          track.stop();
         }
-        streamRef.current = stream;
+        return;
+      }
+      streamRef.current = stream;
 
-        const audioContext = new AudioContext();
-        if (attemptId !== startAttemptRef.current) {
-          void audioContext.close();
-          return;
-        }
-        audioContextRef.current = audioContext;
-        if (audioContext.state === "suspended") {
-          await audioContext.resume();
-          if (attemptId !== startAttemptRef.current) return;
-        }
-        const sampleRate = Math.round(audioContext.sampleRate);
-
-        // Get temporary token and speech model from backend
-        const { token: sttToken, speechModel } = await getSTTToken();
+      const audioContext = new AudioContext();
+      if (attemptId !== startAttemptRef.current) {
+        void audioContext.close();
+        return;
+      }
+      audioContextRef.current = audioContext;
+      if (audioContext.state === "suspended") {
+        await audioContext.resume();
         if (attemptId !== startAttemptRef.current) return;
+      }
+      const sampleRate = Math.round(audioContext.sampleRate);
 
-        const params = new URLSearchParams({
-          sample_rate: String(sampleRate),
-          speech_model: speechModel,
-          token: sttToken,
-        });
+      // Get temporary token and speech model from backend
+      const { token: sttToken, speechModel } = await getSTTToken();
+      if (attemptId !== startAttemptRef.current) return;
 
-        // Open WebSocket to AssemblyAI streaming API
-        const ws = new WebSocket(
-          `wss://streaming.assemblyai.com/v3/ws?${params.toString()}`,
-        );
-        if (attemptId !== startAttemptRef.current) {
-          ws.close();
-          return;
-        }
-        wsRef.current = ws;
+      const params = new URLSearchParams({
+        sample_rate: String(sampleRate),
+        speech_model: speechModel,
+        token: sttToken,
+      });
 
-        ws.onmessage = (event) => {
-          try {
-            const msg = JSON.parse(event.data as string) as {
-              type: string;
-              transcript?: string;
-              end_of_turn?: boolean;
-              error?: string;
-            };
+      // Open WebSocket to AssemblyAI streaming API
+      const ws = new WebSocket(
+        `wss://streaming.assemblyai.com/v3/ws?${params.toString()}`,
+      );
+      if (attemptId !== startAttemptRef.current) {
+        ws.close();
+        return;
+      }
+      wsRef.current = ws;
 
-            if (msg.type === "Turn") {
-              const text = msg.transcript ?? "";
-              if (msg.end_of_turn) {
-                if (text) {
-                  setTranscript((prev) => (prev ? `${prev} ${text}` : text));
-                }
-                setPartialText("");
-              } else {
-                setPartialText(text);
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data as string) as {
+            type: string;
+            transcript?: string;
+            end_of_turn?: boolean;
+            error?: string;
+          };
+
+          if (msg.type === "Turn") {
+            const text = msg.transcript ?? "";
+            if (msg.end_of_turn) {
+              if (text) {
+                setTranscript((prev) => (prev ? `${prev} ${text}` : text));
               }
-              return;
+              setPartialText("");
+            } else {
+              setPartialText(text);
             }
-
-            if (msg.type === "Error" && msg.error) {
-              console.error("[STT] AssemblyAI stream error:", msg.error);
-            }
-          } catch (err) {
-            console.error("[STT] Failed to parse WebSocket message:", err);
+            return;
           }
-        };
 
-        ws.onerror = (event) => {
-          console.error("[STT] WebSocket error event:", event);
-          cleanup();
-          setIsConnecting(false);
-          setIsStreaming(false);
-        };
-
-        ws.onclose = (event) => {
-          if (event.code !== 1000) {
-            console.error(
-              `[STT] WebSocket closed unexpectedly: code=${event.code}, reason=${event.reason}`,
-            );
+          if (msg.type === "Error" && msg.error) {
+            console.error("[STT] AssemblyAI stream error:", msg.error);
           }
-          cleanup();
-          setIsConnecting(false);
-          setIsStreaming(false);
-        };
+        } catch (err) {
+          console.error("[STT] Failed to parse WebSocket message:", err);
+        }
+      };
 
-        // Wait for WebSocket to open
-        await new Promise<void>((resolve, reject) => {
-          const handleOpen = () => {
-            ws.removeEventListener("error", handleOpenError);
-            resolve();
-          };
-          const handleOpenError = () => {
-            ws.removeEventListener("open", handleOpen);
-            reject(new Error("WebSocket connection failed"));
-          };
-
-          ws.addEventListener("open", handleOpen, { once: true });
-          ws.addEventListener("error", handleOpenError, { once: true });
-        });
-        if (attemptId !== startAttemptRef.current) return;
-
-        const source = audioContext.createMediaStreamSource(stream);
-        const processor = audioContext.createScriptProcessor(4096, 1, 1);
-        processorRef.current = processor;
-
-        processor.onaudioprocess = (e) => {
-          if (ws.readyState !== WebSocket.OPEN) return;
-          const inputData = e.inputBuffer.getChannelData(0);
-          const pcm16 = floatTo16BitPCM(inputData);
-          ws.send(pcm16);
-        };
-
-        source.connect(processor);
-        processor.connect(audioContext.destination);
-
-        setIsStreaming(true);
-      } catch (err) {
-        console.error("[STT] Failed to start streaming:", err);
+      ws.onerror = (event) => {
+        console.error("[STT] WebSocket error event:", event);
         cleanup();
         setIsConnecting(false);
         setIsStreaming(false);
-      } finally {
-        if (attemptId === startAttemptRef.current) {
-          setIsConnecting(false);
+      };
+
+      ws.onclose = (event) => {
+        if (event.code !== 1000) {
+          console.error(
+            `[STT] WebSocket closed unexpectedly: code=${event.code}, reason=${event.reason}`,
+          );
         }
+        cleanup();
+        setIsConnecting(false);
+        setIsStreaming(false);
+      };
+
+      // Wait for WebSocket to open
+      await new Promise<void>((resolve, reject) => {
+        const handleOpen = () => {
+          ws.removeEventListener("error", handleOpenError);
+          resolve();
+        };
+        const handleOpenError = () => {
+          ws.removeEventListener("open", handleOpen);
+          reject(new Error("WebSocket connection failed"));
+        };
+
+        ws.addEventListener("open", handleOpen, { once: true });
+        ws.addEventListener("error", handleOpenError, { once: true });
+      });
+      if (attemptId !== startAttemptRef.current) return;
+
+      const source = audioContext.createMediaStreamSource(stream);
+      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      processorRef.current = processor;
+
+      processor.onaudioprocess = (e) => {
+        if (ws.readyState !== WebSocket.OPEN) return;
+        const inputData = e.inputBuffer.getChannelData(0);
+        const pcm16 = floatTo16BitPCM(inputData);
+        ws.send(pcm16);
+      };
+
+      source.connect(processor);
+      processor.connect(audioContext.destination);
+
+      setIsStreaming(true);
+    } catch (err) {
+      console.error("[STT] Failed to start streaming:", err);
+      cleanup();
+      setIsConnecting(false);
+      setIsStreaming(false);
+    } finally {
+      if (attemptId === startAttemptRef.current) {
+        setIsConnecting(false);
       }
-    },
-    [isStreaming, isConnecting, cleanup],
-  );
+    }
+  }, [isStreaming, isConnecting, cleanup]);
 
   const stopStreaming = useCallback(() => {
     startAttemptRef.current += 1;
