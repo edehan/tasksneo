@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
+import Script from "next/script";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 
@@ -27,6 +28,20 @@ export const metadata: Metadata = {
   },
 };
 
+function normalizeInstrumentationSnippet(value: string | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const scriptWrapped = trimmed.match(/^<script[^>]*>([\s\S]*)<\/script>$/i);
+  if (scriptWrapped) {
+    const inner = scriptWrapped[1]?.trim();
+    return inner || null;
+  }
+
+  return trimmed;
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -37,13 +52,19 @@ export default async function RootLayout({
   const user = await getServerUser();
   const cookieStore = await cookies();
   const hasSessionCookie = Boolean(cookieStore.get("tfses_session")?.value);
+  const instrumentationSnippet = normalizeInstrumentationSnippet(
+    process.env.INSTRUMENTATION_SNIPPET,
+  );
 
   return (
     <html lang={toHtmlLang(locale)} suppressHydrationWarning>
-      <head>
-        <script src="/register-sw.js" />
-      </head>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased text-sm leading-relaxed">
+        <Script src="/register-sw.js" strategy="afterInteractive" />
+        {instrumentationSnippet && (
+          <Script id="instrumentation-snippet" strategy="afterInteractive">
+            {instrumentationSnippet}
+          </Script>
+        )}
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>
             <LocaleProvider>

@@ -62,6 +62,7 @@ export function AppSidebar() {
   const router = useRouter();
   const [classes, setClasses] = useState<ClassSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [themeMounted, setThemeMounted] = useState(false);
 
   const loadClasses = useCallback(async () => {
     if (!user) return;
@@ -79,6 +80,10 @@ export function AppSidebar() {
     void loadClasses();
   }, [loadClasses]);
 
+  useEffect(() => {
+    setThemeMounted(true);
+  }, []);
+
   const personalClass = classes.find((c) => c.isPersonal);
   const managedClasses = classes.filter(
     (c) => !c.isPersonal && (c.myRole === "OWNER" || c.myRole === "ADMIN"),
@@ -90,7 +95,8 @@ export function AppSidebar() {
   const displayName = user?.nickname || user?.email || t("user");
   const initials = displayName.slice(0, 2).toUpperCase();
   const avatarUrl = useAvatarUrl(user?.email, 64);
-  const effectiveTheme = resolvedTheme ?? "light";
+  const currentTheme = themeMounted ? (theme ?? "system") : "system";
+  const effectiveTheme = themeMounted ? (resolvedTheme ?? "light") : "light";
 
   return (
     <Sidebar>
@@ -138,9 +144,9 @@ export function AppSidebar() {
                   </DropdownMenuItem>
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
-                      {theme === "dark" ? (
+                      {currentTheme === "dark" ? (
                         <Moon className="mr-2 h-4 w-4" />
-                      ) : theme === "light" ? (
+                      ) : currentTheme === "light" ? (
                         <Sun className="mr-2 h-4 w-4" />
                       ) : (
                         <Monitor className="mr-2 h-4 w-4" />
@@ -152,7 +158,7 @@ export function AppSidebar() {
                         <DropdownMenuItem onClick={() => setTheme("light")}>
                           <Sun className="mr-2 h-4 w-4" />
                           {t("light")}
-                          {theme === "light" && (
+                          {currentTheme === "light" && (
                             <span className="ml-auto text-xs text-muted-foreground">
                               &#10003;
                             </span>
@@ -161,7 +167,7 @@ export function AppSidebar() {
                         <DropdownMenuItem onClick={() => setTheme("dark")}>
                           <Moon className="mr-2 h-4 w-4" />
                           {t("dark")}
-                          {theme === "dark" && (
+                          {currentTheme === "dark" && (
                             <span className="ml-auto text-xs text-muted-foreground">
                               &#10003;
                             </span>
@@ -170,7 +176,7 @@ export function AppSidebar() {
                         <DropdownMenuItem onClick={() => setTheme("system")}>
                           <Monitor className="mr-2 h-4 w-4" />
                           {t("system")}
-                          {theme === "system" && (
+                          {currentTheme === "system" && (
                             <span className="ml-auto text-xs text-muted-foreground">
                               &#10003;
                             </span>
