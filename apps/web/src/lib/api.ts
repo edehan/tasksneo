@@ -56,9 +56,10 @@ export interface UserProfile {
 }
 
 export interface AuthResponse {
-  token: string;
   user: UserProfile;
 }
+
+export const COOKIE_AUTH_PLACEHOLDER = "__taskflow_cookie_session__";
 
 export interface School {
   id: string;
@@ -304,13 +305,14 @@ export async function apiRequest<T>(
     headers.set("Content-Type", "application/json");
   }
 
-  if (token) {
+  if (token && token !== COOKIE_AUTH_PLACEHOLDER) {
     headers.set("Authorization", `Bearer ${token}`);
   }
 
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
     ...init,
     headers,
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -329,7 +331,7 @@ export async function apiRequest<T>(
       // Keep fallback message when response body is not JSON.
     }
 
-    if (token && (response.status === 401 || AUTH_ERROR_CODES.has(errorCode))) {
+    if (response.status === 401 || AUTH_ERROR_CODES.has(errorCode)) {
       emitAuthExpired();
     }
 
@@ -360,7 +362,7 @@ export async function login(
   });
 }
 
-export async function logoutApi(token: string): Promise<void> {
+export async function logoutApi(token?: string | null): Promise<void> {
   return apiRequest<void>("/auth/logout", { method: "POST" }, token);
 }
 
@@ -413,11 +415,14 @@ export async function requestPasswordReset(
 export async function resetPassword(
   token: string,
   password: string,
-): Promise<{ message: string }> {
-  return apiRequest<{ message: string }>("/auth/reset-password", {
-    method: "POST",
-    body: JSON.stringify({ token, password }),
-  });
+): Promise<{ message: string; user: UserProfile }> {
+  return apiRequest<{ message: string; user: UserProfile }>(
+    "/auth/reset-password",
+    {
+      method: "POST",
+      body: JSON.stringify({ token, password }),
+    },
+  );
 }
 
 export async function requestEmailChange(
@@ -1102,10 +1107,12 @@ export async function exportSubmissionsCsv(
   taskId: string,
 ): Promise<string> {
   const headers = new Headers();
-  headers.set("Authorization", `Bearer ${token}`);
+  if (token !== COOKIE_AUTH_PLACEHOLDER) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
   const response = await fetch(
     `${getApiBaseUrl()}/tasks/${taskId}/submissions/export`,
-    { headers },
+    { headers, credentials: "include" },
   );
   if (!response.ok) {
     throw new ApiError("Export failed", "EXPORT_ERROR", response.status);
@@ -1184,8 +1191,13 @@ export async function downloadFile(
 ): Promise<string> {
   // GET /files/:fileKey returns a 302 redirect to presigned URL.
   // We fetch with auth, follow the redirect, and return the final blob URL.
+  const headers = new Headers();
+  if (token !== COOKIE_AUTH_PLACEHOLDER) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
   const res = await fetch(`${getApiBaseUrl()}/files/${fileKey}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers,
+    credentials: "include",
   });
   if (!res.ok) {
     throw new ApiError(
@@ -1202,8 +1214,13 @@ export async function downloadFileBlob(
   token: string,
   fileKey: string,
 ): Promise<Blob> {
+  const headers = new Headers();
+  if (token !== COOKIE_AUTH_PLACEHOLDER) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
   const res = await fetch(`${getApiBaseUrl()}/files/${fileKey}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers,
+    credentials: "include",
   });
   if (!res.ok) {
     throw new ApiError(

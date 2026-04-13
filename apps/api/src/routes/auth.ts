@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { verifyCaptcha } from "../lib/captcha.js";
 import { requireAuthSession } from "../lib/context.js";
+import { clearSessionCookie, setSessionCookie } from "../lib/cookie.js";
 import { getClientIp } from "../lib/http.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { login, type SessionMetadata } from "../services/auth.service.js";
@@ -92,7 +93,8 @@ authRouter.post("/register/complete", async (c) => {
 		},
 		readSessionMeta(c, body.trustDevice),
 	);
-	return c.json(result, 201);
+	setSessionCookie(c, result.token, body.trustDevice === true);
+	return c.json({ user: result.user }, 201);
 });
 
 authRouter.post("/login", async (c) => {
@@ -102,12 +104,14 @@ authRouter.post("/login", async (c) => {
 		password: body.password,
 		sessionMeta: readSessionMeta(c, body.trustDevice),
 	});
-	return c.json(result, 200);
+	setSessionCookie(c, result.token, body.trustDevice === true);
+	return c.json({ user: result.user }, 200);
 });
 
 authRouter.post("/logout", authMiddleware, async (c) => {
 	const session = requireAuthSession(c);
 	await revokeSession(session.id);
+	clearSessionCookie(c);
 	return c.body(null, 204);
 });
 
@@ -124,7 +128,8 @@ authRouter.post("/forgot-password", async (c) => {
 authRouter.post("/reset-password", async (c) => {
 	const body = resetPasswordSchema.parse(await c.req.json());
 	const result = await resetPassword(body.token, body.password);
-	return c.json(result, 200);
+	setSessionCookie(c, result.token, false);
+	return c.json({ message: result.message, user: result.user }, 200);
 });
 
 authRouter.post("/mcp", async (c) => {

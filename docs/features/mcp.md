@@ -11,6 +11,8 @@ TaskFlow 提供 MCP key + MCP session 的双层认证模型，供 Claude Code、
 5. 校验通过后，后端创建 `kind = MCP` 的 session，并返回普通 Bearer token。
 6. 后续 MCP API 请求与浏览器端一样，统一走 `Authorization: Bearer <tfses_...>`。
 
+> MCP 仅支持 key 认证链路，不支持账号密码直登。
+
 ## 生命周期
 
 - MCP key 是长期凭证，可以被多次交换成新的 MCP session。

@@ -8,7 +8,7 @@ export class TaskFlowApiError extends Error {
 	}
 }
 
-interface AuthResult {
+interface McpExchangeResult {
 	token: string;
 	user: {
 		id: string;
@@ -22,35 +22,13 @@ export class TaskFlowClient {
 	private loginPromise: Promise<void> | null = null;
 	private readonly apiUrl: string;
 	private readonly mcpKey: string | null;
-	private readonly email: string | null;
-	private readonly password: string | null;
 
 	constructor(config: {
 		apiUrl: string;
 		mcpKey?: string;
-		email?: string;
-		password?: string;
-		token?: string;
 	}) {
 		this.apiUrl = config.apiUrl.replace(/\/+$/, "");
 		this.mcpKey = config.mcpKey ?? null;
-		this.email = config.email ?? null;
-		this.password = config.password ?? null;
-		this.token = config.token ?? null;
-	}
-
-	async loginWithCredentials(
-		email: string,
-		password: string,
-	): Promise<AuthResult> {
-		const result = await this.rawRequest<AuthResult>(
-			"POST",
-			"/auth/login",
-			{ email, password },
-			true,
-		);
-		this.token = result.token;
-		return result;
 	}
 
 	async request<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -59,7 +37,7 @@ export class TaskFlowClient {
 			return await this.rawRequest<T>(method, path, body);
 		} catch (err) {
 			if (err instanceof TaskFlowApiError && err.status === 401) {
-				// Token expired — try re-auth once
+				// Session expired — exchange MCP key once and retry.
 				this.token = null;
 				await this.ensureAuth();
 				return this.rawRequest<T>(method, path, body);
@@ -71,13 +49,12 @@ export class TaskFlowClient {
 	private async ensureAuth(): Promise<void> {
 		if (this.token) return;
 
-		// Prevent concurrent auto-logins
 		if (this.loginPromise) {
 			await this.loginPromise;
 			return;
 		}
 
-		this.loginPromise = this.performAutoLogin();
+		this.loginPromise = this.exchangeMcpKey();
 		try {
 			await this.loginPromise;
 		} finally {
@@ -85,28 +62,22 @@ export class TaskFlowClient {
 		}
 	}
 
-	private async performAutoLogin(): Promise<void> {
-		if (this.mcpKey) {
-			const result = await this.rawRequest<AuthResult>(
-				"POST",
-				"/auth/mcp",
-				{ key: this.mcpKey },
-				true,
+	private async exchangeMcpKey(): Promise<void> {
+		if (!this.mcpKey) {
+			throw new TaskFlowApiError(
+				401,
+				"NO_MCP_KEY",
+				"Not authenticated. Set TASKFLOW_MCP_KEY before starting the MCP server.",
 			);
-			this.token = result.token;
-			return;
 		}
 
-		if (this.email && this.password) {
-			await this.loginWithCredentials(this.email, this.password);
-			return;
-		}
-
-		throw new TaskFlowApiError(
-			401,
-			"NO_CREDENTIALS",
-			"Not authenticated. Set TASKFLOW_MCP_KEY or use the login tool.",
+		const result = await this.rawRequest<McpExchangeResult>(
+			"POST",
+			"/auth/mcp",
+			{ key: this.mcpKey },
+			true,
 		);
+		this.token = result.token;
 	}
 
 	private async rawRequest<T>(

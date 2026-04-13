@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 
@@ -7,6 +8,7 @@ import { LocaleProvider } from "@/components/locale-provider";
 import { RouteAwareToaster } from "@/components/route-aware-toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import { type AppLocale, toHtmlLang } from "@/i18n/locale";
+import { getServerUser } from "@/lib/server-api";
 
 import "./globals.css";
 
@@ -32,6 +34,9 @@ export default async function RootLayout({
 }>) {
   const locale = (await getLocale()) as AppLocale;
   const messages = await getMessages();
+  const user = await getServerUser();
+  const cookieStore = await cookies();
+  const hasSessionCookie = Boolean(cookieStore.get("tfses_session")?.value);
 
   return (
     <html lang={toHtmlLang(locale)} suppressHydrationWarning>
@@ -42,7 +47,10 @@ export default async function RootLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>
             <LocaleProvider>
-              <AuthProvider>
+              <AuthProvider
+                initialUser={user}
+                initialHasSessionCookie={hasSessionCookie}
+              >
                 {children}
                 <RouteAwareToaster />
               </AuthProvider>

@@ -12,12 +12,10 @@ import {
 import type { UserProfile } from "@/lib/api";
 import {
   login as apiLogin,
-  getMe,
+  COOKIE_AUTH_PLACEHOLDER,
   logoutApi,
   subscribeToAuthExpired,
 } from "@/lib/api";
-
-const TOKEN_KEY = "taskflow_token";
 
 interface AuthContextValue {
   token: string | null;
@@ -35,34 +33,28 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+interface AuthProviderProps {
+  initialUser: UserProfile | null;
+  initialHasSessionCookie?: boolean;
+  children: React.ReactNode;
+}
+
+export function AuthProvider({
+  initialUser,
+  initialHasSessionCookie = false,
+  children,
+}: AuthProviderProps) {
+  const [user, setUser] = useState<UserProfile | null>(initialUser);
+  const [token, setToken] = useState<string | null>(
+    initialUser || initialHasSessionCookie ? COOKIE_AUTH_PLACEHOLDER : null,
+  );
   const router = useRouter();
   const pathname = usePathname();
 
   const clearAuthState = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
     setToken(null);
     setUser(null);
   }, []);
-
-  useEffect(() => {
-    const stored = localStorage.getItem(TOKEN_KEY);
-    if (!stored) {
-      setLoading(false);
-      return;
-    }
-
-    setToken(stored);
-    getMe(stored)
-      .then((u) => setUser(u))
-      .catch(() => {
-        clearAuthState();
-      })
-      .finally(() => setLoading(false));
-  }, [clearAuthState]);
 
   useEffect(() => {
     return subscribeToAuthExpired(() => {
@@ -76,41 +68,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(
     async (email: string, password: string, trustDevice?: boolean) => {
       const res = await apiLogin(email, password, trustDevice);
-      localStorage.setItem(TOKEN_KEY, res.token);
-      setToken(res.token);
+      setToken(COOKIE_AUTH_PLACEHOLDER);
       setUser(res.user);
+      router.refresh();
     },
-    [],
+    [router],
   );
 
-  const setAuth = useCallback((newToken: string, newUser: UserProfile) => {
-    localStorage.setItem(TOKEN_KEY, newToken);
-    setToken(newToken);
+  const setAuth = useCallback((_: string, newUser: UserProfile) => {
+    setToken(COOKIE_AUTH_PLACEHOLDER);
     setUser(newUser);
   }, []);
 
   const logout = useCallback(async () => {
-    // Best-effort server-side revocation. If the request fails (network,
-    // already-expired token, etc.) we still clear local state so the user
-    // ends up logged out locally regardless.
-    const current = token;
-    if (current) {
-      try {
-        await logoutApi(current);
-      } catch {
-        // Ignore — the local clear below is the source of truth for the UI.
-      }
+    try {
+      await logoutApi(token);
+    } catch {
+      // Ignore best-effort revoke failures; clear local state regardless.
     }
     clearAuthState();
-  }, [clearAuthState, token]);
+    router.push("/login");
+    router.refresh();
+  }, [clearAuthState, router, token]);
 
   const updateUser = useCallback((u: UserProfile) => {
     setUser(u);
+    setToken(COOKIE_AUTH_PLACEHOLDER);
   }, []);
 
   const value = useMemo(
-    () => ({ token, user, loading, login, setAuth, logout, updateUser }),
-    [token, user, loading, login, setAuth, logout, updateUser],
+    () => ({
+      token,
+      user,
+      loading: false,
+      login,
+      setAuth,
+      logout,
+      updateUser,
+    }),
+    [token, user, login, setAuth, logout, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

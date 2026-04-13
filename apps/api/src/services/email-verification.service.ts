@@ -12,7 +12,10 @@ import {
 	type RegisterInput,
 	type SessionMetadata,
 } from "./auth.service.js";
-import { revokeAllBrowserSessions } from "./session.service.js";
+import {
+	createBrowserSession,
+	revokeAllBrowserSessions,
+} from "./session.service.js";
 import { getConfigValue } from "./system-config.service.js";
 
 const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -247,6 +250,7 @@ export async function resetPassword(token: string, newPassword: string) {
 
 	const user = await prisma.user.findUnique({
 		where: { id: row.userId },
+		include: { school: { select: { name: true } } },
 	});
 
 	if (!user) {
@@ -260,15 +264,23 @@ export async function resetPassword(token: string, newPassword: string) {
 		data: { passwordHash },
 	});
 
-	// Kill all existing browser sessions for this user — after a password
-	// reset, the user must prove they know the new password by logging in
-	// again. MCP sessions are left alone (they have their own revocation
-	// path via mcp_keys).
+	// Kill all existing browser sessions for this user, then create a fresh
+	// untrusted browser session to auto-login after successful reset.
 	await revokeAllBrowserSessions(row.userId);
+	const { token: sessionToken } = await createBrowserSession({
+		userId: row.userId,
+		isTrusted: false,
+		userAgent: null,
+		ipAddress: null,
+	});
 
 	await consumeToken(row.id, row.email, EmailTokenPurpose.PASSWORD_RESET);
 
-	return { message: "Password reset. Please log in with your new password." };
+	return {
+		message: "Password reset successfully.",
+		token: sessionToken,
+		user: toUserProfile(user),
+	};
 }
 
 // ── Email change flow ───────────────────────────────────────────────────────

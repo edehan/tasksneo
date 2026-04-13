@@ -2,7 +2,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { TaskFlowClient } from "./client.js";
-import { registerAuthTools } from "./tools/auth.js";
 import { registerClassTools } from "./tools/classes.js";
 import { registerFileTools } from "./tools/files.js";
 import { registerSubmissionTools } from "./tools/submissions.js";
@@ -20,9 +19,6 @@ if (!apiUrl) {
 const client = new TaskFlowClient({
 	apiUrl,
 	mcpKey: process.env.TASKFLOW_MCP_KEY,
-	email: process.env.TASKFLOW_EMAIL,
-	password: process.env.TASKFLOW_PASSWORD,
-	token: process.env.TASKFLOW_TOKEN,
 });
 
 const instructions = `TaskFlow is a class task management system for educators. Teachers create classes, publish tasks, collect submissions, and grade them.
@@ -52,7 +48,6 @@ const server = new McpServer(
 	},
 );
 
-registerAuthTools(server, client);
 registerClassTools(server, client);
 registerTaskTools(server, client);
 registerSubmissionTools(server, client);

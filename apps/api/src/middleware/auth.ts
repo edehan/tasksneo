@@ -1,5 +1,6 @@
 import type { MiddlewareHandler } from "hono";
 
+import { readSessionCookie } from "../lib/cookie.js";
 import { AppError } from "../lib/errors.js";
 import {
 	isSessionToken,
@@ -12,15 +13,12 @@ export const authMiddleware: MiddlewareHandler<{
 	Variables: AppVariables;
 }> = async (c, next) => {
 	const authHeader = c.req.header("authorization");
+	const token = authHeader?.startsWith("Bearer ")
+		? authHeader.slice("Bearer ".length).trim()
+		: readSessionCookie(c);
 
-	if (!authHeader?.startsWith("Bearer ")) {
-		throw new AppError(401, "UNAUTHORIZED", "Missing bearer token");
-	}
-
-	const token = authHeader.slice("Bearer ".length).trim();
-
-	if (!isSessionToken(token)) {
-		throw new AppError(401, "INVALID_TOKEN", "Invalid or expired token");
+	if (!token || !isSessionToken(token)) {
+		throw new AppError(401, "UNAUTHORIZED", "Missing or invalid auth token");
 	}
 
 	let session = await loadSessionByToken(token);

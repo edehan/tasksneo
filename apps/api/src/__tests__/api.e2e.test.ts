@@ -20,6 +20,15 @@ function authHeader(token: string) {
 	return { Authorization: `Bearer ${token}` };
 }
 
+function readSessionTokenFromSetCookie(res: Response): string {
+	const raw = res.headers.get("set-cookie") ?? "";
+	const match = raw.match(/tfses_session=([^;]+)/);
+	if (!match) {
+		throw new Error("Missing tfses_session Set-Cookie header");
+	}
+	return decodeURIComponent(match[1]);
+}
+
 describe("TaskFlow API e2e", () => {
 	beforeAll(async () => {
 		await resetDatabase();
@@ -50,6 +59,16 @@ describe("TaskFlow API e2e", () => {
 		}
 	});
 
+	it("accepts cookie auth without Authorization header", async () => {
+		const { token } = await createTestUser({ emailPrefix: "cookie-auth" });
+
+		const response = await app.request("/users/me", {
+			headers: { Cookie: `tfses_session=${token}` },
+		});
+
+		expect(response.status).toBe(200);
+	});
+
 	it("returns CORS headers for allowed frontend origins", async () => {
 		const response = await app.request("/health", {
 			method: "OPTIONS",
@@ -64,9 +83,33 @@ describe("TaskFlow API e2e", () => {
 		expect(response.headers.get("access-control-allow-origin")).toBe(
 			"http://localhost:35540",
 		);
+		expect(response.headers.get("access-control-allow-credentials")).toBe(
+			"true",
+		);
 		expect(response.headers.get("access-control-allow-headers")).toContain(
 			"Authorization",
 		);
+	});
+
+	it("rejects cookie-authenticated write requests from disallowed origins", async () => {
+		const { token } = await createTestUser({ emailPrefix: "csrf-origin" });
+		const response = await app.request("/users/me/notification-prefs", {
+			method: "POST",
+			headers: {
+				Origin: "https://evil.example",
+				Cookie: `tfses_session=${token}`,
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				channel: "EMAIL",
+				address: "csrf-origin@example.com",
+				isEnabled: true,
+			}),
+		});
+
+		expect(response.status).toBe(403);
+		const body = (await json(response)) as { code?: string };
+		expect(body.code).toBe("FORBIDDEN");
 	});
 
 	it("returns placeholder text for undecryptable secret config values", async () => {
@@ -987,7 +1030,7 @@ describe("Session lifecycle", () => {
 			body: JSON.stringify({ email, password: "Passw0rd!" }),
 		});
 		expect(secondLogin.response.status).toBe(200);
-		const secondToken = (secondLogin.body as { token: string }).token;
+		const secondToken = readSessionTokenFromSetCookie(secondLogin.response);
 		expect(secondToken).not.toBe(first.token);
 
 		const createKeyRes = await requestJson(app, "/users/me/mcp-keys", {
@@ -1035,7 +1078,7 @@ describe("Session lifecycle", () => {
 		expect(mcpAfter.status).toBe(200);
 	});
 
-	it("password reset kills every browser session and does not return a new token", async () => {
+	it("password reset kills old browser sessions and auto-signs in a new session", async () => {
 		const email = uniqueEmail("reset");
 		const { token } = await createTestUser({ email, password: "Passw0rd!" });
 
@@ -1077,9 +1120,10 @@ describe("Session lifecycle", () => {
 			}),
 		});
 		expect(resetRes.response.status).toBe(200);
-		// Response must not leak a new token — user is expected to log in again.
+		// Response should not leak a raw token in JSON.
 		expect(resetRes.body).not.toHaveProperty("token");
-		expect(resetRes.body).not.toHaveProperty("user");
+		expect(resetRes.body).toHaveProperty("user");
+		const resetSessionToken = readSessionTokenFromSetCookie(resetRes.response);
 
 		// Old session is dead.
 		const after = await app.request("/users/me", {
@@ -1087,12 +1131,11 @@ describe("Session lifecycle", () => {
 		});
 		expect(after.status).toBe(401);
 
-		// But the new password works.
-		const newLogin = await requestJson(app, "/auth/login", {
-			method: "POST",
-			body: JSON.stringify({ email, password: "Passw0rd!Reset" }),
+		// New session created by reset-password is immediately usable.
+		const autoLoginAfterReset = await app.request("/users/me", {
+			headers: authHeader(resetSessionToken),
 		});
-		expect(newLogin.response.status).toBe(200);
+		expect(autoLoginAfterReset.status).toBe(200);
 
 		// MCP sessions remain valid; password recovery does not revoke API-key access.
 		const mcpAfter = await app.request("/users/me", {
@@ -1110,7 +1153,7 @@ describe("Session lifecycle", () => {
 			body: JSON.stringify({ email, password: "Passw0rd!" }),
 		});
 		expect(second.response.status).toBe(200);
-		const secondToken = (second.body as { token: string }).token;
+		const secondToken = readSessionTokenFromSetCookie(second.response);
 
 		const listRes = await app.request("/users/me/sessions", {
 			headers: authHeader(first.token),
