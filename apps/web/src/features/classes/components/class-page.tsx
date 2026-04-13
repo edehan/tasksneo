@@ -3,9 +3,9 @@
 import { Plus, Settings, Users } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useSWRConfig } from "swr";
 
-import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { FilterBar } from "@/features/dashboard/components/filter-bar";
 import { StatCards } from "@/features/dashboard/components/stat-cards";
@@ -22,8 +22,9 @@ import {
   ViewSwitcher,
 } from "@/features/tasks/components/view-switcher";
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
-import type { ClassSummary } from "@/lib/api";
-import { getClass, listClassTasks, listMembers } from "@/lib/api";
+import type { ClassSummary, TaskSummary } from "@/lib/api";
+import { useClassQuery, useClassTasksQuery } from "@/lib/web-data";
+import { webDataKeys } from "@/lib/web-data-keys";
 
 function deriveDisplayStatus(
   task: TaskWithClass,
@@ -37,17 +38,18 @@ function deriveDisplayStatus(
   return "not-started";
 }
 
-export function ClassPage() {
+interface ClassPageProps {
+  initialClass: ClassSummary | null;
+  initialTasks: TaskSummary[];
+}
+
+export function ClassPage({ initialClass, initialTasks }: ClassPageProps) {
   const t = useTranslations("classPage");
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { mutate: globalMutate } = useSWRConfig();
   const classId = params?.classId as string;
 
-  const [cls, setCls] = useState<ClassSummary | null>(null);
-  const [tasks, setTasks] = useState<TaskWithClass[]>([]);
-  const [myRole, setMyRole] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<TaskWithClass | null>(null);
   const [postTaskOpen, setPostTaskOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("gantt");
@@ -58,41 +60,36 @@ export function ClassPage() {
     overdue: false,
     showSubmitted: false,
   });
-
-  const loadData = useCallback(async () => {
-    if (!user || !classId) return;
-    try {
-      const [classData, classTasks, members] = await Promise.all([
-        getClass(classId),
-        listClassTasks(classId),
-        listMembers(classId),
-      ]);
-      setCls(classData);
-      setTasks(
-        classTasks.map(
-          (t) =>
-            ({
-              ...t,
-              className: classData.name,
-              classColor: classData.color || "#8B7355",
-            }) as TaskWithClass,
-        ),
-      );
-      // Find current user's role
-      const me = members.find((m) => m.userId === user?.id);
-      setMyRole(me?.role || null);
-    } catch {
-      // Failed to load
-    } finally {
-      setLoading(false);
-    }
-  }, [user, classId, user?.id]);
-
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
-
-  const isAdmin = myRole === "OWNER" || myRole === "ADMIN";
+  const {
+    data: cls,
+    isLoading: classLoading,
+    mutate: mutateClass,
+  } = useClassQuery(classId, {
+    fallbackData: initialClass ?? undefined,
+  });
+  const {
+    data: classTasks = initialTasks,
+    isLoading: tasksLoading,
+    mutate: mutateClassTasks,
+  } = useClassTasksQuery(classId, {
+    fallbackData: initialTasks,
+  });
+  const tasks = useMemo(
+    () =>
+      cls
+        ? classTasks.map(
+            (task) =>
+              ({
+                ...task,
+                className: cls.name,
+                classColor: cls.color || "#8B7355",
+              }) as TaskWithClass,
+          )
+        : [],
+    [classTasks, cls],
+  );
+  const isLoading = classLoading || tasksLoading;
+  const isAdmin = cls?.myRole === "OWNER" || cls?.myRole === "ADMIN";
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
@@ -129,7 +126,7 @@ export function ClassPage() {
     return { total, inProgress, overdue, notStarted };
   }, [tasks]);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="w-full px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
         <div className="h-10 w-64 bg-muted animate-pulse rounded mb-8" />
@@ -274,7 +271,11 @@ export function ClassPage() {
           open={postTaskOpen}
           onOpenChange={setPostTaskOpen}
           onEditBody={({ taskId }) => {
-            void loadData();
+            void Promise.all([
+              mutateClass(),
+              mutateClassTasks(),
+              globalMutate(webDataKeys.myTasks()),
+            ]);
             router.push(`/tasks/${taskId}/edit`);
           }}
         />

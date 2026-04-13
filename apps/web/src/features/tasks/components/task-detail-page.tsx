@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Calendar, Loader2 } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
+import { useSWRConfig } from "swr";
 
 import { useAuth } from "@/components/auth-provider";
 import { MarkdownPreview } from "@/features/editor/components/markdown-preview";
@@ -15,7 +16,9 @@ import {
   getStatusBadge,
 } from "@/features/tasks/lib/task-detail-status";
 import type { ClassSummary, TaskDetail } from "@/lib/api";
-import { deleteTask, getClass, getTask, markTaskViewed } from "@/lib/api";
+import { deleteTask, markTaskViewed } from "@/lib/api";
+import { useClassQuery, useTaskQuery } from "@/lib/web-data";
+import { webDataKeys } from "@/lib/web-data-keys";
 
 type SidebarSection = "attachments" | "discussion" | undefined;
 
@@ -26,7 +29,15 @@ function toSidebarSection(value: string | null): SidebarSection {
   return undefined;
 }
 
-export function TaskDetailPage() {
+interface TaskDetailPageProps {
+  initialTask: TaskDetail | null;
+  initialClass: ClassSummary | null;
+}
+
+export function TaskDetailPage({
+  initialTask,
+  initialClass,
+}: TaskDetailPageProps) {
   const t = useTranslations("taskDetailOverlay");
   const pageT = useTranslations("taskDetailPage");
   const locale = useLocale();
@@ -34,13 +45,11 @@ export function TaskDetailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
+  const { mutate: globalMutate } = useSWRConfig();
 
   const taskId = params?.taskId as string;
   const initialSection = toSidebarSection(searchParams.get("section"));
 
-  const [task, setTask] = useState<TaskDetail | null>(null);
-  const [cls, setCls] = useState<ClassSummary | null>(null);
-  const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
 
   const dateFormatter = new Intl.DateTimeFormat(locale, {
@@ -59,26 +68,15 @@ export function TaskDetailPage() {
     [dateFormatter],
   );
 
-  const loadData = useCallback(async () => {
-    if (!user || !taskId) return;
-
-    setLoading(true);
-    try {
-      const taskData = await getTask(taskId);
-      const classData = await getClass(taskData.classId);
-      setTask(taskData);
-      setCls(classData);
-    } catch {
-      setTask(null);
-      setCls(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, taskId]);
-
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
+  const { data: task, isLoading: taskLoading } = useTaskQuery(taskId, {
+    fallbackData: initialTask ?? undefined,
+  });
+  const { data: cls, isLoading: classLoading } = useClassQuery(
+    task?.classId ?? initialTask?.classId,
+    {
+      fallbackData: initialClass ?? undefined,
+    },
+  );
 
   useEffect(() => {
     if (!user || !taskId) return;
@@ -87,7 +85,7 @@ export function TaskDetailPage() {
     });
   }, [user, taskId]);
 
-  if (loading) {
+  if (taskLoading || classLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -195,6 +193,12 @@ export function TaskDetailPage() {
                             setDeleting(true);
                             try {
                               await deleteTask(task.id);
+                              await Promise.all([
+                                globalMutate(
+                                  webDataKeys.classTasks(task.classId),
+                                ),
+                                globalMutate(webDataKeys.myTasks()),
+                              ]);
                               router.push(`/classes/${task.classId}`);
                             } catch {
                               setDeleting(false);

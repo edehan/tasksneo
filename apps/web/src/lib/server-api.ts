@@ -1,6 +1,15 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import type { UserProfile } from "@/lib/api";
+import { cache } from "react";
+import type {
+  ClassSummary,
+  MyTaskSummary,
+  SubmissionDetail,
+  SubmissionListRow,
+  TaskDetail,
+  TaskSummary,
+  UserProfile,
+} from "@/lib/api";
 
 function getApiInternalUrl(): string {
   return (
@@ -70,3 +79,57 @@ export async function getServerUser(): Promise<UserProfile | null> {
     return null;
   }
 }
+
+const redirectOn401 = { redirectOn401: true } as const;
+
+export const getServerUserOrRedirect = cache(
+  async (): Promise<UserProfile> =>
+    serverApiRequest<UserProfile>("/users/me", {}, redirectOn401),
+);
+
+export const getServerClasses = cache(
+  async (): Promise<ClassSummary[]> =>
+    serverApiRequest<ClassSummary[]>("/classes", {}, redirectOn401),
+);
+
+export const getServerMyTasks = cache(
+  async (): Promise<MyTaskSummary[]> =>
+    serverApiRequest<MyTaskSummary[]>("/tasks/mine", {}, redirectOn401),
+);
+
+export const getServerClass = cache(
+  async (classId: string): Promise<ClassSummary> =>
+    serverApiRequest<ClassSummary>(`/classes/${classId}`, {}, redirectOn401),
+);
+
+export const getServerClassTasks = cache(
+  async (classId: string): Promise<TaskSummary[]> =>
+    serverApiRequest<TaskSummary[]>(
+      `/classes/${classId}/tasks`,
+      {},
+      redirectOn401,
+    ),
+);
+
+export const getServerTask = cache(
+  async (taskId: string): Promise<TaskDetail> =>
+    serverApiRequest<TaskDetail>(`/tasks/${taskId}`, {}, redirectOn401),
+);
+
+export const getServerTaskSubmissions = cache(
+  async (taskId: string): Promise<SubmissionListRow[]> =>
+    serverApiRequest<SubmissionListRow[]>(
+      `/tasks/${taskId}/submissions`,
+      {},
+      redirectOn401,
+    ),
+);
+
+export const getServerSubmissionById = cache(
+  async (submissionId: string): Promise<SubmissionDetail> =>
+    serverApiRequest<SubmissionDetail>(
+      `/submissions/${submissionId}`,
+      {},
+      redirectOn401,
+    ),
+);

@@ -17,7 +17,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useSWRConfig } from "swr";
 import { useAuth } from "@/components/auth-provider";
 import { CreateClassDialog } from "@/components/create-class-dialog";
 import { useAppLocale } from "@/components/locale-provider";
@@ -51,34 +52,25 @@ import { JoinClassDialog } from "@/features/classes/components/join-class-dialog
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
 import { type AppLocale, SUPPORTED_LOCALES } from "@/i18n/locale";
 import type { ClassSummary } from "@/lib/api";
-import { listClasses } from "@/lib/api";
+import { useClassesQuery } from "@/lib/web-data";
+import { webDataKeys } from "@/lib/web-data-keys";
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  initialClasses: ClassSummary[];
+}
+
+export function AppSidebar({ initialClasses }: AppSidebarProps) {
   const { user, logout } = useAuth();
   const t = useTranslations("appSidebar");
   const { theme, resolvedTheme, setTheme } = useTheme();
   const { locale, setLocale } = useAppLocale();
   const pathname = usePathname();
   const router = useRouter();
-  const [classes, setClasses] = useState<ClassSummary[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { mutate: globalMutate } = useSWRConfig();
+  const { data: classes = [], isLoading: loading } = useClassesQuery({
+    fallbackData: initialClasses,
+  });
   const [themeMounted, setThemeMounted] = useState(false);
-
-  const loadClasses = useCallback(async () => {
-    if (!user) return;
-    try {
-      const data = await listClasses();
-      setClasses(data);
-    } catch {
-      // Silently fail — sidebar is non-critical
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    void loadClasses();
-  }, [loadClasses]);
 
   useEffect(() => {
     setThemeMounted(true);
@@ -97,6 +89,13 @@ export function AppSidebar() {
   const avatarUrl = useAvatarUrl(user?.email, 64);
   const currentTheme = themeMounted ? (theme ?? "system") : "system";
   const effectiveTheme = themeMounted ? (resolvedTheme ?? "light") : "light";
+
+  async function refreshClasses() {
+    await Promise.all([
+      globalMutate(webDataKeys.classes()),
+      globalMutate(webDataKeys.myTasks()),
+    ]);
+  }
 
   return (
     <Sidebar>
@@ -410,7 +409,7 @@ export function AppSidebar() {
                     <span>{t("joinClass")}</span>
                   </SidebarMenuButton>
                 }
-                onJoined={() => void loadClasses()}
+                onJoined={() => void refreshClasses()}
               />
               <CreateClassDialog
                 trigger={
@@ -419,7 +418,7 @@ export function AppSidebar() {
                     <span>{t("create")}</span>
                   </SidebarMenuButton>
                 }
-                onCreated={() => void loadClasses()}
+                onCreated={() => void refreshClasses()}
               />
             </div>
           </SidebarMenuItem>

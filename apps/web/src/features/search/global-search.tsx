@@ -12,6 +12,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { unstable_serialize, useSWRConfig } from "swr";
 
 import { useAuth } from "@/components/auth-provider";
 import type {
@@ -25,13 +26,14 @@ import type {
 } from "@/lib/api";
 import {
   getTask,
-  listClasses,
   listClassTasks,
   listMembers,
   listMyTasks,
   listSubmissions,
   listTaskComments,
 } from "@/lib/api";
+import { useClassesQuery } from "@/lib/web-data";
+import { webDataKeys } from "@/lib/web-data-keys";
 
 export type SearchResultKind =
   | "class"
@@ -96,6 +98,12 @@ interface IndexedTaskRecord {
   task: TaskSummary;
 }
 
+interface PendingManagedClassFetch {
+  cls: ClassSummary;
+  needsTasks: boolean;
+  needsMembers: boolean;
+}
+
 const GlobalSearchContext = createContext<GlobalSearchContextValue | null>(
   null,
 );
@@ -112,9 +120,11 @@ const GROUP_ORDER_MAP = new Map(
   GROUP_ORDER.map((kind, index) => [kind, index]),
 );
 const MAX_RESULTS = 24;
-const BACKGROUND_BATCH_SIZE = 3;
+const CLASS_DATA_BATCH_SIZE = 1;
+const TASK_ENRICHMENT_BATCH_SIZE = 1;
 const DEFAULT_CLASS_COLOR = "#8B7355";
 const SEARCH_CACHE_TTL_MS = 10 * 60 * 1000;
+const SEARCH_ERROR_RETRY_COOLDOWN_MS = 30 * 1000;
 const SEARCH_CACHE_KEY_PREFIX = "taskflow_global_search_v1";
 
 interface SearchCachePayload {
@@ -184,6 +194,30 @@ function memberRoute(classId: string): string {
 
 function getSearchCacheKey(userId: string): string {
   return `${SEARCH_CACHE_KEY_PREFIX}:${userId}`;
+}
+
+function readSWRData<T>(
+  cache: { get: (key: string) => unknown },
+  key: ReadonlyArray<string>,
+): T | undefined {
+  const cached = cache.get(unstable_serialize(key));
+  if (typeof cached === "undefined") {
+    return undefined;
+  }
+
+  if (
+    cached &&
+    typeof cached === "object" &&
+    ("data" in cached ||
+      "error" in cached ||
+      "isLoading" in cached ||
+      "isValidating" in cached)
+  ) {
+    const state = cached as { data?: T };
+    return state.data;
+  }
+
+  return cached as T | undefined;
 }
 
 function readSearchCache(userId: string): SearchCachePayload | null {
@@ -373,21 +407,28 @@ function searchDocuments(
   );
 }
 
-async function loadImmediateSnapshot(): Promise<{
+async function loadImmediateSnapshot(
+  seed: {
+    classes?: ClassSummary[];
+    myTasks?: MyTaskSummary[];
+    managedTaskLists?: Map<string, TaskSummary[]>;
+    memberLists?: Map<string, ClassMember[]>;
+  } = {},
+): Promise<{
   docs: SearchDocument[];
   taskRecords: IndexedTaskRecord[];
+  pendingManagedClasses: PendingManagedClassFetch[];
 }> {
-  const classes = await listClasses();
+  const classes = seed.classes ?? [];
   const managedClasses = classes.filter(
     (cls) => cls.myRole === "OWNER" || cls.myRole === "ADMIN",
   );
   const classMap = new Map(classes.map((cls) => [cls.id, cls]));
 
-  const [myTasks, managedTaskLists, memberLists] = await Promise.all([
-    listMyTasks(),
-    Promise.all(managedClasses.map((cls) => listClassTasks(cls.id))),
-    Promise.all(managedClasses.map((cls) => listMembers(cls.id))),
-  ]);
+  const myTasks = Array.isArray(seed.myTasks)
+    ? seed.myTasks
+    : await listMyTasks();
+  const pendingManagedClasses: PendingManagedClassFetch[] = [];
 
   const taskMap = new Map<string, IndexedTaskRecord>();
 
@@ -395,22 +436,33 @@ async function loadImmediateSnapshot(): Promise<{
     mergeTaskRecord(taskMap, task, classMap.get(task.classId) ?? null, false);
   }
 
-  managedTaskLists.forEach((tasks, index) => {
-    const cls = managedClasses[index];
-    for (const task of tasks) {
-      mergeTaskRecord(taskMap, task, cls, true);
-    }
-  });
-
   const documentMap = new Map<string, SearchDocument>();
   for (const cls of classes) {
     upsertDocument(documentMap, toClassDocument(cls));
   }
 
-  memberLists.forEach((members, index) => {
-    const cls = managedClasses[index];
-    for (const member of members) {
-      upsertDocument(documentMap, toMemberDocument(member, cls));
+  managedClasses.forEach((cls) => {
+    const cachedTasks = seed.managedTaskLists?.get(cls.id);
+    const cachedMembers = seed.memberLists?.get(cls.id);
+
+    if (Array.isArray(cachedTasks)) {
+      for (const task of cachedTasks) {
+        mergeTaskRecord(taskMap, task, cls, true);
+      }
+    }
+
+    if (Array.isArray(cachedMembers)) {
+      for (const member of cachedMembers) {
+        upsertDocument(documentMap, toMemberDocument(member, cls));
+      }
+    }
+
+    if (!cachedTasks || !cachedMembers) {
+      pendingManagedClasses.push({
+        cls,
+        needsTasks: !cachedTasks,
+        needsMembers: !cachedMembers,
+      });
     }
   });
 
@@ -421,7 +473,109 @@ async function loadImmediateSnapshot(): Promise<{
   return {
     docs: Array.from(documentMap.values()),
     taskRecords: Array.from(taskMap.values()),
+    pendingManagedClasses,
   };
+}
+
+function mergeManagedClassData(args: {
+  docs: Map<string, SearchDocument>;
+  taskMap: Map<string, IndexedTaskRecord>;
+  cls: ClassSummary;
+  tasks: TaskSummary[];
+  members: ClassMember[];
+}): void {
+  const { docs, taskMap, cls, tasks, members } = args;
+
+  for (const task of tasks) {
+    mergeTaskRecord(taskMap, task, cls, true);
+  }
+
+  for (const member of members) {
+    upsertDocument(docs, toMemberDocument(member, cls));
+  }
+
+  for (const record of taskMap.values()) {
+    upsertDocument(docs, toTaskDocument(record));
+  }
+}
+
+async function loadManagedClassDataBatch(
+  classes: PendingManagedClassFetch[],
+): Promise<
+  Array<{
+    cls: ClassSummary;
+    tasks: TaskSummary[];
+    members: ClassMember[];
+  }>
+> {
+  return Promise.all(
+    classes.map(async ({ cls, needsTasks, needsMembers }) => ({
+      cls,
+      tasks: needsTasks
+        ? await listClassTasks(cls.id).catch(() => [] as TaskSummary[])
+        : [],
+      members: needsMembers
+        ? await listMembers(cls.id).catch(() => [] as ClassMember[])
+        : [],
+    })),
+  );
+}
+
+function upsertDocuments(
+  baseDocuments: Map<string, SearchDocument>,
+  incomingDocuments: SearchDocument[],
+): Map<string, SearchDocument> {
+  for (const document of incomingDocuments) {
+    upsertDocument(baseDocuments, document);
+  }
+  return baseDocuments;
+}
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
+}
+
+function createTaskRecordMap(
+  records: IndexedTaskRecord[],
+): Map<string, IndexedTaskRecord> {
+  return new Map(records.map((record) => [record.id, record]));
+}
+
+function toDocumentArray(
+  documentMap: Map<string, SearchDocument>,
+): SearchDocument[] {
+  return Array.from(documentMap.values());
+}
+
+function setDocumentsAndPersist(args: {
+  userId: string;
+  docs: Map<string, SearchDocument>;
+  setDocuments: (documents: SearchDocument[]) => void;
+  setPhase: (phase: SearchPhase) => void;
+  phase: SearchPhase;
+}): void {
+  const documents = toDocumentArray(args.docs);
+  startTransition(() => {
+    args.setDocuments(documents);
+    args.setPhase(args.phase);
+  });
+  writeSearchCache(args.userId, documents);
+}
+
+function hydrateCacheState(args: {
+  docs: SearchDocument[];
+  cachedAt: number;
+  setDocuments: (documents: SearchDocument[]) => void;
+  setLastRefreshAt: (value: number) => void;
+  setPhase: (phase: SearchPhase) => void;
+}): void {
+  args.setDocuments(args.docs);
+  args.setLastRefreshAt(args.cachedAt);
+  args.setPhase("ready");
 }
 
 function buildEnrichedTaskDocument(
@@ -557,11 +711,17 @@ async function enrichTaskRecord(
 }
 
 export function GlobalSearchProvider({
+  initialClasses,
   children,
 }: {
+  initialClasses: ClassSummary[];
   children: React.ReactNode;
 }) {
   const { user } = useAuth();
+  const { cache } = useSWRConfig();
+  const { data: classes = initialClasses } = useClassesQuery({
+    fallbackData: initialClasses,
+  });
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [documents, setDocuments] = useState<SearchDocument[]>([]);
@@ -570,6 +730,8 @@ export function GlobalSearchProvider({
 
   const deferredQuery = useDeferredValue(query);
   const refreshGenerationRef = useRef(0);
+  const refreshInFlightRef = useRef(false);
+  const lastRefreshErrorAtRef = useRef<number | null>(null);
   const documentsRef = useRef<SearchDocument[]>([]);
   const cacheHydratedRef = useRef(false);
 
@@ -609,8 +771,9 @@ export function GlobalSearchProvider({
 
   const runRefresh = useCallback(
     async (mode: RefreshMode) => {
-      if (!user || !user?.id) return;
+      if (!user || !user?.id || refreshInFlightRef.current) return;
 
+      refreshInFlightRef.current = true;
       const generation = refreshGenerationRef.current + 1;
       refreshGenerationRef.current = generation;
 
@@ -619,69 +782,137 @@ export function GlobalSearchProvider({
       }
 
       try {
-        const snapshot = await loadImmediateSnapshot();
+        const cachedMyTasks = readSWRData<MyTaskSummary[]>(
+          cache,
+          webDataKeys.myTasks(),
+        );
+        const managedClasses = classes.filter(
+          (cls) => cls.myRole === "OWNER" || cls.myRole === "ADMIN",
+        );
+        const cachedTaskLists = new Map<string, TaskSummary[]>();
+        const cachedMemberLists = new Map<string, ClassMember[]>();
+
+        managedClasses.forEach((cls) => {
+          const taskList = readSWRData<TaskSummary[]>(
+            cache,
+            webDataKeys.classTasks(cls.id),
+          );
+          if (taskList) {
+            cachedTaskLists.set(cls.id, taskList);
+          }
+
+          const members = readSWRData<ClassMember[]>(
+            cache,
+            webDataKeys.classMembers(cls.id),
+          );
+          if (members) {
+            cachedMemberLists.set(cls.id, members);
+          }
+        });
+
+        const snapshot = await loadImmediateSnapshot({
+          classes,
+          myTasks: cachedMyTasks,
+          managedTaskLists: cachedTaskLists,
+          memberLists: cachedMemberLists,
+        });
         if (refreshGenerationRef.current !== generation) return;
 
-        startTransition(() => {
-          setDocuments(snapshot.docs);
-          setPhase(snapshot.taskRecords.length > 0 ? "enriching" : "ready");
-        });
-        writeSearchCache(user.id, snapshot.docs);
-
-        const refreshedAt = Date.now();
-        setLastRefreshAt(refreshedAt);
-
-        if (snapshot.taskRecords.length === 0) return;
-
+        const taskMap = createTaskRecordMap(snapshot.taskRecords);
         const nextDocuments = new Map(
           snapshot.docs.map((document) => [document.id, document]),
         );
 
-        for (
-          let index = 0;
-          index < snapshot.taskRecords.length;
-          index += BACKGROUND_BATCH_SIZE
-        ) {
-          const batch = snapshot.taskRecords.slice(
-            index,
-            index + BACKGROUND_BATCH_SIZE,
-          );
+        setDocumentsAndPersist({
+          userId: user.id,
+          docs: nextDocuments,
+          setDocuments,
+          setPhase,
+          phase:
+            snapshot.pendingManagedClasses.length > 0 ||
+            snapshot.taskRecords.length > 0
+              ? "enriching"
+              : "ready",
+        });
+        cacheHydratedRef.current = true;
+        const refreshedAt = Date.now();
+        setLastRefreshAt(refreshedAt);
 
+        for (const batch of chunk(
+          snapshot.pendingManagedClasses,
+          CLASS_DATA_BATCH_SIZE,
+        )) {
+          const managedResults = await loadManagedClassDataBatch(batch);
+
+          if (refreshGenerationRef.current !== generation) return;
+
+          for (const result of managedResults) {
+            mergeManagedClassData({
+              docs: nextDocuments,
+              taskMap,
+              cls: result.cls,
+              tasks: result.tasks,
+              members: result.members,
+            });
+          }
+
+          setDocumentsAndPersist({
+            userId: user.id,
+            docs: nextDocuments,
+            setDocuments,
+            setPhase,
+            phase: "enriching",
+          });
+        }
+
+        const taskRecords = Array.from(taskMap.values());
+        if (taskRecords.length === 0) {
+          setPhase("ready");
+          return;
+        }
+
+        for (const batch of chunk(taskRecords, TASK_ENRICHMENT_BATCH_SIZE)) {
           const enrichedBatches = await Promise.all(
             batch.map((record) =>
-              enrichTaskRecord(record).catch(
-                () => [] as SearchDocument[],
-              ),
+              enrichTaskRecord(record).catch(() => [] as SearchDocument[]),
             ),
           );
 
           if (refreshGenerationRef.current !== generation) return;
 
           for (const documentsBatch of enrichedBatches) {
-            for (const document of documentsBatch) {
-              upsertDocument(nextDocuments, document);
-            }
+            upsertDocuments(nextDocuments, documentsBatch);
           }
 
-          const mergedDocuments = Array.from(nextDocuments.values());
-          startTransition(() => {
-            setDocuments(mergedDocuments);
-            setPhase("enriching");
+          setDocumentsAndPersist({
+            userId: user.id,
+            docs: nextDocuments,
+            setDocuments,
+            setPhase,
+            phase: "enriching",
           });
-          writeSearchCache(user.id, mergedDocuments);
         }
 
         if (refreshGenerationRef.current === generation) {
           setPhase("ready");
-          writeSearchCache(user.id, Array.from(nextDocuments.values()));
+          lastRefreshErrorAtRef.current = null;
+          writeSearchCache(user.id, toDocumentArray(nextDocuments));
         }
-      } catch {
+      } catch (error) {
+        if (process.env.NODE_ENV !== "production") {
+          console.error("[global-search] refresh failed", error);
+        }
         if (refreshGenerationRef.current === generation) {
           setPhase("error");
+          lastRefreshErrorAtRef.current = Date.now();
+        }
+      } finally {
+        if (refreshGenerationRef.current === generation) {
+          refreshInFlightRef.current = false;
         }
       }
     },
-    [user, user?.id],
+    [cache, classes, user, user?.id],
   );
 
   const refresh = useCallback(async () => {
@@ -691,6 +922,8 @@ export function GlobalSearchProvider({
   useEffect(() => {
     if (!user || !user?.id) {
       refreshGenerationRef.current += 1;
+      refreshInFlightRef.current = false;
+      lastRefreshErrorAtRef.current = null;
       setDocuments([]);
       setPhase("idle");
       setLastRefreshAt(null);
@@ -703,22 +936,39 @@ export function GlobalSearchProvider({
     if (!open || !user || !user?.id) return;
 
     const cached = readSearchCache(user.id);
+    const now = Date.now();
     const hasFreshCache =
-      cached !== null && Date.now() - cached.cachedAt < SEARCH_CACHE_TTL_MS;
+      cached !== null && now - cached.cachedAt < SEARCH_CACHE_TTL_MS;
+    const hasFreshInMemory =
+      lastRefreshAt !== null && now - lastRefreshAt < SEARCH_CACHE_TTL_MS;
+    const isInErrorCooldown =
+      lastRefreshErrorAtRef.current !== null &&
+      now - lastRefreshErrorAtRef.current < SEARCH_ERROR_RETRY_COOLDOWN_MS;
 
     if (!cacheHydratedRef.current && cached) {
-      setDocuments(cached.docs);
-      setLastRefreshAt(cached.cachedAt);
-      setPhase(hasFreshCache ? "ready" : "enriching");
       cacheHydratedRef.current = true;
+      hydrateCacheState({
+        docs: cached.docs,
+        cachedAt: cached.cachedAt,
+        setDocuments,
+        setLastRefreshAt,
+        setPhase,
+      });
     }
 
-    if (hasFreshCache || phase === "loading" || phase === "enriching") {
+    if (
+      hasFreshCache ||
+      hasFreshInMemory ||
+      isInErrorCooldown ||
+      refreshInFlightRef.current ||
+      phase === "loading" ||
+      phase === "enriching"
+    ) {
       return;
     }
 
     void runRefresh(cached ? "lightweight" : "full");
-  }, [open, phase, runRefresh, user, user?.id]);
+  }, [lastRefreshAt, open, phase, runRefresh, user, user?.id]);
 
   const value = useMemo<GlobalSearchContextValue>(
     () => ({
