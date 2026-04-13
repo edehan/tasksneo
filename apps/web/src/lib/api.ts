@@ -23,6 +23,19 @@ const AUTH_ERROR_CODES = new Set([
   "USER_INACTIVE",
 ]);
 
+export const ADMIN_TOKEN_STORAGE_KEY = "taskflow_admin_token";
+
+function isAdminPath(path: string): boolean {
+  return path === "/admin" || path.startsWith("/admin/");
+}
+
+function readAdminToken(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  return window.sessionStorage.getItem(ADMIN_TOKEN_STORAGE_KEY);
+}
+
 function emitAuthExpired() {
   if (typeof window === "undefined") {
     return;
@@ -293,6 +306,7 @@ export async function apiRequest<T>(
   init: RequestInit = {},
 ): Promise<T> {
   const headers = new Headers(init.headers ?? {});
+  const adminPath = isAdminPath(path);
 
   if (
     !headers.has("Content-Type") &&
@@ -300,6 +314,13 @@ export async function apiRequest<T>(
     !(init.body instanceof FormData)
   ) {
     headers.set("Content-Type", "application/json");
+  }
+
+  if (adminPath && !headers.has("Authorization")) {
+    const adminToken = readAdminToken();
+    if (adminToken) {
+      headers.set("Authorization", `Bearer ${adminToken}`);
+    }
   }
 
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
@@ -324,7 +345,10 @@ export async function apiRequest<T>(
       // Keep fallback message when response body is not JSON.
     }
 
-    if (response.status === 401 || AUTH_ERROR_CODES.has(errorCode)) {
+    if (
+      !adminPath &&
+      (response.status === 401 || AUTH_ERROR_CODES.has(errorCode))
+    ) {
       emitAuthExpired();
     }
 

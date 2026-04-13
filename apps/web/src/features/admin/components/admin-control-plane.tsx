@@ -58,6 +58,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  ADMIN_TOKEN_STORAGE_KEY,
   type AdminAnnouncement,
   type AdminMetrics,
   type AdminSchool,
@@ -79,8 +80,6 @@ import {
   type UserProfile,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
-
-const ADMIN_TOKEN_STORAGE_KEY = "taskflow_admin_token";
 
 const CONFIG_DEFAULTS = {
   "app.title": "TaskNeo",
@@ -310,7 +309,7 @@ export function AdminControlPlane() {
     });
   }, [users, userQuery]);
 
-  const loadAdminData = useCallback(async (adminToken: string) => {
+  const loadAdminData = useCallback(async () => {
     setDataLoading(true);
     try {
       const [
@@ -358,9 +357,9 @@ export function AdminControlPlane() {
   const authenticate = useCallback(
     async (nextToken: string) => {
       setAuthLoading(true);
+      sessionStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, nextToken);
       try {
-        await loadAdminData(nextToken);
-        sessionStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, nextToken);
+        await loadAdminData();
         setToken(nextToken);
         setTokenInput("");
         toast.success("Admin token verified.");
