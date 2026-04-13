@@ -3,7 +3,7 @@ FROM node:22.22.2-trixie-slim AS builder
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_OPTIONS=--max-old-space-size=384
+ENV NODE_OPTIONS=--max-old-space-size=512
 
 RUN corepack enable
 
@@ -28,8 +28,10 @@ ENV PORT=3000
 WORKDIR /app
 
 COPY --from=builder /app/apps/web/.next/standalone ./
-COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
-COPY --from=builder /app/apps/web/public ./apps/web/public
+COPY --from=builder /app/apps/web/.next/static /app/apps/web/.next/static
+COPY --from=builder /app/apps/web/public /app/apps/web/public
+
+WORKDIR /app/apps/web
 
 EXPOSE 3000
 
