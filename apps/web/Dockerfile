@@ -3,6 +3,7 @@ FROM node:22.22.2-trixie-slim AS builder
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_OPTIONS=--max-old-space-size=384
 
 RUN corepack enable
 
