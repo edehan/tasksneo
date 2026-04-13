@@ -147,6 +147,7 @@ model ClassMember {
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([classId, userId])
+  @@index([userId])
   @@map("class_members")
 }
 
@@ -187,6 +188,7 @@ model Task {
   notificationJobs NotificationJob[]
   comments         Comment[]
 
+  @@index([classId, isPublished, deletedAt, createdAt(sort: Desc)])
   @@map("tasks")
 }
 
@@ -203,6 +205,7 @@ model TaskUserState {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([taskId, userId])
+  @@index([userId])
   @@map("task_user_state")
 }
 
@@ -233,6 +236,7 @@ model Submission {
   attachments Attachment[] @relation("SubmissionAttachment")
 
   @@unique([taskId, userId])
+  @@index([taskId])
   @@map("submissions")
 }
 
@@ -281,6 +285,8 @@ model Attachment {
   class      Class?      @relation("ClassAttachment", fields: [classId], references: [id], onDelete: Cascade)
   avatarUser User?       @relation("UserAvatar", fields: [avatarUserId], references: [id], onDelete: Cascade)
 
+  @@index([taskId])
+  @@index([submissionId])
   @@map("attachments")
 }
 
@@ -303,6 +309,7 @@ model NotificationJob {
   task   Task?   @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([userId, status, createdAt(sort: Desc)], map: "idx_notif_user_status_created")
+  @@index([taskId])
   @@map("notification_jobs")
 }
 

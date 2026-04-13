@@ -981,16 +981,16 @@ export async function upsertMySubmissionAttachments(
 		await removeSubmissionAttachments(submissionId);
 	}
 
-	for (const attachment of attachmentRecords) {
-		await prisma.attachment.create({
-			data: {
-				fileKey: attachment.fileKey,
-				originalName: attachment.originalName,
-				mimeType: attachment.mimeType,
-				sizeBytes: attachment.sizeBytes,
+	if (attachmentRecords.length > 0) {
+		await prisma.attachment.createMany({
+			data: attachmentRecords.map((a) => ({
+				fileKey: a.fileKey,
+				originalName: a.originalName,
+				mimeType: a.mimeType,
+				sizeBytes: a.sizeBytes,
 				uploadedBy: userId,
 				submissionId,
-			},
+			})),
 		});
 	}
 
@@ -1020,30 +1020,17 @@ export async function addSubmissionAttachments(
 
 	const submissionId = await ensureSubmission(taskId, userId);
 
-	const created = [] as Array<{
-		id: string;
-		fileKey: string;
-		originalName: string;
-		renamedFile: string | null;
-		mimeType: string | null;
-		sizeBytes: bigint | null;
-		isVisible: boolean;
-		createdAt: Date;
-	}>;
-
-	for (const attachment of attachmentRecords) {
-		const row = await prisma.attachment.create({
-			data: {
-				fileKey: attachment.fileKey,
-				originalName: attachment.originalName,
-				mimeType: attachment.mimeType,
-				sizeBytes: attachment.sizeBytes,
+	if (attachmentRecords.length > 0) {
+		await prisma.attachment.createMany({
+			data: attachmentRecords.map((a) => ({
+				fileKey: a.fileKey,
+				originalName: a.originalName,
+				mimeType: a.mimeType,
+				sizeBytes: a.sizeBytes,
 				uploadedBy: userId,
 				submissionId,
-			},
+			})),
 		});
-
-		created.push(row);
 	}
 
 	await prisma.submission.update({
@@ -1052,6 +1039,11 @@ export async function addSubmissionAttachments(
 	});
 
 	await markTaskSubmissionTouched(taskId, userId);
+
+	const created = await prisma.attachment.findMany({
+		where: { fileKey: { in: attachmentRecords.map((a) => a.fileKey) } },
+		orderBy: { createdAt: "asc" },
+	});
 
 	return created.map(toAttachmentMeta);
 }
@@ -1079,32 +1071,24 @@ export async function addTaskAttachments(
 
 	requireOwnerOrAdmin(classMembership);
 
-	const created = [] as Array<{
-		id: string;
-		fileKey: string;
-		originalName: string;
-		renamedFile: string | null;
-		mimeType: string | null;
-		sizeBytes: bigint | null;
-		isVisible: boolean;
-		createdAt: Date;
-	}>;
-
-	for (const attachment of attachmentRecords) {
-		const row = await prisma.attachment.create({
-			data: {
-				fileKey: attachment.fileKey,
-				originalName: attachment.originalName,
-				mimeType: attachment.mimeType,
-				sizeBytes: attachment.sizeBytes,
+	if (attachmentRecords.length > 0) {
+		await prisma.attachment.createMany({
+			data: attachmentRecords.map((a) => ({
+				fileKey: a.fileKey,
+				originalName: a.originalName,
+				mimeType: a.mimeType,
+				sizeBytes: a.sizeBytes,
 				isVisible,
 				uploadedBy: userId,
 				taskId,
-			},
+			})),
 		});
-
-		created.push(row);
 	}
+
+	const created = await prisma.attachment.findMany({
+		where: { fileKey: { in: attachmentRecords.map((a) => a.fileKey) } },
+		orderBy: { createdAt: "asc" },
+	});
 
 	return created.map(toAttachmentMeta);
 }

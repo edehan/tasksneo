@@ -1,5 +1,4 @@
 import { ClassRole, NotifChannel, NotifStatus, prisma } from "@taskflow/db";
-import { cacheGetOrSet, cacheKeys } from "../lib/cache.js";
 import { sendEmail } from "../lib/mailer.js";
 import {
 	enqueueNotificationJob,
@@ -7,7 +6,6 @@ import {
 } from "../lib/queue.js";
 import { getConfigValue } from "./system-config.service.js";
 
-const NOTIF_PREFS_TTL_SECONDS = 900; // 15 min
 
 interface TaskNotificationPayload {
 	userId: string;
@@ -80,48 +78,44 @@ function formatDueAt(isoString: string | null, timezone: string): string {
 	}
 }
 
-async function createNotificationJob(
-	payload: TaskNotificationPayload,
-	scheduledAt: Date,
-	channel: NotifChannel,
-) {
-	const job = await prisma.notificationJob.create({
-		data: {
-			channel,
-			payload: payload as unknown as object,
-			scheduledAt,
+type JobRow = {
+	channel: NotifChannel;
+	payload: object;
+	scheduledAt: Date;
+	status: (typeof NotifStatus)[keyof typeof NotifStatus];
+	userId: string;
+	taskId: string;
+};
+
+/**
+ * Insert all job rows in one createMany, then enqueue them all concurrently.
+ * Falls back gracefully: PENDING rows survive a Bull enqueue failure.
+ */
+async function batchCreateAndEnqueueJobs(rows: JobRow[]): Promise<void> {
+	if (rows.length === 0) return;
+
+	await prisma.notificationJob.createMany({ data: rows });
+
+	// Retrieve the created IDs — createMany doesn't return records.
+	const created = await prisma.notificationJob.findMany({
+		where: {
+			taskId: rows[0].taskId,
+			userId: { in: [...new Set(rows.map((r) => r.userId))] },
+			scheduledAt: { in: [...new Set(rows.map((r) => r.scheduledAt))] },
 			status: NotifStatus.PENDING,
-			userId: payload.userId,
-			taskId: payload.taskId,
 		},
+		select: { id: true, scheduledAt: true },
 	});
 
-	try {
-		await enqueueNotificationJob(job.id, scheduledAt);
-	} catch {
-		// Keep PENDING row for recovery even if queue enqueue fails.
-	}
-}
-
-async function getEnabledChannels(userId: string): Promise<NotifChannel[]> {
-	return cacheGetOrSet<NotifChannel[]>(
-		cacheKeys.notifPrefs(userId),
-		NOTIF_PREFS_TTL_SECONDS,
-		async () => {
-			const prefs = await prisma.userNotificationPref.findMany({
-				where: { userId, isEnabled: true },
-				select: { channel: true },
-			});
-
-			if (prefs.length === 0) {
-				// Default to EMAIL if user has no preferences set
-				return [NotifChannel.EMAIL];
-			}
-
-			return prefs.map((p) => p.channel);
-		},
+	await Promise.all(
+		created.map((job) =>
+			enqueueNotificationJob(job.id, job.scheduledAt).catch(() => {
+				// Keep PENDING row for recovery even if enqueue fails.
+			}),
+		),
 	);
 }
+
 
 export async function enqueueTaskPublishedNotifications(params: {
 	taskId: string;
@@ -132,10 +126,30 @@ export async function enqueueTaskPublishedNotifications(params: {
 	dueAt: Date | null;
 	memberUserIds: string[];
 }) {
+	if (params.memberUserIds.length === 0) {
+		return;
+	}
+
 	const now = new Date();
 
+	// Batch-fetch all user channel preferences in one query.
+	// Users with no preferences default to EMAIL.
+	const allPrefs = await prisma.userNotificationPref.findMany({
+		where: { userId: { in: params.memberUserIds }, isEnabled: true },
+		select: { userId: true, channel: true },
+	});
+
+	const channelMap = new Map<string, NotifChannel[]>();
+	for (const pref of allPrefs) {
+		const list = channelMap.get(pref.userId) ?? [];
+		list.push(pref.channel);
+		channelMap.set(pref.userId, list);
+	}
+
+	// Build all TASK_PUBLISHED job rows in memory, then insert in one shot.
+	const publishedRows: JobRow[] = [];
 	for (const userId of params.memberUserIds) {
-		const channels = await getEnabledChannels(userId);
+		const channels = channelMap.get(userId) ?? [NotifChannel.EMAIL];
 		const payload: TaskNotificationPayload = {
 			userId,
 			taskId: params.taskId,
@@ -146,11 +160,19 @@ export async function enqueueTaskPublishedNotifications(params: {
 			dueAt: params.dueAt?.toISOString() ?? null,
 			type: "TASK_PUBLISHED",
 		};
-
 		for (const channel of channels) {
-			await createNotificationJob(payload, now, channel);
+			publishedRows.push({
+				channel,
+				payload: payload as unknown as object,
+				scheduledAt: now,
+				status: NotifStatus.PENDING,
+				userId,
+				taskId: params.taskId,
+			});
 		}
 	}
+
+	await batchCreateAndEnqueueJobs(publishedRows);
 
 	if (!params.dueAt) {
 		return;
@@ -160,17 +182,18 @@ export async function enqueueTaskPublishedNotifications(params: {
 		await getConfigValue("notif.before_due_hours"),
 	);
 
+	// Group reminder rows by scheduledAt so we can enqueue each batch.
+	const reminderRows: JobRow[] = [];
 	for (const hour of beforeDueHours) {
 		const scheduledAt = new Date(
 			params.dueAt.getTime() - hour * 60 * 60 * 1000,
 		);
-
 		if (scheduledAt.getTime() <= Date.now()) {
 			continue;
 		}
 
 		for (const userId of params.memberUserIds) {
-			const channels = await getEnabledChannels(userId);
+			const channels = channelMap.get(userId) ?? [NotifChannel.EMAIL];
 			const payload: TaskNotificationPayload = {
 				userId,
 				taskId: params.taskId,
@@ -181,12 +204,20 @@ export async function enqueueTaskPublishedNotifications(params: {
 				dueAt: params.dueAt.toISOString(),
 				type: "TASK_DUE_REMINDER",
 			};
-
 			for (const channel of channels) {
-				await createNotificationJob(payload, scheduledAt, channel);
+				reminderRows.push({
+					channel,
+					payload: payload as unknown as object,
+					scheduledAt,
+					status: NotifStatus.PENDING,
+					userId,
+					taskId: params.taskId,
+				});
 			}
 		}
 	}
+
+	await batchCreateAndEnqueueJobs(reminderRows);
 }
 
 export async function enqueueCommentNotifications(params: {
@@ -241,8 +272,22 @@ export async function enqueueCommentNotifications(params: {
 		recipientUserIds = admins.map((m) => m.userId);
 	}
 
+	// Batch-fetch channel preferences for all recipients.
+	const allPrefs = await prisma.userNotificationPref.findMany({
+		where: { userId: { in: recipientUserIds }, isEnabled: true },
+		select: { userId: true, channel: true },
+	});
+
+	const channelMap = new Map<string, NotifChannel[]>();
+	for (const pref of allPrefs) {
+		const list = channelMap.get(pref.userId) ?? [];
+		list.push(pref.channel);
+		channelMap.set(pref.userId, list);
+	}
+
+	const rows: JobRow[] = [];
 	for (const userId of recipientUserIds) {
-		const channels = await getEnabledChannels(userId);
+		const channels = channelMap.get(userId) ?? [NotifChannel.EMAIL];
 		const payload: CommentNotificationPayload = {
 			userId,
 			taskId: params.taskId,
@@ -254,15 +299,19 @@ export async function enqueueCommentNotifications(params: {
 			commentContent: contentPreview,
 			isReply: params.replyToUserId !== null,
 		};
-
 		for (const channel of channels) {
-			await createNotificationJob(
-				payload as unknown as TaskNotificationPayload,
-				now,
+			rows.push({
 				channel,
-			);
+				payload: payload as unknown as object,
+				scheduledAt: now,
+				status: NotifStatus.PENDING,
+				userId,
+				taskId: params.taskId,
+			});
 		}
 	}
+
+	await batchCreateAndEnqueueJobs(rows);
 }
 
 function buildSubject(payload: NotificationPayload, appTitle: string) {
