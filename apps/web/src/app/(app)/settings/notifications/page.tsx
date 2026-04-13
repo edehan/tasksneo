@@ -13,11 +13,10 @@ import type { NotificationPref } from "@/lib/api";
 import {
   ApiError,
   getNotificationPrefs,
-  upsertNotificationPref,
-} from "@/lib/api";
+  upsertNotificationPref } from "@/lib/api";
 
 export default function NotificationsPage() {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const t = useTranslations("settingsNotifications");
 
   const [loading, setLoading] = useState(true);
@@ -31,9 +30,8 @@ export default function NotificationsPage() {
   const [webhookUrl, setWebhookUrl] = useState("");
 
   const loadPrefs = useCallback(async () => {
-    if (!token) return;
     try {
-      const prefs = await getNotificationPrefs(token);
+      const prefs = await getNotificationPrefs();
 
       const emailPref = prefs.find(
         (p: NotificationPref) => p.channel === "EMAIL",
@@ -54,14 +52,13 @@ export default function NotificationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, t]);
+  }, [t]);
 
   useEffect(() => {
     void loadPrefs();
   }, [loadPrefs]);
 
   async function handleSave() {
-    if (!token) return;
     if (webhookEnabled && !webhookUrl.trim()) {
       toast.error(t("pleaseEnterWebhookUrl"));
       return;
@@ -70,21 +67,19 @@ export default function NotificationsPage() {
     setSaving(true);
     try {
       const promises: Promise<unknown>[] = [
-        upsertNotificationPref(token, {
+        upsertNotificationPref({
           channel: "EMAIL",
           address: user?.email ?? "",
-          isEnabled: emailEnabled,
-        }),
+          isEnabled: emailEnabled }),
       ];
 
       // Only save webhook pref if user has interacted with it
       if (webhookEnabled || webhookUrl.trim()) {
         promises.push(
-          upsertNotificationPref(token, {
+          upsertNotificationPref({
             channel: "WEBHOOK",
             address: webhookUrl.trim() || "https://",
-            isEnabled: webhookEnabled,
-          }),
+            isEnabled: webhookEnabled }),
         );
       }
 

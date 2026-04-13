@@ -9,13 +9,11 @@ import {
   FileText,
   ImagePlus,
   Loader2,
-  X,
-} from "lucide-react";
+  X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { useAuth } from "@/components/auth-provider";
 import type { AttachmentMeta } from "@/lib/api";
 import { ApiError, downloadFile } from "@/lib/api";
 
@@ -64,8 +62,7 @@ const EXT_COLORS: Record<string, string> = {
   jpeg: "#6B8FA3",
   gif: "#6B8FA3",
   svg: "#6B8FA3",
-  webp: "#6B8FA3",
-};
+  webp: "#6B8FA3" };
 
 const DEFAULT_ICON_COLOR = "#8a8078";
 
@@ -103,10 +100,8 @@ export function AttachmentSidebar({
   accentColor,
   onRemove,
   onToggleVisibility,
-  onInsertImage,
-}: AttachmentSidebarProps) {
+  onInsertImage }: AttachmentSidebarProps) {
   const t = useTranslations("attachmentSidebar");
-  const { token } = useAuth();
   const accent = accentColor ?? "var(--class-accent)";
   const [downloading, setDownloading] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(
@@ -119,11 +114,10 @@ export function AttachmentSidebar({
     : attachments;
 
   async function handleDownload(att: AttachmentMeta) {
-    if (!token) return;
 
     setDownloading(att.id);
     try {
-      const blobUrl = await downloadFile(token, att.fileKey);
+      const blobUrl = await downloadFile(att.fileKey);
       const link = document.createElement("a");
       link.href = blobUrl;
       link.download = att.originalName ?? att.fileKey;
@@ -179,8 +173,7 @@ export function AttachmentSidebar({
                       }}
                       className="absolute inset-0 flex items-center justify-center rounded-md bg-secondary text-muted-foreground opacity-0 transition-opacity duration-150 hover:text-foreground group-hover/icon:opacity-100"
                       aria-label={t("insertIntoBody", {
-                        name: att.originalName,
-                      })}
+                        name: att.originalName })}
                       title={t("insertIntoBody", { name: att.originalName })}
                     >
                       <ImagePlus size={14} strokeWidth={2} />

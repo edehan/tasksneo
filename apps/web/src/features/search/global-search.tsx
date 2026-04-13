@@ -10,8 +10,7 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
-} from "react";
+  useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
 import type {
@@ -21,8 +20,7 @@ import type {
   SubmissionListRow,
   TaskComment,
   TaskDetail,
-  TaskSummary,
-} from "@/lib/api";
+  TaskSummary } from "@/lib/api";
 import {
   getTask,
   listClasses,
@@ -30,8 +28,7 @@ import {
   listMembers,
   listMyTasks,
   listSubmissions,
-  listTaskComments,
-} from "@/lib/api";
+  listTaskComments } from "@/lib/api";
 
 export type SearchResultKind =
   | "class"
@@ -151,8 +148,7 @@ function toSearchableDocument(document: SearchDocument): SearchableDocument {
       .filter(Boolean),
     searchKeywordsCompact: document.keywords
       .map((keyword) => compactNormalizedSearch(keyword))
-      .filter(Boolean),
-  };
+      .filter(Boolean) };
 }
 
 function upsertDocument(
@@ -208,8 +204,7 @@ function writeSearchCache(userId: string, docs: SearchDocument[]): void {
   try {
     const payload: SearchCachePayload = {
       cachedAt: Date.now(),
-      docs,
-    };
+      docs };
     window.localStorage.setItem(
       getSearchCacheKey(userId),
       JSON.stringify(payload),
@@ -232,8 +227,7 @@ function toClassDocument(cls: ClassSummary): SearchDocument {
     keywords: [cls.name, cls.description ?? "", cls.myRole],
     classId: cls.id,
     updatedAt: cls.createdAt,
-    sourceDepth: "list",
-  };
+    sourceDepth: "list" };
 }
 
 function toTaskDocument(record: IndexedTaskRecord): SearchDocument {
@@ -248,8 +242,7 @@ function toTaskDocument(record: IndexedTaskRecord): SearchDocument {
     taskId: record.id,
     classId: record.classId,
     updatedAt: record.task.updatedAt,
-    sourceDepth: "list",
-  };
+    sourceDepth: "list" };
 }
 
 function toMemberDocument(
@@ -267,8 +260,7 @@ function toMemberDocument(
     keywords: [displayName, cls.name, member.role],
     classId: cls.id,
     updatedAt: member.joinedAt,
-    sourceDepth: "list",
-  };
+    sourceDepth: "list" };
 }
 
 function mergeTaskRecord(
@@ -294,9 +286,7 @@ function mergeTaskRecord(
     manageable: existing?.manageable || manageable,
     task: {
       ...task,
-      className: nextClassName,
-    },
-  });
+      className: nextClassName } });
 }
 
 function sortAndLimitResults(
@@ -368,8 +358,7 @@ function searchDocuments(
   return sortAndLimitResults(
     fuse.search(compactQuery, { limit: MAX_RESULTS * 2 }).map((result) => ({
       document: result.item,
-      rank: result.score ?? 1,
-    })),
+      rank: result.score ?? 1 })),
   );
 }
 
@@ -385,8 +374,8 @@ async function loadImmediateSnapshot(token: string): Promise<{
 
   const [myTasks, managedTaskLists, memberLists] = await Promise.all([
     listMyTasks(token),
-    Promise.all(managedClasses.map((cls) => listClassTasks(token, cls.id))),
-    Promise.all(managedClasses.map((cls) => listMembers(token, cls.id))),
+    Promise.all(managedClasses.map((cls) => listClassTasks(cls.id))),
+    Promise.all(managedClasses.map((cls) => listMembers(cls.id))),
   ]);
 
   const taskMap = new Map<string, IndexedTaskRecord>();
@@ -420,8 +409,7 @@ async function loadImmediateSnapshot(token: string): Promise<{
 
   return {
     docs: Array.from(documentMap.values()),
-    taskRecords: Array.from(taskMap.values()),
-  };
+    taskRecords: Array.from(taskMap.values()) };
 }
 
 function buildEnrichedTaskDocument(
@@ -445,8 +433,7 @@ function buildEnrichedTaskDocument(
     taskId: detail.id,
     classId: record.classId,
     updatedAt: detail.updatedAt,
-    sourceDepth: "enriched",
-  };
+    sourceDepth: "enriched" };
 }
 
 function buildAttachmentDocuments(
@@ -466,8 +453,7 @@ function buildAttachmentDocuments(
     taskId: detail.id,
     classId: record.classId,
     updatedAt: attachment.createdAt,
-    sourceDepth: "enriched",
-  }));
+    sourceDepth: "enriched" }));
 }
 
 function buildCommentDocuments(
@@ -492,8 +478,7 @@ function buildCommentDocuments(
       taskId: record.id,
       classId: record.classId,
       updatedAt: comment.createdAt,
-      sourceDepth: "enriched",
-    };
+      sourceDepth: "enriched" };
   });
 }
 
@@ -531,8 +516,7 @@ function buildSubmissionDocuments(
         classId: record.classId,
         submissionId: row.submission.id,
         updatedAt: row.submission.lastUpdatedAt,
-        sourceDepth: "enriched",
-      },
+        sourceDepth: "enriched" },
     ];
   });
 }
@@ -542,10 +526,10 @@ async function enrichTaskRecord(
   record: IndexedTaskRecord,
 ): Promise<SearchDocument[]> {
   const [detailResult, commentsResult, submissionsResult] = await Promise.all([
-    getTask(token, record.id),
-    listTaskComments(token, record.id).catch(() => [] as TaskComment[]),
+    getTask(record.id),
+    listTaskComments(record.id).catch(() => [] as TaskComment[]),
     record.manageable
-      ? listSubmissions(token, record.id).catch(() => [] as SubmissionListRow[])
+      ? listSubmissions(record.id).catch(() => [] as SubmissionListRow[])
       : Promise.resolve([] as SubmissionListRow[]),
   ]);
 
@@ -558,11 +542,10 @@ async function enrichTaskRecord(
 }
 
 export function GlobalSearchProvider({
-  children,
-}: {
+  children }: {
   children: React.ReactNode;
 }) {
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [documents, setDocuments] = useState<SearchDocument[]>([]);
@@ -598,8 +581,7 @@ export function GlobalSearchProvider({
           { name: "searchKeywordsCompact", weight: 0.2 },
           { name: "searchContent", weight: 0.15 },
           { name: "searchContentCompact", weight: 0.15 },
-        ],
-      }),
+        ] }),
     [searchableDocuments],
   );
 
@@ -650,7 +632,7 @@ export function GlobalSearchProvider({
 
           const enrichedBatches = await Promise.all(
             batch.map((record) =>
-              enrichTaskRecord(token, record).catch(
+              enrichTaskRecord(record).catch(
                 () => [] as SearchDocument[],
               ),
             ),
@@ -682,7 +664,7 @@ export function GlobalSearchProvider({
         }
       }
     },
-    [token, user?.id],
+    [user?.id],
   );
 
   const refresh = useCallback(async () => {
@@ -698,7 +680,7 @@ export function GlobalSearchProvider({
       cacheHydratedRef.current = false;
       return;
     }
-  }, [token, user?.id]);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!open || !token || !user?.id) return;
@@ -719,7 +701,7 @@ export function GlobalSearchProvider({
     }
 
     void runRefresh(cached ? "lightweight" : "full");
-  }, [open, phase, runRefresh, token, user?.id]);
+  }, [open, phase, runRefresh, user?.id]);
 
   const value = useMemo<GlobalSearchContextValue>(
     () => ({
@@ -729,12 +711,10 @@ export function GlobalSearchProvider({
       status: {
         phase,
         lastRefreshAt,
-        isSearching: query !== deferredQuery,
-      },
+        isSearching: query !== deferredQuery },
       open,
       setOpen,
-      refresh,
-    }),
+      refresh }),
     [deferredQuery, lastRefreshAt, open, phase, query, refresh, results],
   );
 

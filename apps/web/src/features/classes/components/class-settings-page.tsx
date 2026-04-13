@@ -17,8 +17,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,8 +26,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import type { ClassSummary, School } from "@/lib/api";
@@ -38,8 +36,7 @@ import {
   getClass,
   listSchools,
   refreshInviteCode,
-  updateClass,
-} from "@/lib/api";
+  updateClass } from "@/lib/api";
 
 const PRESET_COLORS = [
   "#5B8C6A",
@@ -58,7 +55,7 @@ export function ClassSettingsPage() {
   const t = useTranslations("classSettings");
   const params = useParams();
   const router = useRouter();
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const classId = params?.classId as string;
 
   const [cls, setCls] = useState<ClassSummary | null>(null);
@@ -76,10 +73,10 @@ export function ClassSettingsPage() {
   const [inviteCode, setInviteCode] = useState("");
 
   const loadData = useCallback(async () => {
-    if (!token || !classId) return;
+    if (!classId) return;
     try {
       const [classData, schoolList] = await Promise.all([
-        getClass(token, classId),
+        getClass(classId),
         listSchools(),
       ]);
       setCls(classData);
@@ -94,21 +91,20 @@ export function ClassSettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, classId, t]);
+  }, [classId, t]);
 
   useEffect(() => {
     void loadData();
   }, [loadData]);
 
   async function handleSave() {
-    if (!token || !classId || !name.trim()) return;
+    if (!classId || !name.trim()) return;
     setSaving(true);
     try {
-      const updated = await updateClass(token, classId, {
+      const updated = await updateClass(classId, {
         name: name.trim(),
         description: description.trim() || null,
-        color,
-      });
+        color });
       setCls(updated);
       toast.success(t("classSettingsSaved"));
     } catch (err) {
@@ -121,10 +117,10 @@ export function ClassSettingsPage() {
   }
 
   async function handleRefreshInviteCode() {
-    if (!token || !classId) return;
+    if (!classId) return;
     setRefreshing(true);
     try {
-      const result = await refreshInviteCode(token, classId);
+      const result = await refreshInviteCode(classId);
       setInviteCode(result.inviteCode);
       toast.success(t("inviteCodeRefreshed"));
     } catch (err) {
@@ -137,10 +133,10 @@ export function ClassSettingsPage() {
   }
 
   async function handleDelete() {
-    if (!token || !classId) return;
+    if (!classId) return;
     setDeleting(true);
     try {
-      await deleteClass(token, classId);
+      await deleteClass(classId);
       toast.success(t("classDeleted"));
       router.push("/dashboard");
     } catch (err) {
@@ -166,8 +162,7 @@ export function ClassSettingsPage() {
     const text = t("inviteLinkText", {
       user: userName,
       class: cls.name,
-      url,
-    });
+      url });
     navigator.clipboard.writeText(text).then(
       () => toast.success(t("inviteLinkCopied")),
       () => toast.error(t("failedCopy")),
@@ -253,8 +248,7 @@ export function ClassSettingsPage() {
                     color === c
                       ? "2.5px solid var(--foreground)"
                       : "2.5px solid transparent",
-                  transform: color === c ? "scale(1.1)" : "scale(1)",
-                }}
+                  transform: color === c ? "scale(1.1)" : "scale(1)" }}
               />
             ))}
           </div>
@@ -283,12 +277,11 @@ export function ClassSettingsPage() {
           onValueChange={(val) => {
             const newSchoolId = val === "none" ? null : val;
             setSchoolId(newSchoolId);
-            if (token && classId) {
-              updateClass(token, classId, {
+            if (classId) {
+              updateClass(classId, {
                 name: name.trim(),
                 description: description.trim() || null,
-                color,
-              })
+                color })
                 .then(() => toast.success(t("schoolRestrictionUpdated")))
                 .catch(() => toast.error(t("failedUpdateSchoolRestriction")));
             }

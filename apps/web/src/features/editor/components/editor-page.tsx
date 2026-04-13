@@ -11,8 +11,7 @@ import {
   Send,
   Sparkles,
   Undo2,
-  Upload,
-} from "lucide-react";
+  Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -27,15 +26,13 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -43,8 +40,7 @@ import {
   SheetContent,
   SheetDescription,
   SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  SheetTitle } from "@/components/ui/sheet";
 import { EditorToolbar } from "@/features/editor/components/editor-toolbar";
 import { MarkdownPreview } from "@/features/editor/components/markdown-preview";
 import { AttachmentSidebar } from "@/features/tasks/components/attachment-sidebar";
@@ -60,8 +56,7 @@ import {
   updateTask,
   uploadSubmissionAttachment,
   uploadTaskAttachment,
-  upsertMySubmission,
-} from "@/lib/api";
+  upsertMySubmission } from "@/lib/api";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -90,8 +85,7 @@ export function EditorPage({
   initialContent,
   initialAttachments,
   isAlreadyPublished,
-  initialDueAt,
-}: EditorPageProps) {
+  initialDueAt }: EditorPageProps) {
   const t = useTranslations("editorPage");
   const { token } = useAuth();
   const router = useRouter();
@@ -118,8 +112,7 @@ export function EditorPage({
     partialText: rewritePartialText,
     startStreaming: rewriteStartStreaming,
     stopStreaming: rewriteStopStreaming,
-    resetTranscript: rewriteResetTranscript,
-  } = useStreamingTranscription();
+    resetTranscript: rewriteResetTranscript } = useStreamingTranscription();
 
   // Undo stack
   const [contentHistory, setContentHistory] = useState<string[]>([]);
@@ -195,7 +188,7 @@ export function EditorPage({
         mode === "publish" ? uploadTaskAttachment : uploadSubmissionAttachment;
 
       const results = await Promise.all(
-        files.map((f) => uploadFn(token, taskId, f)),
+        files.map((f) => uploadFn(taskId, f)),
       );
 
       setAttachments((prev) => [...prev, ...results]);
@@ -233,9 +226,8 @@ export function EditorPage({
   }
 
   async function handleRemoveAttachment(att: AttachmentMeta) {
-    if (!token) return;
     try {
-      await deleteAttachment(token, att.id);
+      await deleteAttachment(att.id);
       setAttachments((prev) => prev.filter((a) => a.id !== att.id));
       toast.success(t("toast.attachmentRemoved"));
     } catch (err) {
@@ -251,7 +243,6 @@ export function EditorPage({
     if (!token || mode !== "publish") return;
     try {
       const updated = await updateAttachmentVisibility(
-        token,
         att.id,
         !att.isVisible,
       );
@@ -312,16 +303,14 @@ export function EditorPage({
     try {
       const att =
         mode === "publish"
-          ? await uploadTaskAttachment(token, taskId, file, {
-              isVisible: false,
-            })
-          : await uploadSubmissionAttachment(token, taskId, file);
+          ? await uploadTaskAttachment(taskId, file, {
+              isVisible: false })
+          : await uploadSubmissionAttachment(taskId, file);
       setAttachments((prev) => [...prev, att]);
 
       insertImageMarkdown({
         ...att,
-        originalName: att.originalName ?? file.name,
-      });
+        originalName: att.originalName ?? file.name });
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("toast.failedUploadImage");
@@ -361,7 +350,6 @@ export function EditorPage({
       setContentHistory((prev) => [...prev, content]);
 
       const result = await reviseTaskContent(
-        token,
         taskId,
         content,
         rewriteInstruction.trim(),
@@ -405,8 +393,7 @@ export function EditorPage({
         "1h": 1,
         "3h": 3,
         "1d": 24,
-        "3d": 72,
-      };
+        "3d": 72 };
       hours = presets[extendMode] ?? 0;
     }
 
@@ -421,7 +408,7 @@ export function EditorPage({
 
     setExtending(true);
     try {
-      await updateTask(token, taskId, { dueAt: newDueAt.toISOString() });
+      await updateTask(taskId, { dueAt: newDueAt.toISOString() });
       setDueAt(newDueAt);
       setShowExtendDialog(false);
       toast.success(t("toast.deadlineExtended"));
@@ -446,24 +433,21 @@ export function EditorPage({
   }
 
   async function doSubmitOrPublish() {
-    if (!token) return;
 
     setSubmitting(true);
     try {
       if (mode === "publish") {
         if (isAlreadyPublished) {
-          await updateTask(token, taskId, {
-            description: content || null,
-          });
+          await updateTask(taskId, {
+            description: content || null });
           toast.success(t("toast.changesSaved"));
         } else {
-          await publishTaskDraft(token, taskId, {
-            description: content || null,
-          });
+          await publishTaskDraft(taskId, {
+            description: content || null });
           toast.success(t("toast.taskPublished"));
         }
       } else {
-        await upsertMySubmission(token, taskId, content || null);
+        await upsertMySubmission(taskId, content || null);
         toast.success(t("toast.submissionSaved"));
       }
       router.back();
@@ -498,8 +482,7 @@ export function EditorPage({
 
   const mobileAttachmentButtonLabel = t("manageAttachments");
   const mobileAttachmentLabel = t("attachmentsPanel", {
-    count: attachments.length,
-  });
+    count: attachments.length });
 
   const secondaryActionClass =
     "inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground md:px-3.5 md:py-1.5";
@@ -742,8 +725,7 @@ export function EditorPage({
       <footer
         className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/95 px-4 py-3 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] backdrop-blur supports-[backdrop-filter]:bg-card/90 md:static md:shrink-0 md:bg-background md:px-8 md:shadow-none"
         style={{
-          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)",
-        }}
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.75rem)" }}
       >
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3 text-xs text-muted-foreground md:gap-4">
@@ -930,7 +912,7 @@ export function EditorPage({
                 onClick={() => {
                   if (rewriteStreaming || rewriteConnecting) {
                     rewriteStopStreaming();
-                  } else if (token) {
+                  } else {
                     void rewriteStartStreaming(token);
                   }
                 }}
@@ -1015,8 +997,7 @@ export function EditorPage({
                     extendMode === key
                       ? {
                           backgroundColor: accentColor,
-                          borderColor: accentColor,
-                        }
+                          borderColor: accentColor }
                       : undefined
                   }
                 >
@@ -1058,8 +1039,7 @@ export function EditorPage({
                           customUnit === u
                             ? {
                                 backgroundColor: accentColor,
-                                borderColor: accentColor,
-                              }
+                                borderColor: accentColor }
                             : undefined
                         }
                       >

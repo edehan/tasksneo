@@ -9,16 +9,14 @@ import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { NotificationItem } from "@/lib/api";
 import {
   getUnreadNotificationCount,
   listMyNotifications,
   markAllNotificationsRead,
-  markNotificationRead,
-} from "@/lib/api";
+  markNotificationRead } from "@/lib/api";
 
 const POLL_INTERVAL = 60_000;
 
@@ -38,7 +36,7 @@ function timeAgo(
 }
 
 export function NotificationBell() {
-  const { token } = useAuth();
+  const { user } = useAuth();
   const t = useTranslations("notificationBell");
   const router = useRouter();
   const [unreadCount, setUnreadCount] = useState(0);
@@ -48,14 +46,13 @@ export function NotificationBell() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchCount = useCallback(async () => {
-    if (!token) return;
     try {
-      const res = await getUnreadNotificationCount(token);
+      const res = await getUnreadNotificationCount();
       setUnreadCount(res.unreadCount);
     } catch {
       // Silently fail — badge is non-critical
     }
-  }, [token]);
+  }, []);
 
   // Poll unread count
   useEffect(() => {
@@ -68,26 +65,24 @@ export function NotificationBell() {
 
   // Fetch items when popover opens
   useEffect(() => {
-    if (!open || !token) return;
+    if (!open || !user) return;
     setLoading(true);
-    listMyNotifications(token, { limit: 10 })
+    listMyNotifications({ limit: 10 })
       .then((res) => {
         setItems(res.items);
         setUnreadCount(res.unreadCount);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [open, token]);
+  }, [open]);
 
   async function handleMarkAllRead() {
-    if (!token) return;
     try {
-      await markAllNotificationsRead(token);
+      await markAllNotificationsRead();
       setItems((prev) =>
         prev.map((item) => ({
           ...item,
-          readAt: item.readAt ?? new Date().toISOString(),
-        })),
+          readAt: item.readAt ?? new Date().toISOString() })),
       );
       setUnreadCount(0);
     } catch {
@@ -96,11 +91,10 @@ export function NotificationBell() {
   }
 
   async function handleClickItem(item: NotificationItem) {
-    if (!token) return;
 
     if (!item.readAt) {
       try {
-        await markNotificationRead(token, item.id);
+        await markNotificationRead(item.id);
         setItems((prev) =>
           prev.map((n) =>
             n.id === item.id ? { ...n, readAt: new Date().toISOString() } : n,

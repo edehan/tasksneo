@@ -13,8 +13,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -22,8 +21,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SelectValue } from "@/components/ui/select";
 import { ApiError, createClass, listSchools, type School } from "@/lib/api";
 
 const PRESET_COLORS = [
@@ -46,9 +44,8 @@ interface CreateClassDialogProps {
 
 export function CreateClassDialog({
   trigger,
-  onCreated,
-}: CreateClassDialogProps) {
-  const { token, user } = useAuth();
+  onCreated }: CreateClassDialogProps) {
+  const { user } = useAuth();
   const t = useTranslations("createClassDialog");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -96,16 +93,15 @@ export function CreateClassDialog({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!token || !name.trim()) return;
+    if (!user || !name.trim()) return;
 
     setLoading(true);
     try {
-      const cls = await createClass(token, {
+      const cls = await createClass({
         name: name.trim(),
         color,
         schoolId:
-          restrictSchool && selectedSchoolId ? selectedSchoolId : undefined,
-      });
+          restrictSchool && selectedSchoolId ? selectedSchoolId : undefined });
       toast.success(t("createdToast", { name: cls.name }));
       setOpen(false);
       resetForm();
@@ -159,8 +155,7 @@ export function CreateClassDialog({
                         color === c
                           ? "2.5px solid var(--foreground)"
                           : "2.5px solid transparent",
-                      transform: color === c ? "scale(1.1)" : "scale(1)",
-                    }}
+                      transform: color === c ? "scale(1.1)" : "scale(1)" }}
                   />
                 ))}
               </div>

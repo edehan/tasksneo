@@ -6,8 +6,7 @@ import {
   Loader2,
   LogOut,
   Shield,
-  ShieldCheck,
-} from "lucide-react";
+  ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -24,8 +23,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,24 +32,21 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  TableRow } from "@/components/ui/table";
 import { UserAvatar } from "@/components/user-avatar";
 import type { ClassMember, ClassSummary } from "@/lib/api";
 import {
@@ -60,8 +55,7 @@ import {
   listMembers,
   removeMember,
   transferOwnership,
-  updateMemberRole,
-} from "@/lib/api";
+  updateMemberRole } from "@/lib/api";
 
 function getRoleBadge(
   role: ClassMember["role"],
@@ -96,15 +90,14 @@ function formatDate(dateStr: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "short",
-    day: "numeric",
-  }).format(new Date(dateStr));
+    day: "numeric" }).format(new Date(dateStr));
 }
 
 export function MembersPage() {
   const t = useTranslations("classMembers");
   const locale = useLocale();
   const params = useParams();
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const classId = params?.classId as string;
 
   const [cls, setCls] = useState<ClassSummary | null>(null);
@@ -118,11 +111,11 @@ export function MembersPage() {
   const [transferring, setTransferring] = useState(false);
 
   const loadData = useCallback(async () => {
-    if (!token || !classId) return;
+    if (!classId) return;
     try {
       const [classData, memberList] = await Promise.all([
-        getClass(token, classId),
-        listMembers(token, classId),
+        getClass(classId),
+        listMembers(classId),
       ]);
       setCls(classData);
       setMembers(memberList);
@@ -131,7 +124,7 @@ export function MembersPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, classId, t]);
+  }, [classId, t]);
 
   useEffect(() => {
     void loadData();
@@ -145,14 +138,13 @@ export function MembersPage() {
     memberId: string,
     newRole: "ADMIN" | "MEMBER",
   ) {
-    if (!token || !classId) return;
+    if (!classId) return;
     setActionLoading(memberId);
     try {
-      await updateMemberRole(token, classId, memberId, newRole);
+      await updateMemberRole(classId, memberId, newRole);
       toast.success(
         t("toast.roleUpdated", {
-          role: newRole === "ADMIN" ? t("roles.admin") : t("roles.member"),
-        }),
+          role: newRole === "ADMIN" ? t("roles.admin") : t("roles.member") }),
       );
       await loadData();
     } catch (err) {
@@ -165,10 +157,10 @@ export function MembersPage() {
   }
 
   async function handleRemove(memberId: string, memberName: string) {
-    if (!token || !classId) return;
+    if (!classId) return;
     setActionLoading(memberId);
     try {
-      await removeMember(token, classId, memberId);
+      await removeMember(classId, memberId);
       toast.success(t("toast.memberRemoved", { name: memberName }));
       await loadData();
     } catch (err) {
@@ -181,10 +173,10 @@ export function MembersPage() {
   }
 
   async function handleLeave() {
-    if (!token || !classId || !user) return;
+    if (!classId || !user) return;
     setActionLoading(user.id);
     try {
-      await removeMember(token, classId, user.id);
+      await removeMember(classId, user.id);
       toast.success(t("toast.leftClass"));
       window.location.href = "/dashboard";
     } catch (err) {
@@ -196,10 +188,10 @@ export function MembersPage() {
   }
 
   async function handleTransfer() {
-    if (!token || !classId || !transferTarget) return;
+    if (!classId || !transferTarget) return;
     setTransferring(true);
     try {
-      await transferOwnership(token, classId, transferTarget);
+      await transferOwnership(classId, transferTarget);
       toast.success(t("toast.ownershipTransferred"));
       setTransferOpen(false);
       setTransferTarget("");
@@ -382,8 +374,7 @@ export function MembersPage() {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>
                                   {t("dialogs.remove.title", {
-                                    name: displayName,
-                                  })}
+                                    name: displayName })}
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
                                   {t("dialogs.remove.description")}
@@ -438,8 +429,7 @@ export function MembersPage() {
                             <AlertDialogHeader>
                               <AlertDialogTitle>
                                 {t("dialogs.remove.title", {
-                                  name: displayName,
-                                })}
+                                  name: displayName })}
                               </AlertDialogTitle>
                               <AlertDialogDescription>
                                 {t("dialogs.remove.description")}

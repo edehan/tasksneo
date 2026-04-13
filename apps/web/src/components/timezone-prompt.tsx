@@ -31,8 +31,7 @@ function getUtcOffsetMinutes(tz: string): number {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
-      hour12: false,
-    });
+      hour12: false });
     const parts = formatter.formatToParts(now);
     const get = (type: Intl.DateTimeFormatPartTypes) =>
       parseInt(parts.find((p) => p.type === type)?.value ?? "0", 10);
@@ -55,8 +54,7 @@ function getUtcOffsetMinutes(tz: string): number {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
-      hour12: false,
-    });
+      hour12: false });
     const utcParts = utcFormatter.formatToParts(now);
     const getUtc = (type: Intl.DateTimeFormatPartTypes) =>
       parseInt(utcParts.find((p) => p.type === type)?.value ?? "0", 10);
@@ -80,8 +78,7 @@ function formatOffset(tz: string): string {
   try {
     const formatter = new Intl.DateTimeFormat("en-US", {
       timeZone: tz,
-      timeZoneName: "shortOffset",
-    });
+      timeZoneName: "shortOffset" });
     const parts = formatter.formatToParts(new Date());
     return parts.find((p) => p.type === "timeZoneName")?.value ?? tz;
   } catch {
@@ -90,7 +87,7 @@ function formatOffset(tz: string): string {
 }
 
 export function TimezonePrompt() {
-  const { token, user, updateUser } = useAuth();
+  const { user, updateUser } = useAuth();
   const t = useTranslations("timezonePrompt");
   const [visible, setVisible] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -119,10 +116,10 @@ export function TimezonePrompt() {
   }, [user]);
 
   const handleUpdate = useCallback(async () => {
-    if (!token || !browserTz) return;
+    if (!browserTz) return;
     setUpdating(true);
     try {
-      const updated = await updateProfile(token, { timezone: browserTz });
+      const updated = await updateProfile({ timezone: browserTz });
       updateUser(updated);
       setVisible(false);
       localStorage.removeItem(DISMISS_KEY);
@@ -133,7 +130,7 @@ export function TimezonePrompt() {
     } finally {
       setUpdating(false);
     }
-  }, [token, browserTz, updateUser, t]);
+  }, [browserTz, updateUser, t]);
 
   const handleDismiss = useCallback(() => {
     if (user && browserTz) {

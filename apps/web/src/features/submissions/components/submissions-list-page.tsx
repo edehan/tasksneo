@@ -9,13 +9,11 @@ import {
   Download,
   Eye,
   FileSpreadsheet,
-  Users,
-} from "lucide-react";
+  Users } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useAuth } from "@/components/auth-provider";
 import type { ClassSummary, SubmissionListRow, TaskDetail } from "@/lib/api";
 import {
   ApiError,
@@ -23,8 +21,7 @@ import {
   getClass,
   getTask,
   listSubmissions,
-  toggleExemplary,
-} from "@/lib/api";
+  toggleExemplary } from "@/lib/api";
 import { BatchDownloadDialog } from "./batch-download-dialog";
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -34,7 +31,6 @@ export function SubmissionsListPage() {
   const locale = useLocale();
   const params = useParams();
   const router = useRouter();
-  const { token } = useAuth();
 
   const taskId = params?.taskId as string;
 
@@ -50,8 +46,7 @@ export function SubmissionsListPage() {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
-    hour12: true,
-  });
+    hour12: true });
 
   function formatDate(iso: string | null | undefined): string {
     if (!iso) return "\u2014";
@@ -61,13 +56,13 @@ export function SubmissionsListPage() {
   // ─── Load data ──────────────────────────────────────────────────────────────
 
   const loadData = useCallback(async () => {
-    if (!token || !taskId) return;
+    if (!taskId) return;
     try {
       const [taskData, submissionRows] = await Promise.all([
-        getTask(token, taskId),
-        listSubmissions(token, taskId),
+        getTask(taskId),
+        listSubmissions(taskId),
       ]);
-      const classData = await getClass(token, taskData.classId);
+      const classData = await getClass(taskData.classId);
       setTask(taskData);
       setCls(classData);
       setRows(submissionRows);
@@ -76,7 +71,7 @@ export function SubmissionsListPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, taskId, t]);
+  }, [taskId, t]);
 
   useEffect(() => {
     void loadData();
@@ -107,10 +102,10 @@ export function SubmissionsListPage() {
   // ─── CSV export ─────────────────────────────────────────────────────────────
 
   async function handleExport() {
-    if (!token || !taskId) return;
+    if (!taskId) return;
     setExporting(true);
     try {
-      const csv = await exportSubmissionsCsv(token, taskId);
+      const csv = await exportSubmissionsCsv(taskId);
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -136,9 +131,9 @@ export function SubmissionsListPage() {
     e: React.MouseEvent,
   ) {
     e.stopPropagation();
-    if (!token || !taskId) return;
+    if (!taskId) return;
     try {
-      const updated = await toggleExemplary(token, taskId, submissionId);
+      const updated = await toggleExemplary(taskId, submissionId);
       setRows((prev) =>
         prev.map((row) =>
           row.submission?.id === submissionId
@@ -146,9 +141,7 @@ export function SubmissionsListPage() {
                 ...row,
                 submission: {
                   ...row.submission,
-                  isExemplary: updated.isExemplary,
-                },
-              }
+                  isExemplary: updated.isExemplary } }
             : row,
         ),
       );
@@ -367,8 +360,7 @@ export function SubmissionsListPage() {
                           className="inline-block rounded-md px-2.5 py-0.5 text-[11px] font-semibold"
                           style={{
                             backgroundColor: "#7B6CB018",
-                            color: "#7B6CB0",
-                          }}
+                            color: "#7B6CB0" }}
                         >
                           {t("status.graded")}
                         </span>
@@ -377,8 +369,7 @@ export function SubmissionsListPage() {
                           className="inline-block rounded-md px-2.5 py-0.5 text-[11px] font-semibold"
                           style={{
                             backgroundColor: "#5B8C6A18",
-                            color: "#5B8C6A",
-                          }}
+                            color: "#5B8C6A" }}
                         >
                           {t("status.submitted")}
                         </span>
@@ -392,8 +383,7 @@ export function SubmissionsListPage() {
                           className="inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[11px] font-semibold"
                           style={{
                             backgroundColor: "#d97706" + "18",
-                            color: "#d97706",
-                          }}
+                            color: "#d97706" }}
                           title={t("status.exemplary")}
                         >
                           <Award size={10} strokeWidth={2.5} />
@@ -483,8 +473,7 @@ function StatCard({
   icon,
   label,
   value,
-  accentColor,
-}: {
+  accentColor }: {
   icon: React.ReactNode;
   label: string;
   value: string;

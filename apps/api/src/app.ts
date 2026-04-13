@@ -50,6 +50,7 @@ export function createApp(options?: { startWorker?: boolean }) {
 
 				return "";
 			},
+			credentials: true,
 			allowHeaders: ["Content-Type", "Authorization"],
 			allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 		}),

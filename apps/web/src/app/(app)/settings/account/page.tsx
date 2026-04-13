@@ -14,8 +14,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,11 +25,10 @@ import {
   ApiError,
   deleteAccount,
   listClasses,
-  updatePassword,
-} from "@/lib/api";
+  updatePassword } from "@/lib/api";
 
 export default function AccountPage() {
-  const { token, user, logout } = useAuth();
+  const { user, logout } = useAuth();
   const t = useTranslations("settingsAccount");
   const router = useRouter();
 
@@ -53,9 +51,8 @@ export default function AccountPage() {
   const [loadingClasses, setLoadingClasses] = useState(true);
 
   const checkOwnership = useCallback(async () => {
-    if (!token) return;
     try {
-      const classes = await listClasses(token);
+      const classes = await listClasses();
       const owned = classes.filter(
         (c) => c.myRole === "OWNER" && !c.isPersonal,
       );
@@ -65,7 +62,7 @@ export default function AccountPage() {
     } finally {
       setLoadingClasses(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
     void checkOwnership();
@@ -73,7 +70,6 @@ export default function AccountPage() {
 
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
-    if (!token) return;
 
     if (newPassword !== confirmPassword) {
       toast.error(t("newPasswordsDoNotMatch"));
@@ -87,7 +83,7 @@ export default function AccountPage() {
 
     setChangingPassword(true);
     try {
-      await updatePassword(token, currentPassword, newPassword);
+      await updatePassword(currentPassword, newPassword);
       toast.success(t("passwordUpdated"));
       setCurrentPassword("");
       setNewPassword("");
@@ -102,10 +98,9 @@ export default function AccountPage() {
   }
 
   async function handleDeleteAccount() {
-    if (!token) return;
     setDeleting(true);
     try {
-      await deleteAccount(token);
+      await deleteAccount();
       toast.success(t("accountDeleted"));
       await logout();
       router.push("/login");

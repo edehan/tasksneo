@@ -13,8 +13,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ApiError, joinClass } from "@/lib/api";
@@ -25,7 +24,7 @@ interface JoinClassDialogProps {
 }
 
 export function JoinClassDialog({ trigger, onJoined }: JoinClassDialogProps) {
-  const { token } = useAuth();
+  const { user } = useAuth();
   const t = useTranslations("joinClassDialog");
   const [open, setOpen] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
@@ -34,13 +33,13 @@ export function JoinClassDialog({ trigger, onJoined }: JoinClassDialogProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!token || !inviteCode.trim()) return;
+    if (!user || !inviteCode.trim()) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const cls = await joinClass(token, inviteCode.trim());
+      const cls = await joinClass(inviteCode.trim());
       toast.success(t("joinedToast", { name: cls.name }));
       setOpen(false);
       setInviteCode("");

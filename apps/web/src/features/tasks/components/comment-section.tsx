@@ -39,7 +39,7 @@ function formatRelativeTime(dateStr: string, justNowLabel: string): string {
 
 export function CommentSection({ taskId, accentColor }: CommentSectionProps) {
   const t = useTranslations("commentSection");
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const accent = accentColor ?? "var(--class-accent)";
 
   const [comments, setComments] = useState<TaskComment[]>([]);
@@ -60,9 +60,8 @@ export function CommentSection({ taskId, accentColor }: CommentSectionProps) {
 
   // Fetch comments on mount
   useEffect(() => {
-    if (!token) return;
     setLoading(true);
-    listTaskComments(token, taskId)
+    listTaskComments(taskId)
       .then((data) => {
         setComments(data);
         // Scroll to bottom after render
@@ -70,7 +69,7 @@ export function CommentSection({ taskId, accentColor }: CommentSectionProps) {
       })
       .catch(() => toast.error(t("failedToLoad")))
       .finally(() => setLoading(false));
-  }, [token, taskId, t, scrollToBottom]);
+  }, [taskId, t, scrollToBottom]);
 
   async function handleSend() {
     const trimmed = content.trim();
@@ -79,7 +78,6 @@ export function CommentSection({ taskId, accentColor }: CommentSectionProps) {
     setSending(true);
     try {
       const comment = await createTaskComment(
-        token,
         taskId,
         trimmed,
         replyTo?.id,
@@ -150,8 +148,7 @@ export function CommentSection({ taskId, accentColor }: CommentSectionProps) {
             <Reply size={12} strokeWidth={2} />
             <span>
               {t("replyingTo", {
-                name: replyTo.nickname ?? t("deletedUser"),
-              })}
+                name: replyTo.nickname ?? t("deletedUser") })}
             </span>
             <button
               type="button"
@@ -214,8 +211,7 @@ function CommentCard({
   onReply,
   justNowLabel,
   replyLabel,
-  deletedUserLabel,
-}: CommentCardProps) {
+  deletedUserLabel }: CommentCardProps) {
   const authorName = comment.author?.nickname ?? deletedUserLabel;
   const replyToName = comment.replyTo?.nickname ?? deletedUserLabel;
 

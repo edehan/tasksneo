@@ -14,13 +14,11 @@ import { TaskDetailOverlay } from "@/features/tasks/components/task-detail-overl
 import {
   DEFAULT_DAY_WIDTH,
   GanttZoomSlider,
-  TaskGanttView,
-} from "@/features/tasks/components/task-gantt-view";
+  TaskGanttView } from "@/features/tasks/components/task-gantt-view";
 import { TaskListView } from "@/features/tasks/components/task-list-view";
 import {
   type ViewMode,
-  ViewSwitcher,
-} from "@/features/tasks/components/view-switcher";
+  ViewSwitcher } from "@/features/tasks/components/view-switcher";
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
 import type { ClassSummary } from "@/lib/api";
 import { getClass, listClassTasks, listMembers } from "@/lib/api";
@@ -41,7 +39,7 @@ export function ClassPage() {
   const t = useTranslations("classPage");
   const params = useParams();
   const router = useRouter();
-  const { token, user } = useAuth();
+  const { user } = useAuth();
   const classId = params?.classId as string;
 
   const [cls, setCls] = useState<ClassSummary | null>(null);
@@ -56,16 +54,15 @@ export function ClassPage() {
     unfinished: false,
     notSubmitted: false,
     overdue: false,
-    showSubmitted: false,
-  });
+    showSubmitted: false });
 
   const loadData = useCallback(async () => {
-    if (!token || !classId) return;
+    if (!classId) return;
     try {
       const [classData, classTasks, members] = await Promise.all([
-        getClass(token, classId),
-        listClassTasks(token, classId),
-        listMembers(token, classId),
+        getClass(classId),
+        listClassTasks(classId),
+        listMembers(classId),
       ]);
       setCls(classData);
       setTasks(
@@ -74,8 +71,7 @@ export function ClassPage() {
             ({
               ...t,
               className: classData.name,
-              classColor: classData.color || "#8B7355",
-            }) as TaskWithClass,
+              classColor: classData.color || "#8B7355" }) as TaskWithClass,
         ),
       );
       // Find current user's role
@@ -86,7 +82,7 @@ export function ClassPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, classId, user?.id]);
+  }, [classId, user?.id]);
 
   useEffect(() => {
     void loadData();

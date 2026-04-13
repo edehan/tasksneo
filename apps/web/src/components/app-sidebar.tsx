@@ -11,8 +11,7 @@ import {
   Plus,
   Settings,
   Sun,
-  UserPlus,
-} from "lucide-react";
+  UserPlus } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -31,8 +30,7 @@ import {
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   Sidebar,
   SidebarContent,
@@ -44,8 +42,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
-} from "@/components/ui/sidebar";
+  SidebarSeparator } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { JoinClassDialog } from "@/features/classes/components/join-class-dialog";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
@@ -54,7 +51,7 @@ import type { ClassSummary } from "@/lib/api";
 import { listClasses } from "@/lib/api";
 
 export function AppSidebar() {
-  const { token, user, logout } = useAuth();
+  const { user, logout } = useAuth();
   const t = useTranslations("appSidebar");
   const { theme, resolvedTheme, setTheme } = useTheme();
   const { locale, setLocale } = useAppLocale();
@@ -64,16 +61,15 @@ export function AppSidebar() {
   const [loading, setLoading] = useState(true);
 
   const loadClasses = useCallback(async () => {
-    if (!token) return;
     try {
-      const data = await listClasses(token);
+      const data = await listClasses();
       setClasses(data);
     } catch {
       // Silently fail — sidebar is non-critical
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
     void loadClasses();

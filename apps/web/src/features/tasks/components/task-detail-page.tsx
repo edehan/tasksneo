@@ -5,15 +5,13 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
-import { useAuth } from "@/components/auth-provider";
 import { MarkdownPreview } from "@/features/editor/components/markdown-preview";
 import { TaskSidebar } from "@/features/tasks/components/task-sidebar";
 import {
   type DetailStatus,
   deriveDetailStatus,
   getFooterText,
-  getStatusBadge,
-} from "@/features/tasks/lib/task-detail-status";
+  getStatusBadge } from "@/features/tasks/lib/task-detail-status";
 import type { ClassSummary, TaskDetail } from "@/lib/api";
 import { deleteTask, getClass, getTask, markTaskViewed } from "@/lib/api";
 
@@ -33,7 +31,6 @@ export function TaskDetailPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { token } = useAuth();
 
   const taskId = params?.taskId as string;
   const initialSection = toSidebarSection(searchParams.get("section"));
@@ -48,8 +45,7 @@ export function TaskDetailPage() {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
-    hour12: true,
-  });
+    hour12: true });
 
   const formatDate = useCallback(
     (iso: string | null): string => {
@@ -60,12 +56,12 @@ export function TaskDetailPage() {
   );
 
   const loadData = useCallback(async () => {
-    if (!token || !taskId) return;
+    if (!taskId) return;
 
     setLoading(true);
     try {
-      const taskData = await getTask(token, taskId);
-      const classData = await getClass(token, taskData.classId);
+      const taskData = await getTask(taskId);
+      const classData = await getClass(taskData.classId);
       setTask(taskData);
       setCls(classData);
     } catch {
@@ -74,18 +70,18 @@ export function TaskDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, taskId]);
+  }, [taskId]);
 
   useEffect(() => {
     void loadData();
   }, [loadData]);
 
   useEffect(() => {
-    if (!token || !taskId) return;
-    void markTaskViewed(token, taskId).catch(() => {
+    if (!taskId) return;
+    void markTaskViewed(taskId).catch(() => {
       // Silently ignore
     });
-  }, [token, taskId]);
+  }, [taskId]);
 
   if (loading) {
     return (
@@ -190,11 +186,10 @@ export function TaskDetailPage() {
                           type="button"
                           disabled={deleting}
                           onClick={async () => {
-                            if (!token) return;
                             if (!confirm(t("confirmDelete"))) return;
                             setDeleting(true);
                             try {
-                              await deleteTask(token, task.id);
+                              await deleteTask(task.id);
                               router.push(`/classes/${task.classId}`);
                             } catch {
                               setDeleting(false);
@@ -244,7 +239,6 @@ export function TaskDetailPage() {
                 <MarkdownPreview
                   content={bodyContent}
                   accentColor={accentColor}
-                  authToken={token ?? undefined}
                 />
               ) : (
                 <p className="text-sm italic text-text-muted-soft">

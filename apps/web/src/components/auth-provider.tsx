@@ -1,28 +1,21 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
 } from "react";
 import type { UserProfile } from "@/lib/api";
-import {
-  login as apiLogin,
-  getMe,
-  logoutApi,
-  subscribeToAuthExpired,
-} from "@/lib/api";
-
-const TOKEN_KEY = "taskflow_token";
+import { login as apiLogin, logoutApi, subscribeToAuthExpired } from "@/lib/api";
+import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 interface AuthContextValue {
-  token: string | null;
   user: UserProfile | null;
-  loading: boolean;
+  loading: false;
   login: (
     email: string,
     password: string,
@@ -35,82 +28,65 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+export function AuthProvider({
+  initialUser,
+  children,
+}: {
+  initialUser: UserProfile | null;
+  children: React.ReactNode;
+}) {
+  const [user, setUser] = useState<UserProfile | null>(initialUser);
   const router = useRouter();
   const pathname = usePathname();
 
-  const clearAuthState = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
-    setToken(null);
-    setUser(null);
-  }, []);
-
-  useEffect(() => {
-    const stored = localStorage.getItem(TOKEN_KEY);
-    if (!stored) {
-      setLoading(false);
-      return;
-    }
-
-    setToken(stored);
-    getMe(stored)
-      .then((u) => setUser(u))
-      .catch(() => {
-        clearAuthState();
-      })
-      .finally(() => setLoading(false));
-  }, [clearAuthState]);
-
+  // Handle server-side auth expiry signals from API responses
   useEffect(() => {
     return subscribeToAuthExpired(() => {
-      clearAuthState();
+      setUser(null);
       if (pathname !== "/login") {
         router.replace(`/login?next=${encodeURIComponent(pathname)}`);
       }
     });
-  }, [clearAuthState, pathname, router]);
+  }, [pathname, router]);
 
   const login = useCallback(
     async (email: string, password: string, trustDevice?: boolean) => {
       const res = await apiLogin(email, password, trustDevice);
-      localStorage.setItem(TOKEN_KEY, res.token);
-      setToken(res.token);
+      // Cookie is set via Set-Cookie header; just update local user state
       setUser(res.user);
+      router.refresh();
     },
-    [],
+    [router],
   );
 
-  const setAuth = useCallback((newToken: string, newUser: UserProfile) => {
-    localStorage.setItem(TOKEN_KEY, newToken);
-    setToken(newToken);
+  // Kept for register/complete flow compatibility — cookie is already set by API
+  const setAuth = useCallback((_token: string, newUser: UserProfile) => {
     setUser(newUser);
   }, []);
 
   const logout = useCallback(async () => {
-    // Best-effort server-side revocation. If the request fails (network,
-    // already-expired token, etc.) we still clear local state so the user
-    // ends up logged out locally regardless.
-    const current = token;
-    if (current) {
-      try {
-        await logoutApi(current);
-      } catch {
-        // Ignore — the local clear below is the source of truth for the UI.
-      }
+    try {
+      await logoutApi();
+    } catch {
+      // Ignore — API clears the cookie; local state is cleared below
     }
-    clearAuthState();
-  }, [clearAuthState, token]);
+    setUser(null);
+    router.push("/login");
+    router.refresh();
+  }, [router]);
 
-  const updateUser = useCallback((u: UserProfile) => {
-    setUser(u);
-  }, []);
+  const updateUser = useCallback((u: UserProfile) => setUser(u), []);
 
   const value = useMemo(
-    () => ({ token, user, loading, login, setAuth, logout, updateUser }),
-    [token, user, loading, login, setAuth, logout, updateUser],
+    () => ({
+      user,
+      loading: false as const,
+      login,
+      setAuth,
+      logout,
+      updateUser,
+    }),
+    [user, login, setAuth, logout, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

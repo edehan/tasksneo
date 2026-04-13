@@ -4,14 +4,12 @@ import { ArrowRight, Calendar, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useAuth } from "@/components/auth-provider";
 import { MarkdownPreview } from "@/features/editor/components/markdown-preview";
 import { TaskSidebar } from "@/features/tasks/components/task-sidebar";
 import {
   deriveDetailStatus,
   getFooterText,
-  getStatusBadge,
-} from "@/features/tasks/lib/task-detail-status";
+  getStatusBadge } from "@/features/tasks/lib/task-detail-status";
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
 import type { TaskDetail } from "@/lib/api";
 import { deleteTask, getTask, markTaskViewed } from "@/lib/api";
@@ -27,11 +25,9 @@ export function TaskDetailOverlay({
   task,
   onClose,
   onSubmit,
-  isAdmin = false,
-}: TaskDetailOverlayProps) {
+  isAdmin = false }: TaskDetailOverlayProps) {
   const t = useTranslations("taskDetailOverlay");
   const locale = useLocale();
-  const { token } = useAuth();
   const router = useRouter();
   const [taskDetail, setTaskDetail] = useState<TaskDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,8 +40,7 @@ export function TaskDetailOverlay({
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
-    hour12: true,
-  });
+    hour12: true });
 
   const formatDate = useCallback(
     (iso: string | null): string => {
@@ -62,14 +57,12 @@ export function TaskDetailOverlay({
   // ─── Load full task detail ──────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!token) return;
 
     let cancelled = false;
 
     async function load() {
       try {
-        // biome-ignore lint/style/noNonNullAssertion: token checked before effect runs
-        const detail = await getTask(token!, task.id);
+        const detail = await getTask(task.id);
         if (!cancelled) {
           setTaskDetail(detail);
         }
@@ -87,16 +80,15 @@ export function TaskDetailOverlay({
     return () => {
       cancelled = true;
     };
-  }, [token, task.id]);
+  }, [task.id]);
 
   // ─── Mark as viewed (fire-and-forget) ───────────────────────────────────────
 
   useEffect(() => {
-    if (!token) return;
-    void markTaskViewed(token, task.id).catch(() => {
+    void markTaskViewed(task.id).catch(() => {
       // Silently ignore
     });
-  }, [token, task.id]);
+  }, [task.id]);
 
   // ─── Escape key ─────────────────────────────────────────────────────────────
 
@@ -144,8 +136,7 @@ export function TaskDetailOverlay({
       style={{
         backgroundColor: "rgba(0,0,0,0.4)",
         backdropFilter: "blur(4px)",
-        animation: "custom-overlay-fade-in 0.2s ease",
-      }}
+        animation: "custom-overlay-fade-in 0.2s ease" }}
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
@@ -157,8 +148,7 @@ export function TaskDetailOverlay({
         style={{
           height: "85vh",
           maxHeight: "720px",
-          animation: "custom-modal-enter 0.2s ease",
-        }}
+          animation: "custom-modal-enter 0.2s ease" }}
       >
         {/* Close button — absolute top-right corner of modal */}
         <button
@@ -247,11 +237,10 @@ export function TaskDetailOverlay({
                           type="button"
                           disabled={deleting}
                           onClick={async () => {
-                            if (!token) return;
                             if (!confirm(t("confirmDelete"))) return;
                             setDeleting(true);
                             try {
-                              await deleteTask(token, task.id);
+                              await deleteTask(task.id);
                               onClose();
                             } catch {
                               setDeleting(false);
@@ -316,7 +305,6 @@ export function TaskDetailOverlay({
                 <MarkdownPreview
                   content={bodyContent}
                   accentColor={task.classColor}
-                  authToken={token ?? undefined}
                 />
               ) : (
                 <p className="text-sm italic text-text-muted-soft">

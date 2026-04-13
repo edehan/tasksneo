@@ -9,7 +9,7 @@ export interface UseStreamingTranscriptionReturn {
   isStreaming: boolean;
   transcript: string;
   partialText: string;
-  startStreaming: (authToken: string) => Promise<void>;
+  startStreaming: () => Promise<void>;
   stopStreaming: () => void;
   resetTranscript: () => void;
 }
@@ -65,7 +65,7 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
   }, []);
 
   const startStreaming = useCallback(
-    async (authToken: string) => {
+    async () => {
       if (isStreaming || isConnecting) return;
 
       const attemptId = startAttemptRef.current + 1;
@@ -99,7 +99,7 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
         const sampleRate = Math.round(audioContext.sampleRate);
 
         // Get temporary token and speech model from backend
-        const { token: sttToken, speechModel } = await getSTTToken(authToken);
+        const { token: sttToken, speechModel } = await getSTTToken();
         if (attemptId !== startAttemptRef.current) return;
 
         const params = new URLSearchParams({

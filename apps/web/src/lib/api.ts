@@ -292,7 +292,7 @@ export function getApiBaseUrl(): string {
 export async function apiRequest<T>(
   path: string,
   init: RequestInit = {},
-  token?: string | null,
+  adminToken?: string,
 ): Promise<T> {
   const headers = new Headers(init.headers ?? {});
 
@@ -304,13 +304,14 @@ export async function apiRequest<T>(
     headers.set("Content-Type", "application/json");
   }
 
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
+  if (adminToken) {
+    headers.set("Authorization", `Bearer ${adminToken}`);
   }
 
   const response = await fetch(`${getApiBaseUrl()}${path}`, {
     ...init,
     headers,
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -329,7 +330,7 @@ export async function apiRequest<T>(
       // Keep fallback message when response body is not JSON.
     }
 
-    if (token && (response.status === 401 || AUTH_ERROR_CODES.has(errorCode))) {
+    if (response.status === 401 || AUTH_ERROR_CODES.has(errorCode)) {
       emitAuthExpired();
     }
 
@@ -360,8 +361,8 @@ export async function login(
   });
 }
 
-export async function logoutApi(token: string): Promise<void> {
-  return apiRequest<void>("/auth/logout", { method: "POST" }, token);
+export async function logoutApi(token?: string | null): Promise<void> {
+  return apiRequest<void>("/auth/logout", { method: "POST" });
 }
 
 export async function register(
@@ -421,7 +422,6 @@ export async function resetPassword(
 }
 
 export async function requestEmailChange(
-  authToken: string,
   newEmail: string,
   captchaToken?: string | null,
 ): Promise<{ message: string }> {
@@ -434,29 +434,25 @@ export async function requestEmailChange(
         ...(captchaToken ? { captchaToken } : {}),
       }),
     },
-    authToken,
   );
 }
 
 export async function confirmEmailChange(
-  authToken: string,
   verificationToken: string,
 ): Promise<UserProfile> {
   return apiRequest<UserProfile>(
     "/users/me/email/confirm",
     { method: "POST", body: JSON.stringify({ token: verificationToken }) },
-    authToken,
   );
 }
 
 // ─── Users ───────────────────────────────────────────────────────────────────
 
-export async function getMe(token: string): Promise<UserProfile> {
-  return apiRequest<UserProfile>("/users/me", {}, token);
+export async function getMe(token?: string | null): Promise<UserProfile> {
+  return apiRequest<UserProfile>("/users/me", {});
 }
 
 export async function updateProfile(
-  token: string,
   input: {
     nickname?: string | null;
     schoolId?: string | null;
@@ -467,12 +463,10 @@ export async function updateProfile(
   return apiRequest<UserProfile>(
     "/users/me",
     { method: "PATCH", body: JSON.stringify(input) },
-    token,
   );
 }
 
 export async function updatePassword(
-  token: string,
   currentPassword: string,
   newPassword: string,
 ): Promise<void> {
@@ -482,22 +476,18 @@ export async function updatePassword(
       method: "PATCH",
       body: JSON.stringify({ currentPassword, newPassword }),
     },
-    token,
   );
 }
 
 export async function getNotificationPrefs(
-  token: string,
 ): Promise<NotificationPref[]> {
   return apiRequest<NotificationPref[]>(
     "/users/me/notification-prefs",
     {},
-    token,
   );
 }
 
 export async function upsertNotificationPref(
-  token: string,
   input: {
     channel: "EMAIL" | "WEBHOOK" | "TELEGRAM";
     address: string;
@@ -507,12 +497,10 @@ export async function upsertNotificationPref(
   return apiRequest<NotificationPref>(
     "/users/me/notification-prefs",
     { method: "PUT", body: JSON.stringify(input) },
-    token,
   );
 }
 
 export async function listMyNotifications(
-  token: string,
   params?: { limit?: number; cursor?: string; unreadOnly?: boolean },
 ): Promise<NotificationListResponse> {
   const query = new URLSearchParams();
@@ -523,96 +511,83 @@ export async function listMyNotifications(
   return apiRequest<NotificationListResponse>(
     `/users/me/notifications${qs ? `?${qs}` : ""}`,
     {},
-    token,
   );
 }
 
 export async function markNotificationRead(
-  token: string,
   id: string,
 ): Promise<void> {
   return apiRequest<void>(
     `/users/me/notifications/${id}/read`,
     { method: "PATCH" },
-    token,
   );
 }
 
-export async function markAllNotificationsRead(token: string): Promise<void> {
+export async function markAllNotificationsRead(token?: string | null): Promise<void> {
   return apiRequest<void>(
     "/users/me/notifications/read-all",
     { method: "POST" },
-    token,
   );
 }
 
 export async function getUnreadNotificationCount(
-  token: string,
 ): Promise<{ unreadCount: number }> {
   return apiRequest<{ unreadCount: number }>(
     "/users/me/notifications/unread-count",
     {},
-    token,
   );
 }
 
 // ── MCP keys ───────────────────────────────────────────────────────────────
 
-export async function listMcpKeys(token: string): Promise<McpKeyInfo[]> {
-  return apiRequest<McpKeyInfo[]>("/users/me/mcp-keys", {}, token);
+export async function listMcpKeys(token?: string | null): Promise<McpKeyInfo[]> {
+  return apiRequest<McpKeyInfo[]>("/users/me/mcp-keys", {});
 }
 
 export async function createMcpKey(
-  token: string,
   name: string,
 ): Promise<McpKeyCreated> {
   return apiRequest<McpKeyCreated>(
     "/users/me/mcp-keys",
     { method: "POST", body: JSON.stringify({ name }) },
-    token,
   );
 }
 
 export async function revokeMcpKey(
-  token: string,
   keyId: string,
 ): Promise<McpKeyInfo> {
   return apiRequest<McpKeyInfo>(
     `/users/me/mcp-keys/${keyId}`,
     { method: "DELETE" },
-    token,
   );
 }
 
 // ── Sessions ───────────────────────────────────────────────────────────────
 
-export async function listSessions(token: string): Promise<SessionInfo[]> {
-  return apiRequest<SessionInfo[]>("/users/me/sessions", {}, token);
+export async function listSessions(token?: string | null): Promise<SessionInfo[]> {
+  return apiRequest<SessionInfo[]>("/users/me/sessions", {});
 }
 
 export async function revokeSession(
-  token: string,
   sessionId: string,
 ): Promise<void> {
   return apiRequest<void>(
     `/users/me/sessions/${sessionId}`,
     { method: "DELETE" },
-    token,
   );
 }
 
-export async function revokeOtherSessions(token: string): Promise<void> {
-  return apiRequest<void>("/users/me/sessions", { method: "DELETE" }, token);
+export async function revokeOtherSessions(token?: string | null): Promise<void> {
+  return apiRequest<void>("/users/me/sessions", { method: "DELETE" });
 }
 
 // ── Account ────────────────────────────────────────────────────────────────
 
-export async function deleteAccount(token: string): Promise<void> {
-  return apiRequest<void>("/users/me/delete", { method: "POST" }, token);
+export async function deleteAccount(token?: string | null): Promise<void> {
+  return apiRequest<void>("/users/me/delete", { method: "POST" });
 }
 
 export async function uploadAvatar(
-  token: string,
   file: File,
 ): Promise<AttachmentMeta> {
   const formData = new FormData();
@@ -620,7 +595,6 @@ export async function uploadAvatar(
   return apiRequest<AttachmentMeta>(
     "/users/me/avatar",
     { method: "POST", body: formData },
-    token,
   );
 }
 
@@ -632,12 +606,11 @@ export async function listSchools(): Promise<School[]> {
 
 // ─── Classes ─────────────────────────────────────────────────────────────────
 
-export async function listClasses(token: string): Promise<ClassSummary[]> {
-  return apiRequest<ClassSummary[]>("/classes", {}, token);
+export async function listClasses(token?: string | null): Promise<ClassSummary[]> {
+  return apiRequest<ClassSummary[]>("/classes", {});
 }
 
 export async function createClass(
-  token: string,
   input: {
     name: string;
     description?: string | null;
@@ -648,90 +621,75 @@ export async function createClass(
   return apiRequest<ClassSummary>(
     "/classes",
     { method: "POST", body: JSON.stringify(input) },
-    token,
   );
 }
 
 export async function joinClass(
-  token: string,
   inviteCode: string,
 ): Promise<ClassSummary> {
   return apiRequest<ClassSummary>(
     "/classes/join",
     { method: "POST", body: JSON.stringify({ inviteCode }) },
-    token,
   );
 }
 
 export async function getJoinClassPreview(
-  token: string,
   inviteCode: string,
 ): Promise<JoinClassPreview> {
   return apiRequest<JoinClassPreview>(
     `/classes/join-preview/${encodeURIComponent(inviteCode)}`,
     {},
-    token,
   );
 }
 
 export async function getClass(
-  token: string,
   classId: string,
 ): Promise<ClassSummary> {
-  return apiRequest<ClassSummary>(`/classes/${classId}`, {}, token);
+  return apiRequest<ClassSummary>(`/classes/${classId}`, {});
 }
 
 export async function updateClass(
-  token: string,
   classId: string,
   input: { name?: string; description?: string | null; color?: string },
 ): Promise<ClassSummary> {
   return apiRequest<ClassSummary>(
     `/classes/${classId}`,
     { method: "PATCH", body: JSON.stringify(input) },
-    token,
   );
 }
 
 export async function deleteClass(
-  token: string,
   classId: string,
 ): Promise<void> {
-  return apiRequest<void>(`/classes/${classId}`, { method: "DELETE" }, token);
+  return apiRequest<void>(`/classes/${classId}`, { method: "DELETE" });
 }
 
 export async function refreshInviteCode(
-  token: string,
   classId: string,
 ): Promise<{ inviteCode: string }> {
   return apiRequest<{ inviteCode: string }>(
     `/classes/${classId}/invite-code`,
     { method: "POST" },
-    token,
   );
 }
 
 export async function transferOwnership(
-  token: string,
   classId: string,
   newOwnerId: string,
 ): Promise<ClassSummary> {
   return apiRequest<ClassSummary>(
     `/classes/${classId}/transfer`,
     { method: "POST", body: JSON.stringify({ newOwnerId }) },
-    token,
   );
 }
 
 export async function listMembers(
-  token: string,
   classId: string,
 ): Promise<ClassMember[]> {
-  return apiRequest<ClassMember[]>(`/classes/${classId}/members`, {}, token);
+  return apiRequest<ClassMember[]>(`/classes/${classId}/members`, {});
 }
 
 export async function updateMemberRole(
-  token: string,
   classId: string,
   userId: string,
   role: "ADMIN" | "MEMBER",
@@ -739,29 +697,25 @@ export async function updateMemberRole(
   return apiRequest<ClassMember>(
     `/classes/${classId}/members/${userId}`,
     { method: "PATCH", body: JSON.stringify({ role }) },
-    token,
   );
 }
 
 export async function removeMember(
-  token: string,
   classId: string,
   userId: string,
 ): Promise<void> {
   return apiRequest<void>(
     `/classes/${classId}/members/${userId}`,
     { method: "DELETE" },
-    token,
   );
 }
 
 // ─── Tasks ───────────────────────────────────────────────────────────────────
 
 export async function listClassTasks(
-  token: string,
   classId: string,
 ): Promise<TaskSummary[]> {
-  return apiRequest<TaskSummary[]>(`/classes/${classId}/tasks`, {}, token);
+  return apiRequest<TaskSummary[]>(`/classes/${classId}/tasks`, {});
 }
 
 interface DraftWithAttachments extends TaskSummary {
@@ -769,13 +723,11 @@ interface DraftWithAttachments extends TaskSummary {
 }
 
 export async function getMyClassDraft(
-  token: string,
   classId: string,
 ): Promise<DraftWithAttachments | null> {
   const res = await apiRequest<{ draft: DraftWithAttachments | null }>(
     `/classes/${classId}/tasks/drafts/mine`,
     {},
-    token,
   );
   return res.draft;
 }
@@ -784,12 +736,11 @@ export interface MyTaskSummary extends TaskSummary {
   classColor: string | null;
 }
 
-export async function listMyTasks(token: string): Promise<MyTaskSummary[]> {
-  return apiRequest<MyTaskSummary[]>("/tasks/mine", {}, token);
+export async function listMyTasks(token?: string | null): Promise<MyTaskSummary[]> {
+  return apiRequest<MyTaskSummary[]>("/tasks/mine", {});
 }
 
 export async function createTask(
-  token: string,
   classId: string,
   input: {
     title: string;
@@ -803,12 +754,10 @@ export async function createTask(
   return apiRequest<TaskDetail>(
     `/classes/${classId}/tasks`,
     { method: "POST", body: JSON.stringify(input) },
-    token,
   );
 }
 
 export async function createTaskDraft(
-  token: string,
   classId: string,
   input: {
     title?: string;
@@ -823,23 +772,19 @@ export async function createTaskDraft(
   return apiRequest<TaskSummary>(
     `/classes/${classId}/tasks/drafts`,
     { method: "POST", body: JSON.stringify(input) },
-    token,
   );
 }
 
 export async function parseTask(
-  token: string,
   text: string,
 ): Promise<ParseTaskResponse> {
   return apiRequest<ParseTaskResponse>(
     "/tasks/parse",
     { method: "POST", body: JSON.stringify({ text }) },
-    token,
   );
 }
 
 export async function parseTaskDraft(
-  token: string,
   taskId: string,
   text?: string,
 ): Promise<ParseDraftTaskResponse> {
@@ -849,19 +794,16 @@ export async function parseTaskDraft(
       method: "POST",
       body: JSON.stringify(text ? { text } : {}),
     },
-    token,
   );
 }
 
 // ─── Speech-to-Text ──────────────────────────────────────────────────────────
 
 export async function getSTTToken(
-  token: string,
 ): Promise<{ token: string; speechModel: string }> {
   return apiRequest<{ token: string; speechModel: string }>(
     "/stt/token",
     { method: "POST" },
-    token,
   );
 }
 
@@ -872,7 +814,6 @@ export interface ReviseResponse {
 }
 
 export async function reviseTaskContent(
-  token: string,
   taskId: string,
   currentContent: string,
   instruction: string,
@@ -883,30 +824,25 @@ export async function reviseTaskContent(
       method: "POST",
       body: JSON.stringify({ currentContent, instruction }),
     },
-    token,
   );
 }
 
 export async function getTaskDraftMarkdown(
-  token: string,
   taskId: string,
 ): Promise<{ markdown: string | null }> {
   return apiRequest<{ markdown: string | null }>(
     `/tasks/${taskId}/draft-markdown`,
     {},
-    token,
   );
 }
 
 export async function getTask(
-  token: string,
   taskId: string,
 ): Promise<TaskDetail> {
-  return apiRequest<TaskDetail>(`/tasks/${taskId}`, {}, token);
+  return apiRequest<TaskDetail>(`/tasks/${taskId}`, {});
 }
 
 export async function updateTask(
-  token: string,
   taskId: string,
   input: {
     title?: string;
@@ -921,12 +857,10 @@ export async function updateTask(
   return apiRequest<TaskDetail>(
     `/tasks/${taskId}`,
     { method: "PATCH", body: JSON.stringify(input) },
-    token,
   );
 }
 
 export async function publishTaskDraft(
-  token: string,
   taskId: string,
   input: {
     title?: string;
@@ -941,30 +875,26 @@ export async function publishTaskDraft(
   return apiRequest<TaskSummary>(
     `/tasks/${taskId}/publish`,
     { method: "POST", body: JSON.stringify(input) },
-    token,
   );
 }
 
-export async function deleteTask(token: string, taskId: string): Promise<void> {
-  return apiRequest<void>(`/tasks/${taskId}`, { method: "DELETE" }, token);
+export async function deleteTask(taskId: string): Promise<void> {
+  return apiRequest<void>(`/tasks/${taskId}`, { method: "DELETE" });
 }
 
 export async function markTaskViewed(
-  token: string,
   taskId: string,
 ): Promise<void> {
-  return apiRequest<void>(`/tasks/${taskId}/view`, { method: "POST" }, token);
+  return apiRequest<void>(`/tasks/${taskId}/view`, { method: "POST" });
 }
 
 export async function updateTaskState(
-  token: string,
   taskId: string,
   input: { tags?: string[]; sortOrder?: number },
 ): Promise<TaskUserState> {
   return apiRequest<TaskUserState>(
     `/tasks/${taskId}/state`,
     { method: "PATCH", body: JSON.stringify(input) },
-    token,
   );
 }
 
@@ -985,19 +915,16 @@ export interface TaskComment {
 }
 
 export async function listTaskComments(
-  token: string,
   taskId: string,
 ): Promise<TaskComment[]> {
   const res = await apiRequest<{ comments: TaskComment[] }>(
     `/tasks/${taskId}/comments`,
     {},
-    token,
   );
   return res.comments;
 }
 
 export async function createTaskComment(
-  token: string,
   taskId: string,
   content: string,
   replyToId?: string | null,
@@ -1008,72 +935,60 @@ export async function createTaskComment(
       method: "POST",
       body: JSON.stringify({ content, replyToId: replyToId ?? null }),
     },
-    token,
   );
 }
 
 // ─── Submissions ─────────────────────────────────────────────────────────────
 
 export async function listSubmissions(
-  token: string,
   taskId: string,
 ): Promise<SubmissionListRow[]> {
   return apiRequest<SubmissionListRow[]>(
     `/tasks/${taskId}/submissions`,
     {},
-    token,
   );
 }
 
 export async function getMySubmission(
-  token: string,
   taskId: string,
 ): Promise<SubmissionDetail | null> {
   const result = await apiRequest<SubmissionDetail | undefined>(
     `/tasks/${taskId}/submissions/me`,
     {},
-    token,
   );
   return result ?? null;
 }
 
 export async function getSubmission(
-  token: string,
   taskId: string,
   submissionId: string,
 ): Promise<SubmissionDetail> {
   return apiRequest<SubmissionDetail>(
     `/tasks/${taskId}/submissions/${submissionId}`,
     {},
-    token,
   );
 }
 
 export async function getSubmissionById(
-  token: string,
   submissionId: string,
 ): Promise<SubmissionDetail> {
   return apiRequest<SubmissionDetail>(
     `/submissions/${submissionId}`,
     {},
-    token,
   );
 }
 
 export async function upsertMySubmission(
-  token: string,
   taskId: string,
   content: string | null,
 ): Promise<SubmissionDetail> {
   return apiRequest<SubmissionDetail>(
     `/tasks/${taskId}/submissions/me`,
     { method: "PUT", body: JSON.stringify({ content }) },
-    token,
   );
 }
 
 export async function gradeSubmission(
-  token: string,
   taskId: string,
   submissionId: string,
   input: { score?: string | null; reviewNote?: string | null },
@@ -1081,31 +996,26 @@ export async function gradeSubmission(
   return apiRequest<SubmissionDetail>(
     `/tasks/${taskId}/submissions/${submissionId}/grade`,
     { method: "PATCH", body: JSON.stringify(input) },
-    token,
   );
 }
 
 export async function toggleExemplary(
-  token: string,
   taskId: string,
   submissionId: string,
 ): Promise<SubmissionDetail> {
   return apiRequest<SubmissionDetail>(
     `/tasks/${taskId}/submissions/${submissionId}/exemplary`,
     { method: "PATCH" },
-    token,
   );
 }
 
 export async function exportSubmissionsCsv(
-  token: string,
   taskId: string,
 ): Promise<string> {
   const headers = new Headers();
-  headers.set("Authorization", `Bearer ${token}`);
   const response = await fetch(
     `${getApiBaseUrl()}/tasks/${taskId}/submissions/export`,
-    { headers },
+    { headers, credentials: "include" },
   );
   if (!response.ok) {
     throw new ApiError("Export failed", "EXPORT_ERROR", response.status);
@@ -1114,20 +1024,17 @@ export async function exportSubmissionsCsv(
 }
 
 export async function batchRenameSubmissions(
-  token: string,
   taskId: string,
 ): Promise<void> {
   return apiRequest<void>(
     `/tasks/${taskId}/submissions/rename`,
     { method: "POST" },
-    token,
   );
 }
 
 // ─── Attachments ─────────────────────────────────────────────────────────────
 
 export async function uploadTaskAttachment(
-  token: string,
   taskId: string,
   file: File,
   options?: { isVisible?: boolean },
@@ -1141,13 +1048,11 @@ export async function uploadTaskAttachment(
   const result = await apiRequest<AttachmentMeta[]>(
     `/tasks/${taskId}/attachments`,
     { method: "POST", body: formData },
-    token,
   );
   return result[0];
 }
 
 export async function uploadSubmissionAttachment(
-  token: string,
   taskId: string,
   file: File,
 ): Promise<AttachmentMeta> {
@@ -1157,7 +1062,6 @@ export async function uploadSubmissionAttachment(
   const result = await apiRequest<AttachmentMeta[]>(
     `/tasks/${taskId}/submissions/me/attachments`,
     { method: "POST", body: formData },
-    token,
   );
   return result[0];
 }
@@ -1167,25 +1071,24 @@ export function getFileUrl(fileKey: string): string {
 }
 
 export async function getPresignedFileUrl(
-  token: string,
   fileKey: string,
 ): Promise<string> {
   const res = await apiRequest<{ url: string }>(
     `/files/${fileKey}/url`,
     {},
-    token,
   );
   return res.url;
 }
 
 export async function downloadFile(
-  token: string,
   fileKey: string,
 ): Promise<string> {
   // GET /files/:fileKey returns a 302 redirect to presigned URL.
   // We fetch with auth, follow the redirect, and return the final blob URL.
+  const headers = new Headers();
   const res = await fetch(`${getApiBaseUrl()}/files/${fileKey}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers,
+    credentials: "include",
   });
   if (!res.ok) {
     throw new ApiError(
@@ -1199,11 +1102,12 @@ export async function downloadFile(
 }
 
 export async function downloadFileBlob(
-  token: string,
   fileKey: string,
 ): Promise<Blob> {
+  const headers = new Headers();
   const res = await fetch(`${getApiBaseUrl()}/files/${fileKey}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers,
+    credentials: "include",
   });
   if (!res.ok) {
     throw new ApiError(
@@ -1216,25 +1120,21 @@ export async function downloadFileBlob(
 }
 
 export async function deleteAttachment(
-  token: string,
   attachmentId: string,
 ): Promise<void> {
   return apiRequest<void>(
     `/files/attachments/${attachmentId}`,
     { method: "DELETE" },
-    token,
   );
 }
 
 export async function updateAttachmentVisibility(
-  token: string,
   attachmentId: string,
   isVisible: boolean,
 ): Promise<AttachmentMeta> {
   return apiRequest<AttachmentMeta>(
     `/files/attachments/${attachmentId}`,
     { method: "PATCH", body: JSON.stringify({ isVisible }) },
-    token,
   );
 }
 

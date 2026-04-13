@@ -8,8 +8,7 @@ import {
   LogOut,
   Monitor,
   Smartphone,
-  Tablet,
-} from "lucide-react";
+  Tablet } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -22,16 +21,14 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   ApiError,
   listSessions,
   revokeOtherSessions,
   revokeSession,
-  type SessionInfo,
-} from "@/lib/api";
+  type SessionInfo } from "@/lib/api";
 
 interface ParsedUserAgent {
   browser: string;
@@ -128,20 +125,18 @@ function formatLastSeen(
     }
 
     return t("hoursAgo", {
-      count: Math.max(1, Math.floor(diffMs / (60 * 60 * 1000))),
-    });
+      count: Math.max(1, Math.floor(diffMs / (60 * 60 * 1000))) });
   }
   if (dayDiff === 1) return t("yesterday");
   if (dayDiff <= 7) return t("daysAgo", { count: dayDiff });
   return date.toLocaleDateString(undefined, {
     year: "numeric",
     month: "short",
-    day: "numeric",
-  });
+    day: "numeric" });
 }
 
 export default function SessionsPage() {
-  const { token } = useAuth();
+  const { user } = useAuth();
   const t = useTranslations("settingsSessions");
 
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
@@ -152,26 +147,25 @@ export default function SessionsPage() {
   const [busy, setBusy] = useState(false);
 
   const loadSessions = useCallback(async () => {
-    if (!token) return;
     try {
-      const result = await listSessions(token);
+      const result = await listSessions();
       setSessions(result);
     } catch {
       toast.error(t("failedLoad"));
     } finally {
       setLoading(false);
     }
-  }, [token, t]);
+  }, [t]);
 
   useEffect(() => {
     void loadSessions();
   }, [loadSessions]);
 
   async function handleRevoke() {
-    if (!token || !revokeTarget) return;
+    if (!user || !revokeTarget) return;
     setBusy(true);
     try {
-      await revokeSession(token, revokeTarget.id);
+      await revokeSession(revokeTarget.id);
       setSessions((prev) => prev.filter((s) => s.id !== revokeTarget.id));
       toast.success(t("revoked"));
     } catch (err) {
@@ -184,10 +178,9 @@ export default function SessionsPage() {
   }
 
   async function handleRevokeOthers() {
-    if (!token) return;
     setBusy(true);
     try {
-      await revokeOtherSessions(token);
+      await revokeOtherSessions();
       setSessions((prev) => prev.filter((s) => s.isCurrent));
       toast.success(t("revokedOthers"));
     } catch (err) {
@@ -362,8 +355,7 @@ export default function SessionsPage() {
             <AlertDialogDescription>
               {revokeTarget?.kind === "MCP"
                 ? t("revokeMcpDescription", {
-                    name: revokeTarget?.mcpKeyName ?? t("unknownMcpKey"),
-                  })
+                    name: revokeTarget?.mcpKeyName ?? t("unknownMcpKey") })
                 : t("revokeBrowserDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>

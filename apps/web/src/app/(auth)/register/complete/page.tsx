@@ -13,8 +13,7 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -22,15 +21,13 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SelectValue } from "@/components/ui/select";
 import type { School } from "@/lib/api";
 import {
   ApiError,
   completeRegistration,
   listSchools,
-  verifyToken,
-} from "@/lib/api";
+  verifyToken } from "@/lib/api";
 import { readSafeNextParam, readWindowSearchParam } from "@/lib/search-params";
 
 function detectBrowserTimezone(): string {
@@ -121,14 +118,13 @@ function CompleteRegistrationInner() {
     setSubmitting(true);
     try {
       const res = await completeRegistration({
-        token,
+        token: token!,
         password,
         nickname: nickname || undefined,
         schoolId: schoolId || undefined,
         studentId: schoolId ? studentId : undefined,
-        timezone: detectedTimezone,
-      });
-      setAuth(res.token, res.user);
+        timezone: detectedTimezone });
+      setAuth(res.user);
       router.replace(next ?? "/dashboard");
     } catch (err) {
       const message =

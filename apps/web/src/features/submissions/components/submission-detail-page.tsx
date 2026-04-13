@@ -8,20 +8,17 @@ import {
   Clock,
   Download,
   FileText,
-  Save,
-} from "lucide-react";
+  Save } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { useAuth } from "@/components/auth-provider";
 import { MarkdownPreview } from "@/features/editor/components/markdown-preview";
 import type {
   ClassSummary,
   SubmissionDetail,
-  SubmissionListRow,
-} from "@/lib/api";
+  SubmissionListRow } from "@/lib/api";
 import {
   ApiError,
   downloadFile,
@@ -30,8 +27,7 @@ import {
   getTask,
   gradeSubmission,
   listSubmissions,
-  toggleExemplary,
-} from "@/lib/api";
+  toggleExemplary } from "@/lib/api";
 
 // ─── File size formatting ────────────────────────────────────────────────────
 
@@ -49,7 +45,6 @@ export function SubmissionDetailPage() {
   const locale = useLocale();
   const params = useParams();
   const router = useRouter();
-  const { token } = useAuth();
 
   const submissionId = params?.submissionId as string;
 
@@ -73,8 +68,7 @@ export function SubmissionDetailPage() {
     year: "numeric",
     hour: "numeric",
     minute: "2-digit",
-    hour12: true,
-  });
+    hour12: true });
 
   function formatDate(iso: string | null | undefined): string {
     if (!iso) return "\u2014";
@@ -84,17 +78,17 @@ export function SubmissionDetailPage() {
   // ─── Load data ──────────────────────────────────────────────────────────────
 
   const loadData = useCallback(async () => {
-    if (!token || !submissionId) return;
+    if (!submissionId) return;
     try {
-      const submissionData = await getSubmissionById(token, submissionId);
+      const submissionData = await getSubmissionById(submissionId);
       const resolvedTaskId = submissionData.taskId;
       setTaskId(resolvedTaskId);
 
       const [taskData, submissionRows] = await Promise.all([
-        getTask(token, resolvedTaskId),
-        listSubmissions(token, resolvedTaskId),
+        getTask(resolvedTaskId),
+        listSubmissions(resolvedTaskId),
       ]);
-      const classData = await getClass(token, taskData.classId);
+      const classData = await getClass(taskData.classId);
 
       setSubmission(submissionData);
       setCls(classData);
@@ -110,7 +104,7 @@ export function SubmissionDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, submissionId, t]);
+  }, [submissionId, t]);
 
   useEffect(() => {
     void loadData();
@@ -150,13 +144,12 @@ export function SubmissionDetailPage() {
   // ─── Save grade ─────────────────────────────────────────────────────────────
 
   async function handleSaveGrade() {
-    if (!token || !taskId || !submissionId) return;
+    if (!taskId || !submissionId) return;
     setSaving(true);
     try {
-      const updated = await gradeSubmission(token, taskId, submissionId, {
+      const updated = await gradeSubmission(taskId, submissionId, {
         score: score.trim() || null,
-        reviewNote: reviewNote.trim() || null,
-      });
+        reviewNote: reviewNote.trim() || null });
       setSubmission(updated);
       toast.success(t("toast.gradeSaved"));
     } catch {
@@ -169,10 +162,10 @@ export function SubmissionDetailPage() {
   // ─── Toggle exemplary ───────────────────────────────────────────────────────
 
   async function handleToggleExemplary() {
-    if (!token || !taskId || !submissionId) return;
+    if (!taskId || !submissionId) return;
     setTogglingExemplary(true);
     try {
-      const updated = await toggleExemplary(token, taskId, submissionId);
+      const updated = await toggleExemplary(taskId, submissionId);
       setSubmission(updated);
       toast.success(
         updated.isExemplary
@@ -197,9 +190,8 @@ export function SubmissionDetailPage() {
     originalName: string;
     url?: string;
   }) {
-    if (!token) return;
     try {
-      const blobUrl = await downloadFile(token, att.fileKey);
+      const blobUrl = await downloadFile(att.fileKey);
       const link = document.createElement("a");
       link.href = blobUrl;
       link.download = att.originalName;
@@ -344,7 +336,6 @@ export function SubmissionDetailPage() {
             <MarkdownPreview
               content={submission.content}
               accentColor={accentColor}
-              authToken={token ?? undefined}
             />
           ) : (
             <p className="text-sm italic text-text-muted-soft">

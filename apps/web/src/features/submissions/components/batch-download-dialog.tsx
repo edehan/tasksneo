@@ -13,8 +13,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { ClassSummary, SubmissionListRow, TaskDetail } from "@/lib/api";
 import {
@@ -31,8 +30,7 @@ import {
   saveFolderTagOrder,
   saveZipTagOrder,
   ZIP_TAGS,
-  type ZipEntry,
-} from "../lib/batch-download";
+  type ZipEntry } from "../lib/batch-download";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -57,8 +55,7 @@ function TagComposer({
   onReorder,
   disabled,
   preview,
-  t,
-}: {
+  t }: {
   tags: NameTag[];
   order: string[];
   onReorder: (newOrder: string[]) => void;
@@ -236,8 +233,7 @@ export function BatchDownloadDialog({
   rows,
   task,
   cls,
-  accentColor,
-}: BatchDownloadDialogProps) {
+  accentColor }: BatchDownloadDialogProps) {
   const t = useTranslations("batchDownloadDialog");
   const { token } = useAuth();
 
@@ -306,8 +302,7 @@ export function BatchDownloadDialog({
     () => ({
       YYYY: String(now.getFullYear()),
       MM: String(now.getMonth() + 1).padStart(2, "0"),
-      DD: String(now.getDate()).padStart(2, "0"),
-    }),
+      DD: String(now.getDate()).padStart(2, "0") }),
     [now.getDate, now.getFullYear, now.getMonth],
   );
 
@@ -317,8 +312,7 @@ export function BatchDownloadDialog({
         folderOrder,
         {
           nickname: sampleRow.nickname ?? t("sampleUser"),
-          studentId: sampleRow.studentId ?? "",
-        },
+          studentId: sampleRow.studentId ?? "" },
         "_",
       )
     : t("folderPreviewFallback");
@@ -328,8 +322,7 @@ export function BatchDownloadDialog({
     {
       taskTitle: task.title,
       className: cls.name,
-      ...dateVars,
-    },
+      ...dateVars },
     "_",
   )}.zip`;
 
@@ -350,8 +343,7 @@ export function BatchDownloadDialog({
           folderOrder,
           {
             nickname: r.nickname ?? t("sampleUser"),
-            studentId: r.studentId ?? "",
-          },
+            studentId: r.studentId ?? "" },
           "_",
         ),
       );
@@ -365,8 +357,7 @@ export function BatchDownloadDialog({
           downloadTasks.push({
             fileKey: att.fileKey,
             fileName: att.originalName,
-            folderPath: folderNames[i],
-          });
+            folderPath: folderNames[i] });
         }
       }
 
@@ -375,7 +366,6 @@ export function BatchDownloadDialog({
       if (downloadTasks.length > 0) {
         setProgress({ completed: 0, total: downloadTasks.length });
         results = await downloadAllWithConcurrency(
-          token,
           downloadTasks,
           5,
           (completed, total) => setProgress({ completed, total }),
@@ -394,10 +384,8 @@ export function BatchDownloadDialog({
           files: folderResults.map((r) => ({
             name: r.task.fileName,
             // biome-ignore lint/style/noNonNullAssertion: blob guaranteed by successful fetch
-            blob: r.blob!,
-          })),
-          contentMd: row.submission?.content ?? null,
-        };
+            blob: r.blob! })),
+          contentMd: row.submission?.content ?? null };
       });
 
       // Count errors
@@ -432,7 +420,6 @@ export function BatchDownloadDialog({
       setProgress({ completed: 0, total: 0 });
     }
   }, [
-    token,
     selected,
     eligibleRows,
     folderOrder,
@@ -584,16 +571,14 @@ export function BatchDownloadDialog({
                 className="h-full rounded-full transition-all duration-300"
                 style={{
                   width: `${phase === "zipping" ? 100 : progressPct}%`,
-                  backgroundColor: accentColor,
-                }}
+                  backgroundColor: accentColor }}
               />
             </div>
             <p className="text-[12px] text-muted-foreground">
               {phase === "downloading"
                 ? t("progress.downloading", {
                     completed: progress.completed,
-                    total: progress.total,
-                  })
+                    total: progress.total })
                 : t("progress.generatingZip")}
             </p>
           </div>

@@ -12,8 +12,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  DialogTitle } from "@/components/ui/dialog";
 import { formatFileSize } from "@/features/submissions/lib/batch-download";
 import {
   computeSummary,
@@ -21,8 +20,7 @@ import {
   type ExportSummary,
   exportFromGatheredData,
   type GatheredData,
-  gatherData,
-} from "../lib/data-export";
+  gatherData } from "../lib/data-export";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -32,8 +30,7 @@ type Phase = "idle" | "gathering" | "downloading" | "zipping" | "done";
 
 export function DataExportDialog({
   open,
-  onOpenChange,
-}: {
+  onOpenChange }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -52,10 +49,9 @@ export function DataExportDialog({
   // ── Gather data when dialog opens ────────────────────────────────────
 
   const loadSummary = useCallback(async () => {
-    if (!token) return;
     setLoadingSummary(true);
     try {
-      const data = await gatherData(token, () => {});
+      const data = await gatherData(() => {});
       gatheredRef.current = data;
       setSummary(computeSummary(data));
     } catch {
@@ -79,13 +75,12 @@ export function DataExportDialog({
   // ── Export handler ────────────────────────────────────────────────────
 
   async function handleExport() {
-    if (!token) return;
 
     try {
       // If we didn't pre-gather (error during summary), gather now
       let data = gatheredRef.current;
       if (!data) {
-        data = await gatherData(token, (p: ExportProgress) => {
+        data = await gatherData((p: ExportProgress) => {
           setPhase(p.phase);
           setProgress({ completed: p.completed, total: p.total });
           if (p.detail) setDetail(p.detail);
@@ -94,7 +89,6 @@ export function DataExportDialog({
       }
 
       const result = await exportFromGatheredData(
-        token,
         data,
         (p: ExportProgress) => {
           setPhase(p.phase);
@@ -152,8 +146,7 @@ export function DataExportDialog({
                 <p>{t("summary.classes", { count: summary.classCount })}</p>
                 <p>
                   {t("summary.submissions", {
-                    count: summary.submissionCount,
-                  })}
+                    count: summary.submissionCount })}
                 </p>
                 <p>{t("summary.tasks", { count: summary.managedTaskCount })}</p>
                 {summary.fileCount > 0 && (
@@ -179,8 +172,7 @@ export function DataExportDialog({
               <div
                 className="h-full rounded-full bg-primary transition-all duration-300"
                 style={{
-                  width: `${phase === "zipping" ? 100 : phase === "gathering" ? Math.round((progress.completed / Math.max(progress.total, 1)) * 30) : 30 + Math.round((progressPct / 100) * 70)}%`,
-                }}
+                  width: `${phase === "zipping" ? 100 : phase === "gathering" ? Math.round((progress.completed / Math.max(progress.total, 1)) * 30) : 30 + Math.round((progressPct / 100) * 70)}%` }}
               />
             </div>
             <p className="text-[12px] text-muted-foreground">
@@ -189,8 +181,7 @@ export function DataExportDialog({
                 : phase === "downloading"
                   ? t("progress.downloading", {
                       completed: progress.completed,
-                      total: progress.total,
-                    })
+                      total: progress.total })
                   : t("progress.generatingZip")}
             </p>
           </div>

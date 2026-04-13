@@ -15,8 +15,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -26,16 +25,14 @@ import {
   SelectItem,
   SelectLabel,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  SelectValue } from "@/components/ui/select";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
 import type { School } from "@/lib/api";
 import {
   ApiError,
   listSchools,
   requestEmailChange,
-  updateProfile,
-} from "@/lib/api";
+  updateProfile } from "@/lib/api";
 
 function getBrowserTimezone(): string {
   try {
@@ -50,8 +47,7 @@ function getTimezoneOffset(tz: string): string {
     const now = new Date();
     const formatter = new Intl.DateTimeFormat("en-US", {
       timeZone: tz,
-      timeZoneName: "shortOffset",
-    });
+      timeZoneName: "shortOffset" });
     const parts = formatter.formatToParts(now);
     const offsetPart = parts.find((p) => p.type === "timeZoneName");
     return offsetPart?.value ?? "";
@@ -95,7 +91,7 @@ function groupTimezones(timezones: string[]): Record<string, string[]> {
 }
 
 export default function ProfilePage() {
-  const { token, user, updateUser } = useAuth();
+  const { user, updateUser } = useAuth();
   const t = useTranslations("settingsProfile");
   const avatarUrl = useAvatarUrl(user?.email, 160);
 
@@ -142,15 +138,13 @@ export default function ProfilePage() {
   }, [user]);
 
   async function handleSave() {
-    if (!token) return;
     setSaving(true);
     try {
-      const updated = await updateProfile(token, {
+      const updated = await updateProfile({
         nickname: nickname.trim() || null,
         schoolId,
         studentId: schoolId ? studentId.trim() || null : null,
-        timezone,
-      });
+        timezone });
       updateUser(updated);
       toast.success(t("profileUpdated"));
     } catch (err) {
@@ -221,7 +215,7 @@ export default function ProfilePage() {
             disabled
             className="opacity-60"
           />
-          <ChangeEmailDialog token={token} />
+          <ChangeEmailDialog />
         </div>
       </div>
 
@@ -308,7 +302,7 @@ export default function ProfilePage() {
   );
 }
 
-function ChangeEmailDialog({ token }: { token: string | null }) {
+function ChangeEmailDialog() {
   const t = useTranslations("settingsProfile.changeEmail");
   const [open, setOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
@@ -328,11 +322,11 @@ function ChangeEmailDialog({ token }: { token: string | null }) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!token || !newEmail) return;
+    if (!newEmail) return;
 
     setSubmitting(true);
     try {
-      await requestEmailChange(token, newEmail, captchaToken);
+      await requestEmailChange(newEmail, captchaToken);
       setSent(true);
     } catch (err) {
       const message =

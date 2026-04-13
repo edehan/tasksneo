@@ -10,28 +10,24 @@ import {
   Paperclip,
   Sparkles,
   Trash2,
-  X,
-} from "lucide-react";
+  X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  PopoverTrigger } from "@/components/ui/popover";
 import { useStreamingTranscription } from "@/hooks/use-streaming-transcription";
 import {
   ApiError,
@@ -44,8 +40,7 @@ import {
   parseTaskDraft,
   type TaskSummary,
   updateTask,
-  uploadTaskAttachment,
-} from "@/lib/api";
+  uploadTaskAttachment } from "@/lib/api";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -73,8 +68,7 @@ function formatOptionDate(iso: string | null, locale: string): string {
       month: "short",
       day: "numeric",
       hour: "numeric",
-      minute: "2-digit",
-    });
+      minute: "2-digit" });
   } catch {
     return iso;
   }
@@ -113,10 +107,8 @@ async function convertDocxToMarkdownFile(file: File): Promise<File> {
         convertImage: images.imgElement(() =>
           Promise.resolve({
             src: "embedded-image",
-            alt: "image",
-          }),
-        ),
-      },
+            alt: "image" }),
+        ) },
     );
     markdown = result.value.trim();
   }
@@ -131,8 +123,7 @@ async function convertDocxToMarkdownFile(file: File): Promise<File> {
   }
 
   return new File([markdown], toMarkdownFileName(file.name), {
-    type: "text/markdown;charset=utf-8",
-  });
+    type: "text/markdown;charset=utf-8" });
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -143,11 +134,9 @@ export function PostTaskDialog({
   themeColor,
   open,
   onOpenChange,
-  onEditBody,
-}: PostTaskDialogProps) {
+  onEditBody }: PostTaskDialogProps) {
   const t = useTranslations("postTaskDialog");
   const locale = useLocale();
-  const { token } = useAuth();
 
   // Form state
   const [rawText, setRawText] = useState("");
@@ -190,8 +179,7 @@ export function PostTaskDialog({
     partialText,
     startStreaming,
     stopStreaming,
-    resetTranscript,
-  } = useStreamingTranscription();
+    resetTranscript } = useStreamingTranscription();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -216,9 +204,9 @@ export function PostTaskDialog({
   // ─── Load existing draft on dialog open ─────────────────────────────────
 
   useEffect(() => {
-    if (!open || !token || draftId) return;
+    if (!open || draftId) return;
 
-    getMyClassDraft(token, classId)
+    getMyClassDraft(classId)
       .then((draft) => {
         if (!draft) return;
         setDraftId(draft.id);
@@ -236,16 +224,16 @@ export function PostTaskDialog({
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, token, classId, draftId]);
+  }, [open, classId, draftId]);
 
   // ─── Load class tasks for prerequisites ─────────────────────────────────
 
   useEffect(() => {
-    if (!open || !token) return;
-    listClassTasks(token, classId)
+    if (!open) return;
+    listClassTasks(classId)
       .then((tasks) => setClassTasks(tasks.filter((t) => t.id !== draftId)))
       .catch(() => {});
-  }, [open, token, classId, draftId]);
+  }, [open, classId, draftId]);
 
   // If dialog is closed externally (overlay click / ESC / parent state change),
   // force-stop streaming so browser recording indicator is cleared.
@@ -266,20 +254,19 @@ export function PostTaskDialog({
 
   const ensureDraft = useCallback(async (): Promise<string> => {
     if (draftIdRef.current) return draftIdRef.current;
-    if (!token) throw new Error(t("errors.notAuthenticated"));
+    if (false) throw new Error(t("errors.notAuthenticated"));
 
-    const draft = await createTaskDraft(token, classId, {
+    const draft = await createTaskDraft(classId, {
       title: title.trim() || t("untitledTask"),
       sourceText: rawText.trim() || null,
       startAt: startAt ? startAt.toISOString() : null,
       dueAt: dueAt ? dueAt.toISOString() : null,
       allowLateSubmission: allowLate,
-      blockedBy,
-    });
+      blockedBy });
     setDraftId(draft.id);
     draftIdRef.current = draft.id;
     return draft.id;
-  }, [token, classId, title, rawText, startAt, dueAt, allowLate, blockedBy, t]);
+  }, [classId, title, rawText, startAt, dueAt, allowLate, blockedBy, t]);
 
   // ─── Reset ─────────────────────────────────────────────────────────────
 
@@ -326,7 +313,7 @@ export function PostTaskDialog({
   }
 
   async function handleAiParse() {
-    if (!token || parsing || parsed) return;
+    if (parsing || parsed) return;
 
     const hasText = rawText.trim().length > 0;
     const hasAttachments = attachments.length > 0;
@@ -337,7 +324,6 @@ export function PostTaskDialog({
       const taskId = await ensureDraft();
 
       const result = await parseTaskDraft(
-        token,
         taskId,
         rawText.trim() || undefined,
       );
@@ -370,7 +356,7 @@ export function PostTaskDialog({
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
-    if (!files || files.length === 0 || !token) return;
+    if (!files || files.length === 0) return;
     const fileArray = Array.from(files);
     e.target.value = "";
 
@@ -380,17 +366,15 @@ export function PostTaskDialog({
       const visibleAttachments: AttachmentMeta[] = [];
 
       for (const file of fileArray) {
-        const visible = await uploadTaskAttachment(token, taskId, file, {
-          isVisible: true,
-        });
+        const visible = await uploadTaskAttachment(taskId, file, {
+          isVisible: true });
         visibleAttachments.push(visible);
 
         if (isDocxFile(file)) {
           try {
             const hiddenMarkdown = await convertDocxToMarkdownFile(file);
-            await uploadTaskAttachment(token, taskId, hiddenMarkdown, {
-              isVisible: false,
-            });
+            await uploadTaskAttachment(taskId, hiddenMarkdown, {
+              isVisible: false });
           } catch (err) {
             console.error("Failed to convert DOCX to hidden markdown", err);
           }
@@ -417,7 +401,6 @@ export function PostTaskDialog({
   // ─── Submit (Create/Update Draft → Edit Body) ──────────────────────────
 
   async function handleEditBody() {
-    if (!token) return;
     if (!formValid) {
       setAttempted(true);
       setExpanded(true);
@@ -434,16 +417,15 @@ export function PostTaskDialog({
         startAt: startAt ? startAt.toISOString() : null,
         dueAt: dueAt ? dueAt.toISOString() : null,
         allowLateSubmission: allowLate,
-        blockedBy,
-      };
+        blockedBy };
 
       if (draftIdRef.current) {
         // Draft already exists — update it with latest form state
-        await updateTask(token, draftIdRef.current, taskData);
+        await updateTask(draftIdRef.current, taskData);
         taskId = draftIdRef.current;
       } else {
         // Create new draft
-        const draft = await createTaskDraft(token, classId, taskData);
+        const draft = await createTaskDraft(classId, taskData);
         taskId = draft.id;
       }
 
@@ -461,9 +443,9 @@ export function PostTaskDialog({
   // ─── Clear draft ────────────────────────────────────────────────────────
 
   async function handleClear() {
-    if (draftIdRef.current && token) {
+    if (draftIdRef.current) {
       try {
-        await deleteTask(token, draftIdRef.current);
+        await deleteTask(draftIdRef.current);
       } catch {
         /* draft may already be deleted */
       }
@@ -551,8 +533,8 @@ export function PostTaskDialog({
                 onClick={() => {
                   if (isStreaming || isConnecting) {
                     stopStreaming();
-                  } else if (token) {
-                    void startStreaming(token);
+                  } else {
+                    void startStreaming();
                   }
                 }}
                 disabled={uploading || parsing}
@@ -618,8 +600,7 @@ export function PostTaskDialog({
                     !parsed
                       ? {
                           background: `linear-gradient(135deg, ${themeColor}, ${themeColor}cc)`,
-                          boxShadow: `0 2px 8px ${themeColor}40`,
-                        }
+                          boxShadow: `0 2px 8px ${themeColor}40` }
                       : undefined
                   }
                 >
@@ -724,8 +705,7 @@ export function PostTaskDialog({
             className="overflow-hidden transition-all duration-300 ease-in-out"
             style={{
               maxHeight: expanded ? 600 : 0,
-              opacity: expanded ? 1 : 0,
-            }}
+              opacity: expanded ? 1 : 0 }}
           >
             <div className="pt-5">
               <span className="text-label-upper mb-3 block">
@@ -820,8 +800,7 @@ export function PostTaskDialog({
                   className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] transition-all duration-150"
                   style={{
                     borderColor: allowLate ? themeColor : undefined,
-                    backgroundColor: allowLate ? themeColor : "transparent",
-                  }}
+                    backgroundColor: allowLate ? themeColor : "transparent" }}
                 >
                   {allowLate && (
                     <Check size={11} strokeWidth={3} className="text-white" />
@@ -870,8 +849,7 @@ export function PostTaskDialog({
                               blockedBy.includes(t.id)
                                 ? {
                                     backgroundColor: themeColor,
-                                    borderColor: themeColor,
-                                  }
+                                    borderColor: themeColor }
                                 : undefined
                             }
                           >

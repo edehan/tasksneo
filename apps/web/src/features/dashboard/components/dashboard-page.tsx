@@ -4,7 +4,6 @@ import { BookOpen, UserPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { useAuth } from "@/components/auth-provider";
 import { CreateClassDialog } from "@/components/create-class-dialog";
 import { Button } from "@/components/ui/button";
 import { JoinClassDialog } from "@/features/classes/components/join-class-dialog";
@@ -14,13 +13,11 @@ import { TaskDetailOverlay } from "@/features/tasks/components/task-detail-overl
 import {
   DEFAULT_DAY_WIDTH,
   GanttZoomSlider,
-  TaskGanttView,
-} from "@/features/tasks/components/task-gantt-view";
+  TaskGanttView } from "@/features/tasks/components/task-gantt-view";
 import { TaskListView } from "@/features/tasks/components/task-list-view";
 import {
   type ViewMode,
-  ViewSwitcher,
-} from "@/features/tasks/components/view-switcher";
+  ViewSwitcher } from "@/features/tasks/components/view-switcher";
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
 import type { ClassSummary } from "@/lib/api";
 import { listClasses, listMyTasks } from "@/lib/api";
@@ -39,7 +36,6 @@ function deriveDisplayStatus(
 
 export function DashboardPage() {
   const t = useTranslations("dashboardPage");
-  const { token } = useAuth();
   const [classes, setClasses] = useState<ClassSummary[]>([]);
   const [tasks, setTasks] = useState<TaskWithClass[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,29 +46,26 @@ export function DashboardPage() {
     unfinished: false,
     notSubmitted: false,
     overdue: false,
-    showSubmitted: false,
-  });
+    showSubmitted: false });
 
   const loadData = useCallback(async () => {
-    if (!token) return;
     try {
       const [classList, myTasks] = await Promise.all([
-        listClasses(token),
-        listMyTasks(token),
+        listClasses(),
+        listMyTasks(),
       ]);
       setClasses(classList);
       setTasks(
         myTasks.map((t) => ({
           ...t,
-          classColor: t.classColor || "#8B7355",
-        })),
+          classColor: t.classColor || "#8B7355" })),
       );
     } catch {
       // Failed to load
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
     void loadData();

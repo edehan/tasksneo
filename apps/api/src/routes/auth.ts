@@ -3,6 +3,10 @@ import { z } from "zod";
 
 import { verifyCaptcha } from "../lib/captcha.js";
 import { requireAuthSession } from "../lib/context.js";
+import {
+	clearSessionCookie,
+	setSessionCookie,
+} from "../lib/cookie.js";
 import { getClientIp } from "../lib/http.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { login, type SessionMetadata } from "../services/auth.service.js";
@@ -92,6 +96,7 @@ authRouter.post("/register/complete", async (c) => {
 		},
 		readSessionMeta(c, body.trustDevice),
 	);
+	setSessionCookie(c, result.token, body.trustDevice === true);
 	return c.json(result, 201);
 });
 
@@ -102,12 +107,14 @@ authRouter.post("/login", async (c) => {
 		password: body.password,
 		sessionMeta: readSessionMeta(c, body.trustDevice),
 	});
+	setSessionCookie(c, result.token, body.trustDevice === true);
 	return c.json(result, 200);
 });
 
 authRouter.post("/logout", authMiddleware, async (c) => {
 	const session = requireAuthSession(c);
 	await revokeSession(session.id);
+	clearSessionCookie(c);
 	return c.body(null, 204);
 });
 

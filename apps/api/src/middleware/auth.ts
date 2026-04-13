@@ -1,5 +1,7 @@
 import type { MiddlewareHandler } from "hono";
+import { getCookie } from "hono/cookie";
 
+import { SESSION_COOKIE_NAME } from "../lib/cookie.js";
 import { AppError } from "../lib/errors.js";
 import {
 	isSessionToken,
@@ -11,13 +13,20 @@ import type { AppVariables } from "../types/context.js";
 export const authMiddleware: MiddlewareHandler<{
 	Variables: AppVariables;
 }> = async (c, next) => {
+	// 1) Prefer Bearer header (MCP clients, admin, legacy frontend)
 	const authHeader = c.req.header("authorization");
+	let token: string | undefined;
 
-	if (!authHeader?.startsWith("Bearer ")) {
-		throw new AppError(401, "UNAUTHORIZED", "Missing bearer token");
+	if (authHeader?.startsWith("Bearer ")) {
+		token = authHeader.slice("Bearer ".length).trim();
+	} else {
+		// 2) Fall back to httpOnly session cookie (browser)
+		token = getCookie(c, SESSION_COOKIE_NAME);
 	}
 
-	const token = authHeader.slice("Bearer ".length).trim();
+	if (!token) {
+		throw new AppError(401, "UNAUTHORIZED", "Missing bearer token");
+	}
 
 	if (!isSessionToken(token)) {
 		throw new AppError(401, "INVALID_TOKEN", "Invalid or expired token");
