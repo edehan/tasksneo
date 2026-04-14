@@ -337,7 +337,7 @@ Unified file metadata table. Each row belongs to exactly one parent entity via e
 
 ### notification_jobs
 
-Durable record of every scheduled notification. Bull (Redis) is the primary queue; this table provides durability across restarts and an audit trail.
+Durable record of every scheduled notification. BullMQ (Redis) is the primary queue; this table provides durability across restarts and an audit trail.
 
 | Column | Type | Notes |
 |---|---|---|
@@ -352,7 +352,7 @@ Durable record of every scheduled notification. Bull (Redis) is the primary queu
 | error | String? | last error message on failure |
 | createdAt | DateTime | |
 
-**Worker behaviour**: polls for `status = PENDING AND scheduledAt <= now()`, processes in order, updates status. On server restart, Bull re-hydrates pending jobs from this table.
+**Worker behaviour**: polls for `status = PENDING AND scheduledAt <= now()`, processes in order, updates status. On server restart, BullMQ re-hydrates pending jobs from this table.
 
 ---
 

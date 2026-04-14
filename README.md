@@ -51,7 +51,7 @@
 | 后端 | Hono · Node.js · TypeScript |
 | 数据库 | PostgreSQL 16 · Prisma 6 ORM |
 | 文件存储 | S3 兼容服务（生产推荐 Cloudflare R2；本地开发用 MinIO） |
-| 任务队列 | Bull · Redis |
+| 任务队列 | BullMQ · Redis |
 | 包管理 | pnpm workspaces（monorepo） |
 
 ---
@@ -105,7 +105,7 @@ DEV_SEED_LLM_API_KEY=<your_key>
 - `/auth/logout`、`/users/me/sessions`、`/users/me/sessions/:id` 都会直接撤销服务端 session，失效立即生效。
 - `trustDevice=true` 时创建 30 天滑动续期的浏览器会话；未勾选时是 7 天固定过期。
 - MCP 认证链路是 `MCP key -> /auth/mcp -> MCP session token`。撤销 MCP key 会切断关联 MCP sessions。
-- Redis 只用于 Bull 队列和业务缓存，不再承担用户认证缓存或 token 黑名单职责。
+- Redis 只用于 BullMQ 队列和业务缓存，不再承担用户认证缓存或 token 黑名单职责。
 
 默认访问：
 

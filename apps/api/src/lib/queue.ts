@@ -151,12 +151,16 @@ export async function scheduleSessionCleanupCron() {
 		}
 	}
 
-	await q.add(JOB_NAME_SESSION_CLEANUP, {}, {
-		jobId: SESSION_CLEANUP_JOB_ID,
-		repeat: { pattern: SESSION_CLEANUP_CRON },
-		removeOnComplete: true,
-		removeOnFail: true,
-	});
+	await q.add(
+		JOB_NAME_SESSION_CLEANUP,
+		{},
+		{
+			jobId: SESSION_CLEANUP_JOB_ID,
+			repeat: { pattern: SESSION_CLEANUP_CRON },
+			removeOnComplete: true,
+			removeOnFail: true,
+		},
+	);
 }
 
 export function processSessionCleanupQueue(processor: () => Promise<void>) {
