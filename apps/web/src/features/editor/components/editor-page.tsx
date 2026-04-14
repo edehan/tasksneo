@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useSWRConfig } from "swr";
 
 import { useAuth } from "@/components/auth-provider";
 import {
@@ -62,6 +63,7 @@ import {
   uploadTaskAttachment,
   upsertMySubmission,
 } from "@/lib/api";
+import { webDataKeys } from "@/lib/web-data-keys";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -82,7 +84,7 @@ interface EditorPageProps {
 
 export function EditorPage({
   mode,
-  classId: _classId,
+  classId,
   taskId,
   className: clsName,
   taskTitle,
@@ -95,6 +97,7 @@ export function EditorPage({
   const t = useTranslations("editorPage");
   const { user } = useAuth();
   const router = useRouter();
+  const { mutate } = useSWRConfig();
 
   const [content, setContent] = useState(initialContent ?? "");
   const [attachments, setAttachments] = useState<AttachmentMeta[]>(
@@ -455,6 +458,11 @@ export function EditorPage({
           });
           toast.success(t("toast.taskPublished"));
         }
+        await Promise.all([
+          mutate(webDataKeys.classTasks(classId)),
+          mutate(webDataKeys.task(taskId)),
+          mutate(webDataKeys.myTasks()),
+        ]);
       } else {
         await upsertMySubmission(taskId, content || null);
         toast.success(t("toast.submissionSaved"));
