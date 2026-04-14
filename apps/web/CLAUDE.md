@@ -74,7 +74,10 @@ features/             # Feature modules
   submissions/        # Submission list, detail, grading
   settings/           # User profile, notifications, account
 lib/
-  api.ts              # Typed API client (stable, do not modify without reason)
+  api.ts              # Typed API client — all browser-side fetch calls go here
+  server-api.ts       # Server-only fetch functions wrapped in React cache(); used by Server Components for SSR prefetch
+  web-data.ts         # SWR hooks (useClassesQuery, useTaskQuery, etc.) for client components
+  web-data-keys.ts    # Centralised SWR cache key definitions
   utils.ts            # cn() utility
 hooks/                # Custom hooks (use-mobile, use-class-accent)
 ```
@@ -93,7 +96,8 @@ hooks/                # Custom hooks (use-mobile, use-class-accent)
 
 ### Components
 - Server Components by default. Add `'use client'` only when needed.
-- API calls go through `lib/api.ts`.
+- **Data fetching pattern**: Server Component (page route) prefetches via `server-api.ts`, wraps client component in `<SWRProvider fallbackEntries={[...]}>`, and passes data as `initialX` props. Client component uses SWR hooks from `web-data.ts` with `fallbackData`. Do not use raw `useEffect` fetches for data that can be SSR-prefetched.
+- Browser-side API mutations go through `lib/api.ts`.
 - User auth uses opaque session tokens from the API, not JWTs.
 
 ### Dark mode

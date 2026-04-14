@@ -47,9 +47,10 @@
 | 层 | 技术 |
 |---|---|
 | 前端 | Next.js 16 App Router · TypeScript · Tailwind CSS · shadcn/ui |
+| 数据获取 | SSR 服务端预取（React `cache`）· SWR 客户端缓存 |
 | 后端 | Hono · Node.js · TypeScript |
 | 数据库 | PostgreSQL 16 · Prisma 6 ORM |
-| 文件存储 | MinIO（自托管，兼容 S3） |
+| 文件存储 | S3 兼容服务（生产推荐 Cloudflare R2；本地开发用 MinIO） |
 | 任务队列 | Bull · Redis |
 | 包管理 | pnpm workspaces（monorepo） |
 
@@ -150,7 +151,11 @@ TASKFLOW_DEV_SEED=true pnpm dev
 
 详见 [`docs/deployment/production.md`](docs/deployment/production.md)。
 
-架构：前端部署到 Vercel / Cloudflare Pages，后端 + PostgreSQL + Redis 以 Docker 运行在 VPS 上，文件储存使用第三方 S3 兼容服务。
+支持两种部署架构，按需选择：
+
+**单机部署（推荐默认）**：Web + API + PostgreSQL + Redis 全部以 Docker 运行在同一台 VPS 上。Next.js SSR 预取走容器内网，延迟极低，运维简单，适合大多数场景。
+
+**分离部署（高并发场景）**：Web 部署到 Vercel 自动扩容，VPS 只跑 API + Redis + Worker，数据库使用托管 PostgreSQL（如 Neon）。SSR 预取需跨公网访问 API，**须将 Vercel Function 区域固定到与 VPS 同地区**，否则延迟会抵消 SSR 的性能收益。文件储存使用第三方 S3 兼容服务（推荐 Cloudflare R2）。
 
 ---
 

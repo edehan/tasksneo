@@ -64,8 +64,8 @@ taskflow/
 │
 ├── infra/
 │   ├── docker-compose.dev.yml      # Local dev: postgres, redis, minio
-│   ├── docker-compose.prod.yml     # Production: postgres, redis, api
-│   └── .env.prod.example           # Production env template
+│   ├── docker-compose.prod.yml     # Production: postgres, redis, api, web
+│   └── .env.example                # Production env template
 │
 ├── .devcontainer/
 │   └── devcontainer.json           # VS Code / GitHub Codespaces dev environment
@@ -88,11 +88,12 @@ taskflow/
 | Layer | Choice | Notes |
 |---|---|---|
 | Backend framework | Hono | Lightweight, TypeScript-first, runs on Node.js |
-| Frontend framework | Next.js 16 App Router | SSR + static, file-based routing |
+| Frontend framework | Next.js 16 App Router | SSR + client-side SWR cache, file-based routing |
+| Data fetching | SSR (`server-api.ts`) + SWR (`web-data.ts`) | Server components prefetch via React `cache()`; client components use SWR with SSR fallback injection via `SWRProvider` |
 | UI components | shadcn/ui + Tailwind CSS | Unstyled base components, fully customisable |
 | ORM | Prisma 6 | Schema-first, auto-generated types |
 | Database | PostgreSQL 16 | Via Docker in dev and prod |
-| File storage | MinIO | Self-hosted, S3-compatible |
+| File storage | S3-compatible service | Cloudflare R2 for production; MinIO for local dev |
 | Job queue | Bull + Redis | Async notification jobs |
 | Monorepo | pnpm workspaces | `apps/*` and `packages/*` |
 
@@ -103,6 +104,12 @@ taskflow/
 **Read `docs/DATABASE.md` before touching any database-related code.**
 **Read `docs/openapi/openapi.yaml` before implementing or calling any API endpoint.**
 **Read the relevant file in `docs/features/` before implementing a feature.**
+
+### Data fetching architecture
+- **Server side**: `apps/web/src/lib/server-api.ts` contains server-only fetch functions wrapped in React `cache()`. These are called from async Server Components (page routes) to prefetch data before HTML is sent.
+- **Client side**: `apps/web/src/lib/web-data.ts` exports SWR hooks (e.g. `useClassesQuery`, `useTaskQuery`). Keys are defined in `web-data-keys.ts`.
+- **SSR → SWR handoff**: Page routes wrap their client component in `<SWRProvider fallbackEntries={[...]}>`, injecting server-fetched data into the SWR cache. Client components receive `fallbackData` so they render immediately without a loading state.
+- **Pattern**: Server Component fetches → passes as `initialX` prop + injects into SWR fallback → Client Component uses SWR hook with `fallbackData`. Do not bypass this pattern with raw `useEffect` fetches in new code.
 
 ### Data model rules
 - All primary keys are UUID v4 (`@default(uuid())` in Prisma). Never use sequential IDs.
@@ -142,7 +149,7 @@ All error responses:
 ```
 
 ### File storage
-Files go to MinIO. The database stores only the `fileKey` (MinIO object key). Never store file bytes in the database. Serve files via presigned URLs with short TTL (5 minutes).
+Files go to S3-compatible storage (Cloudflare R2 in production, MinIO in local dev). The database stores only the `fileKey` (S3 object key). Never store file bytes in the database. Serve files via presigned URLs with short TTL (5 minutes).
 
 ---
 

@@ -1,6 +1,52 @@
 # Production Deployment Guide
 
-Hybrid architecture: frontend on edge (Vercel / Cloudflare Pages), backend in Docker on a VPS behind Cloudflare, file storage on a third-party S3-compatible service.
+## Architecture Options
+
+This system supports two deployment architectures. Choose based on your expected load and operational preference.
+
+### Option A: All-in-One VPS (Recommended Default)
+
+Web + API + PostgreSQL + Redis all run in Docker on a single VPS.
+
+```
+User → VPS (Nginx/Cloudflare)
+         ├── Next.js Web (Docker)
+         │     └── SSR prefetch → API via Docker internal network (<1ms)
+         ├── API (Docker)
+         ├── PostgreSQL (Docker)
+         └── Redis (Docker)
+```
+
+**Pros:** SSR prefetch runs over the Docker internal network with near-zero latency, simple to operate, single deployment target.
+
+**Cons:** Web and API share the same machine resources; traffic spikes affect both.
+
+**Recommended for:** Most deployments. A 2–4 GB VPS handles typical classroom-scale load comfortably.
+
+---
+
+### Option B: Split Deployment (High-Traffic)
+
+Web on Vercel (auto-scaling), API + Redis + Worker on VPS, database on managed PostgreSQL (e.g. Neon).
+
+```
+User → Vercel Edge (static assets, CDN)
+         └── Vercel SSR Function
+               └── SSR prefetch → VPS API (public internet)
+
+User → VPS API (business logic, Bull workers)
+         └── Managed PostgreSQL (Neon / Supabase)
+```
+
+**Pros:** Web scales automatically with Vercel; VPS only handles API traffic; managed DB provides read replicas for global distribution.
+
+**Cons:** SSR prefetch crosses the public internet to reach the API. This adds latency to every server-rendered page load.
+
+> **Critical prerequisite:** You must pin the Vercel Function region (Project Settings → Functions → Region) to the same geographic region as your VPS. If the Vercel Function runs in Virginia and your VPS is in Singapore, every SSR page load incurs 150–200 ms of extra latency — negating the benefit of SSR. When co-located in the same region, the overhead is typically under 10 ms.
+
+**Recommended for:** Deployments expecting high concurrent web traffic, or where you want to offload SSR compute from the VPS entirely.
+
+---
 
 ## Prerequisites
 
@@ -8,6 +54,7 @@ Hybrid architecture: frontend on edge (Vercel / Cloudflare Pages), backend in Do
 - Domain name with DNS managed by Cloudflare
 - S3-compatible storage account (Cloudflare R2 recommended — zero egress fees)
 - Git access to the repository
+- (Option B only) Managed PostgreSQL account (Neon `aws-ap-southeast-1` for Singapore, etc.)
 
 ## 1. S3 Bucket Setup
 
@@ -55,7 +102,7 @@ cd /opt/taskflow
 
 ```bash
 # Copy and fill in the environment file
-cp infra/.env.prod.example infra/.env.prod
+cp infra/.env.example infra/.env
 
 # Generate secrets
 openssl rand -hex 32  # Use output for ADMIN_TOKEN
@@ -63,10 +110,10 @@ openssl rand -hex 32  # Use output for SYSTEM_CONFIG_SECRET
 openssl rand -hex 16  # Use output for POSTGRES_PASSWORD
 ```
 
-Edit `infra/.env.prod` with your actual values:
+Edit `infra/.env` with your actual values:
 - S3 credentials from step 1
 - `CORS_ORIGINS` = your frontend domain (e.g., `https://taskflow.yourdomain.com`)
-- `DATABASE_URL` password must match `POSTGRES_PASSWORD`
+- `DATABASE_URL` — for Option A this points to the local postgres container; for Option B use your managed PostgreSQL connection string
 
 ## 5. Deploy Backend
 
@@ -91,7 +138,13 @@ curl https://api.yourdomain.com/health
 
 ## 6. Deploy Frontend
 
-### Option A: Vercel
+### Option A: All-in-One VPS
+
+The `docker-compose.prod.yml` includes a `web` service that builds and runs Next.js alongside the API. No separate frontend deployment is needed.
+
+The web container uses `API_INTERNAL_URL=http://api:3001` for SSR prefetch, keeping all server-side data fetching on the Docker internal network.
+
+### Option B (Split): Vercel
 
 1. Import the GitHub repository in Vercel
 2. Framework preset: Next.js
@@ -100,12 +153,14 @@ curl https://api.yourdomain.com/health
 5. Output directory: `.next`
 6. Environment variables:
    - `NEXT_PUBLIC_API_BASE_URL` = `https://api.yourdomain.com`
+   - `API_INTERNAL_URL` = `https://api.yourdomain.com` (same as public URL in split mode)
    - `NEXT_PUBLIC_CAP_API_ENDPOINT` = `https://cap.yourdomain.com/<site-key>/` (CAPTCHA, omit to disable)
-7. Deploy
+7. **Pin the Function region** to the same region as your VPS (Project Settings → Functions → Region)
+8. Deploy
 
-### Option B: Cloudflare Workers
+### Option B (Split): Cloudflare Workers
 
-This Next.js 16 app deploys to Cloudflare Workers via the [OpenNext adapter](https://opennext.js.org/cloudflare). The adapter transforms `next build` output into a Worker that runs on Cloudflare's edge network.
+This Next.js app deploys to Cloudflare Workers via the [OpenNext adapter](https://opennext.js.org/cloudflare).
 
 #### Workers Builds (recommended — git-connected CI)
 
@@ -125,7 +180,7 @@ This Next.js 16 app deploys to Cloudflare Workers via the [OpenNext adapter](htt
 | `NEXT_PUBLIC_CAP_API_ENDPOINT` | `https://cap.yourdomain.com/<site-key>/` (omit to disable CAPTCHA) |
 | `NODE_VERSION` | `22` |
 
-> The `deploy` script in `apps/web/package.json` runs `opennextjs-cloudflare build && opennextjs-cloudflare deploy`, which builds Next.js, transforms the output, and deploys via wrangler — all from the correct directory.
+> The `deploy` script in `apps/web/package.json` runs `opennextjs-cloudflare build && opennextjs-cloudflare deploy`, which builds Next.js, transforms the output, and deploys via wrangler.
 
 #### Manual deploy from CLI
 
@@ -149,7 +204,7 @@ pnpm run preview
 
 ### Backend
 
-Add to `infra/.env.prod`:
+Add to `infra/.env`:
 
 ```bash
 CAP_ENABLED=true
@@ -190,14 +245,14 @@ When this variable is unset, the CAPTCHA widget is hidden and the backend skips 
 
 ## 10. Environment Variable Summary
 
-### Backend (VPS `infra/.env.prod`)
+### Backend (VPS `infra/.env`)
 
 | Variable | Description |
 |----------|-------------|
 | `LISTEN_ADDR` | Server bind address (default `0.0.0.0:3001`) |
 | `ADMIN_TOKEN` | Admin panel authentication |
 | `SYSTEM_CONFIG_SECRET` | Encrypts secrets in system_config table |
-| `DATABASE_URL` | PostgreSQL connection string (docker network) |
+| `DATABASE_URL` | PostgreSQL connection string |
 | `REDIS_URL` | Redis connection string (docker network) |
 | `S3_ENDPOINT` | S3 provider endpoint |
 | `S3_ACCESS_KEY` | S3 access key |
@@ -218,7 +273,8 @@ User authentication tokens are opaque session IDs stored in PostgreSQL `sessions
 
 | Variable | Description |
 |----------|-------------|
-| `NEXT_PUBLIC_API_BASE_URL` | API base URL (build-time only) |
+| `NEXT_PUBLIC_API_BASE_URL` | Public API URL used by the browser (build-time) |
+| `API_INTERNAL_URL` | API URL used by SSR on the server side; set to internal address when co-located, or same as public URL in split mode |
 | `NEXT_PUBLIC_CAP_API_ENDPOINT` | Cap widget endpoint (build-time, omit to disable CAPTCHA) |
 
 ### Runtime (Admin panel → `/admin`)
@@ -294,4 +350,4 @@ docker compose -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.prod.yml exec api sh -lc "cd /app/packages/db && ./node_modules/.bin/prisma migrate deploy"
 ```
 
-For the frontend, push to the connected Git branch — Vercel / Cloudflare Pages will auto-deploy.
+For the frontend (split deployment), push to the connected Git branch — Vercel / Cloudflare Pages will auto-deploy.
