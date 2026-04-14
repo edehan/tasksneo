@@ -47,9 +47,10 @@
 | 层 | 技术 |
 |---|---|
 | 前端 | Next.js 16 App Router · TypeScript · Tailwind CSS · shadcn/ui |
+| 数据获取 | SSR 服务端预取（React `cache`）· SWR 客户端缓存 |
 | 后端 | Hono · Node.js · TypeScript |
 | 数据库 | PostgreSQL 16 · Prisma 6 ORM |
-| 文件存储 | MinIO（自托管，兼容 S3） |
+| 文件存储 | S3 兼容服务（生产推荐 Cloudflare R2；本地开发用 MinIO） |
 | 任务队列 | Bull · Redis |
 | 包管理 | pnpm workspaces（monorepo） |
 
