@@ -1,16 +1,31 @@
-import Bull, { type Queue } from "bull";
+import { Job, Queue, Worker } from "bullmq";
+import { Redis } from "ioredis";
 
 import { loadEnv } from "./env.js";
 
 let queue: Queue | null = null;
+let redisConnection: Redis | null = null;
+
+function getRedisConnection() {
+	if (redisConnection) {
+		return redisConnection;
+	}
+
+	const env = loadEnv();
+	redisConnection = new Redis(env.redisUrl, {
+		maxRetriesPerRequest: null,
+	});
+	return redisConnection;
+}
 
 function getQueue() {
 	if (queue) {
 		return queue;
 	}
 
-	const env = loadEnv();
-	queue = new Bull("taskflow-notifications", env.redisUrl);
+	queue = new Queue("taskflow-notifications", {
+		connection: getRedisConnection(),
+	});
 
 	return queue;
 }
@@ -23,6 +38,10 @@ export interface AnnouncementQueueJob {
 	announcementId: string;
 }
 
+const JOB_NAME_NOTIFICATION = "notification-send";
+const JOB_NAME_ANNOUNCEMENT = "announcement-publish";
+const JOB_NAME_SESSION_CLEANUP = "session-cleanup";
+
 export async function enqueueNotificationJob(
 	notificationJobId: string,
 	scheduledAt: Date,
@@ -31,9 +50,10 @@ export async function enqueueNotificationJob(
 	const q = getQueue();
 
 	await q.add(
+		JOB_NAME_NOTIFICATION,
 		{
 			notificationJobId,
-		},
+		} satisfies NotificationQueueJob,
 		{
 			jobId: notificationJobId,
 			delay,
@@ -52,12 +72,16 @@ export function processNotificationQueue(
 ) {
 	const q = getQueue();
 
-	q.process(async (job) => {
-		await processor(job.data as NotificationQueueJob);
-	});
+	new Worker(
+		q.name,
+		async (job) => {
+			if (job.name === JOB_NAME_NOTIFICATION) {
+				await processor(job.data as NotificationQueueJob);
+			}
+		},
+		{ connection: getRedisConnection() },
+	);
 }
-
-const ANNOUNCEMENT_JOB_NAME = "announcement-publish";
 
 export async function enqueueAnnouncementPublish(
 	announcementId: string,
@@ -67,7 +91,7 @@ export async function enqueueAnnouncementPublish(
 	const q = getQueue();
 
 	await q.add(
-		ANNOUNCEMENT_JOB_NAME,
+		JOB_NAME_ANNOUNCEMENT,
 		{ announcementId } satisfies AnnouncementQueueJob,
 		{
 			jobId: `announcement-${announcementId}`,
@@ -84,7 +108,7 @@ export async function enqueueAnnouncementPublish(
 
 export async function removeAnnouncementJob(announcementId: string) {
 	const q = getQueue();
-	const job = await q.getJob(`announcement-${announcementId}`);
+	const job = await Job.fromId(q, `announcement-${announcementId}`);
 	if (job) {
 		await job.remove();
 	}
@@ -95,19 +119,24 @@ export function processAnnouncementQueue(
 ) {
 	const q = getQueue();
 
-	q.process(ANNOUNCEMENT_JOB_NAME, async (job) => {
-		await processor(job.data as AnnouncementQueueJob);
-	});
+	new Worker(
+		q.name,
+		async (job) => {
+			if (job.name === JOB_NAME_ANNOUNCEMENT) {
+				await processor(job.data as AnnouncementQueueJob);
+			}
+		},
+		{ connection: getRedisConnection() },
+	);
 }
 
 // ── Session cleanup cron ────────────────────────────────────────────────────
 
-const SESSION_CLEANUP_JOB_NAME = "session-cleanup";
 const SESSION_CLEANUP_JOB_ID = "session-cleanup-daily";
 const SESSION_CLEANUP_CRON = "0 3 * * *"; // every day at 03:00 local time
 
 /**
- * Register the daily session cleanup cron. Safe to call repeatedly — Bull
+ * Register the daily session cleanup cron. Safe to call repeatedly — BullMQ
  * deduplicates the repeatable entry by jobId + cron.
  */
 export async function scheduleSessionCleanupCron() {
@@ -117,27 +146,29 @@ export async function scheduleSessionCleanupCron() {
 	// expression between deploys doesn't leave the old schedule orphaned.
 	const existing = await q.getRepeatableJobs();
 	for (const entry of existing) {
-		if (entry.name === SESSION_CLEANUP_JOB_NAME) {
+		if (entry.name === JOB_NAME_SESSION_CLEANUP) {
 			await q.removeRepeatableByKey(entry.key);
 		}
 	}
 
-	await q.add(
-		SESSION_CLEANUP_JOB_NAME,
-		{},
-		{
-			jobId: SESSION_CLEANUP_JOB_ID,
-			repeat: { cron: SESSION_CLEANUP_CRON },
-			removeOnComplete: true,
-			removeOnFail: true,
-		},
-	);
+	await q.add(JOB_NAME_SESSION_CLEANUP, {}, {
+		jobId: SESSION_CLEANUP_JOB_ID,
+		repeat: { pattern: SESSION_CLEANUP_CRON },
+		removeOnComplete: true,
+		removeOnFail: true,
+	});
 }
 
 export function processSessionCleanupQueue(processor: () => Promise<void>) {
 	const q = getQueue();
 
-	q.process(SESSION_CLEANUP_JOB_NAME, async () => {
-		await processor();
-	});
+	new Worker(
+		q.name,
+		async (job) => {
+			if (job.name === JOB_NAME_SESSION_CLEANUP) {
+				await processor();
+			}
+		},
+		{ connection: getRedisConnection() },
+	);
 }
