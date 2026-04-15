@@ -28,7 +28,9 @@ async function buildCookieHeader(): Promise<string | undefined> {
   return all.map((c) => `${c.name}=${encodeURIComponent(c.value)}`).join("; ");
 }
 
-async function buildForwardedHeaders(initHeaders?: HeadersInit): Promise<Headers> {
+async function buildForwardedHeaders(
+  initHeaders?: HeadersInit,
+): Promise<Headers> {
   const h = new Headers(initHeaders);
   const cookieHeader = await buildCookieHeader();
   if (cookieHeader) {
