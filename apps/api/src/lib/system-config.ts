@@ -66,6 +66,7 @@ export function decryptConfigValue(value: string): string {
 export const SECRET_CONFIG_KEYS = new Set([
 	"smtp.user",
 	"smtp.password",
+	"cyberpanel.api_key",
 	"llm.api_key",
 	"stt.api_key",
 ]);

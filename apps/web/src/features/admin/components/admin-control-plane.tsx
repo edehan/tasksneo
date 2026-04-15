@@ -58,6 +58,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   ADMIN_TOKEN_STORAGE_KEY,
   type AdminAnnouncement,
@@ -89,12 +90,15 @@ const CONFIG_DEFAULTS = {
   "app.base_url": "",
   "auth.registration_open": "true",
   "notif.before_due_hours": "",
+  "email.provider": "smtp",
   "smtp.host": "",
   "smtp.port": "",
   "smtp.user": "",
   "smtp.password": "",
   "smtp.from": "",
   "smtp.from_name": "TaskNeo",
+  "cyberpanel.api_key": "",
+  "cyberpanel.from": "",
   "llm.provider": "",
   "llm.base_url": "",
   "llm.api_key": "",
@@ -141,8 +145,9 @@ const CONFIG_GROUPS: Array<{ title: string; fields: ConfigField[] }> = [
     ],
   },
   {
-    title: "SMTP",
+    title: "Email",
     fields: [
+      { key: "email.provider", label: "Email Provider" },
       { key: "smtp.host", label: "SMTP Host", placeholder: "smtp.example.com" },
       { key: "smtp.port", label: "SMTP Port", placeholder: "587" },
       { key: "smtp.user", label: "SMTP User" },
@@ -156,6 +161,16 @@ const CONFIG_GROUPS: Array<{ title: string; fields: ConfigField[] }> = [
         key: "smtp.from_name",
         label: "SMTP From Name",
         placeholder: "TaskNeo",
+      },
+      {
+        key: "cyberpanel.api_key",
+        label: "CyberPanel API Key",
+        type: "password",
+      },
+      {
+        key: "cyberpanel.from",
+        label: "CyberPanel From",
+        placeholder: "noreply@example.com",
       },
     ],
   },
@@ -196,6 +211,7 @@ const CONFIG_KEYS = Object.keys(CONFIG_DEFAULTS) as ConfigKey[];
 const SECRET_CONFIG_KEYS = new Set<ConfigKey>([
   "smtp.user",
   "smtp.password",
+  "cyberpanel.api_key",
   "llm.api_key",
   "stt.api_key",
 ]);
@@ -761,10 +777,43 @@ export function AdminControlPlane() {
                       <CardTitle className="text-base">{group.title}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {group.fields.map((field) => (
-                        <div key={field.key} className="space-y-2">
-                          <Label htmlFor={field.key}>{field.label}</Label>
-                          {field.key === "auth.registration_open" ? (
+                      {group.fields.map((field) => {
+                        const provider = configForm["email.provider"] ?? "smtp";
+                        const isSmtpField =
+                          field.key.startsWith("smtp.") &&
+                          field.key !== "email.provider";
+                        const isCyberPanelField =
+                          field.key.startsWith("cyberpanel.") &&
+                          field.key !== "email.provider";
+                        if (isSmtpField && provider !== "smtp") return null;
+                        if (isCyberPanelField && provider !== "cyberpanel")
+                          return null;
+
+                        return (
+                          <div key={field.key} className="space-y-2">
+                            <Label htmlFor={field.key}>{field.label}</Label>
+                            {field.key === "email.provider" ? (
+                              <ToggleGroup
+                                type="single"
+                                variant="outline"
+                                value={provider}
+                                onValueChange={(value) => {
+                                  if (value) {
+                                    setConfigForm((prev) => ({
+                                      ...prev,
+                                      "email.provider": value,
+                                    }));
+                                  }
+                                }}
+                              >
+                                <ToggleGroupItem value="smtp">
+                                  SMTP
+                                </ToggleGroupItem>
+                                <ToggleGroupItem value="cyberpanel">
+                                  CyberPanel
+                                </ToggleGroupItem>
+                              </ToggleGroup>
+                            ) : field.key === "auth.registration_open" ? (
                             <div className="flex items-center gap-3">
                               <Switch
                                 id={field.key}
@@ -845,7 +894,7 @@ export function AdminControlPlane() {
                             </div>
                           )}
                         </div>
-                      ))}
+                      )})}
                     </CardContent>
                   </Card>
                 ))}
@@ -952,9 +1001,10 @@ export function AdminControlPlane() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>SMTP Test Email</CardTitle>
+                  <CardTitle>Test Email</CardTitle>
                   <CardDescription>
-                    Send a test message using current SMTP settings.
+                    Send a test message using the currently selected email
+                    provider.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3 sm:flex-row">
