@@ -717,13 +717,20 @@ function toNotificationItem(job: {
 	};
 }
 
+// In-app inbox shows EMAIL channel jobs regardless of delivery status —
+// a failed email send should not hide the notification from the user.
+const INBOX_WHERE = (userId: string) => ({
+	userId,
+	channel: NotifChannel.EMAIL,
+	status: { in: [NotifStatus.SENT, NotifStatus.FAILED, NotifStatus.SENDING] },
+});
+
 export async function listMyNotifications(
 	userId: string,
 	options: { limit: number; cursor?: string; unreadOnly: boolean },
 ) {
 	const where = {
-		userId,
-		status: NotifStatus.SENT,
+		...INBOX_WHERE(userId),
 		...(options.unreadOnly ? { readAt: null } : {}),
 	};
 
@@ -742,7 +749,7 @@ export async function listMyNotifications(
 			},
 		}),
 		prisma.notificationJob.count({
-			where: { userId, status: NotifStatus.SENT, readAt: null },
+			where: { ...INBOX_WHERE(userId), readAt: null },
 		}),
 	]);
 
@@ -786,7 +793,7 @@ export async function markNotificationRead(
 
 export async function markAllNotificationsRead(userId: string) {
 	const result = await prisma.notificationJob.updateMany({
-		where: { userId, readAt: null, status: NotifStatus.SENT },
+		where: { ...INBOX_WHERE(userId), readAt: null },
 		data: { readAt: new Date() },
 	});
 
@@ -795,7 +802,7 @@ export async function markAllNotificationsRead(userId: string) {
 
 export async function getUnreadNotificationCount(userId: string) {
 	const count = await prisma.notificationJob.count({
-		where: { userId, status: NotifStatus.SENT, readAt: null },
+		where: { ...INBOX_WHERE(userId), readAt: null },
 	});
 
 	return { unreadCount: count };
