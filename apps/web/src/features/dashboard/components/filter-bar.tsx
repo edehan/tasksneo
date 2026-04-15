@@ -4,10 +4,10 @@ import { Check, Filter } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 interface Filters {
-  unfinished: boolean;
   notSubmitted: boolean;
   overdue: boolean;
   showSubmitted: boolean;
+  showLongOverdue: boolean;
 }
 
 interface FilterBarProps {
@@ -22,10 +22,10 @@ interface FilterDef {
 }
 
 const filterDefs: FilterDef[] = [
-  { key: "unfinished", labelKey: "unfinished" },
   { key: "notSubmitted", labelKey: "notSubmitted" },
   { key: "overdue", labelKey: "overdue" },
   { key: "showSubmitted", labelKey: "showSubmitted", showCheck: true },
+  { key: "showLongOverdue", labelKey: "showLongOverdue", showCheck: true },
 ];
 
 export function FilterBar({ filters, onChange }: FilterBarProps) {

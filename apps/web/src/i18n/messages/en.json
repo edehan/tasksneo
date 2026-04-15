@@ -353,10 +353,10 @@
     "goBack": "Go back"
   },
   "dashboardFilterBar": {
-    "unfinished": "Unfinished",
     "notSubmitted": "Not Submitted",
     "overdue": "Overdue",
-    "showSubmitted": "Show Submitted"
+    "showSubmitted": "Show Submitted",
+    "showLongOverdue": "Show Long Overdue"
   },
   "dashboardStatCards": {
     "totalTasks": "Total Tasks",

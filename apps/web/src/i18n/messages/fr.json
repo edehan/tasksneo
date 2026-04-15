@@ -353,10 +353,10 @@
     "goBack": "Retour"
   },
   "dashboardFilterBar": {
-    "unfinished": "Non termine",
     "notSubmitted": "Non rendu",
     "overdue": "En retard",
-    "showSubmitted": "Afficher les rendus"
+    "showSubmitted": "Afficher les rendus",
+    "showLongOverdue": "Afficher les longs retards"
   },
   "dashboardStatCards": {
     "totalTasks": "Taches totales",

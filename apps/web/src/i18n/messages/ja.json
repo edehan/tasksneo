@@ -353,10 +353,10 @@
     "goBack": "戻る"
   },
   "dashboardFilterBar": {
-    "unfinished": "未完了",
     "notSubmitted": "未提出",
     "overdue": "期限超過",
-    "showSubmitted": "提出済みを表示"
+    "showSubmitted": "提出済みを表示",
+    "showLongOverdue": "長期超過を表示"
   },
   "dashboardStatCards": {
     "totalTasks": "総タスク数",
