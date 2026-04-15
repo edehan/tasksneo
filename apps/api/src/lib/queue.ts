@@ -6,6 +6,13 @@ import { loadEnv } from "./env.js";
 let queue: Queue | null = null;
 let redisConnection: Redis | null = null;
 
+// Single shared worker + handler registry.
+// BullMQ Workers compete for all jobs on a queue regardless of job name — multiple
+// Workers on the same queue would silently consume each other's jobs. We avoid this
+// by maintaining one Worker that dispatches to registered per-name handlers.
+const jobHandlers = new Map<string, (job: Job) => Promise<void>>();
+let sharedWorker: Worker | null = null;
+
 function getRedisConnection() {
 	if (redisConnection) {
 		return redisConnection;
@@ -28,6 +35,23 @@ function getQueue() {
 	});
 
 	return queue;
+}
+
+function getOrCreateSharedWorker() {
+	if (sharedWorker) return sharedWorker;
+
+	const q = getQueue();
+	sharedWorker = new Worker(
+		q.name,
+		async (job) => {
+			const handler = jobHandlers.get(job.name);
+			if (handler) {
+				await handler(job);
+			}
+		},
+		{ connection: getRedisConnection() },
+	);
+	return sharedWorker;
 }
 
 export interface NotificationQueueJob {
@@ -70,17 +94,10 @@ export async function enqueueNotificationJob(
 export function processNotificationQueue(
 	processor: (job: NotificationQueueJob) => Promise<void>,
 ) {
-	const q = getQueue();
-
-	new Worker(
-		q.name,
-		async (job) => {
-			if (job.name === JOB_NAME_NOTIFICATION) {
-				await processor(job.data as NotificationQueueJob);
-			}
-		},
-		{ connection: getRedisConnection() },
-	);
+	jobHandlers.set(JOB_NAME_NOTIFICATION, async (job) => {
+		await processor(job.data as NotificationQueueJob);
+	});
+	getOrCreateSharedWorker();
 }
 
 export async function enqueueAnnouncementPublish(
@@ -117,17 +134,10 @@ export async function removeAnnouncementJob(announcementId: string) {
 export function processAnnouncementQueue(
 	processor: (job: AnnouncementQueueJob) => Promise<void>,
 ) {
-	const q = getQueue();
-
-	new Worker(
-		q.name,
-		async (job) => {
-			if (job.name === JOB_NAME_ANNOUNCEMENT) {
-				await processor(job.data as AnnouncementQueueJob);
-			}
-		},
-		{ connection: getRedisConnection() },
-	);
+	jobHandlers.set(JOB_NAME_ANNOUNCEMENT, async (job) => {
+		await processor(job.data as AnnouncementQueueJob);
+	});
+	getOrCreateSharedWorker();
 }
 
 // ── Session cleanup cron ────────────────────────────────────────────────────
@@ -164,15 +174,44 @@ export async function scheduleSessionCleanupCron() {
 }
 
 export function processSessionCleanupQueue(processor: () => Promise<void>) {
+	jobHandlers.set(JOB_NAME_SESSION_CLEANUP, async () => {
+		await processor();
+	});
+	getOrCreateSharedWorker();
+}
+
+// ── Queue introspection for admin panel ────────────────────────────────────
+
+export async function getQueueStats() {
 	const q = getQueue();
 
-	new Worker(
-		q.name,
-		async (job) => {
-			if (job.name === JOB_NAME_SESSION_CLEANUP) {
-				await processor();
-			}
-		},
-		{ connection: getRedisConnection() },
-	);
+	const [jobCounts, delayed, failed, repeatable] = await Promise.all([
+		q.getJobCounts("waiting", "active", "delayed", "failed", "paused"),
+		q.getJobs(["delayed"], 0, 29),
+		q.getJobs(["failed"], 0, 29),
+		q.getRepeatableJobs(),
+	]);
+
+	return {
+		jobCounts,
+		delayedJobs: delayed.map((j) => ({
+			id: j.id ?? "",
+			name: j.name,
+			data: j.data as Record<string, unknown>,
+			processAt: new Date(j.timestamp + j.delay).toISOString(),
+		})),
+		failedJobs: failed.map((j) => ({
+			id: j.id ?? "",
+			name: j.name,
+			failedReason: j.failedReason ?? null,
+			attemptsMade: j.attemptsMade,
+			timestamp: new Date(j.timestamp).toISOString(),
+		})),
+		repeatableJobs: repeatable.map((r) => ({
+			key: r.key,
+			name: r.name,
+			pattern: r.pattern ?? "",
+			next: r.next ? new Date(r.next).toISOString() : null,
+		})),
+	};
 }

@@ -3,6 +3,7 @@
 import {
   Activity,
   GraduationCap,
+  ListChecks,
   Loader2,
   LogOut,
   Megaphone,
@@ -61,6 +62,7 @@ import {
   ADMIN_TOKEN_STORAGE_KEY,
   type AdminAnnouncement,
   type AdminMetrics,
+  type AdminQueueStats,
   type AdminSchool,
   ApiError,
   cancelAdminAnnouncement,
@@ -69,6 +71,7 @@ import {
   deleteAdminSchool,
   getAdminConfig,
   getAdminMetrics,
+  getAdminQueueStats,
   getAdminStorageStatus,
   listAdminAnnouncements,
   listAdminSchools,
@@ -204,6 +207,7 @@ const ADMIN_TABS = [
   { value: "schools", label: "Schools", icon: GraduationCap },
   { value: "announcements", label: "Announcements", icon: Megaphone },
   { value: "metrics", label: "Metrics", icon: Activity },
+  { value: "queue", label: "Queue", icon: ListChecks },
 ] as const;
 
 type AdminTab = (typeof ADMIN_TABS)[number]["value"];
@@ -287,6 +291,10 @@ export function AdminControlPlane() {
 
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
+
+  const [queueStats, setQueueStats] = useState<AdminQueueStats | null>(null);
+  const [queueLoading, setQueueLoading] = useState(false);
+
   const [activeTab, setActiveTab] = useState<AdminTab>("config");
 
   const { resolvedTheme, setTheme } = useTheme();
@@ -351,6 +359,19 @@ export function AdminControlPlane() {
       toast.error(`Failed to load metrics: ${getErrorMessage(error)}`);
     } finally {
       setMetricsLoading(false);
+    }
+  }, [token]);
+
+  const refreshQueue = useCallback(async () => {
+    if (!token) return;
+    setQueueLoading(true);
+    try {
+      const stats = await getAdminQueueStats();
+      setQueueStats(stats);
+    } catch (error) {
+      toast.error(`Failed to load queue stats: ${getErrorMessage(error)}`);
+    } finally {
+      setQueueLoading(false);
     }
   }, [token]);
 
@@ -1361,6 +1382,189 @@ export function AdminControlPlane() {
                           refresh.
                         </p>
                       )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="queue" className="mt-0">
+              <Card>
+                <CardHeader className="flex flex-row items-start justify-between gap-4">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <ListChecks className="h-4 w-4" />
+                      Job Queue
+                    </CardTitle>
+                    <CardDescription>
+                      Live view of the{" "}
+                      <code className="font-mono text-xs">
+                        taskflow-notifications
+                      </code>{" "}
+                      BullMQ queue — delayed jobs, failures, and repeatable
+                      schedules.
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void refreshQueue()}
+                    disabled={queueLoading || !token}
+                  >
+                    {queueLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                    Refresh
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {!queueStats ? (
+                    <p className="text-sm text-muted-foreground">
+                      No queue snapshot loaded. Click Refresh to fetch.
+                    </p>
+                  ) : (
+                    <>
+                      <div className="grid gap-3 sm:grid-cols-4">
+                        <MetricTile
+                          label="Waiting"
+                          value={String(queueStats.jobCounts.waiting ?? 0)}
+                        />
+                        <MetricTile
+                          label="Active"
+                          value={String(queueStats.jobCounts.active ?? 0)}
+                        />
+                        <MetricTile
+                          label="Delayed"
+                          value={String(queueStats.jobCounts.delayed ?? 0)}
+                        />
+                        <MetricTile
+                          label="Failed"
+                          value={String(queueStats.jobCounts.failed ?? 0)}
+                          tone={
+                            (queueStats.jobCounts.failed ?? 0) > 0
+                              ? "error"
+                              : "normal"
+                          }
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Scheduled / Delayed Jobs
+                        </Label>
+                        {queueStats.delayedJobs.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">
+                            No delayed jobs pending.
+                          </p>
+                        ) : (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Job Name</TableHead>
+                                <TableHead>Runs At</TableHead>
+                                <TableHead className="font-mono text-xs">
+                                  Data
+                                </TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {queueStats.delayedJobs.map((j) => (
+                                <TableRow key={j.id}>
+                                  <TableCell className="font-mono text-xs">
+                                    {j.name}
+                                  </TableCell>
+                                  <TableCell className="text-sm">
+                                    {formatDateTime(j.processAt)}
+                                  </TableCell>
+                                  <TableCell className="max-w-xs truncate font-mono text-xs text-muted-foreground">
+                                    {JSON.stringify(j.data)}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Failed Jobs
+                        </Label>
+                        {queueStats.failedJobs.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">
+                            No failed jobs.
+                          </p>
+                        ) : (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Job Name</TableHead>
+                                <TableHead>Error</TableHead>
+                                <TableHead className="text-right">
+                                  Attempts
+                                </TableHead>
+                                <TableHead>Time</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {queueStats.failedJobs.map((j) => (
+                                <TableRow key={j.id}>
+                                  <TableCell className="font-mono text-xs">
+                                    {j.name}
+                                  </TableCell>
+                                  <TableCell className="max-w-xs truncate text-sm text-destructive">
+                                    {j.failedReason ?? "—"}
+                                  </TableCell>
+                                  <TableCell className="text-right text-sm">
+                                    {j.attemptsMade}
+                                  </TableCell>
+                                  <TableCell className="text-sm">
+                                    {formatDateTime(j.timestamp)}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Repeatable / Cron Jobs
+                        </Label>
+                        {queueStats.repeatableJobs.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">
+                            No repeatable jobs registered.
+                          </p>
+                        ) : (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Job Name</TableHead>
+                                <TableHead>Cron Pattern</TableHead>
+                                <TableHead>Next Run</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {queueStats.repeatableJobs.map((r) => (
+                                <TableRow key={r.key}>
+                                  <TableCell className="font-mono text-xs">
+                                    {r.name}
+                                  </TableCell>
+                                  <TableCell className="font-mono text-xs">
+                                    {r.pattern || "—"}
+                                  </TableCell>
+                                  <TableCell className="text-sm">
+                                    {r.next ? formatDateTime(r.next) : "—"}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        )}
+                      </div>
                     </>
                   )}
                 </CardContent>

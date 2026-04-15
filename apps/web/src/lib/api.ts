@@ -1111,6 +1111,47 @@ export async function getAdminMetrics(): Promise<AdminMetrics> {
   return apiRequest<AdminMetrics>("/admin/metrics", {});
 }
 
+export interface AdminQueueJobCounts {
+  waiting: number;
+  active: number;
+  delayed: number;
+  failed: number;
+  paused: number;
+}
+
+export interface AdminQueueDelayedJob {
+  id: string;
+  name: string;
+  data: Record<string, unknown>;
+  processAt: string;
+}
+
+export interface AdminQueueFailedJob {
+  id: string;
+  name: string;
+  failedReason: string | null;
+  attemptsMade: number;
+  timestamp: string;
+}
+
+export interface AdminQueueRepeatableJob {
+  key: string;
+  name: string;
+  pattern: string;
+  next: string | null;
+}
+
+export interface AdminQueueStats {
+  jobCounts: AdminQueueJobCounts;
+  delayedJobs: AdminQueueDelayedJob[];
+  failedJobs: AdminQueueFailedJob[];
+  repeatableJobs: AdminQueueRepeatableJob[];
+}
+
+export async function getAdminQueueStats(): Promise<AdminQueueStats> {
+  return apiRequest<AdminQueueStats>("/admin/queue", {});
+}
+
 export async function getAdminConfig(): Promise<Record<string, string>> {
   return apiRequest<Record<string, string>>("/admin/config", {});
 }
