@@ -110,11 +110,13 @@ export function ClassPage({ initialClass, initialTasks }: ClassPageProps) {
       if (status === "submitted" && !filters.showSubmitted) return false;
       if (status === "long-overdue" && !filters.showLongOverdue) return false;
 
-      const hasActiveFilter =
-        filters.notSubmitted || filters.overdue;
+      const hasActiveFilter = filters.notSubmitted || filters.overdue;
       if (!hasActiveFilter) return true;
       if (filters.notSubmitted && status !== "submitted") return true;
-      if (filters.overdue && (status === "overdue" || status === "long-overdue"))
+      if (
+        filters.overdue &&
+        (status === "overdue" || status === "long-overdue")
+      )
         return true;
       return false;
     });

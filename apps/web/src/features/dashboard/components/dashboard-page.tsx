@@ -89,12 +89,14 @@ export function DashboardPage({
       if (status === "long-overdue" && !filters.showLongOverdue) return false;
 
       // If any specific filter is active, only show matching tasks
-      const hasActiveFilter =
-        filters.notSubmitted || filters.overdue;
+      const hasActiveFilter = filters.notSubmitted || filters.overdue;
       if (!hasActiveFilter) return true;
 
       if (filters.notSubmitted && status !== "submitted") return true;
-      if (filters.overdue && (status === "overdue" || status === "long-overdue"))
+      if (
+        filters.overdue &&
+        (status === "overdue" || status === "long-overdue")
+      )
         return true;
 
       return false;

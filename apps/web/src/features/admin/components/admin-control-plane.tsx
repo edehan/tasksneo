@@ -814,87 +814,90 @@ export function AdminControlPlane() {
                                 </ToggleGroupItem>
                               </ToggleGroup>
                             ) : field.key === "auth.registration_open" ? (
-                            <div className="flex items-center gap-3">
-                              <Switch
-                                id={field.key}
-                                checked={
-                                  (
-                                    configForm["auth.registration_open"] ??
-                                    "true"
-                                  ).toLowerCase() !== "false"
-                                }
-                                onCheckedChange={(checked) =>
-                                  setConfigForm((prev) => ({
-                                    ...prev,
-                                    "auth.registration_open": checked
-                                      ? "true"
-                                      : "false",
-                                  }))
-                                }
-                              />
-                              <span className="text-sm text-muted-foreground">
-                                {configForm["auth.registration_open"] ===
-                                "false"
-                                  ? "Closed"
-                                  : "Open"}
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              {field.type === "textarea" ? (
-                                <Textarea
+                              <div className="flex items-center gap-3">
+                                <Switch
                                   id={field.key}
-                                  rows={6}
-                                  placeholder={field.placeholder}
-                                  value={configForm[field.key]}
-                                  onChange={(event) =>
+                                  checked={
+                                    (
+                                      configForm["auth.registration_open"] ??
+                                      "true"
+                                    ).toLowerCase() !== "false"
+                                  }
+                                  onCheckedChange={(checked) =>
                                     setConfigForm((prev) => ({
                                       ...prev,
-                                      [field.key]: event.target.value,
+                                      "auth.registration_open": checked
+                                        ? "true"
+                                        : "false",
                                     }))
                                   }
                                 />
-                              ) : (
-                                <Input
-                                  id={field.key}
-                                  type={field.type ?? "text"}
-                                  placeholder={
-                                    isSecretDisplayValue(
-                                      field.key,
-                                      configForm[field.key],
-                                    )
-                                      ? configForm[field.key] === SECRET_REENTER
-                                        ? "Re-enter and save a new value"
-                                        : "Value saved and hidden"
-                                      : field.placeholder
-                                  }
-                                  value={
-                                    isSecretDisplayValue(
-                                      field.key,
-                                      configForm[field.key],
-                                    )
-                                      ? ""
-                                      : configForm[field.key]
-                                  }
-                                  onChange={(event) =>
-                                    setConfigForm((prev) => ({
-                                      ...prev,
-                                      [field.key]: event.target.value,
-                                    }))
-                                  }
-                                />
-                              )}
-                              {SECRET_CONFIG_KEYS.has(field.key) &&
-                                configInitial[field.key] === SECRET_REENTER && (
-                                  <p className="text-xs text-amber-600 dark:text-amber-400">
-                                    Existing secret cannot be decrypted. Enter a
-                                    new value to replace it.
-                                  </p>
+                                <span className="text-sm text-muted-foreground">
+                                  {configForm["auth.registration_open"] ===
+                                  "false"
+                                    ? "Closed"
+                                    : "Open"}
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                {field.type === "textarea" ? (
+                                  <Textarea
+                                    id={field.key}
+                                    rows={6}
+                                    placeholder={field.placeholder}
+                                    value={configForm[field.key]}
+                                    onChange={(event) =>
+                                      setConfigForm((prev) => ({
+                                        ...prev,
+                                        [field.key]: event.target.value,
+                                      }))
+                                    }
+                                  />
+                                ) : (
+                                  <Input
+                                    id={field.key}
+                                    type={field.type ?? "text"}
+                                    placeholder={
+                                      isSecretDisplayValue(
+                                        field.key,
+                                        configForm[field.key],
+                                      )
+                                        ? configForm[field.key] ===
+                                          SECRET_REENTER
+                                          ? "Re-enter and save a new value"
+                                          : "Value saved and hidden"
+                                        : field.placeholder
+                                    }
+                                    value={
+                                      isSecretDisplayValue(
+                                        field.key,
+                                        configForm[field.key],
+                                      )
+                                        ? ""
+                                        : configForm[field.key]
+                                    }
+                                    onChange={(event) =>
+                                      setConfigForm((prev) => ({
+                                        ...prev,
+                                        [field.key]: event.target.value,
+                                      }))
+                                    }
+                                  />
                                 )}
-                            </div>
-                          )}
-                        </div>
-                      )})}
+                                {SECRET_CONFIG_KEYS.has(field.key) &&
+                                  configInitial[field.key] ===
+                                    SECRET_REENTER && (
+                                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                                      Existing secret cannot be decrypted. Enter
+                                      a new value to replace it.
+                                    </p>
+                                  )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </CardContent>
                   </Card>
                 ))}
