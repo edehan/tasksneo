@@ -353,10 +353,10 @@
     "goBack": "返回"
   },
   "dashboardFilterBar": {
-    "unfinished": "未完成",
     "notSubmitted": "未提交",
     "overdue": "已逾期",
-    "showSubmitted": "显示已提交"
+    "showSubmitted": "显示已提交",
+    "showLongOverdue": "显示长期逾期"
   },
   "dashboardStatCards": {
     "totalTasks": "总任务数",

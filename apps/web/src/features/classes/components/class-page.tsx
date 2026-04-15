@@ -3,7 +3,7 @@
 import { Plus, Settings, Users } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSWRConfig } from "swr";
 
 import { Button } from "@/components/ui/button";
@@ -28,12 +28,15 @@ import { webDataKeys } from "@/lib/web-data-keys";
 
 function deriveDisplayStatus(
   task: TaskWithClass,
-): "submitted" | "overdue" | "in-progress" | "not-started" {
+): "submitted" | "long-overdue" | "overdue" | "in-progress" | "not-started" {
   if (task.userState?.submittedAt) return "submitted";
   const now = Date.now();
   const dueAt = task.dueAt ? new Date(task.dueAt).getTime() : null;
   const startAt = task.startAt ? new Date(task.startAt).getTime() : null;
-  if (dueAt && dueAt < now) return "overdue";
+  if (dueAt && dueAt < now) {
+    if (now - dueAt > 30 * 24 * 60 * 60 * 1000) return "long-overdue";
+    return "overdue";
+  }
   if (startAt && startAt <= now && dueAt && dueAt >= now) return "in-progress";
   return "not-started";
 }
@@ -55,10 +58,10 @@ export function ClassPage({ initialClass, initialTasks }: ClassPageProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("gantt");
   const [dayWidth, setDayWidth] = useState(DEFAULT_DAY_WIDTH);
   const [filters, setFilters] = useState({
-    unfinished: false,
     notSubmitted: false,
     overdue: false,
     showSubmitted: false,
+    showLongOverdue: false,
   });
   const {
     data: cls,
@@ -74,6 +77,16 @@ export function ClassPage({ initialClass, initialTasks }: ClassPageProps) {
   } = useClassTasksQuery(classId, {
     fallbackData: initialTasks,
   });
+
+  // Revalidate on mount so that returning via router.back always shows fresh data.
+  // Without this, navigating back from /tasks/[id]/edit after publishing a task
+  // shows stale data because the SWR cache may have been invalidated while
+  // this component was unmounted.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally mount-only
+  useEffect(() => {
+    void mutateClassTasks();
+    void mutateClass();
+  }, []);
   const tasks = useMemo(
     () =>
       cls
@@ -95,18 +108,16 @@ export function ClassPage({ initialClass, initialTasks }: ClassPageProps) {
     return tasks.filter((task) => {
       const status = deriveDisplayStatus(task);
       if (status === "submitted" && !filters.showSubmitted) return false;
-      const hasActiveFilter =
-        filters.unfinished || filters.notSubmitted || filters.overdue;
+      if (status === "long-overdue" && !filters.showLongOverdue) return false;
+
+      const hasActiveFilter = filters.notSubmitted || filters.overdue;
       if (!hasActiveFilter) return true;
+      if (filters.notSubmitted && status !== "submitted") return true;
       if (
-        filters.unfinished &&
-        (status === "in-progress" ||
-          status === "not-started" ||
-          status === "overdue")
+        filters.overdue &&
+        (status === "overdue" || status === "long-overdue")
       )
         return true;
-      if (filters.notSubmitted && status !== "submitted") return true;
-      if (filters.overdue && status === "overdue") return true;
       return false;
     });
   }, [tasks, filters]);

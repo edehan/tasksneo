@@ -1,18 +1,57 @@
-import Bull, { type Queue } from "bull";
+import { Job, Queue, Worker } from "bullmq";
+import { Redis } from "ioredis";
 
 import { loadEnv } from "./env.js";
 
 let queue: Queue | null = null;
+let redisConnection: Redis | null = null;
+
+// Single shared worker + handler registry.
+// BullMQ Workers compete for all jobs on a queue regardless of job name — multiple
+// Workers on the same queue would silently consume each other's jobs. We avoid this
+// by maintaining one Worker that dispatches to registered per-name handlers.
+const jobHandlers = new Map<string, (job: Job) => Promise<void>>();
+let sharedWorker: Worker | null = null;
+
+function getRedisConnection() {
+	if (redisConnection) {
+		return redisConnection;
+	}
+
+	const env = loadEnv();
+	redisConnection = new Redis(env.redisUrl, {
+		maxRetriesPerRequest: null,
+	});
+	return redisConnection;
+}
 
 function getQueue() {
 	if (queue) {
 		return queue;
 	}
 
-	const env = loadEnv();
-	queue = new Bull("taskflow-notifications", env.redisUrl);
+	queue = new Queue("taskflow-notifications", {
+		connection: getRedisConnection(),
+	});
 
 	return queue;
+}
+
+function getOrCreateSharedWorker() {
+	if (sharedWorker) return sharedWorker;
+
+	const q = getQueue();
+	sharedWorker = new Worker(
+		q.name,
+		async (job) => {
+			const handler = jobHandlers.get(job.name);
+			if (handler) {
+				await handler(job);
+			}
+		},
+		{ connection: getRedisConnection() },
+	);
+	return sharedWorker;
 }
 
 export interface NotificationQueueJob {
@@ -23,6 +62,10 @@ export interface AnnouncementQueueJob {
 	announcementId: string;
 }
 
+const JOB_NAME_NOTIFICATION = "notification-send";
+const JOB_NAME_ANNOUNCEMENT = "announcement-publish";
+const JOB_NAME_SESSION_CLEANUP = "session-cleanup";
+
 export async function enqueueNotificationJob(
 	notificationJobId: string,
 	scheduledAt: Date,
@@ -31,9 +74,10 @@ export async function enqueueNotificationJob(
 	const q = getQueue();
 
 	await q.add(
+		JOB_NAME_NOTIFICATION,
 		{
 			notificationJobId,
-		},
+		} satisfies NotificationQueueJob,
 		{
 			jobId: notificationJobId,
 			delay,
@@ -50,14 +94,11 @@ export async function enqueueNotificationJob(
 export function processNotificationQueue(
 	processor: (job: NotificationQueueJob) => Promise<void>,
 ) {
-	const q = getQueue();
-
-	q.process(async (job) => {
+	jobHandlers.set(JOB_NAME_NOTIFICATION, async (job) => {
 		await processor(job.data as NotificationQueueJob);
 	});
+	getOrCreateSharedWorker();
 }
-
-const ANNOUNCEMENT_JOB_NAME = "announcement-publish";
 
 export async function enqueueAnnouncementPublish(
 	announcementId: string,
@@ -67,7 +108,7 @@ export async function enqueueAnnouncementPublish(
 	const q = getQueue();
 
 	await q.add(
-		ANNOUNCEMENT_JOB_NAME,
+		JOB_NAME_ANNOUNCEMENT,
 		{ announcementId } satisfies AnnouncementQueueJob,
 		{
 			jobId: `announcement-${announcementId}`,
@@ -84,7 +125,7 @@ export async function enqueueAnnouncementPublish(
 
 export async function removeAnnouncementJob(announcementId: string) {
 	const q = getQueue();
-	const job = await q.getJob(`announcement-${announcementId}`);
+	const job = await Job.fromId(q, `announcement-${announcementId}`);
 	if (job) {
 		await job.remove();
 	}
@@ -93,21 +134,19 @@ export async function removeAnnouncementJob(announcementId: string) {
 export function processAnnouncementQueue(
 	processor: (job: AnnouncementQueueJob) => Promise<void>,
 ) {
-	const q = getQueue();
-
-	q.process(ANNOUNCEMENT_JOB_NAME, async (job) => {
+	jobHandlers.set(JOB_NAME_ANNOUNCEMENT, async (job) => {
 		await processor(job.data as AnnouncementQueueJob);
 	});
+	getOrCreateSharedWorker();
 }
 
 // ── Session cleanup cron ────────────────────────────────────────────────────
 
-const SESSION_CLEANUP_JOB_NAME = "session-cleanup";
 const SESSION_CLEANUP_JOB_ID = "session-cleanup-daily";
 const SESSION_CLEANUP_CRON = "0 3 * * *"; // every day at 03:00 local time
 
 /**
- * Register the daily session cleanup cron. Safe to call repeatedly — Bull
+ * Register the daily session cleanup cron. Safe to call repeatedly — BullMQ
  * deduplicates the repeatable entry by jobId + cron.
  */
 export async function scheduleSessionCleanupCron() {
@@ -117,17 +156,17 @@ export async function scheduleSessionCleanupCron() {
 	// expression between deploys doesn't leave the old schedule orphaned.
 	const existing = await q.getRepeatableJobs();
 	for (const entry of existing) {
-		if (entry.name === SESSION_CLEANUP_JOB_NAME) {
+		if (entry.name === JOB_NAME_SESSION_CLEANUP) {
 			await q.removeRepeatableByKey(entry.key);
 		}
 	}
 
 	await q.add(
-		SESSION_CLEANUP_JOB_NAME,
+		JOB_NAME_SESSION_CLEANUP,
 		{},
 		{
 			jobId: SESSION_CLEANUP_JOB_ID,
-			repeat: { cron: SESSION_CLEANUP_CRON },
+			repeat: { pattern: SESSION_CLEANUP_CRON },
 			removeOnComplete: true,
 			removeOnFail: true,
 		},
@@ -135,9 +174,44 @@ export async function scheduleSessionCleanupCron() {
 }
 
 export function processSessionCleanupQueue(processor: () => Promise<void>) {
-	const q = getQueue();
-
-	q.process(SESSION_CLEANUP_JOB_NAME, async () => {
+	jobHandlers.set(JOB_NAME_SESSION_CLEANUP, async () => {
 		await processor();
 	});
+	getOrCreateSharedWorker();
+}
+
+// ── Queue introspection for admin panel ────────────────────────────────────
+
+export async function getQueueStats() {
+	const q = getQueue();
+
+	const [jobCounts, delayed, failed, repeatable] = await Promise.all([
+		q.getJobCounts("waiting", "active", "delayed", "failed", "paused"),
+		q.getJobs(["delayed"], 0, 29),
+		q.getJobs(["failed"], 0, 29),
+		q.getRepeatableJobs(),
+	]);
+
+	return {
+		jobCounts,
+		delayedJobs: delayed.map((j) => ({
+			id: j.id ?? "",
+			name: j.name,
+			data: j.data as Record<string, unknown>,
+			processAt: new Date(j.timestamp + j.delay).toISOString(),
+		})),
+		failedJobs: failed.map((j) => ({
+			id: j.id ?? "",
+			name: j.name,
+			failedReason: j.failedReason ?? null,
+			attemptsMade: j.attemptsMade,
+			timestamp: new Date(j.timestamp).toISOString(),
+		})),
+		repeatableJobs: repeatable.map((r) => ({
+			key: r.key,
+			name: r.name,
+			pattern: r.pattern ?? "",
+			next: r.next ? new Date(r.next).toISOString() : null,
+		})),
+	};
 }

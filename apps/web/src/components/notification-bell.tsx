@@ -124,8 +124,8 @@ export function NotificationBell() {
     }
 
     setOpen(false);
-    if (item.type !== "SITE_ANNOUNCEMENT") {
-      router.push("/dashboard");
+    if (item.taskId) {
+      router.push(`/tasks/${item.taskId}`);
     }
   }
 

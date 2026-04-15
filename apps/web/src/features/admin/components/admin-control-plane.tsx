@@ -3,6 +3,7 @@
 import {
   Activity,
   GraduationCap,
+  ListChecks,
   Loader2,
   LogOut,
   Megaphone,
@@ -57,10 +58,12 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   ADMIN_TOKEN_STORAGE_KEY,
   type AdminAnnouncement,
   type AdminMetrics,
+  type AdminQueueStats,
   type AdminSchool,
   ApiError,
   cancelAdminAnnouncement,
@@ -69,6 +72,7 @@ import {
   deleteAdminSchool,
   getAdminConfig,
   getAdminMetrics,
+  getAdminQueueStats,
   getAdminStorageStatus,
   listAdminAnnouncements,
   listAdminSchools,
@@ -86,12 +90,15 @@ const CONFIG_DEFAULTS = {
   "app.base_url": "",
   "auth.registration_open": "true",
   "notif.before_due_hours": "",
+  "email.provider": "smtp",
   "smtp.host": "",
   "smtp.port": "",
   "smtp.user": "",
   "smtp.password": "",
   "smtp.from": "",
   "smtp.from_name": "TaskNeo",
+  "cyberpanel.api_key": "",
+  "cyberpanel.from": "",
   "llm.provider": "",
   "llm.base_url": "",
   "llm.api_key": "",
@@ -138,8 +145,9 @@ const CONFIG_GROUPS: Array<{ title: string; fields: ConfigField[] }> = [
     ],
   },
   {
-    title: "SMTP",
+    title: "Email",
     fields: [
+      { key: "email.provider", label: "Email Provider" },
       { key: "smtp.host", label: "SMTP Host", placeholder: "smtp.example.com" },
       { key: "smtp.port", label: "SMTP Port", placeholder: "587" },
       { key: "smtp.user", label: "SMTP User" },
@@ -153,6 +161,16 @@ const CONFIG_GROUPS: Array<{ title: string; fields: ConfigField[] }> = [
         key: "smtp.from_name",
         label: "SMTP From Name",
         placeholder: "TaskNeo",
+      },
+      {
+        key: "cyberpanel.api_key",
+        label: "CyberPanel API Key",
+        type: "password",
+      },
+      {
+        key: "cyberpanel.from",
+        label: "CyberPanel From",
+        placeholder: "noreply@example.com",
       },
     ],
   },
@@ -193,6 +211,7 @@ const CONFIG_KEYS = Object.keys(CONFIG_DEFAULTS) as ConfigKey[];
 const SECRET_CONFIG_KEYS = new Set<ConfigKey>([
   "smtp.user",
   "smtp.password",
+  "cyberpanel.api_key",
   "llm.api_key",
   "stt.api_key",
 ]);
@@ -204,6 +223,7 @@ const ADMIN_TABS = [
   { value: "schools", label: "Schools", icon: GraduationCap },
   { value: "announcements", label: "Announcements", icon: Megaphone },
   { value: "metrics", label: "Metrics", icon: Activity },
+  { value: "queue", label: "Queue", icon: ListChecks },
 ] as const;
 
 type AdminTab = (typeof ADMIN_TABS)[number]["value"];
@@ -287,6 +307,10 @@ export function AdminControlPlane() {
 
   const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
+
+  const [queueStats, setQueueStats] = useState<AdminQueueStats | null>(null);
+  const [queueLoading, setQueueLoading] = useState(false);
+
   const [activeTab, setActiveTab] = useState<AdminTab>("config");
 
   const { resolvedTheme, setTheme } = useTheme();
@@ -351,6 +375,19 @@ export function AdminControlPlane() {
       toast.error(`Failed to load metrics: ${getErrorMessage(error)}`);
     } finally {
       setMetricsLoading(false);
+    }
+  }, [token]);
+
+  const refreshQueue = useCallback(async () => {
+    if (!token) return;
+    setQueueLoading(true);
+    try {
+      const stats = await getAdminQueueStats();
+      setQueueStats(stats);
+    } catch (error) {
+      toast.error(`Failed to load queue stats: ${getErrorMessage(error)}`);
+    } finally {
+      setQueueLoading(false);
     }
   }, [token]);
 
@@ -740,91 +777,127 @@ export function AdminControlPlane() {
                       <CardTitle className="text-base">{group.title}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {group.fields.map((field) => (
-                        <div key={field.key} className="space-y-2">
-                          <Label htmlFor={field.key}>{field.label}</Label>
-                          {field.key === "auth.registration_open" ? (
-                            <div className="flex items-center gap-3">
-                              <Switch
-                                id={field.key}
-                                checked={
-                                  (
-                                    configForm["auth.registration_open"] ??
-                                    "true"
-                                  ).toLowerCase() !== "false"
-                                }
-                                onCheckedChange={(checked) =>
-                                  setConfigForm((prev) => ({
-                                    ...prev,
-                                    "auth.registration_open": checked
-                                      ? "true"
-                                      : "false",
-                                  }))
-                                }
-                              />
-                              <span className="text-sm text-muted-foreground">
-                                {configForm["auth.registration_open"] ===
-                                "false"
-                                  ? "Closed"
-                                  : "Open"}
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              {field.type === "textarea" ? (
-                                <Textarea
-                                  id={field.key}
-                                  rows={6}
-                                  placeholder={field.placeholder}
-                                  value={configForm[field.key]}
-                                  onChange={(event) =>
+                      {group.fields.map((field) => {
+                        const provider = configForm["email.provider"] ?? "smtp";
+                        const isSmtpField =
+                          field.key.startsWith("smtp.") &&
+                          field.key !== "email.provider";
+                        const isCyberPanelField =
+                          field.key.startsWith("cyberpanel.") &&
+                          field.key !== "email.provider";
+                        if (isSmtpField && provider !== "smtp") return null;
+                        if (isCyberPanelField && provider !== "cyberpanel")
+                          return null;
+
+                        return (
+                          <div key={field.key} className="space-y-2">
+                            <Label htmlFor={field.key}>{field.label}</Label>
+                            {field.key === "email.provider" ? (
+                              <ToggleGroup
+                                type="single"
+                                variant="outline"
+                                value={provider}
+                                onValueChange={(value) => {
+                                  if (value) {
                                     setConfigForm((prev) => ({
                                       ...prev,
-                                      [field.key]: event.target.value,
+                                      "email.provider": value,
+                                    }));
+                                  }
+                                }}
+                              >
+                                <ToggleGroupItem value="smtp">
+                                  SMTP
+                                </ToggleGroupItem>
+                                <ToggleGroupItem value="cyberpanel">
+                                  CyberPanel
+                                </ToggleGroupItem>
+                              </ToggleGroup>
+                            ) : field.key === "auth.registration_open" ? (
+                              <div className="flex items-center gap-3">
+                                <Switch
+                                  id={field.key}
+                                  checked={
+                                    (
+                                      configForm["auth.registration_open"] ??
+                                      "true"
+                                    ).toLowerCase() !== "false"
+                                  }
+                                  onCheckedChange={(checked) =>
+                                    setConfigForm((prev) => ({
+                                      ...prev,
+                                      "auth.registration_open": checked
+                                        ? "true"
+                                        : "false",
                                     }))
                                   }
                                 />
-                              ) : (
-                                <Input
-                                  id={field.key}
-                                  type={field.type ?? "text"}
-                                  placeholder={
-                                    isSecretDisplayValue(
-                                      field.key,
-                                      configForm[field.key],
-                                    )
-                                      ? configForm[field.key] === SECRET_REENTER
-                                        ? "Re-enter and save a new value"
-                                        : "Value saved and hidden"
-                                      : field.placeholder
-                                  }
-                                  value={
-                                    isSecretDisplayValue(
-                                      field.key,
-                                      configForm[field.key],
-                                    )
-                                      ? ""
-                                      : configForm[field.key]
-                                  }
-                                  onChange={(event) =>
-                                    setConfigForm((prev) => ({
-                                      ...prev,
-                                      [field.key]: event.target.value,
-                                    }))
-                                  }
-                                />
-                              )}
-                              {SECRET_CONFIG_KEYS.has(field.key) &&
-                                configInitial[field.key] === SECRET_REENTER && (
-                                  <p className="text-xs text-amber-600 dark:text-amber-400">
-                                    Existing secret cannot be decrypted. Enter a
-                                    new value to replace it.
-                                  </p>
+                                <span className="text-sm text-muted-foreground">
+                                  {configForm["auth.registration_open"] ===
+                                  "false"
+                                    ? "Closed"
+                                    : "Open"}
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                {field.type === "textarea" ? (
+                                  <Textarea
+                                    id={field.key}
+                                    rows={6}
+                                    placeholder={field.placeholder}
+                                    value={configForm[field.key]}
+                                    onChange={(event) =>
+                                      setConfigForm((prev) => ({
+                                        ...prev,
+                                        [field.key]: event.target.value,
+                                      }))
+                                    }
+                                  />
+                                ) : (
+                                  <Input
+                                    id={field.key}
+                                    type={field.type ?? "text"}
+                                    placeholder={
+                                      isSecretDisplayValue(
+                                        field.key,
+                                        configForm[field.key],
+                                      )
+                                        ? configForm[field.key] ===
+                                          SECRET_REENTER
+                                          ? "Re-enter and save a new value"
+                                          : "Value saved and hidden"
+                                        : field.placeholder
+                                    }
+                                    value={
+                                      isSecretDisplayValue(
+                                        field.key,
+                                        configForm[field.key],
+                                      )
+                                        ? ""
+                                        : configForm[field.key]
+                                    }
+                                    onChange={(event) =>
+                                      setConfigForm((prev) => ({
+                                        ...prev,
+                                        [field.key]: event.target.value,
+                                      }))
+                                    }
+                                  />
                                 )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                                {SECRET_CONFIG_KEYS.has(field.key) &&
+                                  configInitial[field.key] ===
+                                    SECRET_REENTER && (
+                                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                                      Existing secret cannot be decrypted. Enter
+                                      a new value to replace it.
+                                    </p>
+                                  )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </CardContent>
                   </Card>
                 ))}
@@ -931,9 +1004,10 @@ export function AdminControlPlane() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>SMTP Test Email</CardTitle>
+                  <CardTitle>Test Email</CardTitle>
                   <CardDescription>
-                    Send a test message using current SMTP settings.
+                    Send a test message using the currently selected email
+                    provider.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3 sm:flex-row">
@@ -1361,6 +1435,189 @@ export function AdminControlPlane() {
                           refresh.
                         </p>
                       )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="queue" className="mt-0">
+              <Card>
+                <CardHeader className="flex flex-row items-start justify-between gap-4">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <ListChecks className="h-4 w-4" />
+                      Job Queue
+                    </CardTitle>
+                    <CardDescription>
+                      Live view of the{" "}
+                      <code className="font-mono text-xs">
+                        taskflow-notifications
+                      </code>{" "}
+                      BullMQ queue — delayed jobs, failures, and repeatable
+                      schedules.
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void refreshQueue()}
+                    disabled={queueLoading || !token}
+                  >
+                    {queueLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                    Refresh
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {!queueStats ? (
+                    <p className="text-sm text-muted-foreground">
+                      No queue snapshot loaded. Click Refresh to fetch.
+                    </p>
+                  ) : (
+                    <>
+                      <div className="grid gap-3 sm:grid-cols-4">
+                        <MetricTile
+                          label="Waiting"
+                          value={String(queueStats.jobCounts.waiting ?? 0)}
+                        />
+                        <MetricTile
+                          label="Active"
+                          value={String(queueStats.jobCounts.active ?? 0)}
+                        />
+                        <MetricTile
+                          label="Delayed"
+                          value={String(queueStats.jobCounts.delayed ?? 0)}
+                        />
+                        <MetricTile
+                          label="Failed"
+                          value={String(queueStats.jobCounts.failed ?? 0)}
+                          tone={
+                            (queueStats.jobCounts.failed ?? 0) > 0
+                              ? "error"
+                              : "normal"
+                          }
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Scheduled / Delayed Jobs
+                        </Label>
+                        {queueStats.delayedJobs.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">
+                            No delayed jobs pending.
+                          </p>
+                        ) : (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Job Name</TableHead>
+                                <TableHead>Runs At</TableHead>
+                                <TableHead className="font-mono text-xs">
+                                  Data
+                                </TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {queueStats.delayedJobs.map((j) => (
+                                <TableRow key={j.id}>
+                                  <TableCell className="font-mono text-xs">
+                                    {j.name}
+                                  </TableCell>
+                                  <TableCell className="text-sm">
+                                    {formatDateTime(j.processAt)}
+                                  </TableCell>
+                                  <TableCell className="max-w-xs truncate font-mono text-xs text-muted-foreground">
+                                    {JSON.stringify(j.data)}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Failed Jobs
+                        </Label>
+                        {queueStats.failedJobs.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">
+                            No failed jobs.
+                          </p>
+                        ) : (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Job Name</TableHead>
+                                <TableHead>Error</TableHead>
+                                <TableHead className="text-right">
+                                  Attempts
+                                </TableHead>
+                                <TableHead>Time</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {queueStats.failedJobs.map((j) => (
+                                <TableRow key={j.id}>
+                                  <TableCell className="font-mono text-xs">
+                                    {j.name}
+                                  </TableCell>
+                                  <TableCell className="max-w-xs truncate text-sm text-destructive">
+                                    {j.failedReason ?? "—"}
+                                  </TableCell>
+                                  <TableCell className="text-right text-sm">
+                                    {j.attemptsMade}
+                                  </TableCell>
+                                  <TableCell className="text-sm">
+                                    {formatDateTime(j.timestamp)}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Repeatable / Cron Jobs
+                        </Label>
+                        {queueStats.repeatableJobs.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">
+                            No repeatable jobs registered.
+                          </p>
+                        ) : (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Job Name</TableHead>
+                                <TableHead>Cron Pattern</TableHead>
+                                <TableHead>Next Run</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {queueStats.repeatableJobs.map((r) => (
+                                <TableRow key={r.key}>
+                                  <TableCell className="font-mono text-xs">
+                                    {r.name}
+                                  </TableCell>
+                                  <TableCell className="font-mono text-xs">
+                                    {r.pattern || "—"}
+                                  </TableCell>
+                                  <TableCell className="text-sm">
+                                    {r.next ? formatDateTime(r.next) : "—"}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        )}
+                      </div>
                     </>
                   )}
                 </CardContent>

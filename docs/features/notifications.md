@@ -19,12 +19,12 @@
 
 ## 队列架构
 
-使用 **Bull**（基于 Redis）作为任务队列。每个通知事件触发以下两步：
+使用 **BullMQ**（基于 Redis）作为任务队列。每个通知事件触发以下两步：
 
 1. 向 `notification_jobs` 表插入一条记录，`status = PENDING`。
-2. 向 Bull 队列投递一个 job，携带相同的 ID 和 `scheduledAt` 时间戳。
+2. 向 BullMQ 队列投递一个 job，携带相同的 ID 和 `scheduledAt` 时间戳。
 
-`notification_jobs` 表作为持久化审计日志和故障恢复依据。服务重启后，Bull 可从该表中重新载入所有 `PENDING` 状态的 job，避免通知丢失。
+`notification_jobs` 表作为持久化审计日志和故障恢复依据。服务重启后，BullMQ 可从该表中重新载入所有 `PENDING` 状态的 job，避免通知丢失。
 
 ---
 
@@ -39,7 +39,7 @@
 4. 从 `system_config` 读取 SMTP 配置。
 5. 通过 Nodemailer 发送邮件。
 6. 成功：将 `status` 设为 `SENT`，写入 `sentAt = now()`。
-7. 失败：将 `status` 设为 `FAILED`，写入 `error = 错误信息`。Bull 以指数退避策略重试，最多 3 次。达到重试上限后，记录保持 `FAILED` 状态，供后续审计。
+7. 失败：将 `status` 设为 `FAILED`，写入 `error = 错误信息`。BullMQ 以指数退避策略重试，最多 3 次。达到重试上限后，记录保持 `FAILED` 状态，供后续审计。
 
 ---
 

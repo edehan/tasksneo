@@ -34,7 +34,7 @@ User → Vercel Edge (static assets, CDN)
          └── Vercel SSR Function
                └── SSR prefetch → VPS API (public internet)
 
-User → VPS API (business logic, Bull workers)
+User → VPS API (business logic, BullMQ workers)
          └── Managed PostgreSQL (Neon / Supabase)
 ```
 
@@ -267,7 +267,7 @@ When this variable is unset, the CAPTCHA widget is hidden and the backend skips 
 | `CAP_URL` | Cap instance URL with site key (e.g. `https://cap.example.com/<key>`) |
 | `CAP_SECRET` | Cap site secret key (from dashboard) |
 
-User authentication tokens are opaque session IDs stored in PostgreSQL `sessions`; Redis is used for Bull jobs and business caches only.
+User authentication tokens are opaque session IDs stored in PostgreSQL `sessions`; Redis is used for BullMQ jobs and business caches only.
 
 ### Frontend (Vercel / Cloudflare Pages dashboard)
 
@@ -276,6 +276,7 @@ User authentication tokens are opaque session IDs stored in PostgreSQL `sessions
 | `NEXT_PUBLIC_API_BASE_URL` | Public API URL used by the browser (build-time) |
 | `API_INTERNAL_URL` | API URL used by SSR on the server side; set to internal address when co-located, or same as public URL in split mode |
 | `NEXT_PUBLIC_CAP_API_ENDPOINT` | Cap widget endpoint (build-time, omit to disable CAPTCHA) |
+| `INSTRUMENTATION_SCRIPT_URLS` | Optional analytics/RUM script URLs, comma-separated (e.g., `/instrumentation/rum.js,https://cdn.example.com/analytics.js`) |
 
 ### Runtime (Admin panel → `/admin`)
 

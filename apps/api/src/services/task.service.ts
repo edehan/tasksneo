@@ -263,7 +263,6 @@ export async function listMyTasks(userId: string) {
 				deletedAt: null,
 				isPublished: true,
 				class: {
-					isPersonal: false,
 					members: {
 						some: { userId },
 					},
@@ -288,7 +287,6 @@ export async function listMyTasks(userId: string) {
 					deletedAt: null,
 					isPublished: true,
 					class: {
-						isPersonal: false,
 						members: {
 							some: { userId },
 						},
@@ -303,7 +301,6 @@ export async function listMyTasks(userId: string) {
 					deletedAt: null,
 					isPublished: true,
 					class: {
-						isPersonal: false,
 						members: {
 							some: { userId },
 						},

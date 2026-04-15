@@ -119,11 +119,13 @@ export async function sendAdminTestEmail(to: string) {
 	const sentAt = new Date().toISOString();
 	const instanceId = process.env.HOSTNAME ?? "unknown";
 	const appTitle = (await getConfigValue("app.title"))?.trim() || "TaskNeo";
+	const provider = (await getConfigValue("email.provider"))?.trim() || "smtp";
+	const providerLabel = provider === "cyberpanel" ? "CyberPanel" : "SMTP";
 
 	await sendEmail(
 		to,
-		`[${appTitle}] SMTP 测试邮件`,
-		`这是一封来自 ${appTitle} 管理后台的 SMTP 测试邮件。\n\n发送时间（UTC）：${sentAt}\n实例：${instanceId}`,
+		`[${appTitle}] ${providerLabel} 测试邮件`,
+		`这是一封来自 ${appTitle} 管理后台的 ${providerLabel} 测试邮件。\n\n发送时间（UTC）：${sentAt}\n实例：${instanceId}`,
 	);
 }
 

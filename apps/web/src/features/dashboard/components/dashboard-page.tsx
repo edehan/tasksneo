@@ -26,12 +26,15 @@ import { useClassesQuery, useMyTasksQuery } from "@/lib/web-data";
 
 function deriveDisplayStatus(
   task: TaskWithClass,
-): "submitted" | "overdue" | "in-progress" | "not-started" {
+): "submitted" | "long-overdue" | "overdue" | "in-progress" | "not-started" {
   if (task.userState?.submittedAt) return "submitted";
   const now = Date.now();
   const dueAt = task.dueAt ? new Date(task.dueAt).getTime() : null;
   const startAt = task.startAt ? new Date(task.startAt).getTime() : null;
-  if (dueAt && dueAt < now) return "overdue";
+  if (dueAt && dueAt < now) {
+    if (now - dueAt > 30 * 24 * 60 * 60 * 1000) return "long-overdue";
+    return "overdue";
+  }
   if (startAt && startAt <= now && dueAt && dueAt >= now) return "in-progress";
   return "not-started";
 }
@@ -50,10 +53,10 @@ export function DashboardPage({
   const [viewMode, setViewMode] = useState<ViewMode>("gantt");
   const [dayWidth, setDayWidth] = useState(DEFAULT_DAY_WIDTH);
   const [filters, setFilters] = useState({
-    unfinished: false,
     notSubmitted: false,
     overdue: false,
     showSubmitted: false,
+    showLongOverdue: false,
   });
   const {
     data: classes = initialClasses,
@@ -82,21 +85,19 @@ export function DashboardPage({
 
       // Hide submitted unless "Show Submitted" is active
       if (status === "submitted" && !filters.showSubmitted) return false;
+      // Hide long-overdue unless "Show Long Overdue" is active
+      if (status === "long-overdue" && !filters.showLongOverdue) return false;
 
       // If any specific filter is active, only show matching tasks
-      const hasActiveFilter =
-        filters.unfinished || filters.notSubmitted || filters.overdue;
+      const hasActiveFilter = filters.notSubmitted || filters.overdue;
       if (!hasActiveFilter) return true;
 
+      if (filters.notSubmitted && status !== "submitted") return true;
       if (
-        filters.unfinished &&
-        (status === "in-progress" ||
-          status === "not-started" ||
-          status === "overdue")
+        filters.overdue &&
+        (status === "overdue" || status === "long-overdue")
       )
         return true;
-      if (filters.notSubmitted && status !== "submitted") return true;
-      if (filters.overdue && status === "overdue") return true;
 
       return false;
     });

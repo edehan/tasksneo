@@ -423,11 +423,23 @@ export async function parseTaskContent(input: {
 				dueAt: normalizeParsedDatetime(opt.dueAt),
 			}));
 
+		// 验证时间关系：如果开始时间晚于或等于结束时间，则删除开始时间
+		const validatedTimeOptions = normalizedTimeOptions.map((opt) => {
+			if (opt.startAt && opt.dueAt) {
+				const start = new Date(opt.startAt);
+				const due = new Date(opt.dueAt);
+				if (start.getTime() >= due.getTime()) {
+					return { startAt: null, dueAt: opt.dueAt };
+				}
+			}
+			return opt;
+		});
+
 		const normalized: ParseTaskResult = {
 			title: parsed.data.title?.trim() || null,
 			timeOptions:
-				normalizedTimeOptions.length > 0
-					? normalizedTimeOptions
+				validatedTimeOptions.length > 0
+					? validatedTimeOptions
 					: [{ startAt: null, dueAt: null }],
 			allowLateSubmission: parsed.data.allowLateSubmission,
 			description: parsed.data.description?.trim() || null,

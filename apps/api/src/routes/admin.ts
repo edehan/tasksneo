@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 
 import { getMetricsSnapshot } from "../lib/metrics.js";
+import { getQueueStats } from "../lib/queue.js";
 import { getStorageStatus } from "../lib/storage.js";
 import { adminMiddleware } from "../middleware/admin.js";
 import {
@@ -83,6 +84,11 @@ adminRouter.get("/storage-status", async (c) => {
 
 adminRouter.get("/metrics", (c) => {
 	return c.json(getMetricsSnapshot(), 200);
+});
+
+adminRouter.get("/queue", async (c) => {
+	const stats = await getQueueStats();
+	return c.json(stats, 200);
 });
 
 adminRouter.get("/users", async (c) => {

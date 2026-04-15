@@ -94,7 +94,7 @@ taskflow/
 | ORM | Prisma 6 | Schema-first, auto-generated types |
 | Database | PostgreSQL 16 | Via Docker in dev and prod |
 | File storage | S3-compatible service | Cloudflare R2 for production; MinIO for local dev |
-| Job queue | Bull + Redis | Async notification jobs |
+| Job queue | BullMQ + Redis | Async notification jobs |
 | Monorepo | pnpm workspaces | `apps/*` and `packages/*` |
 
 ---
@@ -123,7 +123,7 @@ taskflow/
 - Admin routes (`/admin/*`): `Authorization: Bearer <ADMIN_TOKEN>`. Verified by `adminMiddleware`. The admin is not a database user.
 - These two middleware are completely independent.
 - MCP integrations exchange stored MCP keys at `/auth/mcp` and then use the returned opaque session token.
-- Redis supports Bull queues and business caches only; it is not an auth source of truth.
+- Redis supports BullMQ queues and business caches only; it is not an auth source of truth.
 
 ### Code structure
 - Routes never import `prisma` directly. They call service functions.

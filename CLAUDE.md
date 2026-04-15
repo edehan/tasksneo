@@ -10,9 +10,9 @@ Class task management system for educators. Teachers create classes, publish tas
 - **Backend**: Hono + TypeScript + Node.js (`apps/api`)
 - **Database**: PostgreSQL + Prisma 6 ORM (`packages/db`)
 - **File storage**: S3-compatible service (Cloudflare R2 for production, MinIO for local dev)
-- **Queue**: Bull + Redis (notification jobs)
+- **Queue**: BullMQ + Redis (notification jobs)
 - **Auth**: User requests carry opaque session tokens stored in the `sessions` table; `/admin` routes use `ADMIN_TOKEN` from env only — no DB user
-- **Redis**: Bull queue + business caches only; not used as a user-auth cache
+- **Redis**: BullMQ queue + business caches only; not used as a user-auth cache
 
 ## Key documents (read before editing related code)
 

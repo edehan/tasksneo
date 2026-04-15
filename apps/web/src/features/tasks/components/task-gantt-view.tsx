@@ -8,6 +8,7 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -32,6 +33,9 @@ export const DEFAULT_DAY_WIDTH = 22;
 
 const MIN_SPAN_DAYS = 90;
 const PADDING_DAYS = 14;
+
+// Tick every 60 seconds so the today line drifts smoothly without excessive re-renders
+const NOW_TICK_MS = 60_000;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -251,6 +255,15 @@ function ConnectorLines({
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
+function useNow(interval: number): Date {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), interval);
+    return () => clearInterval(id);
+  }, [interval]);
+  return now;
+}
+
 // ─── Zoom Slider (rendered by parent) ────────────────────────────────────────
 
 export function GanttZoomSlider({
@@ -286,6 +299,7 @@ export function TaskGanttView({
   const locale = useLocale();
   const scrollRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const now = useNow(NOW_TICK_MS);
 
   const dayWidthRef = useRef(dayWidth);
   useEffect(() => {
@@ -311,7 +325,7 @@ export function TaskGanttView({
     return computeMarkers(timelineStart, end, dayWidth, locale);
   }, [timelineStart, totalDays, dayWidth, locale]);
 
-  const todayOffset = diffDays(timelineStart, startOfDay(new Date()));
+  const todayOffset = diffDays(timelineStart, now);
   const totalWidth = totalDays * dayWidth;
 
   // Bar geometries for connector lines
