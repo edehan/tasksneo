@@ -3,7 +3,7 @@
 import { Plus, Settings, Users } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSWRConfig } from "swr";
 
 import { Button } from "@/components/ui/button";
@@ -77,6 +77,16 @@ export function ClassPage({ initialClass, initialTasks }: ClassPageProps) {
   } = useClassTasksQuery(classId, {
     fallbackData: initialTasks,
   });
+
+  // Revalidate on mount so that returning via router.back always shows fresh data.
+  // Without this, navigating back from /tasks/[id]/edit after publishing a task
+  // shows stale data because the SWR cache may have been invalidated while
+  // this component was unmounted.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally mount-only
+  useEffect(() => {
+    void mutateClassTasks();
+    void mutateClass();
+  }, []);
   const tasks = useMemo(
     () =>
       cls

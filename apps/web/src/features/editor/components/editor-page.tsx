@@ -467,11 +467,7 @@ export function EditorPage({
         await upsertMySubmission(taskId, content || null);
         toast.success(t("toast.submissionSaved"));
       }
-      if (mode === "publish") {
-        router.push(`/classes/${classId}`);
-      } else {
-        router.back();
-      }
+      router.back();
     } catch (err) {
       const message =
         err instanceof ApiError
