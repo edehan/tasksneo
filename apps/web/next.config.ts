@@ -16,6 +16,9 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: monorepoRoot,
   },
+  experimental: {
+    webpackMemoryOptimizations: true, // 减少最大内存使用量
+  },
   env: {
     INSTRUMENTATION_SCRIPT_URLS: process.env.INSTRUMENTATION_SCRIPT_URLS || "",
   },
