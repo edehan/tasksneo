@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, headers as nextHeaders } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import type {
@@ -28,29 +28,46 @@ async function buildCookieHeader(): Promise<string | undefined> {
   return all.map((c) => `${c.name}=${encodeURIComponent(c.value)}`).join("; ");
 }
 
+async function buildForwardedHeaders(initHeaders?: HeadersInit): Promise<Headers> {
+  const h = new Headers(initHeaders);
+  const cookieHeader = await buildCookieHeader();
+  if (cookieHeader) {
+    h.set("Cookie", cookieHeader);
+  }
+  const incoming = await nextHeaders();
+  const forwardedFor = incoming.get("x-forwarded-for");
+  const realIp = incoming.get("x-real-ip");
+  if (forwardedFor) h.set("x-forwarded-for", forwardedFor);
+  if (realIp) h.set("x-real-ip", realIp);
+  return h;
+}
+
 export async function serverApiRequest<T>(
   path: string,
   init: RequestInit = {},
   options?: { redirectOn401?: boolean },
 ): Promise<T> {
-  const headers = new Headers(init.headers ?? {});
-  const cookieHeader = await buildCookieHeader();
+  const requestHeaders = await buildForwardedHeaders(init.headers);
+  const cookieHeader = requestHeaders.get("Cookie");
 
-  if (cookieHeader) {
-    headers.set("Cookie", cookieHeader);
+  if (!cookieHeader) {
+    if (options?.redirectOn401) {
+      redirect("/login");
+    }
+    throw new Error("Missing session cookie");
   }
 
   if (
-    !headers.has("Content-Type") &&
+    !requestHeaders.has("Content-Type") &&
     init.body &&
     !(typeof FormData !== "undefined" && init.body instanceof FormData)
   ) {
-    headers.set("Content-Type", "application/json");
+    requestHeaders.set("Content-Type", "application/json");
   }
 
   const response = await fetch(`${getApiInternalUrl()}${path}`, {
     ...init,
-    headers,
+    headers: requestHeaders,
     cache: "no-store",
   });
 

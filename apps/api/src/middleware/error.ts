@@ -28,6 +28,8 @@ export const errorHandler: ErrorHandler<{ Variables: AppVariables }> = (
 
 		if (error.status >= 500) {
 			logger.error(base, "app_error");
+		} else if (error.status === 401) {
+			logger.debug(base, "app_error");
 		} else {
 			logger.warn(base, "app_error");
 		}

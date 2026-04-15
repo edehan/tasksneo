@@ -43,9 +43,9 @@ export default async function RootLayout({
 }>) {
   const locale = (await getLocale()) as AppLocale;
   const messages = await getMessages();
-  const user = await getServerUser();
   const cookieStore = await cookies();
   const hasSessionCookie = Boolean(cookieStore.get("tfses_session")?.value);
+  const user = hasSessionCookie ? await getServerUser() : null;
   const instrumentationScriptUrls = parseInstrumentationScriptUrls(
     process.env.INSTRUMENTATION_SCRIPT_URLS,
   );

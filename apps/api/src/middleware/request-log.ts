@@ -56,6 +56,8 @@ export const requestLogMiddleware: MiddlewareHandler<{
 
 		if (status >= 500) {
 			logger.error(fields, "request");
+		} else if (status === 401) {
+			logger.debug(fields, "request");
 		} else if (status >= 400) {
 			logger.warn(fields, "request");
 		} else {
