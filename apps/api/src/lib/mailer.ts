@@ -75,6 +75,7 @@ export async function sendEmail(
 		host: config.host,
 		port: config.port,
 		secure: config.port === 465,
+		requireTLS: config.port !== 465,
 		auth: {
 			user: config.user,
 			pass: config.password,
@@ -99,7 +100,13 @@ export async function sendEmail(
 			throw new AppError(400, "SMTP_AUTH_FAILED", "SMTP authentication failed");
 		}
 
-		if (code === "ESOCKET" || code === "ECONNECTION" || code === "ETIMEDOUT") {
+		if (
+			code === "ESOCKET" ||
+			code === "ECONNECTION" ||
+			code === "ETIMEDOUT" ||
+			code === "EDNS" ||
+			code === "ECONNREFUSED"
+		) {
 			throw new AppError(503, "SMTP_UNAVAILABLE", "SMTP server is unavailable");
 		}
 
