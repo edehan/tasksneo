@@ -308,7 +308,7 @@ export default function JoinPage() {
           </Button>
 
           <Button variant="ghost" className="w-full" asChild>
-            <Link href="/dashboard">{t("goToDashboard")}</Link>
+            <Link href="/">{t("goToDashboard")}</Link>
           </Button>
         </CardFooter>
       </Card>

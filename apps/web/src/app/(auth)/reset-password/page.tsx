@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-static";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -72,7 +74,7 @@ export default function ResetPasswordPage() {
       const result = await resetPassword(token, password);
       setAuth(result.user);
       toast.success(t("passwordResetSuccess"));
-      router.replace("/dashboard");
+      router.replace("/");
       router.refresh();
     } catch (err) {
       const message =

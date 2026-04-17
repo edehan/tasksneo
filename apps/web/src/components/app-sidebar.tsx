@@ -283,11 +283,11 @@ export function AppSidebar({ initialClasses }: AppSidebarProps) {
                 <SidebarMenuButton
                   asChild
                   isActive={
-                    pathname === "/dashboard" ||
+                    pathname === "/" ||
                     pathname.startsWith("/dashboard/")
                   }
                 >
-                  <Link href="/dashboard">
+                  <Link href="/">
                     <Home className="h-4 w-4" />
                     <span>{t("homepage")}</span>
                   </Link>

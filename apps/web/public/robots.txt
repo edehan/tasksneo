@@ -1,0 +1,20 @@
+# TaskFlow robots.txt
+User-agent: *
+
+# Block authentication and registration flows
+Disallow: /register/complete
+Disallow: /reset-password
+
+# Block API and admin routes
+Disallow: /api/
+Disallow: /admin/
+
+# Block internal Next.js routes
+Disallow: /_next/
+
+# Allow public pages
+Allow: /login
+Allow: /register
+Allow: /forgot-password
+Allow: /terms
+Allow: /privacy

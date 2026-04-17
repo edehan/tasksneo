@@ -142,7 +142,7 @@ export function ClassSettingsPage() {
     try {
       await deleteClass(classId);
       toast.success(t("classDeleted"));
-      router.push("/dashboard");
+      router.push("/");
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("failedDeleteClass");

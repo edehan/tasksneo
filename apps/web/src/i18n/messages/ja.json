@@ -156,7 +156,7 @@
     "schoolMismatch": "このクラスは、あなたのアカウントと一致しない学校に限定されています。",
     "joinFailed": "クラスへの参加に失敗しました。もう一度お試しください。",
     "loadPreviewFailed": "クラス情報の読み込みに失敗しました。もう一度お試しください。",
-    "goToDashboard": "ダッシュボードへ戻る"
+    "goToDashboard": "ホームページへ"
   },
   "appSidebar": {
     "user": "ユーザー",

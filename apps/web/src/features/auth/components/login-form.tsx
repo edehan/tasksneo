@@ -42,7 +42,7 @@ export function LoginForm() {
     setSubmitting(true);
     try {
       await login(email, password, trustDevice);
-      router.replace(next ?? "/dashboard");
+      router.replace(next ?? "/");
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t("loginFailed");
       toast.error(message);
