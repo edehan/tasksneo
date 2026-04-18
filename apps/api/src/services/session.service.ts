@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { prisma, SessionKind } from "@taskflow/db";
 
+import { lookupCountry } from "../lib/ip-geo.js";
 import {
 	processSessionCleanupQueue,
 	scheduleSessionCleanupCron,
@@ -234,6 +235,7 @@ export interface SessionListItem {
 	isCurrent: boolean;
 	userAgent: string | null;
 	ipAddress: string | null;
+	country: string | null;
 	mcpKeyId: string | null;
 	mcpKeyName: string | null;
 	createdAt: string;
@@ -258,6 +260,7 @@ export async function listUserSessions(
 		isCurrent: r.id === currentSessionId,
 		userAgent: r.userAgent,
 		ipAddress: r.ipAddress,
+		country: lookupCountry(r.ipAddress),
 		mcpKeyId: r.mcpKeyId,
 		mcpKeyName: r.mcpKey?.name ?? null,
 		createdAt: r.createdAt.toISOString(),

@@ -265,6 +265,7 @@ export interface SessionInfo {
   isCurrent: boolean;
   userAgent: string | null;
   ipAddress: string | null;
+  country: string | null;
   mcpKeyId: string | null;
   mcpKeyName: string | null;
   createdAt: string;
