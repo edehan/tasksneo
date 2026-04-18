@@ -1237,8 +1237,8 @@ describe("Session lifecycle", () => {
 		expect(untrustedRow?.isTrusted).toBe(false);
 		expect(trustedRow?.isTrusted).toBe(true);
 		// Trusted TTL (30d) should outstrip untrusted TTL (7d) by at least 20 days.
-		const trustedMs = trustedRow?.expiresAt?.getTime();
-		const untrustedMs = untrustedRow?.expiresAt?.getTime();
+		const trustedMs = trustedRow?.expiresAt?.getTime() ?? 0;
+		const untrustedMs = untrustedRow?.expiresAt?.getTime() ?? 0;
 		expect(trustedMs - untrustedMs).toBeGreaterThan(20 * 24 * 3600 * 1000);
 	});
 });
