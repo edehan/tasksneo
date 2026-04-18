@@ -90,13 +90,14 @@ export async function checkAndSendNewLocationAlert(
 	newIp: string | null,
 	newUa: string | null,
 	userEmail: string,
+	excludeSessionId?: string,
 ): Promise<void> {
 	if (!newIp) return;
 
 	const newCountry = lookupCountry(newIp);
 	if (!newCountry) return;
 
-	const lastSession = await getLastBrowserSession(userId);
+	const lastSession = await getLastBrowserSession(userId, excludeSessionId);
 	if (!lastSession?.ipAddress) return;
 
 	const prevCountry = lookupCountry(lastSession.ipAddress);

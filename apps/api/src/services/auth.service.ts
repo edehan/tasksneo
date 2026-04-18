@@ -188,7 +188,7 @@ export async function login(input: LoginInput) {
 		throw new AppError(401, "INVALID_CREDENTIALS", "Invalid email or password");
 	}
 
-	const { token } = await createBrowserSession({
+	const { token, session } = await createBrowserSession({
 		userId: user.id,
 		isTrusted: input.sessionMeta.trustDevice,
 		userAgent: input.sessionMeta.userAgent,
@@ -200,6 +200,7 @@ export async function login(input: LoginInput) {
 		input.sessionMeta.ipAddress,
 		input.sessionMeta.userAgent,
 		user.email,
+		session.id,
 	).catch(() => undefined);
 
 	return {

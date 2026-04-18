@@ -282,12 +282,14 @@ export interface LastBrowserSession {
  */
 export async function getLastBrowserSession(
 	userId: string,
+	excludeSessionId?: string,
 ): Promise<LastBrowserSession | null> {
 	const row = await prisma.session.findFirst({
 		where: {
 			userId,
 			kind: SessionKind.BROWSER,
 			OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+			...(excludeSessionId ? { id: { not: excludeSessionId } } : {}),
 		},
 		orderBy: { lastSeenAt: "desc" },
 	});
