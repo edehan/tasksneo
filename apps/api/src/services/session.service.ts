@@ -277,8 +277,8 @@ export interface LastBrowserSession {
 }
 
 /**
- * Find the most recent active BROWSER session for a user.
- * Excludes expired sessions and MCP sessions.
+ * Find the most recent BROWSER session for a user (including expired ones).
+ * Used for security alerts to compare login locations across time.
  */
 export async function getLastBrowserSession(
 	userId: string,
@@ -288,10 +288,9 @@ export async function getLastBrowserSession(
 		where: {
 			userId,
 			kind: SessionKind.BROWSER,
-			OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
 			...(excludeSessionId ? { id: { not: excludeSessionId } } : {}),
 		},
-		orderBy: { lastSeenAt: "desc" },
+		orderBy: { createdAt: "desc" },
 	});
 
 	if (!row) return null;
