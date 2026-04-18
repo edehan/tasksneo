@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 
 import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
+import { checkAndSendNewLocationAlert } from "./security-alert.service.js";
 import { createBrowserSession } from "./session.service.js";
 import { assertRegistrationOpen } from "./system-config.service.js";
 
@@ -193,6 +194,13 @@ export async function login(input: LoginInput) {
 		userAgent: input.sessionMeta.userAgent,
 		ipAddress: input.sessionMeta.ipAddress,
 	});
+
+	void checkAndSendNewLocationAlert(
+		user.id,
+		input.sessionMeta.ipAddress,
+		input.sessionMeta.userAgent,
+		user.email,
+	).catch(() => undefined);
 
 	return {
 		token,

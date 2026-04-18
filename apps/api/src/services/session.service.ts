@@ -269,6 +269,37 @@ export async function listUserSessions(
 	}));
 }
 
+// ── Last browser session lookup ─────────────────────────────────────────────
+
+export interface LastBrowserSession {
+	ipAddress: string | null;
+	userAgent: string | null;
+}
+
+/**
+ * Find the most recent active BROWSER session for a user.
+ * Excludes expired sessions and MCP sessions.
+ */
+export async function getLastBrowserSession(
+	userId: string,
+): Promise<LastBrowserSession | null> {
+	const row = await prisma.session.findFirst({
+		where: {
+			userId,
+			kind: SessionKind.BROWSER,
+			OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+		},
+		orderBy: { lastSeenAt: "desc" },
+	});
+
+	if (!row) return null;
+
+	return {
+		ipAddress: row.ipAddress,
+		userAgent: row.userAgent,
+	};
+}
+
 // ── Cleanup ─────────────────────────────────────────────────────────────────
 
 /**
