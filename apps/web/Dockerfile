@@ -1,4 +1,4 @@
-FROM node:22.22.2-trixie-slim AS builder
+FROM node:25.9.0-trixie-slim AS builder
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
@@ -26,7 +26,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 COPY apps/web ./apps/web
 RUN pnpm --filter web run build
 
-FROM node:22.22.2-trixie-slim AS runner
+FROM node:25.9.0-trixie-slim AS runner
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
