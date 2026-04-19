@@ -156,7 +156,7 @@
     "schoolMismatch": "This class is restricted to a school that does not match your account.",
     "joinFailed": "Failed to join class. Please try again.",
     "loadPreviewFailed": "Failed to load class details. Please try again.",
-    "goToDashboard": "Go to Dashboard"
+    "goToDashboard": "Go to Homepage"
   },
   "appSidebar": {
     "user": "User",

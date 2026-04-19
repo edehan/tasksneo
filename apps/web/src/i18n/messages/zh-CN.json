@@ -156,7 +156,7 @@
     "schoolMismatch": "该班级限制为特定学校加入，与你的账号信息不匹配。",
     "joinFailed": "加入班级失败，请重试。",
     "loadPreviewFailed": "加载班级信息失败，请重试。",
-    "goToDashboard": "前往仪表盘"
+    "goToDashboard": "前往首页"
   },
   "appSidebar": {
     "user": "用户",

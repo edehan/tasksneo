@@ -97,6 +97,23 @@ export function AppSidebar({ initialClasses }: AppSidebarProps) {
     ]);
   }
 
+  useEffect(() => {
+    const classMatch = pathname.match(/^\/(?:classes|c)\/([^/]+)/);
+    if (classMatch) {
+      const classId = classMatch[1];
+      const cls = classes.find((c) => c.id === classId);
+      const color = cls?.color || "#7B6CB0";
+      document.documentElement.style.setProperty("--class-accent", color);
+    } else if (personalClass) {
+      document.documentElement.style.setProperty(
+        "--class-accent",
+        personalClass.color || "#7B6CB0",
+      );
+    } else {
+      document.documentElement.style.setProperty("--class-accent", "#7B6CB0");
+    }
+  }, [pathname, classes, personalClass]);
+
   return (
     <Sidebar>
       {/* User row with theme toggle */}
@@ -266,11 +283,10 @@ export function AppSidebar({ initialClasses }: AppSidebarProps) {
                 <SidebarMenuButton
                   asChild
                   isActive={
-                    pathname === "/dashboard" ||
-                    pathname.startsWith("/dashboard/")
+                    pathname === "/" || pathname.startsWith("/dashboard/")
                   }
                 >
-                  <Link href="/dashboard">
+                  <Link href="/">
                     <Home className="h-4 w-4" />
                     <span>{t("homepage")}</span>
                   </Link>
@@ -404,7 +420,7 @@ export function AppSidebar({ initialClasses }: AppSidebarProps) {
             <div className="flex gap-2">
               <JoinClassDialog
                 trigger={
-                  <SidebarMenuButton className="flex-1 !rounded-full bg-class-accent text-class-accent-foreground hover:opacity-90">
+                  <SidebarMenuButton className="flex-1 !rounded-full bg-class-accent text-class-accent-foreground hover:bg-class-accent hover:text-class-accent-foreground hover:opacity-90">
                     <UserPlus className="h-4 w-4" />
                     <span>{t("joinClass")}</span>
                   </SidebarMenuButton>

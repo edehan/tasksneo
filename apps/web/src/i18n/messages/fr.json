@@ -156,7 +156,7 @@
     "schoolMismatch": "Cette classe est reservee a un etablissement qui ne correspond pas a votre compte.",
     "joinFailed": "Impossible de rejoindre la classe. Veuillez reessayer.",
     "loadPreviewFailed": "Impossible de charger les details de la classe. Veuillez reessayer.",
-    "goToDashboard": "Aller au tableau de bord"
+    "goToDashboard": "Aller à la page d'accueil"
   },
   "appSidebar": {
     "user": "Utilisateur",

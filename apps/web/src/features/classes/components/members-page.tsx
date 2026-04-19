@@ -186,7 +186,7 @@ export function MembersPage() {
     try {
       await removeMember(classId, user.id);
       toast.success(t("toast.leftClass"));
-      window.location.href = "/dashboard";
+      window.location.href = "/";
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("toast.failedLeaveClass");

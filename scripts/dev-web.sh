@@ -21,4 +21,4 @@ set +a
 export NEXT_PUBLIC_API_BASE_URL="${NEXT_PUBLIC_API_BASE_URL:-http://localhost:3001}"
 
 cd "$ROOT_DIR/apps/web"
-pnpm exec next dev --hostname 0.0.0.0 --port 3000
+NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=4096}" pnpm exec next dev --hostname 0.0.0.0 --port 3000

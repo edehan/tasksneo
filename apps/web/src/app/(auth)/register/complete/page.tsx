@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-static";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -129,7 +131,7 @@ function CompleteRegistrationInner() {
         timezone: detectedTimezone,
       });
       setAuth(res.user);
-      router.replace(next ?? "/dashboard");
+      router.replace(next ?? "/");
       router.refresh();
     } catch (err) {
       const message =

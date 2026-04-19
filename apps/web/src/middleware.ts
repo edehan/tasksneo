@@ -3,7 +3,6 @@ import { type NextRequest, NextResponse } from "next/server";
 const SESSION_COOKIE_NAME = "tfses_session";
 
 const PUBLIC_PATHS = new Set([
-  "/",
   "/login",
   "/register",
   "/forgot-password",

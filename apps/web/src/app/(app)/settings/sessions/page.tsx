@@ -276,6 +276,7 @@ export default function SessionsPage() {
                           <span className="flex items-center gap-1">
                             <Globe className="h-3 w-3" />
                             <span className="font-mono">{s.ipAddress}</span>
+                            {s.country && <span>· {s.country}</span>}
                           </span>
                         )}
                         <span>
@@ -328,6 +329,7 @@ export default function SessionsPage() {
                         <span className="flex items-center gap-1">
                           <Globe className="h-3 w-3" />
                           <span className="font-mono">{s.ipAddress}</span>
+                          {s.country && <span>· {s.country}</span>}
                         </span>
                       )}
                       <span>

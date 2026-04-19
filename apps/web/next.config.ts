@@ -13,11 +13,8 @@ const monorepoRoot = path.join(
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: monorepoRoot,
-  turbopack: {
-    root: monorepoRoot,
-  },
   experimental: {
-    webpackMemoryOptimizations: true, // 减少最大内存使用量
+    webpackMemoryOptimizations: true, // 减少最大内存使用量（webpack 模式有效）
   },
   env: {
     INSTRUMENTATION_SCRIPT_URLS: process.env.INSTRUMENTATION_SCRIPT_URLS || "",

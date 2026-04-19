@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { prisma, SessionKind } from "@taskflow/db";
 
+import { lookupCountry } from "../lib/ip-geo.js";
 import {
 	processSessionCleanupQueue,
 	scheduleSessionCleanupCron,
@@ -234,6 +235,7 @@ export interface SessionListItem {
 	isCurrent: boolean;
 	userAgent: string | null;
 	ipAddress: string | null;
+	country: string | null;
 	mcpKeyId: string | null;
 	mcpKeyName: string | null;
 	createdAt: string;
@@ -258,12 +260,45 @@ export async function listUserSessions(
 		isCurrent: r.id === currentSessionId,
 		userAgent: r.userAgent,
 		ipAddress: r.ipAddress,
+		country: lookupCountry(r.ipAddress),
 		mcpKeyId: r.mcpKeyId,
 		mcpKeyName: r.mcpKey?.name ?? null,
 		createdAt: r.createdAt.toISOString(),
 		lastSeenAt: r.lastSeenAt.toISOString(),
 		expiresAt: r.expiresAt?.toISOString() ?? null,
 	}));
+}
+
+// ── Last browser session lookup ─────────────────────────────────────────────
+
+export interface LastBrowserSession {
+	ipAddress: string | null;
+	userAgent: string | null;
+}
+
+/**
+ * Find the most recent BROWSER session for a user (including expired ones).
+ * Used for security alerts to compare login locations across time.
+ */
+export async function getLastBrowserSession(
+	userId: string,
+	excludeSessionId?: string,
+): Promise<LastBrowserSession | null> {
+	const row = await prisma.session.findFirst({
+		where: {
+			userId,
+			kind: SessionKind.BROWSER,
+			...(excludeSessionId ? { id: { not: excludeSessionId } } : {}),
+		},
+		orderBy: { createdAt: "desc" },
+	});
+
+	if (!row) return null;
+
+	return {
+		ipAddress: row.ipAddress,
+		userAgent: row.userAgent,
+	};
 }
 
 // ── Cleanup ─────────────────────────────────────────────────────────────────

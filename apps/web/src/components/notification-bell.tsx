@@ -227,7 +227,7 @@ export function NotificationBell() {
               type="button"
               onClick={() => {
                 setOpen(false);
-                router.push("/dashboard");
+                router.push("/");
               }}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
             >

@@ -79,6 +79,8 @@ export function AuthProvider({
       // Ignore best-effort revoke failures; clear local state regardless.
     }
     clearAuthState();
+    // Don't preserve 'next' param on manual logout to avoid redirecting
+    // the next user to a page they may not have access to
     router.push("/login");
     router.refresh();
   }, [clearAuthState, router]);
