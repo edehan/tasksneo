@@ -206,6 +206,7 @@ function ConnectorLines({
       width={totalWidth}
       height={height}
       style={{ overflow: "visible" }}
+      aria-hidden="true"
     >
       {/* Arrowhead marker — fixed pointing right */}
       <defs>
@@ -300,6 +301,11 @@ export function TaskGanttView({
   const scrollRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const now = useNow(NOW_TICK_MS);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const dayWidthRef = useRef(dayWidth);
   useEffect(() => {
@@ -393,6 +399,69 @@ export function TaskGanttView({
     return () => viewport.removeEventListener("wheel", onWheel);
   }, [getViewport, onDayWidthChange]);
 
+  // Touch pinch-to-zoom handler
+  useEffect(() => {
+    const viewport = getViewport();
+    if (!viewport) return;
+
+    let initialDistance = 0;
+    let initialDayWidth = dayWidthRef.current;
+    let centerX = 0;
+
+    const getTouchDistance = (e: TouchEvent): number => {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        initialDistance = getTouchDistance(e);
+        initialDayWidth = dayWidthRef.current;
+
+        const rect = viewport.getBoundingClientRect();
+        centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && initialDistance > 0) {
+        e.preventDefault();
+
+        const currentDistance = getTouchDistance(e);
+        const scale = currentDistance / initialDistance;
+        const next = Math.min(
+          MAX_DAY_WIDTH,
+          Math.max(MIN_DAY_WIDTH, initialDayWidth * scale),
+        );
+
+        const rect = viewport.getBoundingClientRect();
+        const cursorXInViewport =
+          (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+        const cursorXInContent = viewport.scrollLeft + centerX;
+        const dayUnderCursor = cursorXInContent / dayWidthRef.current;
+
+        zoomIntentRef.current = { dayUnderCursor, cursorXInViewport };
+        onDayWidthChange(next);
+      }
+    };
+
+    const onTouchEnd = () => {
+      initialDistance = 0;
+    };
+
+    viewport.addEventListener("touchstart", onTouchStart, { passive: false });
+    viewport.addEventListener("touchmove", onTouchMove, { passive: false });
+    viewport.addEventListener("touchend", onTouchEnd);
+
+    return () => {
+      viewport.removeEventListener("touchstart", onTouchStart);
+      viewport.removeEventListener("touchmove", onTouchMove);
+      viewport.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [getViewport, onDayWidthChange]);
+
   // Auto-scroll to today on mount only
   const hasAutoScrolled = useRef(false);
   useEffect(() => {
@@ -419,7 +488,10 @@ export function TaskGanttView({
   }
 
   return (
-    <div className="flex w-full min-w-0 max-w-full overflow-hidden rounded-lg border">
+    <div
+      className="flex w-full min-w-0 max-w-full overflow-hidden rounded-lg border"
+      style={{ touchAction: "pan-x pan-y" }}
+    >
       {/* Left: pinned task column (hidden on mobile) */}
       {!isMobile && (
         <div
@@ -485,7 +557,7 @@ export function TaskGanttView({
               ))}
 
               {/* Today label in header */}
-              {todayOffset >= 0 && todayOffset <= totalDays && (
+              {isMounted && todayOffset >= 0 && todayOffset <= totalDays && (
                 <div
                   className="absolute bottom-1 z-20 rounded px-1 py-0.5 font-sans font-semibold text-white"
                   style={{
@@ -515,7 +587,7 @@ export function TaskGanttView({
               ))}
 
               {/* Today line */}
-              {todayOffset >= 0 && todayOffset <= totalDays && (
+              {isMounted && todayOffset >= 0 && todayOffset <= totalDays && (
                 <div
                   className="absolute top-0 bottom-0 z-10"
                   style={{

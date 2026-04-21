@@ -22,6 +22,7 @@ import {
   ViewSwitcher,
 } from "@/features/tasks/components/view-switcher";
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
+import { useGanttZoom } from "@/hooks/use-gantt-zoom";
 import type { ClassSummary, TaskSummary } from "@/lib/api";
 import { useClassQuery, useClassTasksQuery } from "@/lib/web-data";
 import { webDataKeys } from "@/lib/web-data-keys";
@@ -56,7 +57,8 @@ export function ClassPage({ initialClass, initialTasks }: ClassPageProps) {
   const [selectedTask, setSelectedTask] = useState<TaskWithClass | null>(null);
   const [postTaskOpen, setPostTaskOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("gantt");
-  const [dayWidth, setDayWidth] = useState(DEFAULT_DAY_WIDTH);
+  const [dayWidth, setDayWidth, isZoomHydrated] =
+    useGanttZoom(DEFAULT_DAY_WIDTH);
   const [filters, setFilters] = useState({
     notSubmitted: false,
     overdue: false,
@@ -246,7 +248,10 @@ export function ClassPage({ initialClass, initialTasks }: ClassPageProps) {
           )}
         </div>
       ) : (
-        <div className="w-full min-w-0 max-w-full rounded-lg border border-border bg-card overflow-hidden">
+        <div
+          className="w-full min-w-0 max-w-full rounded-lg border border-border bg-card overflow-hidden transition-opacity duration-150"
+          style={{ opacity: viewMode === "gantt" && !isZoomHydrated ? 0 : 1 }}
+        >
           {viewMode === "gantt" ? (
             <TaskGanttView
               tasks={filteredTasks}
