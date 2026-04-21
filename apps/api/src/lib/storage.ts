@@ -116,6 +116,14 @@ export async function getPresignedUrl(
 	return minio.presignedGetObject(bucket, fileKey, expirySeconds);
 }
 
+export async function getTaskAttachmentPresignedUrl(
+	fileKey: string,
+): Promise<string> {
+	const { minio, bucket } = getClient();
+	await ensureBucketExists();
+	return minio.presignedGetObject(bucket, fileKey, 86400); // 1440 minutes = 24 hours
+}
+
 export async function getStorageStatus(): Promise<{
 	endpoint: string;
 	bucket: string;

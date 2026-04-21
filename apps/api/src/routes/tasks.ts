@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { requireAuthUser } from "../lib/context.js";
 import { AppError } from "../lib/errors.js";
-import { getPresignedUrl, uploadObject } from "../lib/storage.js";
+import { getTaskAttachmentPresignedUrl, uploadObject } from "../lib/storage.js";
 import { authMiddleware } from "../middleware/auth.js";
 import {
 	assertParseInput,
@@ -286,7 +286,7 @@ tasksRouter.post("/:taskId/parse", async (c) => {
 		attachments.map(async (att) => ({
 			originalName: att.originalName,
 			mimeType: att.mimeType,
-			presignedUrl: await getPresignedUrl(att.fileKey, 600),
+			presignedUrl: await getTaskAttachmentPresignedUrl(att.fileKey),
 			sizeBytes: att.sizeBytes != null ? Number(att.sizeBytes) : undefined,
 		})),
 	);

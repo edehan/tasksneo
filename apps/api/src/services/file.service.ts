@@ -2,7 +2,12 @@ import { ClassRole, prisma } from "@taskflow/db";
 
 import { AppError } from "../lib/errors.js";
 import { toAttachmentMeta } from "../lib/http.js";
-import { getPresignedUrl, removeObject } from "../lib/storage.js";
+import { getRedisClient } from "../lib/redis.js";
+import {
+	getPresignedUrl,
+	getTaskAttachmentPresignedUrl,
+	removeObject,
+} from "../lib/storage.js";
 
 async function isClassMember(classId: string, userId: string) {
 	const membership = await prisma.classMember.findUnique({
@@ -121,6 +126,19 @@ export async function getAuthorizedFileUrl(fileKey: string, userId: string) {
 
 	if (attachment.taskId) {
 		await assertTaskAttachmentAccess(attachment.taskId, userId);
+
+		// Task attachments: 1440min expiry + Redis cache (1439min TTL)
+		const cacheKey = `presigned:task:${fileKey}`;
+		const redis = getRedisClient();
+		const cached = await redis.get(cacheKey);
+
+		if (cached) {
+			return cached;
+		}
+
+		const url = await getTaskAttachmentPresignedUrl(fileKey);
+		await redis.setex(cacheKey, 86340, url); // 1439 minutes
+		return url;
 	} else if (attachment.submissionId) {
 		await assertSubmissionAttachmentAccess(attachment.submissionId, userId);
 	} else if (attachment.classId) {
@@ -139,6 +157,7 @@ export async function getAuthorizedFileUrl(fileKey: string, userId: string) {
 		}
 	}
 
+	// Other attachments: 5min expiry, no cache
 	return getPresignedUrl(fileKey, 300);
 }
 
