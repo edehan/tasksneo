@@ -586,15 +586,6 @@ export async function deleteAccount(): Promise<void> {
   return apiRequest<void>("/users/me/delete", { method: "POST" });
 }
 
-export async function uploadAvatar(file: File): Promise<AttachmentMeta> {
-  const formData = new FormData();
-  formData.append("file", file);
-  return apiRequest<AttachmentMeta>("/users/me/avatar", {
-    method: "POST",
-    body: formData,
-  });
-}
-
 // ─── Schools ─────────────────────────────────────────────────────────────────
 
 export async function listSchools(): Promise<School[]> {
@@ -989,20 +980,86 @@ export async function batchRenameSubmissions(taskId: string): Promise<void> {
 
 // ─── Attachments ─────────────────────────────────────────────────────────────
 
+interface DirectUploadTarget {
+  fileKey: string;
+  uploadUrl: string;
+  expiresIn: number;
+  headers: Record<string, string>;
+}
+
+interface CompletedUploadMetadata {
+  fileKey: string;
+  originalName: string;
+  mimeType: string | null;
+  sizeBytes: number;
+}
+
+async function uploadFileToObjectStorage(
+  upload: DirectUploadTarget,
+  file: File,
+): Promise<CompletedUploadMetadata> {
+  const response = await fetch(upload.uploadUrl, {
+    method: "PUT",
+    headers: upload.headers,
+    body: file,
+    credentials: "omit",
+  });
+
+  if (!response.ok) {
+    throw new ApiError(
+      "Failed to upload file",
+      "UPLOAD_FAILED",
+      response.status,
+    );
+  }
+
+  return {
+    fileKey: upload.fileKey,
+    originalName: file.name,
+    mimeType: file.type || null,
+    sizeBytes: file.size,
+  };
+}
+
 export async function uploadTaskAttachment(
   taskId: string,
   file: File,
   options?: { isVisible?: boolean },
 ): Promise<AttachmentMeta> {
-  const formData = new FormData();
-  formData.append("file", file);
-  if (options?.isVisible !== undefined) {
-    formData.append("isVisible", String(options.isVisible));
+  const [upload] = await apiRequest<DirectUploadTarget[]>(
+    `/tasks/${taskId}/attachments/upload-url`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        files: [
+          {
+            name: file.name,
+            mimeType: file.type || null,
+            sizeBytes: file.size,
+          },
+        ],
+      }),
+    },
+  );
+  if (!upload) {
+    throw new ApiError(
+      "Upload URL was not returned",
+      "UPLOAD_URL_MISSING",
+      500,
+    );
   }
-  // Backend returns AttachmentMeta[] — extract the first element
+  const attachment = await uploadFileToObjectStorage(upload, file);
   const result = await apiRequest<AttachmentMeta[]>(
     `/tasks/${taskId}/attachments`,
-    { method: "POST", body: formData },
+    {
+      method: "POST",
+      body: JSON.stringify({
+        attachments: [attachment],
+        ...(options?.isVisible !== undefined
+          ? { isVisible: options.isVisible }
+          : {}),
+      }),
+    },
   );
   return result[0];
 }
@@ -1011,12 +1068,35 @@ export async function uploadSubmissionAttachment(
   taskId: string,
   file: File,
 ): Promise<AttachmentMeta> {
-  const formData = new FormData();
-  formData.append("file", file);
-  // Backend returns AttachmentMeta[] — extract the first element
+  const [upload] = await apiRequest<DirectUploadTarget[]>(
+    `/tasks/${taskId}/submissions/me/attachments/upload-url`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        files: [
+          {
+            name: file.name,
+            mimeType: file.type || null,
+            sizeBytes: file.size,
+          },
+        ],
+      }),
+    },
+  );
+  if (!upload) {
+    throw new ApiError(
+      "Upload URL was not returned",
+      "UPLOAD_URL_MISSING",
+      500,
+    );
+  }
+  const attachment = await uploadFileToObjectStorage(upload, file);
   const result = await apiRequest<AttachmentMeta[]>(
     `/tasks/${taskId}/submissions/me/attachments`,
-    { method: "POST", body: formData },
+    {
+      method: "POST",
+      body: JSON.stringify({ attachments: [attachment] }),
+    },
   );
   return result[0];
 }

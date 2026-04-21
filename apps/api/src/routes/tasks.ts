@@ -3,7 +3,13 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { requireAuthUser } from "../lib/context.js";
 import { AppError } from "../lib/errors.js";
-import { getTaskAttachmentPresignedUrl, uploadObject } from "../lib/storage.js";
+import {
+	createSubmissionAttachmentObjectKey,
+	createTaskAttachmentObjectKey,
+	getPresignedPutUrl,
+	getTaskAttachmentPresignedUrl,
+	statObject,
+} from "../lib/storage.js";
 import { authMiddleware } from "../middleware/auth.js";
 import {
 	assertParseInput,
@@ -19,6 +25,8 @@ import {
 import {
 	addSubmissionAttachments,
 	addTaskAttachments,
+	assertCanUploadSubmissionAttachments,
+	assertCanUploadTaskAttachments,
 	deleteTask,
 	exportTaskSubmissionsCsv,
 	getMySubmission,
@@ -89,22 +97,45 @@ const upsertSubmissionBodySchema = z.object({
 	content: z.string().nullable(),
 });
 
-async function parseFilesFromFormData(
-	formData: FormData,
-	parentType: string,
-	parentId: string,
+const MAX_UPLOAD_FILES = 50;
+const DIRECT_UPLOAD_EXPIRES_SECONDS = 300;
+
+const directUploadFileSchema = z.object({
+	name: z.string().trim().min(1).max(255),
+	mimeType: z.string().trim().min(1).max(255).nullable().optional(),
+	sizeBytes: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+});
+
+const directUploadUrlBodySchema = z.object({
+	files: z.array(directUploadFileSchema).min(1).max(MAX_UPLOAD_FILES),
+});
+
+const completedAttachmentSchema = z.object({
+	fileKey: z.string().trim().min(1).max(1024),
+	originalName: z.string().trim().min(1).max(255),
+	mimeType: z.string().trim().min(1).max(255).nullable().optional(),
+	sizeBytes: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+});
+
+const taskAttachmentCompletionSchema = z.object({
+	attachments: z.array(completedAttachmentSchema).min(1).max(MAX_UPLOAD_FILES),
+	isVisible: z.boolean().optional(),
+});
+
+const submissionAttachmentCompletionSchema = z.object({
+	attachments: z.array(completedAttachmentSchema).min(1).max(MAX_UPLOAD_FILES),
+});
+
+type CompletedAttachmentInput = z.infer<typeof completedAttachmentSchema>;
+
+function getUploadHeaders(mimeType: string | null | undefined) {
+	return mimeType ? { "Content-Type": mimeType } : {};
+}
+
+async function validateCompletedUploads(
+	attachments: CompletedAttachmentInput[],
+	expectedPrefix: string,
 ) {
-	const rawFiles = formData.getAll("files");
-	const singleFile = formData.get("file");
-
-	if (singleFile instanceof File) {
-		rawFiles.push(singleFile);
-	}
-
-	if (rawFiles.length === 0) {
-		throw new AppError(400, "VALIDATION_ERROR", "files is required");
-	}
-
 	const records: Array<{
 		fileKey: string;
 		originalName: string;
@@ -112,67 +143,42 @@ async function parseFilesFromFormData(
 		sizeBytes: bigint;
 	}> = [];
 
-	for (const rawFile of rawFiles) {
-		if (!(rawFile instanceof File)) {
-			continue;
+	for (const attachment of attachments) {
+		if (!attachment.fileKey.startsWith(expectedPrefix)) {
+			throw new AppError(
+				400,
+				"VALIDATION_ERROR",
+				"fileKey does not match this upload context",
+			);
 		}
 
-		const bytes = Buffer.from(await rawFile.arrayBuffer());
-		const fileKey = await uploadObject(
-			parentType,
-			parentId,
-			rawFile.name,
-			bytes,
-			rawFile.type || undefined,
-		);
+		const objectInfo = await statObject(attachment.fileKey);
+
+		if (!objectInfo) {
+			throw new AppError(
+				400,
+				"UPLOAD_NOT_FOUND",
+				"Uploaded object was not found",
+			);
+		}
+
+		if (objectInfo.size !== attachment.sizeBytes) {
+			throw new AppError(
+				400,
+				"UPLOAD_SIZE_MISMATCH",
+				"Uploaded object size does not match metadata",
+			);
+		}
 
 		records.push({
-			fileKey,
-			originalName: rawFile.name,
-			mimeType: rawFile.type || null,
-			sizeBytes: BigInt(bytes.byteLength),
+			fileKey: attachment.fileKey,
+			originalName: attachment.originalName,
+			mimeType: attachment.mimeType ?? null,
+			sizeBytes: BigInt(attachment.sizeBytes),
 		});
 	}
 
-	if (records.length === 0) {
-		throw new AppError(400, "VALIDATION_ERROR", "files is required");
-	}
-
 	return records;
-}
-
-function parseFormBoolean(
-	value: unknown,
-	fieldName: string,
-	defaultValue: boolean,
-) {
-	if (value == null) {
-		return defaultValue;
-	}
-
-	if (typeof value !== "string") {
-		throw new AppError(
-			400,
-			"VALIDATION_ERROR",
-			`${fieldName} must be a boolean string`,
-		);
-	}
-
-	const normalized = value.trim().toLowerCase();
-
-	if (normalized === "true" || normalized === "1") {
-		return true;
-	}
-
-	if (normalized === "false" || normalized === "0") {
-		return false;
-	}
-
-	throw new AppError(
-		400,
-		"VALIDATION_ERROR",
-		`${fieldName} must be one of true/false/1/0`,
-	);
 }
 
 export const tasksRouter = new Hono<{ Variables: AppVariables }>();
@@ -524,39 +530,94 @@ tasksRouter.get("/:taskId/submissions/:submissionId", async (c) => {
 	return c.json(submission, 200);
 });
 
+tasksRouter.post("/:taskId/attachments/upload-url", async (c) => {
+	const authUser = requireAuthUser(c);
+	const params = taskIdParamSchema.parse(c.req.param());
+	const body = directUploadUrlBodySchema.parse(await c.req.json());
+
+	await assertCanUploadTaskAttachments(params.taskId, authUser.userId);
+
+	const uploads = await Promise.all(
+		body.files.map(async (file) => {
+			const fileKey = createTaskAttachmentObjectKey(params.taskId, file.name);
+			return {
+				fileKey,
+				uploadUrl: await getPresignedPutUrl(
+					fileKey,
+					DIRECT_UPLOAD_EXPIRES_SECONDS,
+				),
+				expiresIn: DIRECT_UPLOAD_EXPIRES_SECONDS,
+				headers: getUploadHeaders(file.mimeType),
+			};
+		}),
+	);
+
+	return c.json(uploads, 200);
+});
+
 tasksRouter.post("/:taskId/attachments", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
-	const formData = await c.req.formData();
-	const isVisible = parseFormBoolean(
-		formData.get("isVisible"),
-		"isVisible",
-		true,
-	);
+	const body = taskAttachmentCompletionSchema.parse(await c.req.json());
 
-	const records = await parseFilesFromFormData(
-		formData,
-		"tasks",
-		params.taskId,
+	await assertCanUploadTaskAttachments(params.taskId, authUser.userId);
+
+	const records = await validateCompletedUploads(
+		body.attachments,
+		`tasks/${params.taskId}/`,
 	);
 	const attachments = await addTaskAttachments(
 		params.taskId,
 		authUser.userId,
 		records,
-		isVisible,
+		body.isVisible ?? true,
 	);
 
 	return c.json(attachments, 201);
 });
 
+tasksRouter.post(
+	"/:taskId/submissions/me/attachments/upload-url",
+	async (c) => {
+		const authUser = requireAuthUser(c);
+		const params = taskIdParamSchema.parse(c.req.param());
+		const body = directUploadUrlBodySchema.parse(await c.req.json());
+
+		await assertCanUploadSubmissionAttachments(params.taskId, authUser.userId);
+
+		const uploads = await Promise.all(
+			body.files.map(async (file) => {
+				const fileKey = createSubmissionAttachmentObjectKey(
+					params.taskId,
+					authUser.userId,
+					file.name,
+				);
+				return {
+					fileKey,
+					uploadUrl: await getPresignedPutUrl(
+						fileKey,
+						DIRECT_UPLOAD_EXPIRES_SECONDS,
+					),
+					expiresIn: DIRECT_UPLOAD_EXPIRES_SECONDS,
+					headers: getUploadHeaders(file.mimeType),
+				};
+			}),
+		);
+
+		return c.json(uploads, 200);
+	},
+);
+
 tasksRouter.post("/:taskId/submissions/me/attachments", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
-	const formData = await c.req.formData();
-	const records = await parseFilesFromFormData(
-		formData,
-		"submissions",
-		authUser.userId,
+	const body = submissionAttachmentCompletionSchema.parse(await c.req.json());
+
+	await assertCanUploadSubmissionAttachments(params.taskId, authUser.userId);
+
+	const records = await validateCompletedUploads(
+		body.attachments,
+		`submissions/${params.taskId}/${authUser.userId}/`,
 	);
 	const attachments = await addSubmissionAttachments(
 		params.taskId,

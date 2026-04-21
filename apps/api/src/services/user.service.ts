@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 
 import { cacheDel, cacheDelPattern, cacheKeys } from "../lib/cache.js";
 import { AppError } from "../lib/errors.js";
-import { toAttachmentMeta, toUserProfile } from "../lib/http.js";
+import { toUserProfile } from "../lib/http.js";
 import { removeObject } from "../lib/storage.js";
 import { revokeAllBrowserSessions } from "./session.service.js";
 import {
@@ -214,40 +214,6 @@ export async function upsertMyNotificationPref(
 	});
 	await cacheDel(cacheKeys.notifPrefs(userId));
 	return pref;
-}
-
-export async function uploadMyAvatar(
-	userId: string,
-	fileMeta: {
-		fileKey: string;
-		originalName: string;
-		mimeType: string | null;
-		sizeBytes: bigint;
-	},
-) {
-	const oldAvatars = await prisma.attachment.findMany({
-		where: { avatarUserId: userId },
-		select: { fileKey: true },
-	});
-
-	for (const oldAvatar of oldAvatars) {
-		await removeObject(oldAvatar.fileKey);
-	}
-
-	await prisma.attachment.deleteMany({ where: { avatarUserId: userId } });
-
-	const attachment = await prisma.attachment.create({
-		data: {
-			fileKey: fileMeta.fileKey,
-			originalName: fileMeta.originalName,
-			mimeType: fileMeta.mimeType,
-			sizeBytes: fileMeta.sizeBytes,
-			uploadedBy: userId,
-			avatarUserId: userId,
-		},
-	});
-
-	return toAttachmentMeta(attachment);
 }
 
 async function removeUserAvatarAttachments(userId: string) {

@@ -62,13 +62,14 @@ Create a bucket on your S3 provider (e.g., Cloudflare R2 dashboard):
 - Bucket name: `taskflow-files`
 - Generate an API token / access key pair with read+write permissions
 
-Set a CORS policy on the bucket to allow the frontend to load presigned URLs:
+Set a CORS policy on the bucket to allow the frontend to load and upload
+through presigned URLs:
 
 ```json
 [
   {
     "AllowedOrigins": ["https://taskflow.yourdomain.com"],
-    "AllowedMethods": ["GET"],
+    "AllowedMethods": ["GET", "PUT"],
     "AllowedHeaders": ["*"],
     "MaxAgeSeconds": 3600
   }

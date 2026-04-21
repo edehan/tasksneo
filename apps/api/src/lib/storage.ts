@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { BucketItemStat } from "minio";
 import { Client as MinioClient } from "minio";
 
 import { loadEnv } from "./env.js";
@@ -57,30 +58,54 @@ async function ensureBucketExists() {
 	}
 }
 
-export async function uploadObject(
-	parentType: string,
-	parentId: string,
+function getSafeExtension(fileName: string) {
+	const baseName = fileName.split(/[\\/]/).pop() ?? fileName;
+	const dotIndex = baseName.lastIndexOf(".");
+
+	if (dotIndex <= 0) {
+		return "";
+	}
+
+	const extension = baseName.slice(dotIndex);
+	return /^\.[A-Za-z0-9]{1,16}$/.test(extension) ? extension : "";
+}
+
+export function createTaskAttachmentObjectKey(
+	taskId: string,
 	fileName: string,
-	bytes: Buffer,
-	mimeType?: string,
 ) {
+	return `tasks/${taskId}/${randomUUID()}${getSafeExtension(fileName)}`;
+}
+
+export function createSubmissionAttachmentObjectKey(
+	taskId: string,
+	userId: string,
+	fileName: string,
+) {
+	return `submissions/${taskId}/${userId}/${randomUUID()}${getSafeExtension(
+		fileName,
+	)}`;
+}
+
+export async function getPresignedPutUrl(
+	fileKey: string,
+	expirySeconds = 300,
+): Promise<string> {
 	const { minio, bucket } = getClient();
 	await ensureBucketExists();
+	return minio.presignedPutObject(bucket, fileKey, expirySeconds);
+}
 
-	const extension = fileName.includes(".")
-		? fileName.slice(fileName.lastIndexOf("."))
-		: "";
-	const objectKey = `${parentType}/${parentId}/${randomUUID()}${extension}`;
+export async function statObject(
+	fileKey: string,
+): Promise<BucketItemStat | null> {
+	const { minio, bucket } = getClient();
 
-	await minio.putObject(
-		bucket,
-		objectKey,
-		bytes,
-		bytes.byteLength,
-		mimeType ? { "Content-Type": mimeType } : {},
-	);
-
-	return objectKey;
+	try {
+		return await minio.statObject(bucket, fileKey);
+	} catch {
+		return null;
+	}
 }
 
 export async function removeObject(fileKey: string) {
