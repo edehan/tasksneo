@@ -17,11 +17,7 @@ export class ApiError extends Error {
 }
 
 const AUTH_EXPIRED_EVENT = "taskflow:auth-expired";
-const AUTH_ERROR_CODES = new Set([
-  "INVALID_TOKEN",
-  "UNAUTHORIZED",
-  "USER_INACTIVE",
-]);
+const AUTH_ERROR_CODES = new Set(["UNAUTHORIZED", "USER_INACTIVE"]);
 
 export const ADMIN_TOKEN_STORAGE_KEY = "taskflow_admin_token";
 
