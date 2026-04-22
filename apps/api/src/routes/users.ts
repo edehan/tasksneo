@@ -5,7 +5,6 @@ import { z } from "zod";
 import { verifyCaptcha } from "../lib/captcha.js";
 import { requireAuthSession, requireAuthUser } from "../lib/context.js";
 import { clearSessionCookie } from "../lib/cookie.js";
-import { uploadObject } from "../lib/storage.js";
 import { authMiddleware } from "../middleware/auth.js";
 import {
 	confirmEmailChange,
@@ -33,7 +32,6 @@ import {
 	listMyNotificationPrefs,
 	updateMyPassword,
 	updateMyProfile,
-	uploadMyAvatar,
 	upsertMyNotificationPref,
 } from "../services/user.service.js";
 import type { AppVariables } from "../types/context.js";
@@ -248,34 +246,4 @@ usersRouter.delete("/me/mcp-keys/:keyId", async (c) => {
 	const params = mcpKeyIdParamSchema.parse(c.req.param());
 	const key = await revokeMcpKey(authUser.userId, params.keyId);
 	return c.json(key, 200);
-});
-
-// ── Avatar ─────────────────────────────────────────────────────────────────
-
-usersRouter.post("/me/avatar", async (c) => {
-	const authUser = requireAuthUser(c);
-	const formData = await c.req.formData();
-	const file = formData.get("file");
-
-	if (!(file instanceof File)) {
-		return c.json({ error: "file is required", code: "VALIDATION_ERROR" }, 400);
-	}
-
-	const bytes = Buffer.from(await file.arrayBuffer());
-	const fileKey = await uploadObject(
-		"avatars",
-		authUser.userId,
-		file.name,
-		bytes,
-		file.type || undefined,
-	);
-
-	const attachment = await uploadMyAvatar(authUser.userId, {
-		fileKey,
-		originalName: file.name,
-		mimeType: file.type || null,
-		sizeBytes: BigInt(bytes.byteLength),
-	});
-
-	return c.json(attachment, 200);
 });

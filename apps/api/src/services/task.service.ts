@@ -1045,6 +1045,30 @@ export async function addSubmissionAttachments(
 	return created.map(toAttachmentMeta);
 }
 
+export async function assertCanUploadSubmissionAttachments(
+	taskId: string,
+	userId: string,
+) {
+	await assertTaskAccess(taskId, userId);
+}
+
+export async function assertCanUploadTaskAttachments(
+	taskId: string,
+	userId: string,
+) {
+	const { classMembership } = await assertTaskAccess(taskId, userId);
+
+	if (!classMembership) {
+		throw new AppError(
+			403,
+			"FORBIDDEN",
+			"Only class admin can upload task attachments",
+		);
+	}
+
+	requireOwnerOrAdmin(classMembership);
+}
+
 export async function addTaskAttachments(
 	taskId: string,
 	userId: string,

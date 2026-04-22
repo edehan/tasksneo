@@ -9,7 +9,7 @@ This system supports two deployment architectures. Choose based on your expected
 Web + API + PostgreSQL + Redis all run in Docker on a single VPS.
 
 ```
-User → VPS (Nginx/Cloudflare)
+User → VPS (Caddy/Cloudflare)
          ├── Next.js Web (Docker)
          │     └── SSR prefetch → API via Docker internal network (<1ms)
          ├── API (Docker)
@@ -62,13 +62,14 @@ Create a bucket on your S3 provider (e.g., Cloudflare R2 dashboard):
 - Bucket name: `taskflow-files`
 - Generate an API token / access key pair with read+write permissions
 
-Set a CORS policy on the bucket to allow the frontend to load presigned URLs:
+Set a CORS policy on the bucket to allow the frontend to load and upload
+through presigned URLs:
 
 ```json
 [
   {
     "AllowedOrigins": ["https://taskflow.yourdomain.com"],
-    "AllowedMethods": ["GET"],
+    "AllowedMethods": ["GET", "PUT"],
     "AllowedHeaders": ["*"],
     "MaxAgeSeconds": 3600
   }
@@ -81,9 +82,10 @@ In Cloudflare DNS, create:
 
 | Type | Name | Content | Proxy |
 |------|------|---------|-------|
+| A | `taskflow` | `<VPS-IP>` | Proxied (orange cloud) |
 | A | `api` | `<VPS-IP>` | Proxied (orange cloud) |
 
-Cloudflare terminates TLS. The API Docker container runs plain HTTP on port 3001; Cloudflare proxies HTTPS → HTTP.
+Cloudflare terminates TLS at the edge, then Caddy terminates TLS on the VPS and proxies to local Docker ports. The API and Web containers run plain HTTP bound to `127.0.0.1`.
 
 For the frontend (if using Cloudflare Pages), the DNS is handled automatically. For Vercel, add a CNAME for the custom domain.
 
@@ -143,6 +145,94 @@ curl https://api.yourdomain.com/health
 The `docker-compose.prod.yml` includes a `web` service that builds and runs Next.js alongside the API. No separate frontend deployment is needed.
 
 The web container uses `API_INTERNAL_URL=http://api:3001` for SSR prefetch, keeping all server-side data fetching on the Docker internal network.
+
+#### Caddy reverse proxy with direct static file serving
+
+For higher concurrency, let Caddy serve Next.js static chunks directly from the host instead of sending every `/_next/static/*` request to the Next.js server. This keeps static asset traffic from competing with SSR and API calls.
+
+Install Caddy on the VPS, then create the host-side static directory:
+
+```bash
+sudo mkdir -p /opt/taskflow-static/_next/static /opt/taskflow-static/public
+sudo chown -R "$USER":"$USER" /opt/taskflow-static
+```
+
+After the `web` image has been built and started, copy the static output from the container to the host:
+
+```bash
+cd /opt/taskflow/infra
+./sync-web-static.sh
+```
+
+Set `TASKFLOW_STATIC_ROOT=/some/path` if you want Caddy to read static files from a different host directory.
+
+Configure Caddy:
+
+```caddyfile
+taskflow.yourdomain.com {
+	encode zstd gzip
+
+	handle_path /_next/static/* {
+		root * /opt/taskflow-static/_next/static
+		header {
+			Cache-Control "public, max-age=31536000, immutable"
+			match status 2xx
+		}
+		file_server
+	}
+
+	@publicAssets path /manifest.json /robots.txt /apple-touch-icon.png /icon-192.png /icon-512.png
+	handle @publicAssets {
+		root * /opt/taskflow-static/public
+		header {
+			Cache-Control "public, max-age=86400"
+			match status 2xx
+		}
+		file_server
+	}
+
+	@serviceWorker path /register-sw.js /sw.js
+	handle @serviceWorker {
+		root * /opt/taskflow-static/public
+		header Cache-Control "no-cache"
+		file_server
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:3000
+	}
+}
+
+api.yourdomain.com {
+	encode zstd gzip
+
+	handle /health* {
+		header Cache-Control "no-store"
+		reverse_proxy 127.0.0.1:3001
+	}
+
+	handle {
+		header Cache-Control "no-store"
+		reverse_proxy 127.0.0.1:3001
+	}
+}
+```
+
+Validate and reload Caddy:
+
+```bash
+sudo caddy validate --config /etc/caddy/Caddyfile
+sudo systemctl reload caddy
+```
+
+Verify that static files are served by Caddy with long-lived cache headers:
+
+```bash
+curl -I https://taskflow.yourdomain.com/_next/static/chunks/<chunk-file>.js
+# Expected: Cache-Control: public, max-age=31536000, immutable
+```
+
+Do not long-cache HTML, RSC payloads, private API responses, or `register-sw.js`. Only `/_next/static/*` is safe for one-year immutable caching because Next.js emits content-hashed filenames.
 
 ### Option B (Split): Vercel
 
@@ -349,6 +439,13 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 # Apply any new migrations
 docker compose -f docker-compose.prod.yml exec api sh -lc "cd /app/packages/db && ./node_modules/.bin/prisma migrate deploy"
+```
+
+If using the Option A Caddy static file setup, sync the latest static output after every rebuild:
+
+```bash
+./sync-web-static.sh
+sudo systemctl reload caddy
 ```
 
 For the frontend (split deployment), push to the connected Git branch — Vercel / Cloudflare Pages will auto-deploy.

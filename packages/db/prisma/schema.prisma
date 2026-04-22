@@ -148,6 +148,9 @@ model ClassMember {
 
   @@id([classId, userId])
   @@index([userId])
+  @@index([classId, joinedAt], map: "idx_class_members_class_joined")
+  @@index([userId, joinedAt], map: "idx_class_members_user_joined")
+  @@index([classId, role], map: "idx_class_members_class_role")
   @@map("class_members")
 }
 
@@ -237,6 +240,7 @@ model Submission {
 
   @@unique([taskId, userId])
   @@index([taskId])
+  @@index([userId, taskId], map: "idx_submissions_user_task")
   @@map("submissions")
 }
 
@@ -287,6 +291,8 @@ model Attachment {
 
   @@index([taskId])
   @@index([submissionId])
+  @@index([avatarUserId], map: "idx_attachments_avatar_user")
+  @@index([classId], map: "idx_attachments_class")
   @@map("attachments")
 }
 
@@ -364,7 +370,7 @@ model SiteAnnouncement {
 model McpKey {
   id         String    @id @default(uuid())
   name       String
-  keyHash    String    @map("key_hash")
+  keyHash    String    @unique @map("key_hash")
   keyPrefix  String    @map("key_prefix")
   lastUsedAt DateTime? @map("last_used_at") @db.Timestamptz
   expiresAt  DateTime? @map("expires_at") @db.Timestamptz
@@ -376,6 +382,7 @@ model McpKey {
 
   sessions Session[]
 
+  @@index([userId, revokedAt], map: "idx_mcp_keys_user_revoked")
   @@map("mcp_keys")
 }
 
@@ -402,6 +409,7 @@ model Session {
 
   @@index([userId])
   @@index([expiresAt])
+  @@index([mcpKeyId], map: "idx_sessions_mcp_key")
   @@map("sessions")
 }
 

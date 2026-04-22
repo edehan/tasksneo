@@ -20,6 +20,71 @@ function authHeader(token: string) {
 	return { Authorization: `Bearer ${token}` };
 }
 
+interface DirectUploadTarget {
+	fileKey: string;
+	uploadUrl: string;
+	expiresIn: number;
+	headers: Record<string, string>;
+}
+
+async function uploadAttachmentDirect(input: {
+	uploadUrlPath: string;
+	completePath: string;
+	token: string;
+	fileName: string;
+	content: string;
+	mimeType: string;
+	isVisible?: boolean;
+}) {
+	const bytes = Buffer.from(input.content);
+	const uploadUrlRes = await requestJson(app, input.uploadUrlPath, {
+		method: "POST",
+		headers: authHeader(input.token),
+		body: JSON.stringify({
+			files: [
+				{
+					name: input.fileName,
+					mimeType: input.mimeType,
+					sizeBytes: bytes.byteLength,
+				},
+			],
+		}),
+	});
+	expect(uploadUrlRes.response.status).toBe(200);
+	const [upload] = uploadUrlRes.body as DirectUploadTarget[];
+	expect(upload?.fileKey).toBeTruthy();
+	expect(upload?.expiresIn).toBe(300);
+	if (!upload) {
+		throw new Error("Upload URL response was empty");
+	}
+
+	const putRes = await fetch(upload.uploadUrl, {
+		method: "PUT",
+		headers: upload.headers,
+		body: bytes,
+	});
+	expect(putRes.ok).toBe(true);
+
+	const completeRes = await requestJson(app, input.completePath, {
+		method: "POST",
+		headers: authHeader(input.token),
+		body: JSON.stringify({
+			attachments: [
+				{
+					fileKey: upload.fileKey,
+					originalName: input.fileName,
+					mimeType: input.mimeType,
+					sizeBytes: bytes.byteLength,
+				},
+			],
+			...(input.isVisible !== undefined ? { isVisible: input.isVisible } : {}),
+		}),
+	});
+	expect(completeRes.response.status).toBe(201);
+
+	return completeRes.body;
+}
+
 function readSessionTokenFromSetCookie(res: Response): string {
 	const raw = res.headers.get("set-cookie") ?? "";
 	const match = raw.match(/tfses_session=([^;]+)/);
@@ -342,20 +407,11 @@ describe("TaskFlow API e2e", () => {
 		});
 		expect(prefsPost.response.status).toBe(200);
 
-		const avatarForm = new FormData();
-		avatarForm.append(
-			"file",
-			new File([Buffer.from("avatar-bytes")], "avatar.txt", {
-				type: "text/plain",
-			}),
-		);
 		const avatarResponse = await app.request("/users/me/avatar", {
 			method: "POST",
 			headers: authHeader(ownerToken),
-			body: avatarForm,
 		});
-		expect(avatarResponse.status).toBe(200);
-		const avatarBody = (await json(avatarResponse)) as { fileKey: string };
+		expect(avatarResponse.status).toBe(404);
 
 		const createClassRes = await requestJson(app, "/classes", {
 			method: "POST",
@@ -544,22 +600,14 @@ describe("TaskFlow API e2e", () => {
 			draftTaskWithAttachmentRes.body as { id: string }
 		).id;
 
-		const draftAttachmentForm = new FormData();
-		draftAttachmentForm.append(
-			"files",
-			new File([Buffer.from("draft-only-attachment")], "draft-only.txt", {
-				type: "text/plain",
-			}),
-		);
-		const draftAttachmentRes = await app.request(
-			`/tasks/${draftTaskWithAttachmentId}/attachments`,
-			{
-				method: "POST",
-				headers: authHeader(ownerToken),
-				body: draftAttachmentForm,
-			},
-		);
-		expect(draftAttachmentRes.status).toBe(201);
+		await uploadAttachmentDirect({
+			uploadUrlPath: `/tasks/${draftTaskWithAttachmentId}/attachments/upload-url`,
+			completePath: `/tasks/${draftTaskWithAttachmentId}/attachments`,
+			token: ownerToken,
+			fileName: "draft-only.txt",
+			content: "draft-only-attachment",
+			mimeType: "text/plain",
+		});
 
 		const parseDraftTaskWithAttachmentOnly = await requestJson(
 			app,
@@ -630,47 +678,86 @@ describe("TaskFlow API e2e", () => {
 		});
 		expect(taskState.response.status).toBe(200);
 
-		const taskAttachmentForm = new FormData();
-		taskAttachmentForm.append(
-			"files",
-			new File([Buffer.from("task-file")], "task.txt", { type: "text/plain" }),
+		const memberTaskUploadUrlFail = await requestJson(
+			app,
+			`/tasks/${taskId}/attachments/upload-url`,
+			{
+				method: "POST",
+				headers: authHeader(memberToken),
+				body: JSON.stringify({
+					files: [
+						{ name: "member-task.txt", mimeType: "text/plain", sizeBytes: 4 },
+					],
+				}),
+			},
 		);
-		const taskAttachmentRes = await app.request(
+		expect(memberTaskUploadUrlFail.response.status).toBe(403);
+
+		const missingTaskUploadUrl = await requestJson(
+			app,
+			`/tasks/${taskId}/attachments/upload-url`,
+			{
+				method: "POST",
+				headers: authHeader(ownerToken),
+				body: JSON.stringify({
+					files: [
+						{ name: "missing.txt", mimeType: "text/plain", sizeBytes: 7 },
+					],
+				}),
+			},
+		);
+		expect(missingTaskUploadUrl.response.status).toBe(200);
+		const [missingTaskUpload] =
+			missingTaskUploadUrl.body as DirectUploadTarget[];
+		if (!missingTaskUpload) {
+			throw new Error("Missing task upload URL");
+		}
+		const missingComplete = await requestJson(
+			app,
 			`/tasks/${taskId}/attachments`,
 			{
 				method: "POST",
 				headers: authHeader(ownerToken),
-				body: taskAttachmentForm,
+				body: JSON.stringify({
+					attachments: [
+						{
+							fileKey: missingTaskUpload.fileKey,
+							originalName: "missing.txt",
+							mimeType: "text/plain",
+							sizeBytes: 7,
+						},
+					],
+				}),
 			},
 		);
-		expect(taskAttachmentRes.status).toBe(201);
-		const taskAttachmentBody = (await json(taskAttachmentRes)) as Array<{
+		expect(missingComplete.response.status).toBe(400);
+		expect((missingComplete.body as { code?: string }).code).toBe(
+			"UPLOAD_NOT_FOUND",
+		);
+
+		const taskAttachmentBody = (await uploadAttachmentDirect({
+			uploadUrlPath: `/tasks/${taskId}/attachments/upload-url`,
+			completePath: `/tasks/${taskId}/attachments`,
+			token: ownerToken,
+			fileName: "task.txt",
+			content: "task-file",
+			mimeType: "text/plain",
+		})) as Array<{
 			id: string;
 			fileKey: string;
 			isVisible: boolean;
 		}>;
 		expect(taskAttachmentBody[0]?.isVisible).toBe(true);
 
-		const hiddenTaskAttachmentForm = new FormData();
-		hiddenTaskAttachmentForm.append(
-			"files",
-			new File([Buffer.from("task-hidden-file")], "task-hidden.txt", {
-				type: "text/plain",
-			}),
-		);
-		hiddenTaskAttachmentForm.append("isVisible", "false");
-		const hiddenTaskAttachmentRes = await app.request(
-			`/tasks/${taskId}/attachments`,
-			{
-				method: "POST",
-				headers: authHeader(ownerToken),
-				body: hiddenTaskAttachmentForm,
-			},
-		);
-		expect(hiddenTaskAttachmentRes.status).toBe(201);
-		const hiddenTaskAttachmentBody = (await json(
-			hiddenTaskAttachmentRes,
-		)) as Array<{
+		const hiddenTaskAttachmentBody = (await uploadAttachmentDirect({
+			uploadUrlPath: `/tasks/${taskId}/attachments/upload-url`,
+			completePath: `/tasks/${taskId}/attachments`,
+			token: ownerToken,
+			fileName: "task-hidden.txt",
+			content: "task-hidden-file",
+			mimeType: "text/plain",
+			isVisible: false,
+		})) as Array<{
 			id: string;
 			fileKey: string;
 			isVisible: boolean;
@@ -775,23 +862,14 @@ describe("TaskFlow API e2e", () => {
 			"My first answer",
 		);
 
-		const submissionForm = new FormData();
-		submissionForm.append(
-			"files",
-			new File([Buffer.from("submission-file")], "submission.txt", {
-				type: "text/plain",
-			}),
-		);
-		const submitRes = await app.request(
-			`/tasks/${taskId}/submissions/me/attachments`,
-			{
-				method: "POST",
-				headers: authHeader(memberToken),
-				body: submissionForm,
-			},
-		);
-		expect(submitRes.status).toBe(201);
-		const submitBody = (await json(submitRes)) as Array<{ fileKey: string }>;
+		const submitBody = (await uploadAttachmentDirect({
+			uploadUrlPath: `/tasks/${taskId}/submissions/me/attachments/upload-url`,
+			completePath: `/tasks/${taskId}/submissions/me/attachments`,
+			token: memberToken,
+			fileName: "submission.txt",
+			content: "submission-file",
+			mimeType: "text/plain",
+		})) as Array<{ fileKey: string }>;
 		expect(submitBody.length).toBe(1);
 
 		const mySubmissionRes = await app.request(
@@ -879,14 +957,6 @@ describe("TaskFlow API e2e", () => {
 			},
 		);
 		expect(fileSubmissionRes.status).toBe(302);
-
-		const fileAvatarRes = await app.request(
-			`/files/${encodeURIComponent(avatarBody.fileKey)}`,
-			{
-				headers: authHeader(ownerToken),
-			},
-		);
-		expect(fileAvatarRes.status).toBe(302);
 
 		const transferRes = await requestJson(app, `/classes/${classId}/transfer`, {
 			method: "POST",
