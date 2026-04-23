@@ -167,6 +167,32 @@ services:
       timeout: 5s
       retries: 20
 
+  seed-users-classes:
+    image: taskflow-api:perf
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    profiles: ["seed"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-taskflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-taskflow}
+      SEED_BASE_URL: ${SEED_BASE_URL:-http://api:3001}
+      SEED_COUNT: ${SEED_COUNT:-100}
+      SEED_CONCURRENCY: ${SEED_CONCURRENCY:-10}
+      SEED_EMAIL_DOMAIN: ${SEED_EMAIL_DOMAIN:-example.com}
+      SEED_PASSWORD: ${SEED_PASSWORD:-12345678}
+      SEED_NICKNAME_PREFIX: ${SEED_NICKNAME_PREFIX:-Random User}
+      SEED_CLASS_PREFIX: ${SEED_CLASS_PREFIX:-Random Class}
+      SEED_CLASS_DESCRIPTION: ${SEED_CLASS_DESCRIPTION:-Created for performance testing}
+      SEED_TIMEZONE: ${SEED_TIMEZONE:-Asia/Shanghai}
+    volumes:
+      - ../perf:/app/perf:ro
+    command:
+      - node
+      - /app/perf/scripts/seed-users-classes.mjs
+
 volumes:
   taskflow_perf_pg_data:
   taskflow_perf_redis_data:

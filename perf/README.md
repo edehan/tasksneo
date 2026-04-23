@@ -35,6 +35,26 @@ curl http://<test-server>:3001/health/ready
 curl -I http://<test-server>:3000
 ```
 
+## Seed Users And Classes
+
+Create 100 random test users and one non-personal class per user:
+
+```bash
+docker compose --env-file infra/.env.perf -f infra/docker-compose.perf.yml --profile seed run --rm --build seed-users-classes
+```
+
+The script creates fresh random data on every run:
+
+- email: random local part under `@example.com`
+- password: `12345678` by default
+- class name: random suffix
+
+Useful overrides:
+
+```bash
+SEED_COUNT=25 docker compose --env-file infra/.env.perf -f infra/docker-compose.perf.yml --profile seed run --rm --build seed-users-classes
+```
+
 ## Stop
 
 ```bash
