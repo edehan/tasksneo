@@ -49,6 +49,15 @@ The script creates fresh random data on every run:
 - password: `12345678` by default
 - class name: random suffix
 
+At the end it prints a `seed_users` JSON event containing every created user:
+`email`, `password`, `userId`, `classId`, and `className`.
+
+To also write the list to disk:
+
+```bash
+SEED_OUTPUT_FILE=/app/perf/results/seed-users.json docker compose --env-file infra/.env.perf -f infra/docker-compose.perf.yml --profile seed run --rm --build seed-users-classes
+```
+
 Useful overrides:
 
 ```bash

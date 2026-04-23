@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { writeFile } from "node:fs/promises";
 import { EmailTokenPurpose, prisma } from "@taskflow/db";
 
 const config = {
@@ -13,6 +14,7 @@ const config = {
 		"SEED_CLASS_DESCRIPTION",
 		"Created for performance testing",
 	),
+	outputFile: process.env.SEED_OUTPUT_FILE || "",
 	timezone: envString("SEED_TIMEZONE", "Asia/Shanghai"),
 };
 
@@ -212,8 +214,31 @@ async function main() {
 		}),
 	);
 	console.log(
-		JSON.stringify({ event: "seed_sample", results: results.slice(0, 5) }),
+		JSON.stringify({
+			event: "seed_users",
+			users: results.map((item) => ({
+				email: item.email,
+				password: item.password,
+				userId: item.userId,
+				classId: item.classId,
+				className: item.className,
+			})),
+		}),
 	);
+
+	if (config.outputFile) {
+		await writeFile(
+			config.outputFile,
+			`${JSON.stringify({ users: results }, null, 2)}\n`,
+			"utf8",
+		);
+		console.log(
+			JSON.stringify({
+				event: "seed_output_written",
+				file: config.outputFile,
+			}),
+		);
+	}
 }
 
 main()
