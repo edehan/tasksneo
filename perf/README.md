@@ -84,6 +84,9 @@ Useful overrides:
 SEED_POOL_CLASS_COUNT=200 SEED_JOIN_CLASSES_PER_USER=5 docker compose --env-file infra/.env.perf -f infra/docker-compose.perf.yml --profile seed run --rm --build seed-class-memberships
 ```
 
+The class pool file includes `ownerId`, `ownerEmail`, and `ownerPassword` for
+each class, so later scripts can log in as the class owner.
+
 ## Seed Tasks For Recorded Classes
 
 Read `perf/results/class-pool-200.json`, then create 5-10 random published
@@ -95,6 +98,47 @@ docker compose --env-file infra/.env.perf -f infra/docker-compose.perf.yml --pro
 ```
 
 The task list is written to `perf/results/class-tasks.json`.
+
+## Export Class Owners
+
+If `perf/results/class-pool-200.json` already exists and you only need owner
+accounts for those classes, export them without changing memberships, classes,
+or tasks:
+
+```bash
+docker compose --env-file infra/.env.perf -f infra/docker-compose.perf.yml --profile seed run --rm --build export-class-owners
+```
+
+The output is written to `perf/results/class-owners-200.json` and includes
+`classId`, `className`, `inviteCode`, `ownerId`, `ownerEmail`, and
+`ownerPassword`.
+
+## Full Reset And Seed
+
+This destructive command wipes seeded application data, then creates:
+
+- 5000 users, all with password `12345678`
+- 200 public classes owned by 200 of those users
+- each user joined to 3-10 public classes total
+- each public class with 3-10 published tasks
+- task start dates from 30 days ago to 2 days from now
+- task due dates from 3 to 15 days from now
+- task bodies with 200-1000 real English words
+
+Run it only on the disposable performance database:
+
+```bash
+FULL_SEED_CONFIRM_RESET=YES docker compose --env-file infra/.env.perf -f infra/docker-compose.perf.yml --profile seed run --rm --build reset-and-seed-full
+```
+
+The two primary output files are written to `perf/results/full-seed/`:
+
+- `users.json`
+- `public-classes.json`
+
+`users.json` contains login information for all 5000 users.
+`public-classes.json` contains all 200 public classes and their owner login
+information.
 
 ## Stop
 

@@ -245,6 +245,58 @@ services:
       - node
       - /app/perf/scripts/seed-class-tasks.mjs
 
+  export-class-owners:
+    image: taskflow-api:perf
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    profiles: ["seed"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-taskflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-taskflow}
+      SEED_CLASS_POOL_FILE: ${SEED_CLASS_POOL_FILE:-/app/perf/results/class-pool-200.json}
+      SEED_CLASS_OWNER_OUTPUT_FILE: ${SEED_CLASS_OWNER_OUTPUT_FILE:-/app/perf/results/class-owners-200.json}
+    volumes:
+      - ../perf:/app/perf:ro
+      - ../perf/results:/app/perf/results
+    command:
+      - node
+      - /app/perf/scripts/export-class-owners.mjs
+
+  reset-and-seed-full:
+    image: taskflow-api:perf
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    profiles: ["seed"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-taskflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-taskflow}
+      FULL_SEED_CONFIRM_RESET: ${FULL_SEED_CONFIRM_RESET:-}
+      FULL_SEED_USER_COUNT: ${FULL_SEED_USER_COUNT:-5000}
+      FULL_SEED_PUBLIC_CLASS_COUNT: ${FULL_SEED_PUBLIC_CLASS_COUNT:-200}
+      FULL_SEED_MIN_CLASSES_PER_USER: ${FULL_SEED_MIN_CLASSES_PER_USER:-3}
+      FULL_SEED_MAX_CLASSES_PER_USER: ${FULL_SEED_MAX_CLASSES_PER_USER:-10}
+      FULL_SEED_MIN_TASKS_PER_CLASS: ${FULL_SEED_MIN_TASKS_PER_CLASS:-3}
+      FULL_SEED_MAX_TASKS_PER_CLASS: ${FULL_SEED_MAX_TASKS_PER_CLASS:-10}
+      FULL_SEED_TASK_START_MIN_DAYS_FROM_NOW: ${FULL_SEED_TASK_START_MIN_DAYS_FROM_NOW:--30}
+      FULL_SEED_TASK_START_MAX_DAYS_FROM_NOW: ${FULL_SEED_TASK_START_MAX_DAYS_FROM_NOW:-2}
+      FULL_SEED_TASK_DUE_MIN_DAYS_FROM_NOW: ${FULL_SEED_TASK_DUE_MIN_DAYS_FROM_NOW:-3}
+      FULL_SEED_TASK_DUE_MAX_DAYS_FROM_NOW: ${FULL_SEED_TASK_DUE_MAX_DAYS_FROM_NOW:-15}
+      FULL_SEED_TASK_BODY_MIN_WORDS: ${FULL_SEED_TASK_BODY_MIN_WORDS:-200}
+      FULL_SEED_TASK_BODY_MAX_WORDS: ${FULL_SEED_TASK_BODY_MAX_WORDS:-1000}
+      FULL_SEED_OUTPUT_DIR: ${FULL_SEED_OUTPUT_DIR:-/app/perf/results/full-seed}
+    volumes:
+      - ../perf:/app/perf:ro
+      - ../perf/results:/app/perf/results
+    command:
+      - node
+      - /app/perf/scripts/reset-and-seed-full.mjs
+
 volumes:
   taskflow_perf_pg_data:
   taskflow_perf_redis_data:

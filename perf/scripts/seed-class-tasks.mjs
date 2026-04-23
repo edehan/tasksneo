@@ -169,6 +169,8 @@ async function main() {
 				classId: task.classId,
 				className: classInfo.name,
 				createdBy: task.createdBy,
+				ownerEmail: classInfo.ownerEmail ?? null,
+				ownerPassword: classInfo.ownerPassword ?? "12345678",
 				title: task.title,
 				startAt: task.startAt.toISOString(),
 				dueAt: task.dueAt.toISOString(),

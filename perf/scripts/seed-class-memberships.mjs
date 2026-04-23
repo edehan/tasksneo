@@ -48,6 +48,11 @@ async function loadClassPool() {
 			name: true,
 			inviteCode: true,
 			ownerId: true,
+			owner: {
+				select: {
+					email: true,
+				},
+			},
 			createdAt: true,
 		},
 	});
@@ -138,6 +143,8 @@ async function main() {
 					name: item.name,
 					inviteCode: item.inviteCode,
 					ownerId: item.ownerId,
+					ownerEmail: item.owner.email,
+					ownerPassword: "12345678",
 					createdAt: item.createdAt.toISOString(),
 				})),
 			},
