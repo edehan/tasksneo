@@ -84,6 +84,18 @@ Useful overrides:
 SEED_POOL_CLASS_COUNT=200 SEED_JOIN_CLASSES_PER_USER=5 docker compose --env-file infra/.env.perf -f infra/docker-compose.perf.yml --profile seed run --rm --build seed-class-memberships
 ```
 
+## Seed Tasks For Recorded Classes
+
+Read `perf/results/class-pool-200.json`, then create 5-10 random published
+tasks in each recorded class. Start dates are 30 days ago to 1 day from now.
+Due dates are 3-15 days from now.
+
+```bash
+docker compose --env-file infra/.env.perf -f infra/docker-compose.perf.yml --profile seed run --rm --build seed-class-tasks
+```
+
+The task list is written to `perf/results/class-tasks.json`.
+
 ## Stop
 
 ```bash
