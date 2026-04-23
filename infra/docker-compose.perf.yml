@@ -178,7 +178,9 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-taskflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-taskflow}
+      CORS_ORIGINS: ${CORS_ORIGINS}
       SEED_BASE_URL: ${SEED_BASE_URL:-http://api:3001}
+      SEED_ORIGIN: ${SEED_ORIGIN:-}
       SEED_COUNT: ${SEED_COUNT:-100}
       SEED_CONCURRENCY: ${SEED_CONCURRENCY:-10}
       SEED_EMAIL_DOMAIN: ${SEED_EMAIL_DOMAIN:-example.com}

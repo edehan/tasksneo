@@ -6,6 +6,7 @@ const { EmailTokenPurpose, prisma } = await import(dbModulePath);
 
 const config = {
 	baseUrl: envString("SEED_BASE_URL", "http://api:3001").replace(/\/+$/, ""),
+	origin: envString("SEED_ORIGIN", firstCorsOrigin() ?? "http://localhost:3000"),
 	count: envInt("SEED_COUNT", 100),
 	concurrency: envInt("SEED_CONCURRENCY", 10),
 	emailDomain: envString("SEED_EMAIL_DOMAIN", "example.com"),
@@ -44,6 +45,10 @@ function envInt(name, fallback) {
 		throw new Error(`${name} must be a positive integer`);
 	}
 	return value;
+}
+
+function firstCorsOrigin() {
+	return process.env.CORS_ORIGINS?.split(",").map((s) => s.trim()).find(Boolean);
 }
 
 function randomHex(byteLength = 8) {
@@ -132,7 +137,7 @@ async function createClass(index, cookie) {
 	const name = `${config.classPrefix} ${randomHex(5)}`;
 	const { body } = await requestJson("/classes", {
 		method: "POST",
-		headers: { Cookie: cookie },
+		headers: { Cookie: cookie, Origin: config.origin },
 		body: JSON.stringify({
 			name,
 			description: `${config.classDescription} #${index}`,
@@ -184,6 +189,7 @@ async function main() {
 		JSON.stringify({
 			event: "seed_start",
 			baseUrl: config.baseUrl,
+			origin: config.origin,
 			count: config.count,
 			concurrency: config.concurrency,
 			emailPattern: `<random>@${config.emailDomain}`,

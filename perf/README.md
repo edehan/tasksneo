@@ -52,6 +52,10 @@ The script creates fresh random data on every run:
 At the end it prints a `seed_users` JSON event containing every created user:
 `email`, `password`, `userId`, `classId`, and `className`.
 
+The class creation request sends an `Origin` header. By default it uses the
+first `CORS_ORIGINS` value from `infra/.env.perf`; override `SEED_ORIGIN` if
+you need a different allowed web origin.
+
 To also write the list to disk:
 
 ```bash
