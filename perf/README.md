@@ -68,6 +68,22 @@ Useful overrides:
 SEED_COUNT=25 docker compose --env-file infra/.env.perf -f infra/docker-compose.perf.yml --profile seed run --rm --build seed-users-classes
 ```
 
+## Seed Memberships From Existing Classes
+
+Pick 200 existing non-personal classes, write them to
+`perf/results/class-pool-200.json`, then make every active user join 5 random
+classes from that pool:
+
+```bash
+docker compose --env-file infra/.env.perf -f infra/docker-compose.perf.yml --profile seed run --rm --build seed-class-memberships
+```
+
+Useful overrides:
+
+```bash
+SEED_POOL_CLASS_COUNT=200 SEED_JOIN_CLASSES_PER_USER=5 docker compose --env-file infra/.env.perf -f infra/docker-compose.perf.yml --profile seed run --rm --build seed-class-memberships
+```
+
 ## Stop
 
 ```bash

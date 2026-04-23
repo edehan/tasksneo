@@ -197,6 +197,27 @@ services:
       - node
       - /app/perf/scripts/seed-users-classes.mjs
 
+  seed-class-memberships:
+    image: taskflow-api:perf
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    profiles: ["seed"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-taskflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-taskflow}
+      SEED_POOL_CLASS_COUNT: ${SEED_POOL_CLASS_COUNT:-200}
+      SEED_JOIN_CLASSES_PER_USER: ${SEED_JOIN_CLASSES_PER_USER:-5}
+      SEED_CLASS_POOL_OUTPUT_FILE: ${SEED_CLASS_POOL_OUTPUT_FILE:-/app/perf/results/class-pool-200.json}
+    volumes:
+      - ../perf:/app/perf:ro
+      - ../perf/results:/app/perf/results
+    command:
+      - node
+      - /app/perf/scripts/seed-class-memberships.mjs
+
 volumes:
   taskflow_perf_pg_data:
   taskflow_perf_redis_data:
