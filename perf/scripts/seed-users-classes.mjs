@@ -1,6 +1,8 @@
 import { randomBytes } from "node:crypto";
 import { writeFile } from "node:fs/promises";
-import { EmailTokenPurpose, prisma } from "@taskflow/db";
+
+const dbModulePath = process.env.SEED_DB_MODULE_PATH ?? "/app/packages/db/dist/index.js";
+const { EmailTokenPurpose, prisma } = await import(dbModulePath);
 
 const config = {
 	baseUrl: envString("SEED_BASE_URL", "http://api:3001").replace(/\/+$/, ""),
