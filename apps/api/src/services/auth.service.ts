@@ -1,13 +1,15 @@
 import { AuthProvider, ClassRole, prisma } from "@taskflow/db";
-import bcrypt from "bcryptjs";
 
 import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
+import { hashPassword, verifyPassword } from "../lib/password.js";
 import { checkAndSendNewLocationAlert } from "./security-alert.service.js";
-import { createBrowserSession } from "./session.service.js";
+import {
+	cacheSessionByToken,
+	createBrowserSession,
+} from "./session.service.js";
 import { assertRegistrationOpen } from "./system-config.service.js";
 
-const SALT_ROUNDS = 10;
 const PERSONAL_CLASS_NAME = "个人空间";
 
 export interface RegisterInput {
@@ -74,7 +76,7 @@ export async function createUserWithPersonalClass(
 		throw new AppError(409, "EMAIL_EXISTS", "Email already registered");
 	}
 
-	const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
+	const passwordHash = await hashPassword(input.password);
 
 	const user = await prisma.$transaction(async (tx) => {
 		const createdUser = await tx.user.create({
@@ -130,12 +132,13 @@ export async function createUserWithPersonalClass(
 		throw new AppError(500, "USER_NOT_FOUND", "Failed to load created user");
 	}
 
-	const { token } = await createBrowserSession({
+	const { token, session } = await createBrowserSession({
 		userId: fullUser.id,
 		isTrusted: sessionMeta.trustDevice,
 		userAgent: sessionMeta.userAgent,
 		ipAddress: sessionMeta.ipAddress,
 	});
+	await cacheSessionByToken(token, session, fullUser);
 
 	return {
 		token,
@@ -153,13 +156,26 @@ export async function register(
 export async function login(input: LoginInput) {
 	const user = await prisma.user.findUnique({
 		where: { email: input.email },
-		include: {
+		select: {
+			id: true,
+			email: true,
+			nickname: true,
+			isActive: true,
+			createdAt: true,
+			updatedAt: true,
+			schoolId: true,
+			studentId: true,
+			timezone: true,
 			school: {
 				select: {
 					name: true,
 				},
 			},
-			credentials: true,
+			credentials: {
+				where: { provider: AuthProvider.LOCAL },
+				select: { passwordHash: true },
+				take: 1,
+			},
 		},
 	});
 
@@ -171,15 +187,13 @@ export async function login(input: LoginInput) {
 		throw new AppError(403, "USER_INACTIVE", "Account is disabled");
 	}
 
-	const localCredential = user.credentials.find(
-		(credential) => credential.provider === AuthProvider.LOCAL,
-	);
+	const localCredential = user.credentials[0];
 
 	if (!localCredential?.passwordHash) {
 		throw new AppError(401, "INVALID_CREDENTIALS", "Invalid email or password");
 	}
 
-	const passwordMatched = await bcrypt.compare(
+	const passwordMatched = await verifyPassword(
 		input.password,
 		localCredential.passwordHash,
 	);
@@ -194,6 +208,7 @@ export async function login(input: LoginInput) {
 		userAgent: input.sessionMeta.userAgent,
 		ipAddress: input.sessionMeta.ipAddress,
 	});
+	await cacheSessionByToken(token, session, user);
 
 	void checkAndSendNewLocationAlert(
 		user.id,

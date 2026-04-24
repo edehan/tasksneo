@@ -1,4 +1,4 @@
-import { EmailTokenPurpose, prisma } from "@taskflow/db";
+import { AuthProvider, EmailTokenPurpose, prisma } from "@taskflow/db";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { createApp } from "../app.js";
@@ -1085,6 +1085,31 @@ describe("Session lifecycle", () => {
 			headers: authHeader(token),
 		});
 		expect(after.status).toBe(401);
+	});
+
+	it("logs in users with bcryptjs-generated legacy password hashes", async () => {
+		const email = uniqueEmail("legacy-bcryptjs");
+		await createTestUser({ email, password: "Temporary1!" });
+		const legacyBcryptjsHash =
+			"$2b$10$poJpCmMkcrrNE8Ss9/6AJ.bjppNTIDpPE1QbCs6gKOnAvwkqmSVdK";
+
+		const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+		await prisma.userCredential.update({
+			where: {
+				userId_provider: {
+					userId: user.id,
+					provider: AuthProvider.LOCAL,
+				},
+			},
+			data: { passwordHash: legacyBcryptjsHash },
+		});
+
+		const loginRes = await requestJson(app, "/auth/login", {
+			method: "POST",
+			body: JSON.stringify({ email, password: "Passw0rd!" }),
+		});
+
+		expect(loginRes.response.status).toBe(200);
 	});
 
 	it("changing password keeps current session alive and kicks other browser sessions", async () => {

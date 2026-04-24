@@ -1,11 +1,11 @@
 import { randomBytes } from "node:crypto";
 
 import { AuthProvider, EmailTokenPurpose, prisma } from "@taskflow/db";
-import bcrypt from "bcryptjs";
 
 import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
 import { sendEmail } from "../lib/mailer.js";
+import { hashPassword } from "../lib/password.js";
 
 import {
 	createUserWithPersonalClass,
@@ -13,6 +13,7 @@ import {
 	type SessionMetadata,
 } from "./auth.service.js";
 import {
+	cacheSessionByToken,
 	createBrowserSession,
 	revokeAllBrowserSessions,
 } from "./session.service.js";
@@ -21,7 +22,6 @@ import { getConfigValue } from "./system-config.service.js";
 const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
 const RATE_LIMIT_MAX = 5;
 const TOKEN_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
-const SALT_ROUNDS = 10;
 const DEFAULT_APP_TITLE = "TaskNeo";
 
 async function getAppTitle() {
@@ -257,7 +257,7 @@ export async function resetPassword(token: string, newPassword: string) {
 		throw new AppError(400, "INVALID_TOKEN", "User not found");
 	}
 
-	const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+	const passwordHash = await hashPassword(newPassword);
 
 	await prisma.userCredential.updateMany({
 		where: { userId: row.userId, provider: AuthProvider.LOCAL },
@@ -267,12 +267,13 @@ export async function resetPassword(token: string, newPassword: string) {
 	// Kill all existing browser sessions for this user, then create a fresh
 	// untrusted browser session to auto-login after successful reset.
 	await revokeAllBrowserSessions(row.userId);
-	const { token: sessionToken } = await createBrowserSession({
+	const { token: sessionToken, session } = await createBrowserSession({
 		userId: row.userId,
 		isTrusted: false,
 		userAgent: null,
 		ipAddress: null,
 	});
+	await cacheSessionByToken(sessionToken, session, user);
 
 	await consumeToken(row.id, row.email, EmailTokenPurpose.PASSWORD_RESET);
 

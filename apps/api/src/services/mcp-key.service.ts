@@ -4,6 +4,7 @@ import { prisma } from "@taskflow/db";
 import { AppError } from "../lib/errors.js";
 import { toMcpKey, toUserProfile } from "../lib/http.js";
 import {
+	cacheSessionByToken,
 	createMcpSession,
 	revokeMcpSessionsByKeyId,
 } from "./session.service.js";
@@ -127,7 +128,7 @@ export async function exchangeMcpKey(
 		data: { lastUsedAt: new Date() },
 	});
 
-	const { token } = await createMcpSession({
+	const { token, session } = await createMcpSession({
 		userId: key.user.id,
 		mcpKeyId: key.id,
 		// Inherit the underlying key's expiry — null means "never expires".
@@ -135,6 +136,7 @@ export async function exchangeMcpKey(
 		userAgent: meta.userAgent,
 		ipAddress: meta.ipAddress,
 	});
+	await cacheSessionByToken(token, session, key.user);
 
 	return {
 		token,

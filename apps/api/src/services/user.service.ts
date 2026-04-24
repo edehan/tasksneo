@@ -1,19 +1,20 @@
 import { AuthProvider, NotifChannel, prisma } from "@taskflow/db";
-import bcrypt from "bcryptjs";
 
 import { cacheDel, cacheDelPattern, cacheKeys } from "../lib/cache.js";
 import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
+import { hashPassword, verifyPassword } from "../lib/password.js";
 import { removeObject } from "../lib/storage.js";
-import { revokeAllBrowserSessions } from "./session.service.js";
+import {
+	invalidateSessionCacheForUser,
+	revokeAllBrowserSessions,
+} from "./session.service.js";
 import {
 	hardDeleteTask,
 	removeSubmissionAttachments,
 	softDeleteTask,
 	tryHardDeleteOrphanTask,
 } from "./task-cleanup.service.js";
-
-const SALT_ROUNDS = 10;
 
 export async function getMyProfile(userId: string) {
 	const [user, avatar] = await Promise.all([
@@ -118,7 +119,7 @@ export async function updateMyPassword(
 		);
 	}
 
-	const valid = await bcrypt.compare(currentPassword, credential.passwordHash);
+	const valid = await verifyPassword(currentPassword, credential.passwordHash);
 
 	if (!valid) {
 		throw new AppError(
@@ -128,7 +129,7 @@ export async function updateMyPassword(
 		);
 	}
 
-	const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+	const passwordHash = await hashPassword(newPassword);
 
 	await prisma.userCredential.update({
 		where: {
@@ -305,6 +306,7 @@ export async function deleteMyAccount(userId: string) {
 	await deleteUserSubmissions(userId);
 	await deletePersonalClass(userId);
 	await removeUserAvatarAttachments(userId);
+	await invalidateSessionCacheForUser(userId);
 	await prisma.user.delete({ where: { id: userId } });
 	await cacheDel(cacheKeys.notifPrefs(userId));
 }
@@ -313,6 +315,7 @@ export async function adminDeleteUser(userId: string) {
 	await deleteUserSubmissions(userId);
 	await deletePersonalClass(userId);
 	await removeUserAvatarAttachments(userId);
+	await invalidateSessionCacheForUser(userId);
 	await prisma.user.delete({ where: { id: userId } });
 	await cacheDel(cacheKeys.notifPrefs(userId));
 }
