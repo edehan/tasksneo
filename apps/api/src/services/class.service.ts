@@ -20,6 +20,7 @@ import { hardDeleteTask, softDeleteTask } from "./task-cleanup.service.js";
 const DEFAULT_CLASS_COLOR = "#6366f1";
 const INVITE_CODE_LENGTH = 10;
 const INVITE_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const USER_CLASSES_TTL_SECONDS = 60;
 
 export interface CreateClassInput {
 	name: string;
@@ -88,27 +89,46 @@ async function getClassById(classId: string) {
 	});
 }
 
+async function invalidateUserClassLists(userIds: string[]) {
+	const uniqueIds = [...new Set(userIds)];
+	await cacheDel(...uniqueIds.map((userId) => cacheKeys.userClasses(userId)));
+}
+
+async function invalidateClassMemberClassLists(classId: string) {
+	const members = await prisma.classMember.findMany({
+		where: { classId },
+		select: { userId: true },
+	});
+	await invalidateUserClassLists(members.map((member) => member.userId));
+}
+
 export async function listMyClasses(userId: string) {
-	const memberships = await prisma.classMember.findMany({
-		where: { userId },
-		include: {
-			class: {
+	return cacheGetOrSet(
+		cacheKeys.userClasses(userId),
+		USER_CLASSES_TTL_SECONDS,
+		async () => {
+			const memberships = await prisma.classMember.findMany({
+				where: { userId },
 				include: {
-					_count: {
-						select: {
-							members: true,
+					class: {
+						include: {
+							_count: {
+								select: {
+									members: true,
+								},
+							},
 						},
 					},
 				},
-			},
-		},
-		orderBy: {
-			joinedAt: "asc",
-		},
-	});
+				orderBy: {
+					joinedAt: "asc",
+				},
+			});
 
-	return memberships.map((membership) =>
-		toClassSummary(membership.class, membership.role),
+			return memberships.map((membership) =>
+				toClassSummary(membership.class, membership.role),
+			);
+		},
 	);
 }
 
@@ -160,6 +180,8 @@ export async function createClass(userId: string, input: CreateClassInput) {
 	if (!classInfo) {
 		throw new AppError(500, "CLASS_CREATE_FAILED", "Failed to create class");
 	}
+
+	await invalidateUserClassLists([userId]);
 
 	return toClassSummary(classInfo, ClassRole.OWNER);
 }
@@ -231,6 +253,7 @@ export async function joinClass(userId: string, inviteCode: string) {
 	await cacheDel(
 		cacheKeys.membership(targetClass.id, userId),
 		cacheKeys.classDetail(targetClass.id),
+		cacheKeys.userClasses(userId),
 	);
 
 	const joinedClass = await getClassById(targetClass.id);
@@ -391,6 +414,7 @@ export async function updateClass(
 		},
 	});
 	await cacheDel(cacheKeys.classDetail(classId));
+	await invalidateClassMemberClassLists(classId);
 
 	return toClassSummary(updatedClass, membership.role);
 }
@@ -414,6 +438,7 @@ export async function refreshInviteCode(classId: string, userId: string) {
 		data: { inviteCode },
 	});
 	await cacheDel(cacheKeys.classDetail(classId));
+	await invalidateClassMemberClassLists(classId);
 
 	return {
 		inviteCode: updatedClass.inviteCode,
@@ -478,6 +503,7 @@ export async function transferOwnership(
 	// Owner change affects ownerId in every cached membership for this class.
 	await cacheDelPattern(cacheKeys.membershipClassPattern(classId));
 	await cacheDel(cacheKeys.classDetail(classId));
+	await invalidateClassMemberClassLists(classId);
 
 	const updatedClass = await getClassById(classId);
 
@@ -567,6 +593,7 @@ export async function updateMemberRole(
 		},
 	});
 	await cacheDel(cacheKeys.membership(classId, targetUserId));
+	await invalidateUserClassLists([targetUserId]);
 
 	return toClassMember(updatedMembership);
 }
@@ -628,6 +655,7 @@ export async function removeMember(
 	await cacheDel(
 		cacheKeys.membership(classId, targetUserId),
 		cacheKeys.classDetail(classId),
+		cacheKeys.userClasses(targetUserId),
 	);
 }
 
@@ -656,6 +684,10 @@ export async function deleteClass(classId: string, userId: string) {
 			},
 		},
 	});
+	const members = await prisma.classMember.findMany({
+		where: { classId },
+		select: { userId: true },
+	});
 
 	for (const task of tasks) {
 		if (task._count.submissions > 0) {
@@ -678,5 +710,8 @@ export async function deleteClass(classId: string, userId: string) {
 
 	await prisma.class.delete({ where: { id: classId } });
 	await cacheDelPattern(cacheKeys.membershipClassPattern(classId));
-	await cacheDel(cacheKeys.classDetail(classId));
+	await cacheDel(
+		cacheKeys.classDetail(classId),
+		...members.map((member) => cacheKeys.userClasses(member.userId)),
+	);
 }

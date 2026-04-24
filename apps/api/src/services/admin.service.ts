@@ -1,5 +1,6 @@
 import { AuthProvider, NotifChannel, prisma } from "@taskflow/db";
 
+import { cacheDel, cacheKeys } from "../lib/cache.js";
 import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
 import { sendEmail } from "../lib/mailer.js";
@@ -56,6 +57,7 @@ export async function updateAdminUser(
 			data: { isActive: input.isActive },
 		});
 		await invalidateSessionCacheForUser(userId);
+		await cacheDel(cacheKeys.userProfile(userId));
 	}
 
 	if (input.password) {
@@ -90,7 +92,7 @@ export async function updateAdminUser(
 		throw new AppError(404, "USER_NOT_FOUND", "User not found");
 	}
 
-	return toUserProfile(updated);
+	return toUserProfile(updated, null);
 }
 
 export async function deleteAdminUser(userId: string) {

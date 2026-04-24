@@ -253,21 +253,28 @@ export async function touchSession(
 		? new Date(now + TRUSTED_TTL_MS)
 		: undefined;
 
-	const updated = await prisma.session.update({
-		where: { id: session.id },
-		data: {
-			lastSeenAt: new Date(now),
-			...(nextExpiresAt ? { expiresAt: nextExpiresAt } : {}),
-		},
-	});
-
 	const nextSession = {
 		...session,
-		lastSeenAt: updated.lastSeenAt.toISOString(),
-		expiresAt: updated.expiresAt?.toISOString() ?? session.expiresAt,
+		lastSeenAt: new Date(now).toISOString(),
+		expiresAt: nextExpiresAt?.toISOString() ?? session.expiresAt,
 	};
 
-	await writeSessionCache(nextSession);
+	void prisma.session
+		.update({
+			where: { id: session.id },
+			data: {
+				lastSeenAt: new Date(now),
+				...(nextExpiresAt ? { expiresAt: nextExpiresAt } : {}),
+			},
+		})
+		.then((updated) =>
+			writeSessionCache({
+				...nextSession,
+				lastSeenAt: updated.lastSeenAt.toISOString(),
+				expiresAt: updated.expiresAt?.toISOString() ?? nextSession.expiresAt,
+			}),
+		)
+		.catch(() => undefined);
 
 	return nextSession;
 }

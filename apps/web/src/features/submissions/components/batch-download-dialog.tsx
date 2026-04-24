@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { ClassSummary, SubmissionListRow, TaskDetail } from "@/lib/api";
+import { getSubmission } from "@/lib/api";
 import {
   buildNameFromTags,
   buildZip,
@@ -241,15 +242,10 @@ export function BatchDownloadDialog({
   const t = useTranslations("batchDownloadDialog");
   const { user } = useAuth();
 
-  // Filter to eligible rows: submitted with attachments or content
+  // The submissions list intentionally does not preload attachment metadata.
+  // Attachment rows are resolved from submission detail only when downloading.
   const eligibleRows = useMemo(
-    () =>
-      rows.filter(
-        (r) =>
-          r.submitted &&
-          (r.attachments.length > 0 ||
-            (r.submission?.content && r.submission.content.trim().length > 0)),
-      ),
+    () => rows.filter((r) => r.submitted && r.submission),
     [rows],
   );
 
@@ -343,14 +339,34 @@ export function BatchDownloadDialog({
 
     try {
       const selectedRows = eligibleRows.filter((r) => selected.has(r.userId));
+      const details = await Promise.all(
+        selectedRows.map((row) =>
+          row.submission
+            ? getSubmission(task.id, row.submission.id).catch(() => null)
+            : Promise.resolve(null),
+        ),
+      );
+      const downloadableRows = selectedRows
+        .map((row, index) => ({ row, detail: details[index] }))
+        .filter(
+          (
+            item,
+          ): item is {
+            row: SubmissionListRow;
+            detail: NonNullable<(typeof details)[number]>;
+          } =>
+            !!item.detail &&
+            (item.detail.attachments.length > 0 ||
+              (item.detail.content?.trim().length ?? 0) > 0),
+        );
 
       // Build folder names and deduplicate
-      const rawFolderNames = selectedRows.map((r) =>
+      const rawFolderNames = downloadableRows.map(({ row }) =>
         buildNameFromTags(
           folderOrder,
           {
-            nickname: r.nickname ?? t("sampleUser"),
-            studentId: r.studentId ?? "",
+            nickname: row.nickname ?? t("sampleUser"),
+            studentId: row.studentId ?? "",
           },
           "_",
         ),
@@ -359,9 +375,9 @@ export function BatchDownloadDialog({
 
       // Build download tasks for all attachments
       const downloadTasks: DownloadTask[] = [];
-      for (let i = 0; i < selectedRows.length; i++) {
-        const row = selectedRows[i];
-        for (const att of row.attachments) {
+      for (let i = 0; i < downloadableRows.length; i++) {
+        const { detail } = downloadableRows[i];
+        for (const att of detail.attachments) {
           downloadTasks.push({
             fileKey: att.fileKey,
             fileName: att.originalName,
@@ -383,7 +399,7 @@ export function BatchDownloadDialog({
 
       // Assemble zip entries
       setPhase("zipping");
-      const entries: ZipEntry[] = selectedRows.map((row, i) => {
+      const entries: ZipEntry[] = downloadableRows.map(({ detail }, i) => {
         const folderName = folderNames[i];
         const folderResults = results.filter(
           (r) => r.task.folderPath === folderName && r.blob,
@@ -395,7 +411,7 @@ export function BatchDownloadDialog({
             // biome-ignore lint/style/noNonNullAssertion: blob guaranteed by successful fetch
             blob: r.blob!,
           })),
-          contentMd: row.submission?.content ?? null,
+          contentMd: detail.content ?? null,
         };
       });
 
@@ -436,6 +452,7 @@ export function BatchDownloadDialog({
     eligibleRows,
     folderOrder,
     zipOrder,
+    task.id,
     task.title,
     cls.name,
     dateVars,

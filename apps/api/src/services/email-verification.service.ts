@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 
 import { AuthProvider, EmailTokenPurpose, prisma } from "@taskflow/db";
 
+import { cacheDel, cacheKeys } from "../lib/cache.js";
 import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
 import { sendEmail } from "../lib/mailer.js";
@@ -347,8 +348,9 @@ export async function confirmEmailChange(
 	});
 
 	await consumeToken(row.id, row.email, EmailTokenPurpose.EMAIL_CHANGE);
+	await cacheDel(cacheKeys.userProfile(row.userId));
 
-	return toUserProfile(user);
+	return toUserProfile(user, null);
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
