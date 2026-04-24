@@ -4,10 +4,15 @@
 
 - Service machine: `service-host`
   - Role: run `web`, `api`, `postgres`, `redis`, `minio`
-  - Spec: `2c8g`
+  - Spec: `2c4g`
+  - Reason: earlier service runs on the larger host only peaked a little above
+    `2GB` memory, so 4GB leaves enough headroom for this workload.
 - Load machine: `load-host`
   - Role: run `k6`, store plans, fixtures, reports
-  - Spec: `2c4g`
+  - Spec: `8c32g`
+  - Reason: earlier `2c4g` runs were limited by the load generator; k6 memory
+    usage could climb to about `18GB`, so the runner needs enough headroom to
+    keep service-side results valid.
 
 ## Endpoints
 
@@ -100,7 +105,7 @@ Purpose:
 
 Purpose:
 
-- find the practical boundary of `2c8g` single-node deployment
+- find the practical boundary of `2c4g` single-node deployment
 
 ## Result Collection
 
@@ -122,13 +127,13 @@ On `load-host`:
 cd <repo-root>
 export WEB_BASE_URL=http://<web-host>:3000
 export API_BASE_URL=http://<api-host>:3001
-export FIXTURE_FILE=perf/results/load-fixtures.json
+export FIXTURE_FILE="$PWD/perf/results/load-fixtures.json"
 ```
 
 ### Example single scenario
 
 ```bash
-CASE=classes k6 run \
+k6 run -e CASE=classes -e FIXTURE_FILE="$FIXTURE_FILE" \
   --summary-export perf/results/thesis-run-001/api-classes-summary.json \
   perf/k6/01-api-baseline.js
 ```
@@ -149,7 +154,8 @@ node perf/scripts/report.mjs perf/results/thesis-run-001
 
 ## Notes For The Thesis
 
-- All conclusions should be described as results for a `2c8g` single-node deployment.
-- The `2c4g` machine is only the traffic generator and report node.
+- All conclusions should be described as results for a `2c4g` single-node deployment.
+- The `8c32g` machine is only the traffic generator and report node; do not
+  describe it as part of the service capacity.
 - Do not use file-upload throughput as the main system-performance conclusion.
 - Prefer `p95`, error rate, and resource curves over raw peak RPS alone.

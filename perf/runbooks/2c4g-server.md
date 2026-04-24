@@ -1,6 +1,11 @@
-# 2c8g Service Machine Runbook
+# 2c4g Service Machine Runbook
 
 This machine runs the TaskFlow production-shaped stack and service-side metric collection.
+
+Use `2c4g` as the service-side baseline for the current test plan. Earlier
+service runs on the larger host only peaked a little above `2GB` memory, so 4GB
+keeps reasonable headroom while making the deployment result more representative
+of a smaller VPS.
 
 ## 1. Configure
 
@@ -40,7 +45,7 @@ perf/results/full-seed/submissions.json
 perf/results/load-fixtures.json
 ```
 
-Copy `perf/results/load-fixtures.json`, `perf/k6/`, and `perf/scripts/report.mjs` to the 2c4g load-generator machine.
+Copy `perf/results/load-fixtures.json`, `perf/k6/`, and `perf/scripts/report.mjs` to the 8c32g load-generator machine.
 
 ## 4. Collect Metrics
 
@@ -55,6 +60,6 @@ Stop both collectors with `Ctrl+C` after the k6 run.
 
 ## 5. Notes
 
-- Keep Docker service CPU/memory unrestricted to represent the real shared 2c8g VPS.
+- Keep Docker service CPU/memory unrestricted to represent the real shared 2c4g VPS.
 - Watch `docker stats`; if Postgres or Web/API saturates CPU, record that as the bottleneck instead of hiding it.
 - Do not use large file-upload throughput as a thesis headline result.

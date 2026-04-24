@@ -1,43 +1,63 @@
 import http from "k6/http";
 import { sleep } from "k6";
-import { expectOk, parseStageList, relaxedThresholds, webBaseUrl } from "./lib/config.js";
-import { login, ownerUserFromClass } from "./lib/auth.js";
-import { pickAccessibleClass, pickOwnerClass, pickTaskForClass, randomUser } from "./lib/data.js";
+import { cacheMode, expectOk, parseStageList, relaxedThresholds, webBaseUrl } from "./lib/config.js";
+import { ownerUserFromClass, sessionForUser } from "./lib/auth.js";
+import { pickScenarioClass, pickScenarioOwnerClass, pickScenarioTaskForClass, scenarioUser } from "./lib/data.js";
 
 export const options = {
 	stages: parseStageList(__ENV.STAGES, "30s:10,1m:10,30s:0"),
 	thresholds: relaxedThresholds,
 };
 
-function getPage(path, cookieHeader, endpoint) {
+const warmedKeys = new Set();
+
+function getPage(path, cookieHeader, endpoint, phase = "measure") {
 	const response = http.get(`${webBaseUrl}${path}`, {
 		headers: { Cookie: cookieHeader },
-		tags: { endpoint },
+		tags: {
+			endpoint: phase === "warmup" ? `${endpoint}_warmup` : endpoint,
+			phase,
+		},
 	});
 	expectOk(response, endpoint);
 	return response;
 }
 
+function warmPageOnce(key, path, cookieHeader, endpoint) {
+	if (cacheMode !== "warm" || __ITER !== 0 || warmedKeys.has(key)) return;
+	warmedKeys.add(key);
+	getPage(path, cookieHeader, endpoint, "warmup");
+}
+
 export default function () {
 	const mode = __ENV.PAGE || "mixed";
-	const user = randomUser();
-	const session = login(user, { setup: "login" });
-	const classInfo = pickAccessibleClass(user);
-	const task = pickTaskForClass(classInfo.id);
+	const user = scenarioUser();
+	const session = sessionForUser(user, { setup: "login" });
+	const classInfo = pickScenarioClass(user);
+	const task = pickScenarioTaskForClass(classInfo.id);
 
 	if (mode === "dashboard" || mode === "mixed") {
+		warmPageOnce("ssr_dashboard", "/", session.cookieHeader, "ssr_dashboard");
 		getPage("/", session.cookieHeader, "ssr_dashboard");
 	}
 	if (mode === "class" || mode === "mixed") {
+		warmPageOnce("ssr_class", `/classes/${classInfo.id}`, session.cookieHeader, "ssr_class");
 		getPage(`/classes/${classInfo.id}`, session.cookieHeader, "ssr_class");
 	}
 	if (mode === "task" || mode === "mixed") {
+		warmPageOnce("ssr_task", `/tasks/${task.id}`, session.cookieHeader, "ssr_task");
 		getPage(`/tasks/${task.id}`, session.cookieHeader, "ssr_task");
 	}
 	if (mode === "submissions" || mode === "mixed") {
-		const ownerClass = pickOwnerClass();
-		const ownerSession = login(ownerUserFromClass(ownerClass), { setup: "owner_login" });
-		const ownerTask = pickTaskForClass(ownerClass.id);
+		const ownerClass = pickScenarioOwnerClass();
+		const ownerSession = sessionForUser(ownerUserFromClass(ownerClass), { setup: "owner_login" });
+		const ownerTask = pickScenarioTaskForClass(ownerClass.id);
+		warmPageOnce(
+			"ssr_submissions",
+			`/tasks/${ownerTask.id}/submissions`,
+			ownerSession.cookieHeader,
+			"ssr_submissions",
+		);
 		getPage(`/tasks/${ownerTask.id}/submissions`, ownerSession.cookieHeader, "ssr_submissions");
 	}
 

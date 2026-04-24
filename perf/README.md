@@ -4,14 +4,19 @@ This directory is reserved for local performance-test scenarios and results.
 
 ## Tooling
 
-- `k6`: main HTTP/API/SSR load-test runner on the 2c4g load-generator machine.
-- `docker stats`: resource sampling on the 2c8g service machine.
+- `k6`: main HTTP/API/SSR load-test runner on the 8c32g load-generator machine.
+- `docker stats`: resource sampling on the 2c4g service machine.
 - `GET /admin/metrics`: API route-level latency/error snapshot.
 - `node perf/scripts/report.mjs`: converts k6 summaries and resource samples into CSV, Markdown, and SVG chart files.
 
+Use a separate `8c32g` load generator for the full suite. Previous `2c4g`
+runner tests were constrained by the runner itself: k6 memory usage could rise
+to about `18GB`, which makes load-generator saturation look like service-side
+latency or throughput limits.
+
 ## Environment
 
-Use `infra/docker-compose.perf.yml` on the 2c8g test server. The compose file
+Use `infra/docker-compose.perf.yml` on the 2c4g test server. The compose file
 starts the same production-shape services used by the single-host deployment:
 
 - Next.js SSR web
@@ -21,7 +26,9 @@ starts the same production-shape services used by the single-host deployment:
 - MinIO for S3-compatible file flows
 
 It intentionally does not set container CPU or memory hard limits. On a clean
-2c8g host, that better represents a real VPS where services share the machine.
+2c4g host, that better represents a smaller real VPS where services share the
+machine. Previous service runs on the larger host peaked only a little above
+`2GB` memory, so 4GB leaves enough headroom for this workload.
 Redis is configured with a cache-size limit so it cannot grow without bound.
 
 ## Start
@@ -167,11 +174,11 @@ The generated fixture is:
 perf/results/load-fixtures.json
 ```
 
-Copy this fixture and the `perf/k6` directory to the 2c4g load-generator machine.
+Copy this fixture and the `perf/k6` directory to the 8c32g load-generator machine.
 
 ## Run k6 From The Load Generator
 
-On the 2c4g load-generator machine:
+On the 8c32g load-generator machine:
 
 ```bash
 export WEB_BASE_URL=http://<web-host>:3000
@@ -181,10 +188,25 @@ export FIXTURE_FILE=perf/results/load-fixtures.json
 bash perf/scripts/run-k6-suite.sh thesis-run-001
 ```
 
+The suite now runs endpoint scenarios in two variants:
+
+- `cold-login`: `AUTH_MODE=per_iter CACHE_MODE=cold`; each iteration logs in and uses random fixture data. This keeps login cost visible and approximates cold or low-hit cache behavior.
+- `warm-session`: `AUTH_MODE=session CACHE_MODE=warm`; each VU reuses its session cookie, sticks to stable fixture data, and sends one first-iteration warmup request per cached endpoint before measured traffic continues. This better matches normal users who keep cookies between page/API calls.
+
+For a narrower run, set `RUN_VARIANTS=cold` or `RUN_VARIANTS=warm`. To get the cleanest cold-cache comparison, restart the service stack or flush Redis/Valkey before the cold run; otherwise prior suite cases may leave server-side cache entries behind.
+
 Run a single baseline case:
 
 ```bash
-CASE=classes k6 run --summary-export perf/results/thesis-run-001/api-classes-summary.json perf/k6/01-api-baseline.js
+k6 run -e CASE=classes -e FIXTURE_FILE="$PWD/perf/results/load-fixtures.json" --summary-export perf/results/thesis-run-001/api-classes-summary.json perf/k6/01-api-baseline.js
+```
+
+Single-case auth/cache examples:
+
+```bash
+k6 run -e CASE=classes -e AUTH_MODE=per_iter -e CACHE_MODE=cold -e FIXTURE_FILE="$PWD/perf/results/load-fixtures.json" perf/k6/01-api-baseline.js
+k6 run -e CASE=classes -e AUTH_MODE=session -e CACHE_MODE=warm -e FIXTURE_FILE="$PWD/perf/results/load-fixtures.json" perf/k6/01-api-baseline.js
+k6 run -e AUTH_MODE=session -e CACHE_MODE=warm -e FIXTURE_FILE="$PWD/perf/results/load-fixtures.json" perf/k6/03-business-flow.js
 ```
 
 Common cases:
@@ -195,7 +217,7 @@ login users_me classes class_detail class_tasks task_detail my_tasks submit_cont
 
 ## Collect Service Metrics
 
-On the 2c8g service machine, start these in separate terminals before running k6:
+On the 2c4g service machine, start these in separate terminals before running k6:
 
 ```bash
 bash perf/scripts/collect-docker-stats.sh perf/results/thesis-run-001 5
@@ -211,8 +233,8 @@ node perf/scripts/report.mjs perf/results/thesis-run-001
 
 See:
 
-- `perf/runbooks/2c8g-server.md`
-- `perf/runbooks/2c4g-runner.md`
+- `perf/runbooks/2c4g-server.md`
+- `perf/runbooks/8c32g-runner.md`
 
 ## Stop
 

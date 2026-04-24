@@ -1,6 +1,8 @@
 import http from "k6/http";
 import { check } from "k6";
-import { apiBaseUrl, origin } from "./config.js";
+import { apiBaseUrl, authMode, origin } from "./config.js";
+
+const sessionsByEmail = new Map();
 
 export function login(user, tags = {}) {
 	const response = http.post(
@@ -37,6 +39,19 @@ export function login(user, tags = {}) {
 			Origin: origin,
 		},
 	};
+}
+
+export function sessionForUser(user, tags = {}) {
+	if (authMode !== "session") {
+		return login(user, tags);
+	}
+
+	const cached = sessionsByEmail.get(user.email);
+	if (cached) return cached;
+
+	const session = login(user, tags);
+	sessionsByEmail.set(user.email, session);
+	return session;
 }
 
 export function ownerUserFromClass(classInfo) {
