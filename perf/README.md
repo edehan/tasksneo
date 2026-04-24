@@ -2,6 +2,13 @@
 
 This directory is reserved for local performance-test scenarios and results.
 
+## Tooling
+
+- `k6`: main HTTP/API/SSR load-test runner on the 2c4g load-generator machine.
+- `docker stats`: resource sampling on the 2c8g service machine.
+- `GET /admin/metrics`: API route-level latency/error snapshot.
+- `node perf/scripts/report.mjs`: converts k6 summaries and resource samples into CSV, Markdown, and SVG chart files.
+
 ## Environment
 
 Use `infra/docker-compose.perf.yml` on the 2c8g test server. The compose file
@@ -139,6 +146,73 @@ The two primary output files are written to `perf/results/full-seed/`:
 `users.json` contains login information for all 5000 users.
 `public-classes.json` contains all 200 public classes and their owner login
 information.
+
+## Seed Submissions And Build k6 Fixtures
+
+After the full seed, create submission data for owner submission-list tests:
+
+```bash
+docker compose --env-file infra/.env.perf -f infra/docker-compose.perf.yml --profile seed run --rm --build seed-task-submissions
+```
+
+Build the fixture file consumed by k6:
+
+```bash
+docker compose --env-file infra/.env.perf -f infra/docker-compose.perf.yml --profile seed run --rm --build build-load-fixtures
+```
+
+The generated fixture is:
+
+```text
+perf/results/load-fixtures.json
+```
+
+Copy this fixture and the `perf/k6` directory to the 2c4g load-generator machine.
+
+## Run k6 From The Load Generator
+
+On the 2c4g load-generator machine:
+
+```bash
+export WEB_BASE_URL=http://<web-host>:3000
+export API_BASE_URL=http://<api-host>:3001
+export FIXTURE_FILE=perf/results/load-fixtures.json
+
+bash perf/scripts/run-k6-suite.sh thesis-run-001
+```
+
+Run a single baseline case:
+
+```bash
+CASE=classes k6 run --summary-export perf/results/thesis-run-001/api-classes-summary.json perf/k6/01-api-baseline.js
+```
+
+Common cases:
+
+```text
+login users_me classes class_detail class_tasks task_detail my_tasks submit_content my_submission owner_submissions
+```
+
+## Collect Service Metrics
+
+On the 2c8g service machine, start these in separate terminals before running k6:
+
+```bash
+bash perf/scripts/collect-docker-stats.sh perf/results/thesis-run-001 5
+bash perf/scripts/collect-api-metrics.sh perf/results/thesis-run-001 5
+```
+
+Stop them with `Ctrl+C` after the k6 run. Copy their output into the same run
+directory used by the load-generator, then generate the report:
+
+```bash
+node perf/scripts/report.mjs perf/results/thesis-run-001
+```
+
+See:
+
+- `perf/runbooks/2c8g-server.md`
+- `perf/runbooks/2c4g-runner.md`
 
 ## Stop
 

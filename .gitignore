@@ -4,6 +4,7 @@ node_modules/
 .env.local
 .env.prod
 infra/.env.perf
+perf/results/
 dist/
 .next/
 .open-next/

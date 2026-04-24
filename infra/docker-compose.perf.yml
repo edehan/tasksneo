@@ -297,6 +297,49 @@ services:
       - node
       - /app/perf/scripts/reset-and-seed-full.mjs
 
+  seed-task-submissions:
+    image: taskflow-api:perf
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    profiles: ["seed"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-taskflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-taskflow}
+      SEED_MIN_SUBMISSIONS_PER_TASK: ${SEED_MIN_SUBMISSIONS_PER_TASK:-5}
+      SEED_MAX_SUBMISSIONS_PER_TASK: ${SEED_MAX_SUBMISSIONS_PER_TASK:-20}
+      SEED_SUBMISSION_OUTPUT_FILE: ${SEED_SUBMISSION_OUTPUT_FILE:-/app/perf/results/full-seed/submissions.json}
+    volumes:
+      - ../perf:/app/perf:ro
+      - ../perf/results:/app/perf/results
+    command:
+      - node
+      - /app/perf/scripts/seed-task-submissions.mjs
+
+  build-load-fixtures:
+    image: taskflow-api:perf
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    profiles: ["seed"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-taskflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-taskflow}
+      FIXTURE_USERS_FILE: ${FIXTURE_USERS_FILE:-/app/perf/results/full-seed/users.json}
+      FIXTURE_PUBLIC_CLASSES_FILE: ${FIXTURE_PUBLIC_CLASSES_FILE:-/app/perf/results/full-seed/public-classes.json}
+      FIXTURE_OUTPUT_FILE: ${FIXTURE_OUTPUT_FILE:-/app/perf/results/load-fixtures.json}
+      FIXTURE_SUBMISSION_LIMIT: ${FIXTURE_SUBMISSION_LIMIT:-50000}
+    volumes:
+      - ../perf:/app/perf:ro
+      - ../perf/results:/app/perf/results
+    command:
+      - node
+      - /app/perf/scripts/build-load-fixtures.mjs
+
 volumes:
   taskflow_perf_pg_data:
   taskflow_perf_redis_data:
