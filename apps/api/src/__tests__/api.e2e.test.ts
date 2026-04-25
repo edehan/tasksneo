@@ -1087,6 +1087,24 @@ describe("Session lifecycle", () => {
 		expect(after.status).toBe(401);
 	});
 
+	it("returns the same password reset request response for existing and missing emails", async () => {
+		const email = uniqueEmail("forgot");
+		await createTestUser({ email, password: "Passw0rd!" });
+
+		const existing = await requestJson(app, "/auth/forgot-password", {
+			method: "POST",
+			body: JSON.stringify({ email }),
+		});
+		const missing = await requestJson(app, "/auth/forgot-password", {
+			method: "POST",
+			body: JSON.stringify({ email: uniqueEmail("forgot-missing") }),
+		});
+
+		expect(existing.response.status).toBe(200);
+		expect(missing.response.status).toBe(200);
+		expect(existing.body).toEqual(missing.body);
+	});
+
 	it("logs in users with bcryptjs-generated legacy password hashes", async () => {
 		const email = uniqueEmail("legacy-bcryptjs");
 		await createTestUser({ email, password: "Temporary1!" });

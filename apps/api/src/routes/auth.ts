@@ -1,4 +1,5 @@
 import { type Context, Hono } from "hono";
+import type { Logger } from "pino";
 import { z } from "zod";
 
 import { verifyCaptcha } from "../lib/captcha.js";
@@ -71,6 +72,14 @@ function readSessionMeta(
 	};
 }
 
+function dispatchPasswordResetEmail(email: string, logger: Logger | undefined) {
+	setImmediate(() => {
+		void sendPasswordResetEmail(email).catch((error: unknown) => {
+			logger?.warn({ err: error }, "password_reset_email_failed");
+		});
+	});
+}
+
 // Step 1: send verification email
 authRouter.post("/register", async (c) => {
 	const body = registerStep1Schema.parse(await c.req.json());
@@ -117,7 +126,7 @@ authRouter.post("/logout", authMiddleware, async (c) => {
 
 authRouter.post("/forgot-password", async (c) => {
 	const body = forgotPasswordSchema.parse(await c.req.json());
-	await sendPasswordResetEmail(body.email);
+	dispatchPasswordResetEmail(body.email, c.get("logger"));
 	// Always return success to prevent email enumeration
 	return c.json(
 		{ message: "If the email exists, a reset link has been sent" },
