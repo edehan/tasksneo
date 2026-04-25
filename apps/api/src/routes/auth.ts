@@ -5,7 +5,12 @@ import { z } from "zod";
 import { verifyCaptcha } from "../lib/captcha.js";
 import { requireAuthSession } from "../lib/context.js";
 import { clearSessionCookie, setSessionCookie } from "../lib/cookie.js";
+import { AppError } from "../lib/errors.js";
 import { getClientIp } from "../lib/http.js";
+import {
+	assertLoginAllowed,
+	recordFailedLoginAttempt,
+} from "../lib/login-rate-limit.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { login, type SessionMetadata } from "../services/auth.service.js";
 import {
@@ -108,11 +113,23 @@ authRouter.post("/register/complete", async (c) => {
 
 authRouter.post("/login", async (c) => {
 	const body = loginBodySchema.parse(await c.req.json());
-	const result = await login({
-		email: body.email,
-		password: body.password,
-		sessionMeta: readSessionMeta(c, body.trustDevice),
-	});
+	const sessionMeta = readSessionMeta(c, body.trustDevice);
+	await assertLoginAllowed(sessionMeta.ipAddress);
+
+	let result: Awaited<ReturnType<typeof login>>;
+	try {
+		result = await login({
+			email: body.email,
+			password: body.password,
+			sessionMeta,
+		});
+	} catch (error) {
+		if (error instanceof AppError && error.code === "INVALID_CREDENTIALS") {
+			await recordFailedLoginAttempt(sessionMeta.ipAddress);
+		}
+		throw error;
+	}
+
 	setSessionCookie(c, result.token, body.trustDevice === true);
 	return c.json({ user: result.user }, 200);
 });

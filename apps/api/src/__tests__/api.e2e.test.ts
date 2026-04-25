@@ -1130,6 +1130,43 @@ describe("Session lifecycle", () => {
 		expect(loginRes.response.status).toBe(200);
 	});
 
+	it("rate limits repeated invalid login attempts from the same IP", async () => {
+		const email = uniqueEmail("login-rate-limit");
+		await createTestUser({ email, password: "Passw0rd!" });
+		const ip = `203.0.113.${Math.floor(Math.random() * 200) + 1}`;
+
+		for (let i = 0; i < 49; i += 1) {
+			const invalid = await requestJson(app, "/auth/login", {
+				method: "POST",
+				headers: { "X-Forwarded-For": ip },
+				body: JSON.stringify({ email, password: "wrong-password" }),
+			});
+			expect(invalid.response.status).toBe(401);
+		}
+
+		const valid = await requestJson(app, "/auth/login", {
+			method: "POST",
+			headers: { "X-Forwarded-For": ip },
+			body: JSON.stringify({ email, password: "Passw0rd!" }),
+		});
+		expect(valid.response.status).toBe(200);
+
+		const limited = await requestJson(app, "/auth/login", {
+			method: "POST",
+			headers: { "X-Forwarded-For": ip },
+			body: JSON.stringify({ email, password: "wrong-password" }),
+		});
+		expect(limited.response.status).toBe(429);
+		expect((limited.body as { code: string }).code).toBe("LOGIN_RATE_LIMITED");
+
+		const stillLimited = await requestJson(app, "/auth/login", {
+			method: "POST",
+			headers: { "X-Forwarded-For": ip },
+			body: JSON.stringify({ email, password: "Passw0rd!" }),
+		});
+		expect(stillLimited.response.status).toBe(429);
+	});
+
 	it("changing password keeps current session alive and kicks other browser sessions", async () => {
 		const email = uniqueEmail("passchange");
 		const first = await createTestUser({
