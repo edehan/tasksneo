@@ -3,12 +3,16 @@
 	"version": "0.0.1",
 	"type": "module",
 	"main": "./src/index.ts",
+	"scripts": {
+		"erd": "prisma generate --generator client && node scripts/prisma-erd-generator.mjs --standalone"
+	},
 	"dependencies": {
 		"@prisma/client": "6"
 	},
 	"devDependencies": {
 		"@types/node": "^25.5.0",
 		"prisma": "6",
+		"prisma-erd-generator": "^2.4.2",
 		"typescript": "^5.9.3"
 	}
 }
