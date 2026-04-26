@@ -1,18 +1,18 @@
 import { AuthProvider, NotifChannel, prisma } from "@taskflow/db";
-import bcrypt from "bcryptjs";
 
+import { cacheDel, cacheKeys } from "../lib/cache.js";
 import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
 import { sendEmail } from "../lib/mailer.js";
+import { hashPassword } from "../lib/password.js";
 import { createSchool, deleteSchool, listSchools } from "./school.service.js";
+import { invalidateSessionCacheForUser } from "./session.service.js";
 import {
 	getConfigMap,
 	getConfigValue,
 	updateConfig,
 } from "./system-config.service.js";
 import { adminDeleteUser } from "./user.service.js";
-
-const SALT_ROUNDS = 10;
 
 export async function getAdminConfig() {
 	const map = await getConfigMap();
@@ -56,10 +56,12 @@ export async function updateAdminUser(
 			where: { id: userId },
 			data: { isActive: input.isActive },
 		});
+		await invalidateSessionCacheForUser(userId);
+		await cacheDel(cacheKeys.userProfile(userId));
 	}
 
 	if (input.password) {
-		const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
+		const passwordHash = await hashPassword(input.password);
 
 		await prisma.userCredential.upsert({
 			where: {
@@ -90,7 +92,7 @@ export async function updateAdminUser(
 		throw new AppError(404, "USER_NOT_FOUND", "User not found");
 	}
 
-	return toUserProfile(updated);
+	return toUserProfile(updated, null);
 }
 
 export async function deleteAdminUser(userId: string) {

@@ -257,84 +257,70 @@ export async function listClassTasks(classId: string, userId: string) {
 }
 
 export async function listMyTasks(userId: string) {
-	const [tasks, states, submissions] = await Promise.all([
-		prisma.task.findMany({
-			where: {
-				deletedAt: null,
-				isPublished: true,
-				class: {
-					members: {
-						some: { userId },
-					},
-				},
-			},
-			include: {
-				class: {
-					select: {
-						name: true,
-						color: true,
-					},
-				},
-			},
-			orderBy: {
-				createdAt: "desc",
-			},
-		}),
-		prisma.taskUserState.findMany({
-			where: {
-				userId,
-				task: {
-					deletedAt: null,
-					isPublished: true,
-					class: {
-						members: {
-							some: { userId },
-						},
-					},
-				},
-			},
-		}),
-		prisma.submission.findMany({
-			where: {
-				userId,
-				task: {
-					deletedAt: null,
-					isPublished: true,
-					class: {
-						members: {
-							some: { userId },
-						},
-					},
-				},
-			},
-			select: {
-				taskId: true,
-				firstSubmittedAt: true,
-			},
-		}),
-	]);
+	const memberships = await prisma.classMember.findMany({
+		where: { userId },
+		select: { classId: true },
+		orderBy: { joinedAt: "asc" },
+	});
+	const classIds = memberships.map((membership) => membership.classId);
 
-	// Collect unique class IDs from tasks
-	const classIds = [
-		...new Set(
-			tasks.map((t) => t.classId).filter((id): id is string => id !== null),
-		),
-	];
+	if (classIds.length === 0) {
+		return [];
+	}
 
-	// Batch-fetch member counts per class and submission counts per task
-	const taskIds = tasks.map((t) => t.id);
-	const [memberCounts, submissionCounts] = await Promise.all([
-		prisma.classMember.groupBy({
-			by: ["classId"],
-			_count: true,
-			where: { classId: { in: classIds } },
-		}),
-		prisma.submission.groupBy({
-			by: ["taskId"],
-			_count: true,
-			where: { taskId: { in: taskIds } },
-		}),
-	]);
+	const tasks = await prisma.task.findMany({
+		where: {
+			deletedAt: null,
+			isPublished: true,
+			classId: { in: classIds },
+		},
+		include: {
+			class: {
+				select: {
+					name: true,
+					color: true,
+				},
+			},
+		},
+		orderBy: {
+			createdAt: "desc",
+		},
+	});
+	const taskIds = tasks.map((task) => task.id);
+
+	if (taskIds.length === 0) {
+		return [];
+	}
+
+	const [states, submissions, memberCounts, submissionCounts] =
+		await Promise.all([
+			prisma.taskUserState.findMany({
+				where: {
+					userId,
+					taskId: { in: taskIds },
+				},
+			}),
+			prisma.submission.findMany({
+				where: {
+					userId,
+					taskId: { in: taskIds },
+				},
+				select: {
+					taskId: true,
+					firstSubmittedAt: true,
+				},
+			}),
+			prisma.classMember.groupBy({
+				by: ["classId"],
+				_count: true,
+				where: { classId: { in: classIds } },
+			}),
+			prisma.submission.groupBy({
+				by: ["taskId"],
+				_count: true,
+				where: { taskId: { in: taskIds } },
+			}),
+		]);
 
 	const stateMap = new Map(states.map((state) => [state.taskId, state]));
 	const submissionMap = new Map(
@@ -746,7 +732,6 @@ export async function listTaskSubmissions(taskId: string, userId: string) {
 
 	const submissions = await prisma.submission.findMany({
 		where: { taskId },
-		include: { attachments: true },
 	});
 
 	const submissionMap = new Map(
@@ -765,9 +750,7 @@ export async function listTaskSubmissions(taskId: string, userId: string) {
 			role: row.role,
 			submitted: Boolean(submission),
 			submission: submission ? toSubmission(submission) : null,
-			attachments: submission
-				? submission.attachments.map(toAttachmentMeta)
-				: [],
+			attachments: [],
 		};
 	});
 }

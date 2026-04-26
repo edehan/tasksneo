@@ -1,11 +1,19 @@
 import { AuthProvider, NotifChannel, prisma } from "@taskflow/db";
-import bcrypt from "bcryptjs";
 
-import { cacheDel, cacheDelPattern, cacheKeys } from "../lib/cache.js";
+import {
+	cacheDel,
+	cacheDelPattern,
+	cacheGetOrSet,
+	cacheKeys,
+} from "../lib/cache.js";
 import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
+import { hashPassword, verifyPassword } from "../lib/password.js";
 import { removeObject } from "../lib/storage.js";
-import { revokeAllBrowserSessions } from "./session.service.js";
+import {
+	invalidateSessionCacheForUser,
+	revokeAllBrowserSessions,
+} from "./session.service.js";
 import {
 	hardDeleteTask,
 	removeSubmissionAttachments,
@@ -13,31 +21,31 @@ import {
 	tryHardDeleteOrphanTask,
 } from "./task-cleanup.service.js";
 
-const SALT_ROUNDS = 10;
+const USER_PROFILE_TTL_SECONDS = 300;
 
 export async function getMyProfile(userId: string) {
-	const [user, avatar] = await Promise.all([
-		prisma.user.findUnique({
-			where: { id: userId },
-			include: {
-				school: {
-					select: {
-						name: true,
+	return cacheGetOrSet(
+		cacheKeys.userProfile(userId),
+		USER_PROFILE_TTL_SECONDS,
+		async () => {
+			const user = await prisma.user.findUnique({
+				where: { id: userId },
+				include: {
+					school: {
+						select: {
+							name: true,
+						},
 					},
 				},
-			},
-		}),
-		prisma.attachment.findFirst({
-			where: { avatarUserId: userId },
-			select: { fileKey: true },
-		}),
-	]);
+			});
 
-	if (!user) {
-		throw new AppError(404, "USER_NOT_FOUND", "User not found");
-	}
+			if (!user) {
+				throw new AppError(404, "USER_NOT_FOUND", "User not found");
+			}
 
-	return toUserProfile(user, avatar?.fileKey ?? null);
+			return toUserProfile(user, null);
+		},
+	);
 }
 
 export async function updateMyProfile(
@@ -91,8 +99,9 @@ export async function updateMyProfile(
 			},
 		},
 	});
+	await cacheDel(cacheKeys.userProfile(userId));
 
-	return toUserProfile(user);
+	return toUserProfile(user, null);
 }
 
 export async function updateMyPassword(
@@ -118,7 +127,7 @@ export async function updateMyPassword(
 		);
 	}
 
-	const valid = await bcrypt.compare(currentPassword, credential.passwordHash);
+	const valid = await verifyPassword(currentPassword, credential.passwordHash);
 
 	if (!valid) {
 		throw new AppError(
@@ -128,7 +137,7 @@ export async function updateMyPassword(
 		);
 	}
 
-	const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+	const passwordHash = await hashPassword(newPassword);
 
 	await prisma.userCredential.update({
 		where: {
@@ -279,7 +288,10 @@ async function deletePersonalClass(userId: string) {
 
 	await prisma.class.delete({ where: { id: personalClass.id } });
 	await cacheDelPattern(cacheKeys.membershipClassPattern(personalClass.id));
-	await cacheDel(cacheKeys.classDetail(personalClass.id));
+	await cacheDel(
+		cacheKeys.classDetail(personalClass.id),
+		cacheKeys.userClasses(userId),
+	);
 }
 
 export async function deleteMyAccount(userId: string) {
@@ -305,14 +317,24 @@ export async function deleteMyAccount(userId: string) {
 	await deleteUserSubmissions(userId);
 	await deletePersonalClass(userId);
 	await removeUserAvatarAttachments(userId);
+	await invalidateSessionCacheForUser(userId);
 	await prisma.user.delete({ where: { id: userId } });
-	await cacheDel(cacheKeys.notifPrefs(userId));
+	await cacheDel(
+		cacheKeys.notifPrefs(userId),
+		cacheKeys.userProfile(userId),
+		cacheKeys.userClasses(userId),
+	);
 }
 
 export async function adminDeleteUser(userId: string) {
 	await deleteUserSubmissions(userId);
 	await deletePersonalClass(userId);
 	await removeUserAvatarAttachments(userId);
+	await invalidateSessionCacheForUser(userId);
 	await prisma.user.delete({ where: { id: userId } });
-	await cacheDel(cacheKeys.notifPrefs(userId));
+	await cacheDel(
+		cacheKeys.notifPrefs(userId),
+		cacheKeys.userProfile(userId),
+		cacheKeys.userClasses(userId),
+	);
 }

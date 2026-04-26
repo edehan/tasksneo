@@ -1,4 +1,4 @@
-import { EmailTokenPurpose, prisma } from "@taskflow/db";
+import { AuthProvider, EmailTokenPurpose, prisma } from "@taskflow/db";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { createApp } from "../app.js";
@@ -1085,6 +1085,86 @@ describe("Session lifecycle", () => {
 			headers: authHeader(token),
 		});
 		expect(after.status).toBe(401);
+	});
+
+	it("returns the same password reset request response for existing and missing emails", async () => {
+		const email = uniqueEmail("forgot");
+		await createTestUser({ email, password: "Passw0rd!" });
+
+		const existing = await requestJson(app, "/auth/forgot-password", {
+			method: "POST",
+			body: JSON.stringify({ email }),
+		});
+		const missing = await requestJson(app, "/auth/forgot-password", {
+			method: "POST",
+			body: JSON.stringify({ email: uniqueEmail("forgot-missing") }),
+		});
+
+		expect(existing.response.status).toBe(200);
+		expect(missing.response.status).toBe(200);
+		expect(existing.body).toEqual(missing.body);
+	});
+
+	it("logs in users with bcryptjs-generated legacy password hashes", async () => {
+		const email = uniqueEmail("legacy-bcryptjs");
+		await createTestUser({ email, password: "Temporary1!" });
+		const legacyBcryptjsHash =
+			"$2b$10$poJpCmMkcrrNE8Ss9/6AJ.bjppNTIDpPE1QbCs6gKOnAvwkqmSVdK";
+
+		const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+		await prisma.userCredential.update({
+			where: {
+				userId_provider: {
+					userId: user.id,
+					provider: AuthProvider.LOCAL,
+				},
+			},
+			data: { passwordHash: legacyBcryptjsHash },
+		});
+
+		const loginRes = await requestJson(app, "/auth/login", {
+			method: "POST",
+			body: JSON.stringify({ email, password: "Passw0rd!" }),
+		});
+
+		expect(loginRes.response.status).toBe(200);
+	});
+
+	it("rate limits repeated invalid login attempts from the same IP", async () => {
+		const email = uniqueEmail("login-rate-limit");
+		await createTestUser({ email, password: "Passw0rd!" });
+		const ip = `203.0.113.${Math.floor(Math.random() * 200) + 1}`;
+
+		for (let i = 0; i < 49; i += 1) {
+			const invalid = await requestJson(app, "/auth/login", {
+				method: "POST",
+				headers: { "X-Forwarded-For": ip },
+				body: JSON.stringify({ email, password: "wrong-password" }),
+			});
+			expect(invalid.response.status).toBe(401);
+		}
+
+		const valid = await requestJson(app, "/auth/login", {
+			method: "POST",
+			headers: { "X-Forwarded-For": ip },
+			body: JSON.stringify({ email, password: "Passw0rd!" }),
+		});
+		expect(valid.response.status).toBe(200);
+
+		const limited = await requestJson(app, "/auth/login", {
+			method: "POST",
+			headers: { "X-Forwarded-For": ip },
+			body: JSON.stringify({ email, password: "wrong-password" }),
+		});
+		expect(limited.response.status).toBe(429);
+		expect((limited.body as { code: string }).code).toBe("LOGIN_RATE_LIMITED");
+
+		const stillLimited = await requestJson(app, "/auth/login", {
+			method: "POST",
+			headers: { "X-Forwarded-For": ip },
+			body: JSON.stringify({ email, password: "Passw0rd!" }),
+		});
+		expect(stillLimited.response.status).toBe(429);
 	});
 
 	it("changing password keeps current session alive and kicks other browser sessions", async () => {

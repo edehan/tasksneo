@@ -1,8 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { AuthProvider, ClassRole, prisma } from "@taskflow/db";
-import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
+
+import { hashPassword } from "../src/lib/password.js";
 import { updateConfig } from "../src/services/system-config.service.js";
 
 const repoRoot = path.resolve(process.cwd(), "../..");
@@ -340,7 +341,7 @@ async function seedAiConfig() {
 async function main() {
 	assertLocalDatabase();
 
-	const passwordHash = await bcrypt.hash("12345678", 10);
+	const passwordHash = await hashPassword("12345678");
 
 	// 三位用户：张老师（老师/管理员角色），李明 & 王芳（学生）
 	const userA = await upsertUser("zhang@example.com", "张晓梅", passwordHash);

@@ -1,0 +1,346 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    command:
+      - postgres
+      - -c
+      - shared_buffers=${POSTGRES_SHARED_BUFFERS:-1GB}
+      - -c
+      - effective_cache_size=${POSTGRES_EFFECTIVE_CACHE_SIZE:-5GB}
+      - -c
+      - maintenance_work_mem=${POSTGRES_MAINTENANCE_WORK_MEM:-512MB}
+      - -c
+      - work_mem=${POSTGRES_WORK_MEM:-16MB}
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-taskflow}
+      POSTGRES_USER: ${POSTGRES_USER:-taskflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - taskflow_perf_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-taskflow} -d ${POSTGRES_DB:-taskflow}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: valkey/valkey:8-alpine
+    restart: unless-stopped
+    command:
+      - valkey-server
+      - --appendonly
+      - "yes"
+      - --maxmemory
+      - ${REDIS_MAXMEMORY:-768mb}
+      - --maxmemory-policy
+      - allkeys-lru
+    volumes:
+      - taskflow_perf_redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    image: minio/minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "${MINIO_BIND_ADDR:-0.0.0.0}:${S3_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_BIND_ADDR:-127.0.0.1}:${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - taskflow_perf_minio_data:/data
+    networks:
+      default:
+        aliases:
+          - ${S3_ENDPOINT}
+
+  migrate:
+    image: taskflow-api:perf
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-taskflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-taskflow}
+    command:
+      - sh
+      - -lc
+      - cd /app/packages/db && ./node_modules/.bin/prisma migrate deploy
+
+  api:
+    image: taskflow-api:perf
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    environment:
+      LISTEN_ADDR: 0.0.0.0:3001
+      ADMIN_TOKEN: ${ADMIN_TOKEN}
+      SYSTEM_CONFIG_SECRET: ${SYSTEM_CONFIG_SECRET}
+
+      DATABASE_URL: postgresql://${POSTGRES_USER:-taskflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-taskflow}
+      REDIS_URL: redis://redis:6379
+
+      S3_ENDPOINT: ${S3_ENDPOINT}
+      S3_PORT: ${S3_PORT:-9000}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET: ${S3_BUCKET}
+      S3_USE_SSL: ${S3_USE_SSL:-false}
+      S3_REGION: ${S3_REGION:-auto}
+      S3_PATH_STYLE: ${S3_PATH_STYLE:-true}
+
+      CORS_ORIGINS: ${CORS_ORIGINS}
+
+      NOTIFICATION_WORKER_ENABLED: ${NOTIFICATION_WORKER_ENABLED:-true}
+      CAP_ENABLED: ${CAP_ENABLED:-false}
+      CAP_URL: ${CAP_URL:-}
+      CAP_SECRET: ${CAP_SECRET:-}
+
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      AXIOM_TOKEN: ${AXIOM_TOKEN:-}
+      AXIOM_DATASET: ${AXIOM_DATASET:-}
+      SLOW_QUERY_MS: ${SLOW_QUERY_MS:-200}
+      LOG_PRISMA_PARAMS: ${LOG_PRISMA_PARAMS:-false}
+
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    ports:
+      - "${API_BIND_ADDR:-0.0.0.0}:${API_PORT:-3001}:3001"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:3001/health/ready').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\"",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  web:
+    image: taskflow-web:perf
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+        NEXT_PUBLIC_CAP_API_ENDPOINT: ${NEXT_PUBLIC_CAP_API_ENDPOINT:-}
+        INSTRUMENTATION_SCRIPT_URLS: ${INSTRUMENTATION_SCRIPT_URLS:-}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      API_INTERNAL_URL: http://api:3001
+    ports:
+      - "${WEB_BIND_ADDR:-0.0.0.0}:${WEB_PORT:-3000}:3000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:3000').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\"",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  seed-users-classes:
+    image: taskflow-api:perf
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    profiles: ["seed"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-taskflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-taskflow}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      SEED_BASE_URL: ${SEED_BASE_URL:-http://api:3001}
+      SEED_ORIGIN: ${SEED_ORIGIN:-}
+      SEED_COUNT: ${SEED_COUNT:-100}
+      SEED_CONCURRENCY: ${SEED_CONCURRENCY:-10}
+      SEED_EMAIL_DOMAIN: ${SEED_EMAIL_DOMAIN:-example.com}
+      SEED_PASSWORD: ${SEED_PASSWORD:-12345678}
+      SEED_NICKNAME_PREFIX: ${SEED_NICKNAME_PREFIX:-Random User}
+      SEED_CLASS_PREFIX: ${SEED_CLASS_PREFIX:-Random Class}
+      SEED_CLASS_DESCRIPTION: ${SEED_CLASS_DESCRIPTION:-Created for performance testing}
+      SEED_OUTPUT_FILE: ${SEED_OUTPUT_FILE:-}
+      SEED_TIMEZONE: ${SEED_TIMEZONE:-Asia/Shanghai}
+    volumes:
+      - ../perf:/app/perf:ro
+      - ../perf/results:/app/perf/results
+    command:
+      - node
+      - /app/perf/scripts/seed-users-classes.mjs
+
+  seed-class-memberships:
+    image: taskflow-api:perf
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    profiles: ["seed"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-taskflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-taskflow}
+      SEED_POOL_CLASS_COUNT: ${SEED_POOL_CLASS_COUNT:-200}
+      SEED_JOIN_CLASSES_PER_USER: ${SEED_JOIN_CLASSES_PER_USER:-5}
+      SEED_CLASS_POOL_OUTPUT_FILE: ${SEED_CLASS_POOL_OUTPUT_FILE:-/app/perf/results/class-pool-200.json}
+    volumes:
+      - ../perf:/app/perf:ro
+      - ../perf/results:/app/perf/results
+    command:
+      - node
+      - /app/perf/scripts/seed-class-memberships.mjs
+
+  seed-class-tasks:
+    image: taskflow-api:perf
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    profiles: ["seed"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-taskflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-taskflow}
+      SEED_CLASS_POOL_FILE: ${SEED_CLASS_POOL_FILE:-/app/perf/results/class-pool-200.json}
+      SEED_TASKS_MIN_PER_CLASS: ${SEED_TASKS_MIN_PER_CLASS:-5}
+      SEED_TASKS_MAX_PER_CLASS: ${SEED_TASKS_MAX_PER_CLASS:-10}
+      SEED_TASK_START_MIN_DAYS_FROM_NOW: ${SEED_TASK_START_MIN_DAYS_FROM_NOW:--30}
+      SEED_TASK_START_MAX_DAYS_FROM_NOW: ${SEED_TASK_START_MAX_DAYS_FROM_NOW:-1}
+      SEED_TASK_DUE_MIN_DAYS_FROM_NOW: ${SEED_TASK_DUE_MIN_DAYS_FROM_NOW:-3}
+      SEED_TASK_DUE_MAX_DAYS_FROM_NOW: ${SEED_TASK_DUE_MAX_DAYS_FROM_NOW:-15}
+      SEED_TASK_TITLE_PREFIX: ${SEED_TASK_TITLE_PREFIX:-Performance Task}
+      SEED_TASK_OUTPUT_FILE: ${SEED_TASK_OUTPUT_FILE:-/app/perf/results/class-tasks.json}
+    volumes:
+      - ../perf:/app/perf:ro
+      - ../perf/results:/app/perf/results
+    command:
+      - node
+      - /app/perf/scripts/seed-class-tasks.mjs
+
+  export-class-owners:
+    image: taskflow-api:perf
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    profiles: ["seed"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-taskflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-taskflow}
+      SEED_CLASS_POOL_FILE: ${SEED_CLASS_POOL_FILE:-/app/perf/results/class-pool-200.json}
+      SEED_CLASS_OWNER_OUTPUT_FILE: ${SEED_CLASS_OWNER_OUTPUT_FILE:-/app/perf/results/class-owners-200.json}
+    volumes:
+      - ../perf:/app/perf:ro
+      - ../perf/results:/app/perf/results
+    command:
+      - node
+      - /app/perf/scripts/export-class-owners.mjs
+
+  reset-and-seed-full:
+    image: taskflow-api:perf
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    profiles: ["seed"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-taskflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-taskflow}
+      FULL_SEED_CONFIRM_RESET: ${FULL_SEED_CONFIRM_RESET:-}
+      FULL_SEED_USER_COUNT: ${FULL_SEED_USER_COUNT:-5000}
+      FULL_SEED_PUBLIC_CLASS_COUNT: ${FULL_SEED_PUBLIC_CLASS_COUNT:-200}
+      FULL_SEED_MIN_CLASSES_PER_USER: ${FULL_SEED_MIN_CLASSES_PER_USER:-3}
+      FULL_SEED_MAX_CLASSES_PER_USER: ${FULL_SEED_MAX_CLASSES_PER_USER:-10}
+      FULL_SEED_MIN_TASKS_PER_CLASS: ${FULL_SEED_MIN_TASKS_PER_CLASS:-3}
+      FULL_SEED_MAX_TASKS_PER_CLASS: ${FULL_SEED_MAX_TASKS_PER_CLASS:-10}
+      FULL_SEED_TASK_START_MIN_DAYS_FROM_NOW: ${FULL_SEED_TASK_START_MIN_DAYS_FROM_NOW:--30}
+      FULL_SEED_TASK_START_MAX_DAYS_FROM_NOW: ${FULL_SEED_TASK_START_MAX_DAYS_FROM_NOW:-2}
+      FULL_SEED_TASK_DUE_MIN_DAYS_FROM_NOW: ${FULL_SEED_TASK_DUE_MIN_DAYS_FROM_NOW:-3}
+      FULL_SEED_TASK_DUE_MAX_DAYS_FROM_NOW: ${FULL_SEED_TASK_DUE_MAX_DAYS_FROM_NOW:-15}
+      FULL_SEED_TASK_BODY_MIN_WORDS: ${FULL_SEED_TASK_BODY_MIN_WORDS:-200}
+      FULL_SEED_TASK_BODY_MAX_WORDS: ${FULL_SEED_TASK_BODY_MAX_WORDS:-1000}
+      FULL_SEED_OUTPUT_DIR: ${FULL_SEED_OUTPUT_DIR:-/app/perf/results/full-seed}
+    volumes:
+      - ../perf:/app/perf:ro
+      - ../perf/results:/app/perf/results
+    command:
+      - node
+      - /app/perf/scripts/reset-and-seed-full.mjs
+
+  seed-task-submissions:
+    image: taskflow-api:perf
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    profiles: ["seed"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-taskflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-taskflow}
+      SEED_MIN_SUBMISSIONS_PER_TASK: ${SEED_MIN_SUBMISSIONS_PER_TASK:-5}
+      SEED_MAX_SUBMISSIONS_PER_TASK: ${SEED_MAX_SUBMISSIONS_PER_TASK:-20}
+      SEED_SUBMISSION_OUTPUT_FILE: ${SEED_SUBMISSION_OUTPUT_FILE:-/app/perf/results/full-seed/submissions.json}
+    volumes:
+      - ../perf:/app/perf:ro
+      - ../perf/results:/app/perf/results
+    command:
+      - node
+      - /app/perf/scripts/seed-task-submissions.mjs
+
+  build-load-fixtures:
+    image: taskflow-api:perf
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    profiles: ["seed"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-taskflow}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-taskflow}
+      FIXTURE_USERS_FILE: ${FIXTURE_USERS_FILE:-/app/perf/results/full-seed/users.json}
+      FIXTURE_PUBLIC_CLASSES_FILE: ${FIXTURE_PUBLIC_CLASSES_FILE:-/app/perf/results/full-seed/public-classes.json}
+      FIXTURE_OUTPUT_FILE: ${FIXTURE_OUTPUT_FILE:-/app/perf/results/load-fixtures.json}
+      FIXTURE_SUBMISSION_LIMIT: ${FIXTURE_SUBMISSION_LIMIT:-50000}
+    volumes:
+      - ../perf:/app/perf:ro
+      - ../perf/results:/app/perf/results
+    command:
+      - node
+      - /app/perf/scripts/build-load-fixtures.mjs
+
+volumes:
+  taskflow_perf_pg_data:
+  taskflow_perf_redis_data:
+  taskflow_perf_minio_data:

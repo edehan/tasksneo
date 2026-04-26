@@ -169,6 +169,9 @@ export const cacheKeys = {
 	notifPrefs: (userId: string) => `notifPrefs:${userId}`,
 	taskStats: (taskId: string) => `task:stats:${taskId}`,
 	classDetail: (classId: string) => `class:${classId}`,
+	session: (tokenHash: string) => `session:cache:${tokenHash}`,
+	userProfile: (userId: string) => `user:profile:${userId}`,
+	userClasses: (userId: string) => `user:classes:${userId}`,
 };
 
 export function getCacheStats() {

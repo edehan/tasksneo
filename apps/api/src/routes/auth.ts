@@ -1,10 +1,16 @@
 import { type Context, Hono } from "hono";
+import type { Logger } from "pino";
 import { z } from "zod";
 
 import { verifyCaptcha } from "../lib/captcha.js";
 import { requireAuthSession } from "../lib/context.js";
 import { clearSessionCookie, setSessionCookie } from "../lib/cookie.js";
+import { AppError } from "../lib/errors.js";
 import { getClientIp } from "../lib/http.js";
+import {
+	assertLoginAllowed,
+	recordFailedLoginAttempt,
+} from "../lib/login-rate-limit.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { login, type SessionMetadata } from "../services/auth.service.js";
 import {
@@ -71,6 +77,14 @@ function readSessionMeta(
 	};
 }
 
+function dispatchPasswordResetEmail(email: string, logger: Logger | undefined) {
+	setImmediate(() => {
+		void sendPasswordResetEmail(email).catch((error: unknown) => {
+			logger?.warn({ err: error }, "password_reset_email_failed");
+		});
+	});
+}
+
 // Step 1: send verification email
 authRouter.post("/register", async (c) => {
 	const body = registerStep1Schema.parse(await c.req.json());
@@ -99,11 +113,23 @@ authRouter.post("/register/complete", async (c) => {
 
 authRouter.post("/login", async (c) => {
 	const body = loginBodySchema.parse(await c.req.json());
-	const result = await login({
-		email: body.email,
-		password: body.password,
-		sessionMeta: readSessionMeta(c, body.trustDevice),
-	});
+	const sessionMeta = readSessionMeta(c, body.trustDevice);
+	await assertLoginAllowed(sessionMeta.ipAddress);
+
+	let result: Awaited<ReturnType<typeof login>>;
+	try {
+		result = await login({
+			email: body.email,
+			password: body.password,
+			sessionMeta,
+		});
+	} catch (error) {
+		if (error instanceof AppError && error.code === "INVALID_CREDENTIALS") {
+			await recordFailedLoginAttempt(sessionMeta.ipAddress);
+		}
+		throw error;
+	}
+
 	setSessionCookie(c, result.token, body.trustDevice === true);
 	return c.json({ user: result.user }, 200);
 });
@@ -117,7 +143,7 @@ authRouter.post("/logout", authMiddleware, async (c) => {
 
 authRouter.post("/forgot-password", async (c) => {
 	const body = forgotPasswordSchema.parse(await c.req.json());
-	await sendPasswordResetEmail(body.email);
+	dispatchPasswordResetEmail(body.email, c.get("logger"));
 	// Always return success to prevent email enumeration
 	return c.json(
 		{ message: "If the email exists, a reset link has been sent" },
