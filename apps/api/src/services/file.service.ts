@@ -8,6 +8,7 @@ import {
 	getTaskAttachmentPresignedUrl,
 	removeObject,
 } from "../lib/storage.js";
+import { assertSubmissionMutationAllowed } from "./task.service.js";
 
 async function isClassMember(classId: string, userId: string) {
 	const membership = await prisma.classMember.findUnique({
@@ -203,7 +204,7 @@ export async function deleteAttachment(attachmentId: string, userId: string) {
 	} else if (attachment.submissionId) {
 		const submission = await prisma.submission.findUnique({
 			where: { id: attachment.submissionId },
-			select: { userId: true },
+			select: { taskId: true, userId: true },
 		});
 
 		if (!submission || submission.userId !== userId) {
@@ -213,6 +214,8 @@ export async function deleteAttachment(attachmentId: string, userId: string) {
 				"No permission to delete this attachment",
 			);
 		}
+
+		await assertSubmissionMutationAllowed(submission.taskId, userId);
 	} else {
 		throw new AppError(
 			403,

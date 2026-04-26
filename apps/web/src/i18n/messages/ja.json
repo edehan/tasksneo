@@ -350,7 +350,10 @@
   },
   "taskEditorPage": {
     "failedLoadTask": "課題の読み込みに失敗しました",
-    "goBack": "戻る"
+    "goBack": "戻る",
+    "submissionClosedTitle": "この課題は締切を過ぎています",
+    "submissionClosedDescription": "この課題では遅延提出は許可されていません。",
+    "readOnlySubmission": "締切後 · 表示のみ"
   },
   "dashboardFilterBar": {
     "notSubmitted": "未提出",
@@ -532,6 +535,9 @@
       "deleteTask": "課題を削除",
       "viewSubmissions": "提出を表示",
       "submitted": "提出済み",
+      "editSubmission": "提出を編集",
+      "viewSubmission": "提出を表示",
+      "submissionsClosed": "締切後 · 提出不可",
       "submitAssignment": "課題を提出"
     }
   },

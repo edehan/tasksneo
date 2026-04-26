@@ -78,6 +78,8 @@ interface EditorPageProps {
   initialAttachments?: AttachmentMeta[];
   isAlreadyPublished?: boolean;
   initialDueAt?: string;
+  readOnly?: boolean;
+  lockedReason?: string;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -93,6 +95,8 @@ export function EditorPage({
   initialAttachments,
   isAlreadyPublished,
   initialDueAt,
+  readOnly = false,
+  lockedReason,
 }: EditorPageProps) {
   const t = useTranslations("editorPage");
   const { user } = useAuth();
@@ -190,6 +194,7 @@ export function EditorPage({
   // ─── File upload ──────────────────────────────────────────────────────────
 
   async function uploadFiles(files: File[]) {
+    if (readOnly) return;
     if (!user || files.length === 0) return;
 
     setUploading(true);
@@ -234,6 +239,7 @@ export function EditorPage({
   }
 
   async function handleRemoveAttachment(att: AttachmentMeta) {
+    if (readOnly) return;
     if (!user) return;
     try {
       await deleteAttachment(att.id);
@@ -303,6 +309,7 @@ export function EditorPage({
   async function handleImageFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
+    if (readOnly) return;
     if (!file || !user) return;
 
     setUploading(true);
@@ -433,6 +440,7 @@ export function EditorPage({
   // ─── Submit / Publish ─────────────────────────────────────────────────────
 
   function handlePrimaryClick() {
+    if (readOnly) return;
     if (mode === "publish" && !isAlreadyPublished) {
       // New task — show confirmation before publishing
       setShowPublishConfirm(true);
@@ -533,7 +541,13 @@ export function EditorPage({
 
           {/* Desktop actions */}
           <div className="hidden items-center justify-end gap-3 md:flex md:flex-wrap">
-            {contentHistory.length > 0 && (
+            {readOnly && lockedReason && (
+              <span className="rounded-full border border-destructive/20 bg-destructive/10 px-3.5 py-1.5 text-xs font-semibold text-destructive">
+                {lockedReason}
+              </span>
+            )}
+
+            {!readOnly && contentHistory.length > 0 && (
               <button
                 type="button"
                 onClick={handleUndo}
@@ -544,7 +558,7 @@ export function EditorPage({
               </button>
             )}
 
-            {mode === "publish" && (
+            {!readOnly && mode === "publish" && (
               <button
                 type="button"
                 onClick={() => setShowRewriteDialog(true)}
@@ -555,7 +569,7 @@ export function EditorPage({
               </button>
             )}
 
-            {mode === "publish" && dueAt && (
+            {!readOnly && mode === "publish" && dueAt && (
               <button
                 type="button"
                 onClick={() => setShowExtendDialog(true)}
@@ -566,44 +580,52 @@ export function EditorPage({
               </button>
             )}
 
-            <button
-              type="button"
-              onClick={() => setPreview(!preview)}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
-            >
-              {preview ? (
-                <>
-                  <Edit3 size={13} strokeWidth={2} />
-                  {t("toggle.edit")}
-                </>
-              ) : (
-                <>
-                  <Eye size={13} strokeWidth={2} />
-                  {t("toggle.preview")}
-                </>
-              )}
-            </button>
+            {!readOnly && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setPreview(!preview)}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground"
+                >
+                  {preview ? (
+                    <>
+                      <Edit3 size={13} strokeWidth={2} />
+                      {t("toggle.edit")}
+                    </>
+                  ) : (
+                    <>
+                      <Eye size={13} strokeWidth={2} />
+                      {t("toggle.preview")}
+                    </>
+                  )}
+                </button>
 
-            <Button
-              onClick={handlePrimaryClick}
-              disabled={submitting}
-              className="shrink-0 gap-2 text-white hover:opacity-90"
-              style={{ backgroundColor: accentColor }}
-            >
-              {submitting ? (
-                <Loader2 size={15} className="animate-spin" />
-              ) : (
-                <Send size={15} strokeWidth={2} />
-              )}
-              {primaryLabel}
-            </Button>
+                <Button
+                  onClick={handlePrimaryClick}
+                  disabled={submitting}
+                  className="shrink-0 gap-2 text-white hover:opacity-90"
+                  style={{ backgroundColor: accentColor }}
+                >
+                  {submitting ? (
+                    <Loader2 size={15} className="animate-spin" />
+                  ) : (
+                    <Send size={15} strokeWidth={2} />
+                  )}
+                  {primaryLabel}
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
         {/* Mobile secondary actions */}
         <div className="-mx-4 mt-3 overflow-x-auto px-4 pb-1 md:hidden">
           <div className="flex min-w-max items-center gap-2">
-            {contentHistory.length > 0 && (
+            {readOnly && lockedReason && (
+              <span className={secondaryActionClass}>{lockedReason}</span>
+            )}
+
+            {!readOnly && contentHistory.length > 0 && (
               <button
                 type="button"
                 onClick={handleUndo}
@@ -614,7 +636,7 @@ export function EditorPage({
               </button>
             )}
 
-            {mode === "publish" && (
+            {!readOnly && mode === "publish" && (
               <button
                 type="button"
                 onClick={() => setShowRewriteDialog(true)}
@@ -625,7 +647,7 @@ export function EditorPage({
               </button>
             )}
 
-            {mode === "publish" && dueAt && (
+            {!readOnly && mode === "publish" && dueAt && (
               <button
                 type="button"
                 onClick={() => setShowExtendDialog(true)}
@@ -636,23 +658,25 @@ export function EditorPage({
               </button>
             )}
 
-            <button
-              type="button"
-              onClick={() => setPreview(!preview)}
-              className={secondaryActionClass}
-            >
-              {preview ? (
-                <>
-                  <Edit3 size={13} strokeWidth={2} />
-                  {t("toggle.edit")}
-                </>
-              ) : (
-                <>
-                  <Eye size={13} strokeWidth={2} />
-                  {t("toggle.preview")}
-                </>
-              )}
-            </button>
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={() => setPreview(!preview)}
+                className={secondaryActionClass}
+              >
+                {preview ? (
+                  <>
+                    <Edit3 size={13} strokeWidth={2} />
+                    {t("toggle.edit")}
+                  </>
+                ) : (
+                  <>
+                    <Eye size={13} strokeWidth={2} />
+                    {t("toggle.preview")}
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -662,7 +686,7 @@ export function EditorPage({
         {/* Editor / Preview area */}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           {/* Toolbar (only in edit mode) */}
-          {!preview && (
+          {!readOnly && !preview && (
             <EditorToolbar
               onInsert={handleInsert}
               onImageUpload={handleImageUploadClick}
@@ -670,7 +694,7 @@ export function EditorPage({
           )}
 
           {/* Content */}
-          {preview ? (
+          {readOnly || preview ? (
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 md:px-8 md:py-7">
               <MarkdownPreview content={content} accentColor={accentColor} />
             </div>
@@ -689,43 +713,47 @@ export function EditorPage({
         <div className="hidden w-[260px] shrink-0 border-l border-border md:block">
           <div className="flex h-full flex-col">
             {/* Drag-drop zone */}
-            {/* biome-ignore lint/a11y/noStaticElementInteractions: drag-drop zone for file uploads */}
-            <div
-              className={`border-b border-border p-4 ${
-                dragOver ? "bg-surface-subtle" : ""
-              }`}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-            >
-              <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border px-4 py-6 text-center transition-colors hover:border-muted-foreground hover:bg-surface-subtle">
-                <Upload
-                  size={20}
-                  strokeWidth={1.5}
-                  className="text-muted-foreground"
-                />
-                <span className="text-xs text-muted-foreground">
-                  {uploading ? t("uploading") : t("dropOrClickUpload")}
-                </span>
-                <input
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={handleFileInputChange}
-                  disabled={uploading}
-                />
-              </label>
-            </div>
+            {!readOnly && (
+              // biome-ignore lint/a11y/noStaticElementInteractions: drag-drop zone for file uploads
+              <div
+                className={`border-b border-border p-4 ${
+                  dragOver ? "bg-surface-subtle" : ""
+                }`}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+              >
+                <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border px-4 py-6 text-center transition-colors hover:border-muted-foreground hover:bg-surface-subtle">
+                  <Upload
+                    size={20}
+                    strokeWidth={1.5}
+                    className="text-muted-foreground"
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {uploading ? t("uploading") : t("dropOrClickUpload")}
+                  </span>
+                  <input
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileInputChange}
+                    disabled={uploading}
+                  />
+                </label>
+              </div>
+            )}
 
             {/* File list */}
             <div className="min-h-0 flex-1 overflow-y-auto">
               <AttachmentSidebar
                 attachments={attachments}
                 accentColor={accentColor}
-                onRemove={handleRemoveAttachment}
-                onInsertImage={handleInsertAttachmentImage}
+                onRemove={readOnly ? undefined : handleRemoveAttachment}
+                onInsertImage={
+                  readOnly ? undefined : handleInsertAttachmentImage
+                }
                 onToggleVisibility={
-                  mode === "publish"
+                  !readOnly && mode === "publish"
                     ? handleToggleAttachmentVisibility
                     : undefined
                 }
@@ -752,13 +780,17 @@ export function EditorPage({
               {t("footer.markdownSupported")}
             </span>
             <span className="text-text-muted-soft md:hidden">
-              {t("footer.draftSaved")}
+              {readOnly ? lockedReason : t("footer.draftSaved")}
             </span>
           </div>
           <span className="hidden text-xs text-text-muted-soft md:inline">
-            {t("footer.draftSaved")}
+            {readOnly ? lockedReason : t("footer.draftSaved")}
           </span>
-          <div className="grid grid-cols-2 gap-3 md:hidden">
+          <div
+            className={`grid gap-3 md:hidden ${
+              readOnly ? "grid-cols-1" : "grid-cols-2"
+            }`}
+          >
             <Button
               type="button"
               variant="outline"
@@ -773,19 +805,21 @@ export function EditorPage({
                 {attachments.length}
               </span>
             </Button>
-            <Button
-              onClick={handlePrimaryClick}
-              disabled={submitting}
-              className="h-11 rounded-2xl text-white hover:opacity-90"
-              style={{ backgroundColor: accentColor }}
-            >
-              {submitting ? (
-                <Loader2 size={15} className="animate-spin" />
-              ) : (
-                <Send size={15} strokeWidth={2} />
-              )}
-              {primaryLabel}
-            </Button>
+            {!readOnly && (
+              <Button
+                onClick={handlePrimaryClick}
+                disabled={submitting}
+                className="h-11 rounded-2xl text-white hover:opacity-90"
+                style={{ backgroundColor: accentColor }}
+              >
+                {submitting ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <Send size={15} strokeWidth={2} />
+                )}
+                {primaryLabel}
+              </Button>
+            )}
           </div>
         </div>
       </footer>
@@ -802,47 +836,51 @@ export function EditorPage({
             <SheetTitle className="font-serif text-base">
               {mobileAttachmentLabel}
             </SheetTitle>
-            <SheetDescription>
-              {t("attachmentsSheetDescription")}
-            </SheetDescription>
+            {!readOnly && (
+              <SheetDescription>
+                {t("attachmentsSheetDescription")}
+              </SheetDescription>
+            )}
           </SheetHeader>
 
           <div className="min-h-0 overflow-y-auto">
-            {/* biome-ignore lint/a11y/noStaticElementInteractions: drag-drop zone for file uploads */}
-            <div
-              className={`border-y border-border p-4 ${
-                dragOver ? "bg-surface-subtle" : ""
-              }`}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-            >
-              <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border px-4 py-6 text-center transition-colors hover:border-muted-foreground hover:bg-surface-subtle">
-                <Upload
-                  size={20}
-                  strokeWidth={1.5}
-                  className="text-muted-foreground"
-                />
-                <span className="text-xs text-muted-foreground">
-                  {uploading ? t("uploading") : t("dropOrClickUpload")}
-                </span>
-                <input
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={handleFileInputChange}
-                  disabled={uploading}
-                />
-              </label>
-            </div>
+            {!readOnly && (
+              // biome-ignore lint/a11y/noStaticElementInteractions: drag-drop zone for file uploads
+              <div
+                className={`border-y border-border p-4 ${
+                  dragOver ? "bg-surface-subtle" : ""
+                }`}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+              >
+                <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border px-4 py-6 text-center transition-colors hover:border-muted-foreground hover:bg-surface-subtle">
+                  <Upload
+                    size={20}
+                    strokeWidth={1.5}
+                    className="text-muted-foreground"
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {uploading ? t("uploading") : t("dropOrClickUpload")}
+                  </span>
+                  <input
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileInputChange}
+                    disabled={uploading}
+                  />
+                </label>
+              </div>
+            )}
 
             <AttachmentSidebar
               attachments={attachments}
               accentColor={accentColor}
-              onRemove={handleRemoveAttachment}
-              onInsertImage={handleInsertAttachmentImage}
+              onRemove={readOnly ? undefined : handleRemoveAttachment}
+              onInsertImage={readOnly ? undefined : handleInsertAttachmentImage}
               onToggleVisibility={
-                mode === "publish"
+                !readOnly && mode === "publish"
                   ? handleToggleAttachmentVisibility
                   : undefined
               }

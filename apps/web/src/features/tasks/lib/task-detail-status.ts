@@ -5,7 +5,7 @@ import type { TaskDetail } from "@/lib/api";
 
 type TaskDetailLike = Pick<
   TaskDetail | TaskWithClass,
-  "userState" | "dueAt" | "startAt"
+  "userState" | "dueAt" | "startAt" | "allowLateSubmission"
 >;
 
 export type DetailStatus =
@@ -24,6 +24,11 @@ export function deriveDetailStatus(task: TaskDetailLike): DetailStatus {
   if (dueAt && dueAt < now) return "overdue";
   if (startAt && startAt <= now && dueAt && dueAt >= now) return "in-progress";
   return "not-started";
+}
+
+export function isSubmissionLocked(task: TaskDetailLike): boolean {
+  if (!task.dueAt || task.allowLateSubmission) return false;
+  return new Date(task.dueAt).getTime() < Date.now();
 }
 
 export function getStatusBadge(

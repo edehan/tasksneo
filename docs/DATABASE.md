@@ -254,8 +254,7 @@ Usually belongs to one class. For class-deletion cleanup, a soft-deleted task ca
 
 **`allowLateSubmission` semantics** (enforced in service layer):
 - `true` → no restrictions at any time.
-- `false` → after `dueAt`: a user who has never submitted may submit exactly once; a user who has already submitted may not update.
-- **v1**: field is stored and returned by the API but enforcement logic is not implemented. Reserved for v2.
+- `false` → after `dueAt`: members may view existing submissions, but may not create new submissions or edit existing submissions.
 
 **`blockedBy`**: stores other task UUIDs as plain strings. No referential integrity. If a referenced task is deleted, the dangling UUID in the array is silently ignored by the frontend.
 
