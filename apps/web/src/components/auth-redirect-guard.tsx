@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/components/auth-provider";
+import { getMe } from "@/lib/api";
 
 const AUTH_PATHS = new Set([
   "/login",
@@ -32,17 +34,40 @@ function getAuthenticatedRedirectTarget(): string {
 }
 
 export function AuthRedirectGuard({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, setAuth } = useAuth();
+  const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+
     if (!user) {
-      return;
+      getMe()
+        .then((currentUser) => {
+          if (cancelled) {
+            return;
+          }
+
+          setAuth(currentUser);
+          window.location.replace(getAuthenticatedRedirectTarget());
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setCheckingSession(false);
+          }
+        });
+
+      return () => {
+        cancelled = true;
+      };
     }
 
     window.location.replace(getAuthenticatedRedirectTarget());
-  }, [user]);
+    return () => {
+      cancelled = true;
+    };
+  }, [setAuth, user]);
 
-  if (user) {
+  if (user || checkingSession) {
     return null;
   }
 
