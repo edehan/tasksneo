@@ -37,11 +37,19 @@ function getCookie(name: string): string | null {
 }
 
 function readStoredLocale(): AppLocale | null {
-  const cookieLocale = matchLocaleTag(getCookie(LOCALE_COOKIE));
+  const cookieLocale = readCookieLocale();
   if (cookieLocale) {
     return cookieLocale;
   }
 
+  return readLocalStorageLocale();
+}
+
+function readCookieLocale(): AppLocale | null {
+  return matchLocaleTag(getCookie(LOCALE_COOKIE));
+}
+
+function readLocalStorageLocale(): AppLocale | null {
   try {
     return matchLocaleTag(localStorage.getItem(LOCALE_STORAGE_KEY));
   } catch {
@@ -69,6 +77,19 @@ function persistLocale(locale: AppLocale) {
   document.cookie = `${LOCALE_COOKIE}=${locale};path=/;max-age=${365 * 24 * 60 * 60};samesite=lax`;
 }
 
+function syncStoredLocale() {
+  const cookieLocale = readCookieLocale();
+  if (cookieLocale) {
+    persistLocale(cookieLocale);
+    return;
+  }
+
+  const localStorageLocale = readLocalStorageLocale();
+  if (localStorageLocale) {
+    persistLocale(localStorageLocale);
+  }
+}
+
 export function useClientLocale() {
   const [locale, setLocale] = useState<AppLocale>(DEFAULT_LOCALE);
   const [messages, setMessages] = useState<AbstractIntlMessages>(
@@ -92,6 +113,7 @@ export function useClientLocale() {
 
   useEffect(() => {
     const detectedLocale = detectClientLocale();
+    syncStoredLocale();
     applyLocale(detectedLocale);
   }, [applyLocale]);
 

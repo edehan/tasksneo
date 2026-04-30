@@ -350,7 +350,10 @@
   },
   "taskEditorPage": {
     "failedLoadTask": "加载作业失败",
-    "goBack": "返回"
+    "goBack": "返回",
+    "submissionClosedTitle": "该任务已过截止时间",
+    "submissionClosedDescription": "此任务不允许迟交，已无法新增提交。",
+    "readOnlySubmission": "已过截止时间 · 仅可查看"
   },
   "dashboardFilterBar": {
     "notSubmitted": "未提交",
@@ -532,6 +535,9 @@
       "deleteTask": "删除任务",
       "viewSubmissions": "查看提交",
       "submitted": "已提交",
+      "editSubmission": "编辑提交",
+      "viewSubmission": "查看提交",
+      "submissionsClosed": "已过截止时间 · 不允许迟交",
       "submitAssignment": "提交作业"
     }
   },
@@ -856,7 +862,6 @@
     "title": "下载提交内容",
     "description": "{count} 名学生有可下载内容",
     "selectAll": "全选（{count}）",
-    "filesCount": "{count} 个文件",
     "noSubmissions": "没有可下载的提交内容",
     "namingRules": "命名规则",
     "folderName": "文件夹名",

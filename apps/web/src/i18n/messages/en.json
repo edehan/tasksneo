@@ -350,7 +350,10 @@
   },
   "taskEditorPage": {
     "failedLoadTask": "Failed to load task",
-    "goBack": "Go back"
+    "goBack": "Go back",
+    "submissionClosedTitle": "This assignment is past due",
+    "submissionClosedDescription": "Late submissions are not allowed for this assignment.",
+    "readOnlySubmission": "Past due · view only"
   },
   "dashboardFilterBar": {
     "notSubmitted": "Not Submitted",
@@ -532,6 +535,9 @@
       "deleteTask": "Delete Task",
       "viewSubmissions": "View Submissions",
       "submitted": "Submitted",
+      "editSubmission": "Edit Submission",
+      "viewSubmission": "View Submission",
+      "submissionsClosed": "Past due · submissions closed",
       "submitAssignment": "Submit Assignment"
     }
   },
@@ -856,7 +862,6 @@
     "title": "Download Submissions",
     "description": "{count} student(s) with downloadable content",
     "selectAll": "Select all ({count})",
-    "filesCount": "{count} {count, plural, one {file} other {files}}",
     "noSubmissions": "No submissions with downloadable content",
     "namingRules": "Naming Rules",
     "folderName": "Folder name",

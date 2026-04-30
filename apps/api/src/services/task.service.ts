@@ -143,6 +143,27 @@ export async function assertTaskAccess(taskId: string, userId: string) {
 	};
 }
 
+export async function assertSubmissionMutationAllowed(
+	taskId: string,
+	userId: string,
+) {
+	const { task } = await assertTaskAccess(taskId, userId);
+
+	if (
+		task.dueAt &&
+		!task.allowLateSubmission &&
+		task.dueAt.getTime() < Date.now()
+	) {
+		throw new AppError(
+			403,
+			"LATE_SUBMISSION_CLOSED",
+			"Submission deadline has passed",
+		);
+	}
+
+	return task;
+}
+
 async function getTaskWithUserState(taskId: string, userId: string) {
 	const [task, state, submission] = await Promise.all([
 		prisma.task.findUnique({
@@ -914,7 +935,7 @@ export async function upsertMySubmissionContent(
 	userId: string,
 	content: string | null,
 ) {
-	await assertTaskAccess(taskId, userId);
+	await assertSubmissionMutationAllowed(taskId, userId);
 
 	const submissionId = await ensureSubmission(taskId, userId);
 
@@ -940,7 +961,7 @@ export async function upsertMySubmissionAttachments(
 		sizeBytes: bigint;
 	}>,
 ) {
-	await assertTaskAccess(taskId, userId);
+	await assertSubmissionMutationAllowed(taskId, userId);
 
 	const existingSubmission = await prisma.submission.findUnique({
 		where: {
@@ -996,7 +1017,7 @@ export async function addSubmissionAttachments(
 		sizeBytes: bigint;
 	}>,
 ) {
-	await assertTaskAccess(taskId, userId);
+	await assertSubmissionMutationAllowed(taskId, userId);
 
 	const submissionId = await ensureSubmission(taskId, userId);
 
@@ -1032,7 +1053,7 @@ export async function assertCanUploadSubmissionAttachments(
 	taskId: string,
 	userId: string,
 ) {
-	await assertTaskAccess(taskId, userId);
+	await assertSubmissionMutationAllowed(taskId, userId);
 }
 
 export async function assertCanUploadTaskAttachments(

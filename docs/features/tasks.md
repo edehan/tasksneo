@@ -124,13 +124,10 @@ v1 不实现。未来可考虑提供 UI 入口，允许用户一次创建一对"
 
 ### 延迟提交逻辑（`allowLateSubmission`）
 
-**v1**：该字段存储在数据库中并由 API 返回，但不实现任何执行逻辑。所有提交请求均被接受，不受 `dueAt` 限制。
-
-**v2 规划逻辑：**
 - `allowLateSubmission = true`：任何时间均无限制。
 - `allowLateSubmission = false` 且当前时间 > `dueAt`：
-  - 若 `firstSubmittedAt IS NULL`（从未提交）：允许提交一次。
-  - 若 `firstSubmittedAt IS NOT NULL`（已有提交）：返回 403，拒绝更新。
+  - 从未提交：返回 403，拒绝新增提交。
+  - 已有提交：返回 403，拒绝更新正文、附件新增和附件删除。
 
 此检查在提交服务层执行。对 `task_user_state` 中 `viewedAt`、`tags`、`sortOrder` 的更新操作不受此规则影响。
 

@@ -2,21 +2,15 @@
 
 import { Check, Filter } from "lucide-react";
 import { useTranslations } from "next-intl";
-
-interface Filters {
-  notSubmitted: boolean;
-  overdue: boolean;
-  showSubmitted: boolean;
-  showLongOverdue: boolean;
-}
+import type { TaskFilters } from "@/hooks/use-task-filter-prefs";
 
 interface FilterBarProps {
-  filters: Filters;
-  onChange: (filters: Filters) => void;
+  filters: TaskFilters;
+  onChange: (filters: TaskFilters) => void;
 }
 
 interface FilterDef {
-  key: keyof Filters;
+  key: keyof TaskFilters;
   labelKey: string;
   showCheck?: boolean;
 }
@@ -31,7 +25,7 @@ const filterDefs: FilterDef[] = [
 export function FilterBar({ filters, onChange }: FilterBarProps) {
   const t = useTranslations("dashboardFilterBar");
 
-  function toggle(key: keyof Filters) {
+  function toggle(key: keyof TaskFilters) {
     onChange({ ...filters, [key]: !filters[key] });
   }
 

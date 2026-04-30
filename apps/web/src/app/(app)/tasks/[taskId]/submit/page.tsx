@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth-provider";
 import { EditorPage } from "@/features/editor/components/editor-page";
+import { isSubmissionLocked } from "@/features/tasks/lib/task-detail-status";
 import {
   ApiError,
   type AttachmentMeta,
@@ -34,6 +35,7 @@ export default function SubmitTaskPage() {
   const [existingAttachments, setExistingAttachments] = useState<
     AttachmentMeta[]
   >([]);
+  const [hasExistingSubmission, setHasExistingSubmission] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -54,9 +56,11 @@ export default function SubmitTaskPage() {
       setCls(classData);
 
       if (submission) {
+        setHasExistingSubmission(true);
         setExistingContent(submission.content ?? "");
         setExistingAttachments(submission.attachments);
       } else {
+        setHasExistingSubmission(false);
         setExistingContent("");
         setExistingAttachments([]);
       }
@@ -102,6 +106,28 @@ export default function SubmitTaskPage() {
 
   if (!task || !cls) return null;
 
+  const locked = isSubmissionLocked(task);
+
+  if (locked && !hasExistingSubmission) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-3 bg-background px-4 text-center">
+        <p className="text-sm font-semibold text-destructive">
+          {t("submissionClosedTitle")}
+        </p>
+        <p className="max-w-sm text-sm text-muted-foreground">
+          {t("submissionClosedDescription")}
+        </p>
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+        >
+          {t("goBack")}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <EditorPage
       mode="submit"
@@ -112,6 +138,8 @@ export default function SubmitTaskPage() {
       accentColor={cls.color}
       initialContent={existingContent}
       initialAttachments={existingAttachments}
+      readOnly={locked}
+      lockedReason={locked ? t("readOnlySubmission") : undefined}
     />
   );
 }

@@ -32,6 +32,7 @@ interface ToolbarItem {
 
 interface ToolbarSeparator {
   type: "separator";
+  id: string;
 }
 
 type ToolbarEntry = ToolbarItem | ToolbarSeparator;
@@ -57,7 +58,7 @@ const TOOLBAR_ITEMS: ToolbarEntry[] = [
     icon: <Heading size={15} strokeWidth={2} />,
     before: "## ",
   },
-  { type: "separator" },
+  { type: "separator", id: "text-blocks" },
   {
     type: "button",
     labelKey: "code",
@@ -83,7 +84,7 @@ const TOOLBAR_ITEMS: ToolbarEntry[] = [
     icon: <Minus size={15} strokeWidth={2} />,
     before: "---\n",
   },
-  { type: "separator" },
+  { type: "separator", id: "media-links" },
   {
     type: "button",
     labelKey: "image",
@@ -108,12 +109,11 @@ export function EditorToolbar({ onInsert, onImageUpload }: EditorToolbarProps) {
   return (
     <div className="min-w-0 overflow-x-auto border-b border-border">
       <div className="flex min-w-max items-center gap-0.5 px-4 py-2">
-        {TOOLBAR_ITEMS.map((item, i) => {
+        {TOOLBAR_ITEMS.map((item) => {
           if (item.type === "separator") {
             return (
-              // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholder
               <div
-                key={`sep-${i}`}
+                key={item.id}
                 className="mx-1.5 h-[18px] w-px shrink-0 bg-border"
               />
             );

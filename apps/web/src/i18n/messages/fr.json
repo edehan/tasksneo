@@ -350,7 +350,10 @@
   },
   "taskEditorPage": {
     "failedLoadTask": "Impossible de charger la tache",
-    "goBack": "Retour"
+    "goBack": "Retour",
+    "submissionClosedTitle": "Cette tache est en retard",
+    "submissionClosedDescription": "Les rendus en retard ne sont pas autorises pour cette tache.",
+    "readOnlySubmission": "En retard · lecture seule"
   },
   "dashboardFilterBar": {
     "notSubmitted": "Non rendu",
@@ -532,6 +535,9 @@
       "deleteTask": "Supprimer la tache",
       "viewSubmissions": "Voir les rendus",
       "submitted": "Rendu",
+      "editSubmission": "Modifier le rendu",
+      "viewSubmission": "Voir le rendu",
+      "submissionsClosed": "En retard · rendus fermes",
       "submitAssignment": "Rendre le devoir"
     }
   },
@@ -856,7 +862,6 @@
     "title": "Telecharger les rendus",
     "description": "{count} etudiant(s) avec contenu telechargeable",
     "selectAll": "Tout selectionner ({count})",
-    "filesCount": "{count} {count, plural, one {fichier} other {fichiers}}",
     "noSubmissions": "Aucun rendu avec contenu telechargeable",
     "namingRules": "Regles de nommage",
     "folderName": "Nom du dossier",

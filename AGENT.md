@@ -181,5 +181,5 @@ Environment variables: copy `.env.example` to `.env` and fill in values.
 - Do not edit files in `packages/db/prisma/migrations/` directly. Use `prisma migrate dev`.
 - Do not import across `apps/` packages. Shared code belongs in `packages/shared`.
 - Do not use `any` in TypeScript.
-- The `allowLateSubmission` field on tasks is stored but its enforcement logic is **not implemented in v1**. Do not add enforcement logic unless explicitly asked.
+- The `allowLateSubmission` field is enforced in the service layer: when false, members cannot create or edit submissions after `dueAt`.
 - The `blockedBy` field on tasks is a `String[]` of task UUIDs. No FK enforcement. Frontend handles rendering. Do not add validation logic on this field.

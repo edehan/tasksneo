@@ -14,6 +14,7 @@ import {
   deriveDetailStatus,
   getFooterText,
   getStatusBadge,
+  isSubmissionLocked,
 } from "@/features/tasks/lib/task-detail-status";
 import type { ClassSummary, TaskDetail } from "@/lib/api";
 import { deleteTask, markTaskViewed } from "@/lib/api";
@@ -105,6 +106,7 @@ export function TaskDetailPage({
   const status: DetailStatus = deriveDetailStatus(task);
   const badge = getStatusBadge(status, accentColor, t);
   const isSubmitted = status === "submitted";
+  const submissionLocked = isSubmissionLocked(task);
   const isAdmin = cls.myRole === "OWNER" || cls.myRole === "ADMIN";
   const attachments = (task.attachments ?? []).filter((attachment) =>
     isAdmin ? true : attachment.isVisible,
@@ -224,10 +226,20 @@ export function TaskDetailPage({
                       </button>
                     </>
                   )}
-                  {isSubmitted ? (
-                    <span className="text-[12px] font-medium text-muted-foreground">
-                      {t("actions.submitted")}
+                  {submissionLocked && !isSubmitted ? (
+                    <span className="text-[12px] font-semibold text-[#c45c5c]">
+                      {t("actions.submissionsClosed")}
                     </span>
+                  ) : isSubmitted ? (
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/tasks/${task.id}/submit`)}
+                      className="rounded-lg border border-border bg-transparent px-3 py-1.5 text-[12px] font-medium text-muted-foreground transition-colors duration-100 hover:bg-secondary hover:text-foreground"
+                    >
+                      {submissionLocked
+                        ? t("actions.viewSubmission")
+                        : t("actions.editSubmission")}
+                    </button>
                   ) : (
                     <button
                       type="button"

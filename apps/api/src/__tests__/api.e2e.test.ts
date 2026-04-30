@@ -1,4 +1,9 @@
-import { AuthProvider, EmailTokenPurpose, prisma } from "@taskflow/db";
+import {
+	AuthProvider,
+	ClassRole,
+	EmailTokenPurpose,
+	prisma,
+} from "@taskflow/db";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { createApp } from "../app.js";
@@ -1059,6 +1064,234 @@ describe("TaskFlow API e2e", () => {
 		expect([404, 409]).toContain(oldInviteJoin.response.status);
 
 		expect(ownerUserId).not.toBe(memberUserId);
+	});
+
+	it("enforces allowLateSubmission for student submission mutations", async () => {
+		const owner = await createTestUser({ emailPrefix: "late-owner" });
+		const member = await createTestUser({ emailPrefix: "late-member" });
+		const classRow = await prisma.class.create({
+			data: {
+				name: "Late Submission Class",
+				ownerId: owner.user.id,
+				color: "#7B6CB0",
+				members: {
+					create: [
+						{ userId: owner.user.id, role: ClassRole.OWNER },
+						{ userId: member.user.id, role: ClassRole.MEMBER },
+					],
+				},
+			},
+		});
+
+		async function createTask(input: {
+			dueAt: Date;
+			allowLateSubmission: boolean;
+		}) {
+			return prisma.task.create({
+				data: {
+					classId: classRow.id,
+					createdBy: owner.user.id,
+					title: "Late policy task",
+					description: "Check late policy",
+					startAt: new Date(Date.now() - 3_600_000),
+					dueAt: input.dueAt,
+					allowLateSubmission: input.allowLateSubmission,
+					blockedBy: [],
+					isPublished: true,
+					publishedAt: new Date(Date.now() - 3_600_000),
+				},
+			});
+		}
+
+		const lockedTask = await createTask({
+			dueAt: new Date(Date.now() - 3_600_000),
+			allowLateSubmission: false,
+		});
+
+		const lateCreateRes = await requestJson(
+			app,
+			`/tasks/${lockedTask.id}/submissions/me`,
+			{
+				method: "PUT",
+				headers: authHeader(member.token),
+				body: JSON.stringify({ content: "too late" }),
+			},
+		);
+		expect(lateCreateRes.response.status).toBe(403);
+		expect((lateCreateRes.body as { code: string }).code).toBe(
+			"LATE_SUBMISSION_CLOSED",
+		);
+
+		const previouslyOpenTask = await createTask({
+			dueAt: new Date(Date.now() + 3_600_000),
+			allowLateSubmission: false,
+		});
+
+		const firstSubmitRes = await requestJson(
+			app,
+			`/tasks/${previouslyOpenTask.id}/submissions/me`,
+			{
+				method: "PUT",
+				headers: authHeader(member.token),
+				body: JSON.stringify({ content: "before deadline" }),
+			},
+		);
+		expect(firstSubmitRes.response.status).toBe(200);
+
+		await prisma.task.update({
+			where: { id: previouslyOpenTask.id },
+			data: { dueAt: new Date(Date.now() - 3_600_000) },
+		});
+
+		const lateEditRes = await requestJson(
+			app,
+			`/tasks/${previouslyOpenTask.id}/submissions/me`,
+			{
+				method: "PUT",
+				headers: authHeader(member.token),
+				body: JSON.stringify({ content: "after deadline" }),
+			},
+		);
+		expect(lateEditRes.response.status).toBe(403);
+		expect((lateEditRes.body as { code: string }).code).toBe(
+			"LATE_SUBMISSION_CLOSED",
+		);
+
+		const uploadUrlAfterDeadline = await requestJson(
+			app,
+			`/tasks/${previouslyOpenTask.id}/submissions/me/attachments/upload-url`,
+			{
+				method: "POST",
+				headers: authHeader(member.token),
+				body: JSON.stringify({
+					files: [
+						{
+							name: "late.txt",
+							mimeType: "text/plain",
+							sizeBytes: 4,
+						},
+					],
+				}),
+			},
+		);
+		expect(uploadUrlAfterDeadline.response.status).toBe(403);
+		expect((uploadUrlAfterDeadline.body as { code: string }).code).toBe(
+			"LATE_SUBMISSION_CLOSED",
+		);
+
+		const completionTask = await createTask({
+			dueAt: new Date(Date.now() + 3_600_000),
+			allowLateSubmission: false,
+		});
+		const uploadUrlBeforeDeadline = await requestJson(
+			app,
+			`/tasks/${completionTask.id}/submissions/me/attachments/upload-url`,
+			{
+				method: "POST",
+				headers: authHeader(member.token),
+				body: JSON.stringify({
+					files: [
+						{
+							name: "race.txt",
+							mimeType: "text/plain",
+							sizeBytes: 4,
+						},
+					],
+				}),
+			},
+		);
+		expect(uploadUrlBeforeDeadline.response.status).toBe(200);
+		const [upload] = uploadUrlBeforeDeadline.body as DirectUploadTarget[];
+		expect(upload).toBeTruthy();
+		await fetch(upload.uploadUrl, {
+			method: "PUT",
+			headers: upload.headers,
+			body: Buffer.from("race"),
+		});
+		await prisma.task.update({
+			where: { id: completionTask.id },
+			data: { dueAt: new Date(Date.now() - 3_600_000) },
+		});
+		const completionAfterDeadline = await requestJson(
+			app,
+			`/tasks/${completionTask.id}/submissions/me/attachments`,
+			{
+				method: "POST",
+				headers: authHeader(member.token),
+				body: JSON.stringify({
+					attachments: [
+						{
+							fileKey: upload.fileKey,
+							originalName: "race.txt",
+							mimeType: "text/plain",
+							sizeBytes: 4,
+						},
+					],
+				}),
+			},
+		);
+		expect(completionAfterDeadline.response.status).toBe(403);
+		expect((completionAfterDeadline.body as { code: string }).code).toBe(
+			"LATE_SUBMISSION_CLOSED",
+		);
+
+		const deleteTask = await createTask({
+			dueAt: new Date(Date.now() + 3_600_000),
+			allowLateSubmission: false,
+		});
+		const uploaded = (await uploadAttachmentDirect({
+			uploadUrlPath: `/tasks/${deleteTask.id}/submissions/me/attachments/upload-url`,
+			completePath: `/tasks/${deleteTask.id}/submissions/me/attachments`,
+			token: member.token,
+			fileName: "delete-me.txt",
+			content: "delete",
+			mimeType: "text/plain",
+		})) as Array<{ id: string }>;
+		await prisma.task.update({
+			where: { id: deleteTask.id },
+			data: { dueAt: new Date(Date.now() - 3_600_000) },
+		});
+		const deleteAfterDeadline = await app.request(
+			`/files/attachments/${uploaded[0].id}`,
+			{
+				method: "DELETE",
+				headers: authHeader(member.token),
+			},
+		);
+		expect(deleteAfterDeadline.status).toBe(403);
+		expect(((await json(deleteAfterDeadline)) as { code: string }).code).toBe(
+			"LATE_SUBMISSION_CLOSED",
+		);
+
+		const allowedLateTask = await createTask({
+			dueAt: new Date(Date.now() - 3_600_000),
+			allowLateSubmission: true,
+		});
+		const allowedLateSubmit = await requestJson(
+			app,
+			`/tasks/${allowedLateTask.id}/submissions/me`,
+			{
+				method: "PUT",
+				headers: authHeader(member.token),
+				body: JSON.stringify({ content: "late but allowed" }),
+			},
+		);
+		expect(allowedLateSubmit.response.status).toBe(200);
+
+		const futureClosedTask = await createTask({
+			dueAt: new Date(Date.now() + 3_600_000),
+			allowLateSubmission: false,
+		});
+		const futureSubmit = await requestJson(
+			app,
+			`/tasks/${futureClosedTask.id}/submissions/me`,
+			{
+				method: "PUT",
+				headers: authHeader(member.token),
+				body: JSON.stringify({ content: "on time" }),
+			},
+		);
+		expect(futureSubmit.response.status).toBe(200);
 	});
 });
 

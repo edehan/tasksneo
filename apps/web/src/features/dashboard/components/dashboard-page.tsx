@@ -22,6 +22,7 @@ import {
 } from "@/features/tasks/components/view-switcher";
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
 import { useGanttZoom } from "@/hooks/use-gantt-zoom";
+import { useTaskFilterPrefs } from "@/hooks/use-task-filter-prefs";
 import type { ClassSummary, MyTaskSummary } from "@/lib/api";
 import { useClassesQuery, useMyTasksQuery } from "@/lib/web-data";
 
@@ -54,12 +55,7 @@ export function DashboardPage({
   const [viewMode, setViewMode] = useState<ViewMode>("gantt");
   const [dayWidth, setDayWidth, isZoomHydrated] =
     useGanttZoom(DEFAULT_DAY_WIDTH);
-  const [filters, setFilters] = useState({
-    notSubmitted: false,
-    overdue: false,
-    showSubmitted: false,
-    showLongOverdue: false,
-  });
+  const [filters, setFilters] = useTaskFilterPrefs();
   const {
     data: classes = initialClasses,
     isLoading: classesLoading,

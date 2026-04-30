@@ -10,6 +10,7 @@
     "dev:web": "bash scripts/dev-web.sh",
     "dev:seed": "pnpm --filter @taskflow/api seed:dev",
     "dev:down": "bash scripts/dev-down.sh",
+    "db:erd": "pnpm --filter @taskflow/db erd",
     "lint": "biome check .",
     "typecheck": "pnpm --filter @taskflow/db exec prisma generate && pnpm --filter @taskflow/api exec tsc --noEmit",
     "test": "pnpm --filter @taskflow/api test"
