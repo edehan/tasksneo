@@ -19,7 +19,9 @@ function isSafeAuthenticatedTarget(value: string | null): value is string {
 
   try {
     const url = new URL(value, window.location.origin);
-    return url.origin === window.location.origin && !AUTH_PATHS.has(url.pathname);
+    return (
+      url.origin === window.location.origin && !AUTH_PATHS.has(url.pathname)
+    );
   } catch {
     return false;
   }
@@ -30,11 +32,7 @@ function getAuthenticatedRedirectTarget(): string {
   return isSafeAuthenticatedTarget(next) ? next : "/";
 }
 
-export function AuthRedirectGuard({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function AuthRedirectGuard({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const router = useRouter();
 
