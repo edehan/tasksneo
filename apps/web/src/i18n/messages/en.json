@@ -862,7 +862,6 @@
     "title": "Download Submissions",
     "description": "{count} student(s) with downloadable content",
     "selectAll": "Select all ({count})",
-    "filesCount": "{count} {count, plural, one {file} other {files}}",
     "noSubmissions": "No submissions with downloadable content",
     "namingRules": "Naming Rules",
     "folderName": "Folder name",

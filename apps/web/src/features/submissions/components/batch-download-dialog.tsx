@@ -25,7 +25,6 @@ import {
   deduplicateFolderNames,
   downloadAllWithConcurrency,
   FOLDER_TAGS,
-  formatFileSize,
   loadFolderTagOrder,
   loadZipTagOrder,
   type NameTag,
@@ -474,19 +473,6 @@ export function BatchDownloadDialog({
     }
   }
 
-  // ── Total size of selected ────────────────────────────────────────────
-
-  const totalSize = useMemo(() => {
-    let bytes = 0;
-    for (const row of eligibleRows) {
-      if (!selected.has(row.userId)) continue;
-      for (const att of row.attachments) {
-        bytes += att.sizeBytes ?? 0;
-      }
-    }
-    return bytes;
-  }, [eligibleRows, selected]);
-
   // ── Render ────────────────────────────────────────────────────────────
 
   const progressPct =
@@ -518,11 +504,6 @@ export function BatchDownloadDialog({
             >
               {t("selectAll", { count: eligibleRows.length })}
             </label>
-            {selected.size > 0 && (
-              <span className="ml-auto text-[12px] text-muted-foreground">
-                {formatFileSize(totalSize)}
-              </span>
-            )}
           </div>
 
           <ScrollArea className="max-h-[240px]">
@@ -540,11 +521,6 @@ export function BatchDownloadDialog({
                   <span className="min-w-0 flex-1 truncate text-[13px] text-foreground">
                     {row.nickname ?? row.studentId ?? "Student"}
                   </span>
-                  {row.attachments.length > 0 && (
-                    <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground">
-                      {t("filesCount", { count: row.attachments.length })}
-                    </span>
-                  )}
                 </label>
               ))}
 

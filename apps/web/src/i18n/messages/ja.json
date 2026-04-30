@@ -862,7 +862,6 @@
     "title": "提出をダウンロード",
     "description": "ダウンロード可能な内容がある学生: {count}名",
     "selectAll": "すべて選択（{count}）",
-    "filesCount": "{count}件のファイル",
     "noSubmissions": "ダウンロード可能な提出はありません",
     "namingRules": "命名ルール",
     "folderName": "フォルダ名",

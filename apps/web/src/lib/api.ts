@@ -1107,11 +1107,8 @@ export async function getPresignedFileUrl(fileKey: string): Promise<string> {
 }
 
 export async function downloadFile(fileKey: string): Promise<string> {
-  // GET /files/:fileKey returns a 302 redirect to presigned URL.
-  // We fetch with auth, follow the redirect, and return the final blob URL.
-  const res = await fetch(`${getApiBaseUrl()}/files/${fileKey}`, {
-    credentials: "include",
-  });
+  const url = await getPresignedFileUrl(fileKey);
+  const res = await fetch(url, { credentials: "omit" });
   if (!res.ok) {
     throw new ApiError(
       "Failed to download file",
@@ -1124,9 +1121,8 @@ export async function downloadFile(fileKey: string): Promise<string> {
 }
 
 export async function downloadFileBlob(fileKey: string): Promise<Blob> {
-  const res = await fetch(`${getApiBaseUrl()}/files/${fileKey}`, {
-    credentials: "include",
-  });
+  const url = await getPresignedFileUrl(fileKey);
+  const res = await fetch(url, { credentials: "omit" });
   if (!res.ok) {
     throw new ApiError(
       "Failed to download file",

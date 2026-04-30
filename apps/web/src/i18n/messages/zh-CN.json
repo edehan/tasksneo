@@ -862,7 +862,6 @@
     "title": "下载提交内容",
     "description": "{count} 名学生有可下载内容",
     "selectAll": "全选（{count}）",
-    "filesCount": "{count} 个文件",
     "noSubmissions": "没有可下载的提交内容",
     "namingRules": "命名规则",
     "folderName": "文件夹名",
