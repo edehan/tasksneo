@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "@/components/auth-provider";
 
@@ -34,15 +33,14 @@ function getAuthenticatedRedirectTarget(): string {
 
 export function AuthRedirectGuard({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const router = useRouter();
 
   useEffect(() => {
     if (!user) {
       return;
     }
 
-    router.replace(getAuthenticatedRedirectTarget());
-  }, [router, user]);
+    window.location.replace(getAuthenticatedRedirectTarget());
+  }, [user]);
 
   if (user) {
     return null;
