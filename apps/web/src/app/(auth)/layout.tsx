@@ -2,6 +2,7 @@
 
 import { NextIntlClientProvider } from "next-intl";
 
+import { AuthRedirectGuard } from "@/components/auth-redirect-guard";
 import { AppLocaleProvider } from "@/components/locale-provider";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { PageTransition } from "@/components/page-transition";
@@ -22,7 +23,7 @@ export default function AuthLayout({
             <LocaleSwitcher />
           </div>
           <PageTransition className="w-full max-w-md">
-            {children}
+            <AuthRedirectGuard>{children}</AuthRedirectGuard>
           </PageTransition>
         </div>
       </AppLocaleProvider>
