@@ -1,5 +1,7 @@
 "use client";
 
+import { isSafeAuthenticatedRedirectPath } from "@/lib/auth-paths";
+
 export function readWindowSearchParam(name: string): string | null {
   if (typeof window === "undefined") {
     return null;
@@ -11,5 +13,5 @@ export function readWindowSearchParam(name: string): string | null {
 export function readSafeNextParam(): string | null {
   const next = readWindowSearchParam("next");
 
-  return next?.startsWith("/") ? next : null;
+  return isSafeAuthenticatedRedirectPath(next) ? next : null;
 }

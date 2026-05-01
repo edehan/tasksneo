@@ -15,9 +15,11 @@ import {
   logoutApi,
   subscribeToAuthExpired,
 } from "@/lib/api";
+import { isPublicAuthPath } from "@/lib/auth-paths";
 
 interface AuthContextValue {
   user: UserProfile | null;
+  hasSessionCookie: boolean;
   loading: boolean;
   login: (
     email: string,
@@ -39,22 +41,29 @@ interface AuthProviderProps {
 
 export function AuthProvider({
   initialUser,
-  initialHasSessionCookie: _initialHasSessionCookie = false,
+  initialHasSessionCookie = false,
   children,
 }: AuthProviderProps) {
   const [user, setUser] = useState<UserProfile | null>(initialUser);
+  const [hasSessionCookie, setHasSessionCookie] = useState(
+    initialHasSessionCookie,
+  );
   const router = useRouter();
   const pathname = usePathname();
 
   const clearAuthState = useCallback(() => {
     setUser(null);
+    setHasSessionCookie(false);
   }, []);
 
   useEffect(() => {
     return subscribeToAuthExpired(() => {
       clearAuthState();
-      if (pathname !== "/login") {
-        router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+      if (!isPublicAuthPath(pathname)) {
+        const search = window.location.search;
+        router.replace(
+          `/login?next=${encodeURIComponent(`${pathname}${search}`)}`,
+        );
       }
     });
   }, [clearAuthState, pathname, router]);
@@ -63,6 +72,7 @@ export function AuthProvider({
     async (email: string, password: string, trustDevice?: boolean) => {
       const res = await apiLogin(email, password, trustDevice);
       setUser(res.user);
+      setHasSessionCookie(true);
       router.refresh();
     },
     [router],
@@ -70,6 +80,7 @@ export function AuthProvider({
 
   const setAuth = useCallback((newUser: UserProfile) => {
     setUser(newUser);
+    setHasSessionCookie(true);
   }, []);
 
   const logout = useCallback(async () => {
@@ -92,13 +103,14 @@ export function AuthProvider({
   const value = useMemo(
     () => ({
       user,
+      hasSessionCookie,
       loading: false,
       login,
       setAuth,
       logout,
       updateUser,
     }),
-    [user, login, setAuth, logout, updateUser],
+    [user, hasSessionCookie, login, setAuth, logout, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -292,6 +292,10 @@ export interface AdminUpdateUserInput {
   password?: string;
 }
 
+interface ApiRequestOptions {
+  suppressAuthExpired?: boolean;
+}
+
 // ─── Core Request Function ───────────────────────────────────────────────────
 
 export function getApiBaseUrl(): string {
@@ -301,6 +305,7 @@ export function getApiBaseUrl(): string {
 export async function apiRequest<T>(
   path: string,
   init: RequestInit = {},
+  options: ApiRequestOptions = {},
 ): Promise<T> {
   const headers = new Headers(init.headers ?? {});
   const adminPath = isAdminPath(path);
@@ -344,6 +349,7 @@ export async function apiRequest<T>(
 
     if (
       !adminPath &&
+      !options.suppressAuthExpired &&
       (response.status === 401 || AUTH_ERROR_CODES.has(errorCode))
     ) {
       emitAuthExpired();
@@ -463,8 +469,10 @@ export async function confirmEmailChange(
 
 // ─── Users ───────────────────────────────────────────────────────────────────
 
-export async function getMe(): Promise<UserProfile> {
-  return apiRequest<UserProfile>("/users/me", {});
+export async function getMe(
+  options: ApiRequestOptions = {},
+): Promise<UserProfile> {
+  return apiRequest<UserProfile>("/users/me", {}, options);
 }
 
 export async function updateProfile(input: {

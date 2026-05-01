@@ -10,6 +10,10 @@ import type {
   TaskSummary,
   UserProfile,
 } from "@/lib/api";
+import {
+  CURRENT_PATH_HEADER,
+  isSafeAuthenticatedRedirectPath,
+} from "@/lib/auth-paths";
 
 function getApiInternalUrl(): string {
   return (
@@ -28,9 +32,14 @@ async function buildCookieHeader(): Promise<string | undefined> {
   return all.map((c) => `${c.name}=${encodeURIComponent(c.value)}`).join("; ");
 }
 
-async function buildForwardedHeaders(
+interface ForwardedRequestContext {
+  headers: Headers;
+  currentPath: string | null;
+}
+
+async function buildForwardedRequestContext(
   initHeaders?: HeadersInit,
-): Promise<Headers> {
+): Promise<ForwardedRequestContext> {
   const h = new Headers(initHeaders);
   const cookieHeader = await buildCookieHeader();
   if (cookieHeader) {
@@ -41,7 +50,18 @@ async function buildForwardedHeaders(
   const realIp = incoming.get("x-real-ip");
   if (forwardedFor) h.set("x-forwarded-for", forwardedFor);
   if (realIp) h.set("x-real-ip", realIp);
-  return h;
+  return {
+    headers: h,
+    currentPath: incoming.get(CURRENT_PATH_HEADER),
+  };
+}
+
+function redirectToLogin(currentPath: string | null): never {
+  if (isSafeAuthenticatedRedirectPath(currentPath)) {
+    redirect(`/login?next=${encodeURIComponent(currentPath)}`);
+  }
+
+  redirect("/login");
 }
 
 export async function serverApiRequest<T>(
@@ -49,12 +69,13 @@ export async function serverApiRequest<T>(
   init: RequestInit = {},
   options?: { redirectOn401?: boolean },
 ): Promise<T> {
-  const requestHeaders = await buildForwardedHeaders(init.headers);
+  const { headers: requestHeaders, currentPath } =
+    await buildForwardedRequestContext(init.headers);
   const cookieHeader = requestHeaders.get("Cookie");
 
   if (!cookieHeader) {
     if (options?.redirectOn401) {
-      redirect("/login");
+      redirectToLogin(currentPath);
     }
     throw new Error("Missing session cookie");
   }
@@ -74,7 +95,7 @@ export async function serverApiRequest<T>(
   });
 
   if (response.status === 401 && options?.redirectOn401) {
-    redirect("/login");
+    redirectToLogin(currentPath);
   }
 
   if (!response.ok) {
