@@ -18,6 +18,7 @@ import {
 	resetPassword,
 	sendPasswordResetEmail,
 	sendRegistrationEmail,
+	signInWithPasswordResetToken,
 	verifyPasswordResetToken,
 	verifyRegistrationToken,
 } from "../services/email-verification.service.js";
@@ -53,6 +54,10 @@ const forgotPasswordSchema = z.object({
 const resetPasswordSchema = z.object({
 	token: z.string().min(1),
 	password: z.string().min(8),
+});
+
+const resetPasswordSignInSchema = z.object({
+	token: z.string().min(1),
 });
 
 const mcpKeySchema = z.object({
@@ -154,6 +159,16 @@ authRouter.post("/forgot-password", async (c) => {
 authRouter.post("/reset-password", async (c) => {
 	const body = resetPasswordSchema.parse(await c.req.json());
 	const result = await resetPassword(body.token, body.password);
+	setSessionCookie(c, result.token, false);
+	return c.json({ message: result.message, user: result.user }, 200);
+});
+
+authRouter.post("/reset-password/sign-in", async (c) => {
+	const body = resetPasswordSignInSchema.parse(await c.req.json());
+	const result = await signInWithPasswordResetToken(
+		body.token,
+		readSessionMeta(c, false),
+	);
 	setSessionCookie(c, result.token, false);
 	return c.json({ message: result.message, user: result.user }, 200);
 });

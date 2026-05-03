@@ -285,6 +285,42 @@ export async function resetPassword(token: string, newPassword: string) {
 	};
 }
 
+export async function signInWithPasswordResetToken(
+	token: string,
+	sessionMeta: SessionMetadata,
+) {
+	const row = await validateToken(token, EmailTokenPurpose.PASSWORD_RESET);
+
+	if (!row.userId) {
+		throw new AppError(400, "INVALID_TOKEN", "Token is invalid");
+	}
+
+	const user = await prisma.user.findUnique({
+		where: { id: row.userId },
+		include: { school: { select: { name: true } } },
+	});
+
+	if (!user) {
+		throw new AppError(400, "INVALID_TOKEN", "User not found");
+	}
+
+	const { token: sessionToken, session } = await createBrowserSession({
+		userId: row.userId,
+		isTrusted: false,
+		userAgent: sessionMeta.userAgent,
+		ipAddress: sessionMeta.ipAddress,
+	});
+	await cacheSessionByToken(sessionToken, session, user);
+
+	await consumeToken(row.id, row.email, EmailTokenPurpose.PASSWORD_RESET);
+
+	return {
+		message: "Signed in successfully.",
+		token: sessionToken,
+		user: toUserProfile(user),
+	};
+}
+
 // ── Email change flow ───────────────────────────────────────────────────────
 
 export async function sendEmailChangeVerification(

@@ -95,8 +95,8 @@ const sections: LegalSection[] = [
     enTitle: "4. Data Storage Location and International Transfers",
     en: [
       <>
-        Our primary servers and user data are currently hosted in Hong Kong SAR, China.
-        Uploaded files are stored in our object storage system and are
+        Our primary servers and user data are currently hosted in Hong Kong SAR,
+        China. Uploaded files are stored in our object storage system and are
         accessible only to authorized users under the relevant access controls.
       </>,
       <>

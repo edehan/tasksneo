@@ -42,7 +42,9 @@
     "invalidOrExpiredLink": "This link is invalid or has expired.",
     "passwordsDoNotMatch": "Passwords do not match",
     "passwordResetFailed": "Password reset failed",
-    "passwordResetSuccess": "Password reset. Please sign in with your new password.",
+    "passwordResetSuccess": "Password reset. You are signed in now.",
+    "signInWithoutResetFailed": "Could not sign in with this link",
+    "signedInWithoutReset": "Signed in without changing your password.",
     "linkExpired": "Link expired",
     "requestNewLink": "Request a new link",
     "setNewPassword": "Set a new password",
@@ -52,7 +54,9 @@
     "confirmNewPassword": "Confirm new password",
     "repeatPassword": "Repeat your password",
     "resetting": "Resetting...",
-    "resetPassword": "Reset password"
+    "resetPassword": "Reset password",
+    "signingIn": "Signing in...",
+    "signInWithoutReset": "Not now, sign in"
   },
   "authRegisterComplete": {
     "missingVerificationToken": "Missing verification token.",

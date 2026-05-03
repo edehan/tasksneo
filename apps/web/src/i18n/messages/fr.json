@@ -42,7 +42,9 @@
     "invalidOrExpiredLink": "Ce lien est invalide ou a expire.",
     "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
     "passwordResetFailed": "La reinitialisation a echoue",
-    "passwordResetSuccess": "Mot de passe reinitialise. Connectez-vous avec votre nouveau mot de passe.",
+    "passwordResetSuccess": "Mot de passe reinitialise. Vous etes connecte.",
+    "signInWithoutResetFailed": "Impossible de se connecter avec ce lien",
+    "signedInWithoutReset": "Connecte sans modifier le mot de passe.",
     "linkExpired": "Lien expire",
     "requestNewLink": "Demander un nouveau lien",
     "setNewPassword": "Definir un nouveau mot de passe",
@@ -52,7 +54,9 @@
     "confirmNewPassword": "Confirmer le nouveau mot de passe",
     "repeatPassword": "Repetez votre mot de passe",
     "resetting": "Reinitialisation...",
-    "resetPassword": "Reinitialiser le mot de passe"
+    "resetPassword": "Reinitialiser le mot de passe",
+    "signingIn": "Connexion...",
+    "signInWithoutReset": "Pas maintenant, se connecter"
   },
   "authRegisterComplete": {
     "missingVerificationToken": "Jeton de verification manquant.",

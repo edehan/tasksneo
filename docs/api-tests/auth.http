@@ -4,6 +4,7 @@
 @token = REPLACE_WITH_SESSION_TOKEN
 @registrationToken = REPLACE_WITH_REGISTRATION_TOKEN
 @resetToken = REPLACE_WITH_RESET_TOKEN
+@resetSignInToken = REPLACE_WITH_RESET_SIGN_IN_TOKEN
 @mcpKey = REPLACE_WITH_MCP_KEY
 
 ### Step 1: request registration email
@@ -65,6 +66,14 @@ Content-Type: application/json
 {
   "token": "{{resetToken}}",
   "password": "Passw0rd!2"
+}
+
+### Sign in with password reset token without changing password
+POST {{baseUrl}}/auth/reset-password/sign-in
+Content-Type: application/json
+
+{
+  "token": "{{resetSignInToken}}"
 }
 
 ### Exchange MCP key for an MCP session token

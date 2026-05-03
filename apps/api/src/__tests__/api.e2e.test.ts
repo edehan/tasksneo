@@ -1526,6 +1526,68 @@ describe("Session lifecycle", () => {
 		expect(mcpAfter.status).toBe(200);
 	});
 
+	it("password reset link can sign in without changing password or revoking browser sessions", async () => {
+		const email = uniqueEmail("reset-sign-in");
+		const first = await createTestUser({ email, password: "Passw0rd!" });
+
+		const secondLogin = await requestJson(app, "/auth/login", {
+			method: "POST",
+			body: JSON.stringify({ email, password: "Passw0rd!" }),
+		});
+		expect(secondLogin.response.status).toBe(200);
+		const secondToken = readSessionTokenFromSetCookie(secondLogin.response);
+
+		const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+		const resetToken = `test-reset-login-token-${Math.random().toString(36).slice(2)}`;
+		await prisma.emailVerificationToken.create({
+			data: {
+				email,
+				token: resetToken,
+				purpose: EmailTokenPurpose.PASSWORD_RESET,
+				userId: user.id,
+				expiresAt: new Date(Date.now() + 60_000),
+			},
+		});
+
+		const signInRes = await requestJson(app, "/auth/reset-password/sign-in", {
+			method: "POST",
+			body: JSON.stringify({ token: resetToken }),
+		});
+		expect(signInRes.response.status).toBe(200);
+		expect(signInRes.body).not.toHaveProperty("token");
+		expect(signInRes.body).toHaveProperty("user");
+		const resetLinkSessionToken = readSessionTokenFromSetCookie(
+			signInRes.response,
+		);
+
+		const firstAfter = await app.request("/users/me", {
+			headers: authHeader(first.token),
+		});
+		expect(firstAfter.status).toBe(200);
+
+		const secondAfter = await app.request("/users/me", {
+			headers: authHeader(secondToken),
+		});
+		expect(secondAfter.status).toBe(200);
+
+		const resetLinkSessionAfter = await app.request("/users/me", {
+			headers: authHeader(resetLinkSessionToken),
+		});
+		expect(resetLinkSessionAfter.status).toBe(200);
+
+		const oldPasswordStillWorks = await requestJson(app, "/auth/login", {
+			method: "POST",
+			body: JSON.stringify({ email, password: "Passw0rd!" }),
+		});
+		expect(oldPasswordStillWorks.response.status).toBe(200);
+
+		const reusedToken = await requestJson(app, "/auth/reset-password/sign-in", {
+			method: "POST",
+			body: JSON.stringify({ token: resetToken }),
+		});
+		expect(reusedToken.response.status).toBe(400);
+	});
+
 	it("GET /users/me/sessions lists sessions and marks the current one", async () => {
 		const email = uniqueEmail("sessions-list");
 		const first = await createTestUser({ email });

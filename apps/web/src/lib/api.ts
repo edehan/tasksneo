@@ -445,6 +445,18 @@ export async function resetPassword(
   );
 }
 
+export async function signInWithPasswordResetToken(
+  token: string,
+): Promise<{ message: string; user: UserProfile }> {
+  return apiRequest<{ message: string; user: UserProfile }>(
+    "/auth/reset-password/sign-in",
+    {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    },
+  );
+}
+
 export async function requestEmailChange(
   newEmail: string,
   captchaToken?: string | null,

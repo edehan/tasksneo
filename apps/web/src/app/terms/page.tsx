@@ -112,9 +112,9 @@ const sections: LegalSection[] = [
     enTitle: "5. Data Storage and International Processing",
     en: [
       <>
-        Our primary servers and user data are currently hosted in Hong Kong SAR, China.
-        Depending on the features you use, selected data may be processed by
-        subprocessors outside your country or region.
+        Our primary servers and user data are currently hosted in Hong Kong SAR,
+        China. Depending on the features you use, selected data may be processed
+        by subprocessors outside your country or region.
       </>,
     ],
     zhTitle: "5. 数据存储和跨境处理",

@@ -107,12 +107,19 @@
 
 1. 用户提交邮箱到 `POST /auth/forgot-password`。
 2. 前端进入重置页前先调用 `GET /auth/verify-token?purpose=PASSWORD_RESET`。
-3. 用户提交新密码到 `POST /auth/reset-password`。
-4. 成功后：
+3. 用户可选择：
+   - 提交新密码到 `POST /auth/reset-password`
+   - 或点击“暂不重设，直接登入”，调用 `POST /auth/reset-password/sign-in`
+4. 提交新密码成功后：
    - 更新本地密码 hash
    - 撤销该用户全部旧浏览器 sessions
    - 自动创建新的 7 天非信任浏览器 session（cookie 自动登录）
    - MCP keys / MCP sessions 保持可用
+5. 直接登入成功后：
+   - 不修改密码
+   - 不撤销该用户已有浏览器 sessions
+   - 自动创建新的 7 天非信任浏览器 session（cookie 自动登录）
+   - 消耗该重置 token
 
 ---
 

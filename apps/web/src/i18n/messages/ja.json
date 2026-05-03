@@ -42,7 +42,9 @@
     "invalidOrExpiredLink": "このリンクは無効か期限切れです。",
     "passwordsDoNotMatch": "パスワードが一致しません",
     "passwordResetFailed": "パスワード再設定に失敗しました",
-    "passwordResetSuccess": "パスワードを再設定しました。新しいパスワードでサインインしてください。",
+    "passwordResetSuccess": "パスワードを再設定しました。サインイン済みです。",
+    "signInWithoutResetFailed": "このリンクでサインインできませんでした",
+    "signedInWithoutReset": "パスワードを変更せずにサインインしました。",
     "linkExpired": "リンクの有効期限が切れています",
     "requestNewLink": "新しいリンクをリクエスト",
     "setNewPassword": "新しいパスワードを設定",
@@ -52,7 +54,9 @@
     "confirmNewPassword": "新しいパスワードを確認",
     "repeatPassword": "パスワードを再入力",
     "resetting": "再設定中...",
-    "resetPassword": "パスワードを再設定"
+    "resetPassword": "パスワードを再設定",
+    "signingIn": "サインイン中...",
+    "signInWithoutReset": "今は再設定せずサインイン"
   },
   "authRegisterComplete": {
     "missingVerificationToken": "確認トークンがありません。",
