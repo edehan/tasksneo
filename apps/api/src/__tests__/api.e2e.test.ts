@@ -1461,6 +1461,58 @@ describe("Session lifecycle", () => {
 		expect(mcpAfter.status).toBe(200);
 	});
 
+	it("revoking an MCP key invalidates all sessions minted from it", async () => {
+		const { token } = await createTestUser({ emailPrefix: "mcp-revoke" });
+
+		const createKeyRes = await requestJson(app, "/users/me/mcp-keys", {
+			method: "POST",
+			headers: authHeader(token),
+			body: JSON.stringify({ name: "Bot" }),
+		});
+		expect(createKeyRes.response.status).toBe(201);
+		const createdKey = createKeyRes.body as { id: string; key: string };
+
+		const firstExchange = await requestJson(app, "/auth/mcp", {
+			method: "POST",
+			body: JSON.stringify({ key: createdKey.key }),
+		});
+		expect(firstExchange.response.status).toBe(200);
+		const firstMcpToken = (firstExchange.body as { token: string }).token;
+
+		const secondExchange = await requestJson(app, "/auth/mcp", {
+			method: "POST",
+			body: JSON.stringify({ key: createdKey.key }),
+		});
+		expect(secondExchange.response.status).toBe(200);
+		const secondMcpToken = (secondExchange.body as { token: string }).token;
+
+		const revokeKey = await requestJson(
+			app,
+			`/users/me/mcp-keys/${createdKey.id}`,
+			{
+				method: "DELETE",
+				headers: authHeader(token),
+			},
+		);
+		expect(revokeKey.response.status).toBe(200);
+
+		const firstAfter = await app.request("/users/me", {
+			headers: authHeader(firstMcpToken),
+		});
+		expect(firstAfter.status).toBe(401);
+
+		const secondAfter = await app.request("/users/me", {
+			headers: authHeader(secondMcpToken),
+		});
+		expect(secondAfter.status).toBe(401);
+
+		const exchangeAfterRevoke = await requestJson(app, "/auth/mcp", {
+			method: "POST",
+			body: JSON.stringify({ key: createdKey.key }),
+		});
+		expect(exchangeAfterRevoke.response.status).toBe(401);
+	});
+
 	it("password reset kills old browser sessions and auto-signs in a new session", async () => {
 		const email = uniqueEmail("reset");
 		const { token } = await createTestUser({ email, password: "Passw0rd!" });

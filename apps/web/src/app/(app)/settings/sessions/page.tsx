@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import {
   ApiError,
   listSessions,
+  revokeMcpKey,
   revokeOtherSessions,
   revokeSession,
   type SessionInfo,
@@ -171,9 +172,17 @@ export default function SessionsPage() {
     if (!user || !revokeTarget) return;
     setBusy(true);
     try {
-      await revokeSession(revokeTarget.id);
-      setSessions((prev) => prev.filter((s) => s.id !== revokeTarget.id));
-      toast.success(t("revoked"));
+      if (revokeTarget.kind === "MCP" && revokeTarget.mcpKeyId) {
+        await revokeMcpKey(revokeTarget.mcpKeyId);
+        setSessions((prev) =>
+          prev.filter((s) => s.mcpKeyId !== revokeTarget.mcpKeyId),
+        );
+        toast.success(t("mcpKeyRevoked"));
+      } else {
+        await revokeSession(revokeTarget.id);
+        setSessions((prev) => prev.filter((s) => s.id !== revokeTarget.id));
+        toast.success(t("revoked"));
+      }
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t("failedRevoke");
       toast.error(message);
@@ -212,6 +221,14 @@ export default function SessionsPage() {
   const browserSessions = sessions.filter((s) => s.kind === "BROWSER");
   const mcpSessions = sessions.filter((s) => s.kind === "MCP");
   const hasOtherBrowserSessions = browserSessions.some((s) => !s.isCurrent);
+  const revokeTargetMcpSessions =
+    revokeTarget?.kind === "MCP"
+      ? mcpSessions.filter((s) =>
+          revokeTarget.mcpKeyId
+            ? s.mcpKeyId === revokeTarget.mcpKeyId
+            : s.id === revokeTarget.id,
+        )
+      : [];
 
   return (
     <div className="space-y-10">
@@ -360,14 +377,46 @@ export default function SessionsPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("revokeTitle")}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {revokeTarget?.kind === "MCP"
+                ? t("revokeMcpTitle")
+                : t("revokeTitle")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
               {revokeTarget?.kind === "MCP"
                 ? t("revokeMcpDescription", {
                     name: revokeTarget?.mcpKeyName ?? t("unknownMcpKey"),
+                    count: revokeTargetMcpSessions.length,
                   })
                 : t("revokeBrowserDescription")}
             </AlertDialogDescription>
+            {revokeTarget?.kind === "MCP" && (
+              <div className="rounded-lg border border-border bg-surface-subtle/40 p-3">
+                <p className="mb-2 text-xs font-medium text-muted-foreground">
+                  {t("mcpActiveSessions", {
+                    count: revokeTargetMcpSessions.length,
+                  })}
+                </p>
+                <div className="space-y-2">
+                  {revokeTargetMcpSessions.map((s) => (
+                    <div
+                      key={s.id}
+                      className="grid gap-1 rounded-md bg-background px-3 py-2 text-xs sm:grid-cols-[minmax(0,1fr)_minmax(0,0.75fr)_minmax(0,1fr)]"
+                    >
+                      <span className="min-w-0 truncate font-mono">
+                        {s.ipAddress ?? t("unknownIp")}
+                      </span>
+                      <span className="min-w-0 truncate text-muted-foreground">
+                        {s.country ?? t("unknownLocation")}
+                      </span>
+                      <span className="min-w-0 truncate text-muted-foreground">
+                        {formatLastSeen(s.lastSeenAt, t)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={busy}>{t("cancel")}</AlertDialogCancel>
@@ -377,7 +426,9 @@ export default function SessionsPage() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t("signOut")}
+              {revokeTarget?.kind === "MCP"
+                ? t("revokeMcpAction")
+                : t("signOut")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

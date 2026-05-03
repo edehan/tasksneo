@@ -93,6 +93,7 @@
 - 可撤销指定 browser session 或 MCP session。
 - 若撤销的是当前 session，会同时清除当前浏览器 cookie。
 - 若撤销 MCP session，只断开该连接，不吊销底层 MCP key。
+- 当前设置页 UI 对 MCP session 不再暴露“只断开单条连接”的操作；用户确认后会撤销底层 MCP key，并清除该 key 的全部 MCP sessions，避免客户端用同一 key 自动重连。
 
 ---
 
