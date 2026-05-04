@@ -108,8 +108,10 @@ export function ClassSettingsPage() {
         name: name.trim(),
         description: description.trim() || null,
         color,
+        schoolId,
       });
       setCls(updated);
+      setSchoolId(updated.schoolId);
       toast.success(t("classSettingsSaved"));
     } catch (err) {
       const message =
@@ -288,8 +290,13 @@ export function ClassSettingsPage() {
                 name: name.trim(),
                 description: description.trim() || null,
                 color,
+                schoolId: newSchoolId,
               })
-                .then(() => toast.success(t("schoolRestrictionUpdated")))
+                .then((updated) => {
+                  setCls(updated);
+                  setSchoolId(updated.schoolId);
+                  toast.success(t("schoolRestrictionUpdated"));
+                })
                 .catch(() => toast.error(t("failedUpdateSchoolRestriction")));
             }
           }}

@@ -52,6 +52,7 @@ const updateClassBodySchema = z.object({
 		.string()
 		.regex(/^#[0-9a-fA-F]{6}$/)
 		.optional(),
+	schoolId: z.string().uuid().optional().nullable(),
 });
 
 const joinClassBodySchema = z.object({

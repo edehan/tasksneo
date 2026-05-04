@@ -648,7 +648,12 @@ export async function getClass(classId: string): Promise<ClassSummary> {
 
 export async function updateClass(
   classId: string,
-  input: { name?: string; description?: string | null; color?: string },
+  input: {
+    name?: string;
+    description?: string | null;
+    color?: string;
+    schoolId?: string | null;
+  },
 ): Promise<ClassSummary> {
   return apiRequest<ClassSummary>(`/classes/${classId}`, {
     method: "PATCH",

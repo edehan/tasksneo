@@ -484,6 +484,26 @@ describe("TaskFlow API e2e", () => {
 			body: JSON.stringify({ description: "Updated description" }),
 		});
 		expect(classPatch.response.status).toBe(200);
+		expect((classPatch.body as { schoolId: string | null }).schoolId).toBe(
+			schoolAId,
+		);
+
+		const clearClassSchool = await requestJson(app, `/classes/${classId}`, {
+			method: "PATCH",
+			headers: authHeader(ownerToken),
+			body: JSON.stringify({ schoolId: null }),
+		});
+		expect(clearClassSchool.response.status).toBe(200);
+		expect(
+			(clearClassSchool.body as { schoolId: string | null }).schoolId,
+		).toBeNull();
+
+		const outsiderJoinAfterClear = await requestJson(app, "/classes/join", {
+			method: "POST",
+			headers: authHeader(outsiderToken),
+			body: JSON.stringify({ inviteCode: activeInviteCode }),
+		});
+		expect(outsiderJoinAfterClear.response.status).toBe(200);
 
 		const membersList = await app.request(`/classes/${classId}/members`, {
 			headers: authHeader(ownerToken),

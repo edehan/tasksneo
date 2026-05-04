@@ -197,7 +197,9 @@ export default function SessionsPage() {
     setBusy(true);
     try {
       await revokeOtherSessions();
-      setSessions((prev) => prev.filter((s) => s.isCurrent));
+      setSessions((prev) =>
+        prev.filter((s) => s.kind === "MCP" || s.isCurrent),
+      );
       toast.success(t("revokedOthers"));
     } catch (err) {
       const message = err instanceof ApiError ? err.message : t("failedRevoke");
