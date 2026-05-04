@@ -5,6 +5,7 @@ import { z } from "zod";
 import { verifyCaptcha } from "../lib/captcha.js";
 import { requireAuthSession, requireAuthUser } from "../lib/context.js";
 import { clearSessionCookie } from "../lib/cookie.js";
+import { normalizeEmail } from "../lib/email.js";
 import { authMiddleware } from "../middleware/auth.js";
 import {
 	confirmEmailChange,
@@ -78,7 +79,7 @@ usersRouter.patch("/me", async (c) => {
 // ── Email change ────────────────────────────────────────────────────────────
 
 const changeEmailSchema = z.object({
-	email: z.string().email(),
+	email: z.string().trim().email().transform(normalizeEmail),
 	captchaToken: z.string().optional(),
 });
 

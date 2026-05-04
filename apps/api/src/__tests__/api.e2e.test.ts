@@ -1358,6 +1358,32 @@ describe("Session lifecycle", () => {
 		expect(existing.body).toEqual(missing.body);
 	});
 
+	it("normalizes email addresses across registration and login", async () => {
+		const rawEmail = `  Normalize.${Date.now()}@Example.COM  `;
+		const normalizedEmail = rawEmail.trim().toLowerCase();
+		const created = await createTestUser({
+			email: rawEmail,
+			password: "Passw0rd!",
+		});
+
+		expect(created.user.email).toBe(normalizedEmail);
+
+		const storedUser = await prisma.user.findUnique({
+			where: { email: normalizedEmail },
+		});
+		expect(storedUser).not.toBeNull();
+
+		const loginRes = await requestJson(app, "/auth/login", {
+			method: "POST",
+			body: JSON.stringify({
+				email: ` ${normalizedEmail.toUpperCase()} `,
+				password: "Passw0rd!",
+			}),
+		});
+
+		expect(loginRes.response.status).toBe(200);
+	});
+
 	it("logs in users with bcryptjs-generated legacy password hashes", async () => {
 		const email = uniqueEmail("legacy-bcryptjs");
 		await createTestUser({ email, password: "Temporary1!" });
@@ -1596,6 +1622,46 @@ describe("Session lifecycle", () => {
 			headers: authHeader(mcpToken),
 		});
 		expect(mcpAfter.status).toBe(200);
+	});
+
+	it("password reset recreates a missing local credential", async () => {
+		const email = uniqueEmail("reset-missing-credential");
+		await createTestUser({ email, password: "Passw0rd!" });
+		const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+		await prisma.userCredential.delete({
+			where: {
+				userId_provider: {
+					userId: user.id,
+					provider: AuthProvider.LOCAL,
+				},
+			},
+		});
+
+		const resetToken = `test-reset-missing-credential-${Math.random().toString(36).slice(2)}`;
+		await prisma.emailVerificationToken.create({
+			data: {
+				email,
+				token: resetToken,
+				purpose: EmailTokenPurpose.PASSWORD_RESET,
+				userId: user.id,
+				expiresAt: new Date(Date.now() + 60_000),
+			},
+		});
+
+		const resetRes = await requestJson(app, "/auth/reset-password", {
+			method: "POST",
+			body: JSON.stringify({
+				token: resetToken,
+				password: "Passw0rd!Restored",
+			}),
+		});
+		expect(resetRes.response.status).toBe(200);
+
+		const loginRes = await requestJson(app, "/auth/login", {
+			method: "POST",
+			body: JSON.stringify({ email, password: "Passw0rd!Restored" }),
+		});
+		expect(loginRes.response.status).toBe(200);
 	});
 
 	it("password reset link can sign in without changing password or revoking browser sessions", async () => {

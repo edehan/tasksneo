@@ -5,6 +5,7 @@ import { z } from "zod";
 import { verifyCaptcha } from "../lib/captcha.js";
 import { requireAuthSession } from "../lib/context.js";
 import { clearSessionCookie, setSessionCookie } from "../lib/cookie.js";
+import { normalizeEmail } from "../lib/email.js";
 import { AppError } from "../lib/errors.js";
 import { getClientIp } from "../lib/http.js";
 import {
@@ -26,8 +27,10 @@ import { exchangeMcpKey } from "../services/mcp-key.service.js";
 import { revokeSession } from "../services/session.service.js";
 import type { AppVariables } from "../types/context.js";
 
+const emailSchema = z.string().trim().email().transform(normalizeEmail);
+
 const registerStep1Schema = z.object({
-	email: z.string().email(),
+	email: emailSchema,
 	captchaToken: z.string().optional(),
 });
 
@@ -42,13 +45,13 @@ const registerCompleteSchema = z.object({
 });
 
 const loginBodySchema = z.object({
-	email: z.string().email(),
+	email: emailSchema,
 	password: z.string(),
 	trustDevice: z.boolean().optional(),
 });
 
 const forgotPasswordSchema = z.object({
-	email: z.string().email(),
+	email: emailSchema,
 });
 
 const resetPasswordSchema = z.object({

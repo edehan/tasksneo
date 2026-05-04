@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { AuthProvider, EmailTokenPurpose, prisma } from "@taskflow/db";
 
 import { cacheDel, cacheKeys } from "../lib/cache.js";
+import { normalizeEmail } from "../lib/email.js";
 import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
 import { sendEmail } from "../lib/mailer.js";
@@ -37,9 +38,10 @@ async function createVerificationToken(
 	purpose: EmailTokenPurpose,
 	userId?: string,
 ): Promise<string> {
+	const normalizedEmail = normalizeEmail(email);
 	const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS);
 	const count = await prisma.emailVerificationToken.count({
-		where: { email, purpose, createdAt: { gte: windowStart } },
+		where: { email: normalizedEmail, purpose, createdAt: { gte: windowStart } },
 	});
 
 	if (count >= RATE_LIMIT_MAX) {
@@ -54,7 +56,7 @@ async function createVerificationToken(
 
 	await prisma.emailVerificationToken.create({
 		data: {
-			email,
+			email: normalizedEmail,
 			token,
 			purpose,
 			userId: userId ?? null,
@@ -82,14 +84,18 @@ async function validateToken(token: string, purpose: EmailTokenPurpose) {
 }
 
 async function consumeToken(
-	_tokenId: string,
+	tokenId: string,
 	email: string,
 	purpose: EmailTokenPurpose,
 ) {
+	const normalizedEmail = normalizeEmail(email);
 	await prisma.emailVerificationToken.deleteMany({
-		where: { email, purpose },
+		where: {
+			purpose,
+			OR: [{ id: tokenId }, { email: normalizedEmail }],
+		},
 	});
-	// tokenId's row is included in the batch delete above
+	// Remove this token plus any same-purpose tokens for the normalized address.
 }
 
 // ── Email templates ─────────────────────────────────────────────────────────
@@ -143,13 +149,16 @@ function buildVerificationHtml(
 // ── Registration flow ───────────────────────────────────────────────────────
 
 export async function sendRegistrationEmail(email: string) {
-	const existing = await prisma.user.findUnique({ where: { email } });
+	const normalizedEmail = normalizeEmail(email);
+	const existing = await prisma.user.findUnique({
+		where: { email: normalizedEmail },
+	});
 	if (existing) {
 		throw new AppError(409, "EMAIL_EXISTS", "Email already registered");
 	}
 
 	const token = await createVerificationToken(
-		email,
+		normalizedEmail,
 		EmailTokenPurpose.REGISTRATION,
 	);
 	const baseUrl =
@@ -167,7 +176,7 @@ export async function sendRegistrationEmail(email: string) {
 		verifyUrl,
 	);
 
-	await sendEmail(email, subject, text, html);
+	await sendEmail(normalizedEmail, subject, text, html);
 }
 
 export async function verifyRegistrationToken(token: string) {
@@ -207,7 +216,10 @@ export async function completeRegistration(
 // ── Password reset flow ─────────────────────────────────────────────────────
 
 export async function sendPasswordResetEmail(email: string) {
-	const user = await prisma.user.findUnique({ where: { email } });
+	const normalizedEmail = normalizeEmail(email);
+	const user = await prisma.user.findUnique({
+		where: { email: normalizedEmail },
+	});
 
 	// Silent return — do not reveal whether email exists
 	if (!user) {
@@ -215,7 +227,7 @@ export async function sendPasswordResetEmail(email: string) {
 	}
 
 	const token = await createVerificationToken(
-		email,
+		normalizedEmail,
 		EmailTokenPurpose.PASSWORD_RESET,
 		user.id,
 	);
@@ -234,7 +246,7 @@ export async function sendPasswordResetEmail(email: string) {
 		resetUrl,
 	);
 
-	await sendEmail(email, subject, text, html);
+	await sendEmail(normalizedEmail, subject, text, html);
 }
 
 export async function verifyPasswordResetToken(token: string) {
@@ -260,9 +272,19 @@ export async function resetPassword(token: string, newPassword: string) {
 
 	const passwordHash = await hashPassword(newPassword);
 
-	await prisma.userCredential.updateMany({
-		where: { userId: row.userId, provider: AuthProvider.LOCAL },
-		data: { passwordHash },
+	await prisma.userCredential.upsert({
+		where: {
+			userId_provider: {
+				userId: row.userId,
+				provider: AuthProvider.LOCAL,
+			},
+		},
+		create: {
+			userId: row.userId,
+			provider: AuthProvider.LOCAL,
+			passwordHash,
+		},
+		update: { passwordHash },
 	});
 
 	// Kill all existing browser sessions for this user, then create a fresh
@@ -327,13 +349,16 @@ export async function sendEmailChangeVerification(
 	userId: string,
 	newEmail: string,
 ) {
-	const existing = await prisma.user.findUnique({ where: { email: newEmail } });
+	const normalizedEmail = normalizeEmail(newEmail);
+	const existing = await prisma.user.findUnique({
+		where: { email: normalizedEmail },
+	});
 	if (existing) {
 		throw new AppError(409, "EMAIL_EXISTS", "Email already in use");
 	}
 
 	const token = await createVerificationToken(
-		newEmail,
+		normalizedEmail,
 		EmailTokenPurpose.EMAIL_CHANGE,
 		userId,
 	);
@@ -343,16 +368,16 @@ export async function sendEmailChangeVerification(
 	const confirmUrl = `${baseUrl}/settings/verify-email?token=${token}`;
 
 	const subject = `[${appTitle}] 确认你的新邮箱`;
-	const text = `你收到这封邮件，是因为 ${appTitle} 账户发起了邮箱修改请求。\n\n请确认将邮箱更改为 ${newEmail}：\n${confirmUrl}\n\n出于安全考虑，该链接 1 小时内有效。若非本人操作，可忽略本邮件。`;
+	const text = `你收到这封邮件，是因为 ${appTitle} 账户发起了邮箱修改请求。\n\n请确认将邮箱更改为 ${normalizedEmail}：\n${confirmUrl}\n\n出于安全考虑，该链接 1 小时内有效。若非本人操作，可忽略本邮件。`;
 	const html = buildVerificationHtml(
 		appTitle,
 		"确认新邮箱",
-		`请点击下方按钮，确认将 ${escapeHtml(appTitle)} 账户邮箱修改为 <strong>${escapeHtml(newEmail)}</strong>。`,
+		`请点击下方按钮，确认将 ${escapeHtml(appTitle)} 账户邮箱修改为 <strong>${escapeHtml(normalizedEmail)}</strong>。`,
 		"确认邮箱修改",
 		confirmUrl,
 	);
 
-	await sendEmail(newEmail, subject, text, html);
+	await sendEmail(normalizedEmail, subject, text, html);
 }
 
 export async function confirmEmailChange(
@@ -360,6 +385,7 @@ export async function confirmEmailChange(
 	authenticatedUserId: string,
 ) {
 	const row = await validateToken(token, EmailTokenPurpose.EMAIL_CHANGE);
+	const email = normalizeEmail(row.email);
 
 	if (!row.userId || row.userId !== authenticatedUserId) {
 		throw new AppError(
@@ -371,7 +397,7 @@ export async function confirmEmailChange(
 
 	// Check email still available (race condition guard)
 	const existing = await prisma.user.findUnique({
-		where: { email: row.email },
+		where: { email },
 	});
 	if (existing) {
 		throw new AppError(409, "EMAIL_EXISTS", "Email already in use");
@@ -379,11 +405,11 @@ export async function confirmEmailChange(
 
 	const user = await prisma.user.update({
 		where: { id: row.userId },
-		data: { email: row.email },
+		data: { email },
 		include: { school: { select: { name: true } } },
 	});
 
-	await consumeToken(row.id, row.email, EmailTokenPurpose.EMAIL_CHANGE);
+	await consumeToken(row.id, email, EmailTokenPurpose.EMAIL_CHANGE);
 	await cacheDel(cacheKeys.userProfile(row.userId));
 
 	return toUserProfile(user, null);

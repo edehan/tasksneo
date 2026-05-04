@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { z } from "zod";
 
+import { normalizeEmail } from "../lib/email.js";
 import { getMetricsSnapshot } from "../lib/metrics.js";
 import { getQueueStats } from "../lib/queue.js";
 import { getStorageStatus } from "../lib/storage.js";
@@ -34,7 +35,7 @@ const schoolIdParamSchema = z.object({
 
 const patchConfigSchema = z.record(z.string(), z.string());
 const sendTestEmailSchema = z.object({
-	to: z.string().email(),
+	to: z.string().trim().email().transform(normalizeEmail),
 });
 
 const patchAdminUserSchema = z.object({

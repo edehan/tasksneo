@@ -1,5 +1,6 @@
 import { AuthProvider, ClassRole, prisma } from "@taskflow/db";
 
+import { normalizeEmail } from "../lib/email.js";
 import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
@@ -41,6 +42,8 @@ export async function createUserWithPersonalClass(
 	input: RegisterInput,
 	sessionMeta: SessionMetadata,
 ) {
+	const email = normalizeEmail(input.email);
+
 	await assertRegistrationOpen();
 
 	if (input.schoolId && !input.studentId) {
@@ -70,7 +73,7 @@ export async function createUserWithPersonalClass(
 	}
 
 	const existingUser = await prisma.user.findUnique({
-		where: { email: input.email },
+		where: { email },
 	});
 	if (existingUser) {
 		throw new AppError(409, "EMAIL_EXISTS", "Email already registered");
@@ -81,7 +84,7 @@ export async function createUserWithPersonalClass(
 	const user = await prisma.$transaction(async (tx) => {
 		const createdUser = await tx.user.create({
 			data: {
-				email: input.email,
+				email,
 				nickname: input.nickname ?? null,
 				schoolId: input.schoolId ?? null,
 				studentId: input.studentId ?? null,
@@ -154,8 +157,10 @@ export async function register(
 }
 
 export async function login(input: LoginInput) {
+	const email = normalizeEmail(input.email);
+
 	const user = await prisma.user.findUnique({
-		where: { email: input.email },
+		where: { email },
 		select: {
 			id: true,
 			email: true,
