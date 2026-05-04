@@ -5,6 +5,7 @@ import { z } from "zod";
 import { verifyCaptcha } from "../lib/captcha.js";
 import { requireAuthSession } from "../lib/context.js";
 import { clearSessionCookie, setSessionCookie } from "../lib/cookie.js";
+import { normalizeEmail } from "../lib/email.js";
 import { AppError } from "../lib/errors.js";
 import { getClientIp } from "../lib/http.js";
 import {
@@ -18,6 +19,7 @@ import {
 	resetPassword,
 	sendPasswordResetEmail,
 	sendRegistrationEmail,
+	signInWithPasswordResetToken,
 	verifyPasswordResetToken,
 	verifyRegistrationToken,
 } from "../services/email-verification.service.js";
@@ -25,8 +27,10 @@ import { exchangeMcpKey } from "../services/mcp-key.service.js";
 import { revokeSession } from "../services/session.service.js";
 import type { AppVariables } from "../types/context.js";
 
+const emailSchema = z.string().trim().email().transform(normalizeEmail);
+
 const registerStep1Schema = z.object({
-	email: z.string().email(),
+	email: emailSchema,
 	captchaToken: z.string().optional(),
 });
 
@@ -41,18 +45,22 @@ const registerCompleteSchema = z.object({
 });
 
 const loginBodySchema = z.object({
-	email: z.string().email(),
+	email: emailSchema,
 	password: z.string(),
 	trustDevice: z.boolean().optional(),
 });
 
 const forgotPasswordSchema = z.object({
-	email: z.string().email(),
+	email: emailSchema,
 });
 
 const resetPasswordSchema = z.object({
 	token: z.string().min(1),
 	password: z.string().min(8),
+});
+
+const resetPasswordSignInSchema = z.object({
+	token: z.string().min(1),
 });
 
 const mcpKeySchema = z.object({
@@ -154,6 +162,16 @@ authRouter.post("/forgot-password", async (c) => {
 authRouter.post("/reset-password", async (c) => {
 	const body = resetPasswordSchema.parse(await c.req.json());
 	const result = await resetPassword(body.token, body.password);
+	setSessionCookie(c, result.token, false);
+	return c.json({ message: result.message, user: result.user }, 200);
+});
+
+authRouter.post("/reset-password/sign-in", async (c) => {
+	const body = resetPasswordSignInSchema.parse(await c.req.json());
+	const result = await signInWithPasswordResetToken(
+		body.token,
+		readSessionMeta(c, false),
+	);
 	setSessionCookie(c, result.token, false);
 	return c.json({ message: result.message, user: result.user }, 200);
 });

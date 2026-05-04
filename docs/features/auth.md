@@ -93,6 +93,7 @@
 - 可撤销指定 browser session 或 MCP session。
 - 若撤销的是当前 session，会同时清除当前浏览器 cookie。
 - 若撤销 MCP session，只断开该连接，不吊销底层 MCP key。
+- 当前设置页 UI 对 MCP session 不再暴露“只断开单条连接”的操作；用户确认后会撤销底层 MCP key，并清除该 key 的全部 MCP sessions，避免客户端用同一 key 自动重连。
 
 ---
 
@@ -107,12 +108,19 @@
 
 1. 用户提交邮箱到 `POST /auth/forgot-password`。
 2. 前端进入重置页前先调用 `GET /auth/verify-token?purpose=PASSWORD_RESET`。
-3. 用户提交新密码到 `POST /auth/reset-password`。
-4. 成功后：
+3. 用户可选择：
+   - 提交新密码到 `POST /auth/reset-password`
+   - 或点击“暂不重设，直接登入”，调用 `POST /auth/reset-password/sign-in`
+4. 提交新密码成功后：
    - 更新本地密码 hash
    - 撤销该用户全部旧浏览器 sessions
    - 自动创建新的 7 天非信任浏览器 session（cookie 自动登录）
    - MCP keys / MCP sessions 保持可用
+5. 直接登入成功后：
+   - 不修改密码
+   - 不撤销该用户已有浏览器 sessions
+   - 自动创建新的 7 天非信任浏览器 session（cookie 自动登录）
+   - 消耗该重置 token
 
 ---
 

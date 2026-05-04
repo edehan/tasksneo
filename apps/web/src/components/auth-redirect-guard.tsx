@@ -1,46 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { getMe } from "@/lib/api";
-
-const AUTH_PATHS = new Set([
-  "/login",
-  "/register",
-  "/register/complete",
-  "/forgot-password",
-  "/reset-password",
-]);
-
-function isSafeAuthenticatedTarget(value: string | null): value is string {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return false;
-  }
-
-  try {
-    const url = new URL(value, window.location.origin);
-    return (
-      url.origin === window.location.origin && !AUTH_PATHS.has(url.pathname)
-    );
-  } catch {
-    return false;
-  }
-}
+import { readSafeNextParam } from "@/lib/search-params";
 
 function getAuthenticatedRedirectTarget(): string {
-  const next = new URLSearchParams(window.location.search).get("next");
-  return isSafeAuthenticatedTarget(next) ? next : "/";
+  return readSafeNextParam() ?? "/";
 }
 
 export function AuthRedirectGuard({ children }: { children: React.ReactNode }) {
-  const { user, setAuth } = useAuth();
-  const [checkingSession, setCheckingSession] = useState(true);
+  const { user, hasSessionCookie, setAuth } = useAuth();
 
   useEffect(() => {
     let cancelled = false;
 
     if (!user) {
-      getMe()
+      if (!hasSessionCookie) {
+        return () => {
+          cancelled = true;
+        };
+      }
+
+      getMe({ suppressAuthExpired: true })
         .then((currentUser) => {
           if (cancelled) {
             return;
@@ -49,11 +31,7 @@ export function AuthRedirectGuard({ children }: { children: React.ReactNode }) {
           setAuth(currentUser);
           window.location.replace(getAuthenticatedRedirectTarget());
         })
-        .catch(() => {
-          if (!cancelled) {
-            setCheckingSession(false);
-          }
-        });
+        .catch(() => undefined);
 
       return () => {
         cancelled = true;
@@ -64,9 +42,9 @@ export function AuthRedirectGuard({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [setAuth, user]);
+  }, [hasSessionCookie, setAuth, user]);
 
-  if (user || checkingSession) {
+  if (user) {
     return null;
   }
 

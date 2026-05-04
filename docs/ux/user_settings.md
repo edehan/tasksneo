@@ -24,12 +24,14 @@
 - MCP 会话列表，标记其来源 MCP key 名称
 - “Sign out other browser sessions” 操作
 - 单条 session 的撤销按钮
+- MCP 连接的关闭访问权限按钮
 
 **文案要求**：
 
 - 批量登出必须明确写“只影响其他浏览器会话”
 - 明确提示：MCP keys / MCP connections 不受该操作影响
-- 如果用户单独撤销某条 MCP session，需要说明这只会断开这条连接，不会吊销底层 MCP key
+- 如果用户从 MCP 连接列表关闭访问权限，需要说明这会撤销底层 MCP key，并清除该 key 的全部有效会话；确认按钮应表达“登出且撤销”
+- 确认弹窗应列出该 key 当前有效会话的 IP、位置、最近访问时间
 
 ### 8.3 MCP keys
 

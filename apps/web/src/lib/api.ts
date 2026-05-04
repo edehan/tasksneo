@@ -292,6 +292,10 @@ export interface AdminUpdateUserInput {
   password?: string;
 }
 
+interface ApiRequestOptions {
+  suppressAuthExpired?: boolean;
+}
+
 // ─── Core Request Function ───────────────────────────────────────────────────
 
 export function getApiBaseUrl(): string {
@@ -301,6 +305,7 @@ export function getApiBaseUrl(): string {
 export async function apiRequest<T>(
   path: string,
   init: RequestInit = {},
+  options: ApiRequestOptions = {},
 ): Promise<T> {
   const headers = new Headers(init.headers ?? {});
   const adminPath = isAdminPath(path);
@@ -344,6 +349,7 @@ export async function apiRequest<T>(
 
     if (
       !adminPath &&
+      !options.suppressAuthExpired &&
       (response.status === 401 || AUTH_ERROR_CODES.has(errorCode))
     ) {
       emitAuthExpired();
@@ -439,6 +445,18 @@ export async function resetPassword(
   );
 }
 
+export async function signInWithPasswordResetToken(
+  token: string,
+): Promise<{ message: string; user: UserProfile }> {
+  return apiRequest<{ message: string; user: UserProfile }>(
+    "/auth/reset-password/sign-in",
+    {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    },
+  );
+}
+
 export async function requestEmailChange(
   newEmail: string,
   captchaToken?: string | null,
@@ -463,8 +481,10 @@ export async function confirmEmailChange(
 
 // ─── Users ───────────────────────────────────────────────────────────────────
 
-export async function getMe(): Promise<UserProfile> {
-  return apiRequest<UserProfile>("/users/me", {});
+export async function getMe(
+  options: ApiRequestOptions = {},
+): Promise<UserProfile> {
+  return apiRequest<UserProfile>("/users/me", {}, options);
 }
 
 export async function updateProfile(input: {
@@ -628,7 +648,12 @@ export async function getClass(classId: string): Promise<ClassSummary> {
 
 export async function updateClass(
   classId: string,
-  input: { name?: string; description?: string | null; color?: string },
+  input: {
+    name?: string;
+    description?: string | null;
+    color?: string;
+    schoolId?: string | null;
+  },
 ): Promise<ClassSummary> {
   return apiRequest<ClassSummary>(`/classes/${classId}`, {
     method: "PATCH",

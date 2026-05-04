@@ -17,7 +17,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ApiError, resetPassword, verifyToken } from "@/lib/api";
+import {
+  ApiError,
+  resetPassword,
+  signInWithPasswordResetToken,
+  verifyToken,
+} from "@/lib/api";
 import { readWindowSearchParam } from "@/lib/search-params";
 
 export function ResetPasswordForm() {
@@ -33,6 +38,7 @@ export function ResetPasswordForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
 
   useEffect(() => {
     const searchToken = readWindowSearchParam("token");
@@ -80,6 +86,25 @@ export function ResetPasswordForm() {
       toast.error(message);
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleSignInWithoutReset() {
+    if (!token) return;
+
+    setSigningIn(true);
+    try {
+      const result = await signInWithPasswordResetToken(token);
+      setAuth(result.user);
+      toast.success(t("signedInWithoutReset"));
+      router.replace("/");
+      router.refresh();
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : t("signInWithoutResetFailed");
+      toast.error(message);
+    } finally {
+      setSigningIn(false);
     }
   }
 
@@ -153,9 +178,22 @@ export function ResetPasswordForm() {
             />
           </div>
         </CardContent>
-        <CardFooter>
-          <Button type="submit" className="w-full" disabled={submitting}>
+        <CardFooter className="flex-col gap-2">
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={submitting || signingIn}
+          >
             {submitting ? t("resetting") : t("resetPassword")}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            disabled={submitting || signingIn}
+            onClick={handleSignInWithoutReset}
+          >
+            {signingIn ? t("signingIn") : t("signInWithoutReset")}
           </Button>
         </CardFooter>
       </form>

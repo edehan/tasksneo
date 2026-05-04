@@ -484,6 +484,26 @@ describe("TaskFlow API e2e", () => {
 			body: JSON.stringify({ description: "Updated description" }),
 		});
 		expect(classPatch.response.status).toBe(200);
+		expect((classPatch.body as { schoolId: string | null }).schoolId).toBe(
+			schoolAId,
+		);
+
+		const clearClassSchool = await requestJson(app, `/classes/${classId}`, {
+			method: "PATCH",
+			headers: authHeader(ownerToken),
+			body: JSON.stringify({ schoolId: null }),
+		});
+		expect(clearClassSchool.response.status).toBe(200);
+		expect(
+			(clearClassSchool.body as { schoolId: string | null }).schoolId,
+		).toBeNull();
+
+		const outsiderJoinAfterClear = await requestJson(app, "/classes/join", {
+			method: "POST",
+			headers: authHeader(outsiderToken),
+			body: JSON.stringify({ inviteCode: activeInviteCode }),
+		});
+		expect(outsiderJoinAfterClear.response.status).toBe(200);
 
 		const membersList = await app.request(`/classes/${classId}/members`, {
 			headers: authHeader(ownerToken),
@@ -1338,6 +1358,32 @@ describe("Session lifecycle", () => {
 		expect(existing.body).toEqual(missing.body);
 	});
 
+	it("normalizes email addresses across registration and login", async () => {
+		const rawEmail = `  Normalize.${Date.now()}@Example.COM  `;
+		const normalizedEmail = rawEmail.trim().toLowerCase();
+		const created = await createTestUser({
+			email: rawEmail,
+			password: "Passw0rd!",
+		});
+
+		expect(created.user.email).toBe(normalizedEmail);
+
+		const storedUser = await prisma.user.findUnique({
+			where: { email: normalizedEmail },
+		});
+		expect(storedUser).not.toBeNull();
+
+		const loginRes = await requestJson(app, "/auth/login", {
+			method: "POST",
+			body: JSON.stringify({
+				email: ` ${normalizedEmail.toUpperCase()} `,
+				password: "Passw0rd!",
+			}),
+		});
+
+		expect(loginRes.response.status).toBe(200);
+	});
+
 	it("logs in users with bcryptjs-generated legacy password hashes", async () => {
 		const email = uniqueEmail("legacy-bcryptjs");
 		await createTestUser({ email, password: "Temporary1!" });
@@ -1461,6 +1507,58 @@ describe("Session lifecycle", () => {
 		expect(mcpAfter.status).toBe(200);
 	});
 
+	it("revoking an MCP key invalidates all sessions minted from it", async () => {
+		const { token } = await createTestUser({ emailPrefix: "mcp-revoke" });
+
+		const createKeyRes = await requestJson(app, "/users/me/mcp-keys", {
+			method: "POST",
+			headers: authHeader(token),
+			body: JSON.stringify({ name: "Bot" }),
+		});
+		expect(createKeyRes.response.status).toBe(201);
+		const createdKey = createKeyRes.body as { id: string; key: string };
+
+		const firstExchange = await requestJson(app, "/auth/mcp", {
+			method: "POST",
+			body: JSON.stringify({ key: createdKey.key }),
+		});
+		expect(firstExchange.response.status).toBe(200);
+		const firstMcpToken = (firstExchange.body as { token: string }).token;
+
+		const secondExchange = await requestJson(app, "/auth/mcp", {
+			method: "POST",
+			body: JSON.stringify({ key: createdKey.key }),
+		});
+		expect(secondExchange.response.status).toBe(200);
+		const secondMcpToken = (secondExchange.body as { token: string }).token;
+
+		const revokeKey = await requestJson(
+			app,
+			`/users/me/mcp-keys/${createdKey.id}`,
+			{
+				method: "DELETE",
+				headers: authHeader(token),
+			},
+		);
+		expect(revokeKey.response.status).toBe(200);
+
+		const firstAfter = await app.request("/users/me", {
+			headers: authHeader(firstMcpToken),
+		});
+		expect(firstAfter.status).toBe(401);
+
+		const secondAfter = await app.request("/users/me", {
+			headers: authHeader(secondMcpToken),
+		});
+		expect(secondAfter.status).toBe(401);
+
+		const exchangeAfterRevoke = await requestJson(app, "/auth/mcp", {
+			method: "POST",
+			body: JSON.stringify({ key: createdKey.key }),
+		});
+		expect(exchangeAfterRevoke.response.status).toBe(401);
+	});
+
 	it("password reset kills old browser sessions and auto-signs in a new session", async () => {
 		const email = uniqueEmail("reset");
 		const { token } = await createTestUser({ email, password: "Passw0rd!" });
@@ -1524,6 +1622,108 @@ describe("Session lifecycle", () => {
 			headers: authHeader(mcpToken),
 		});
 		expect(mcpAfter.status).toBe(200);
+	});
+
+	it("password reset recreates a missing local credential", async () => {
+		const email = uniqueEmail("reset-missing-credential");
+		await createTestUser({ email, password: "Passw0rd!" });
+		const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+		await prisma.userCredential.delete({
+			where: {
+				userId_provider: {
+					userId: user.id,
+					provider: AuthProvider.LOCAL,
+				},
+			},
+		});
+
+		const resetToken = `test-reset-missing-credential-${Math.random().toString(36).slice(2)}`;
+		await prisma.emailVerificationToken.create({
+			data: {
+				email,
+				token: resetToken,
+				purpose: EmailTokenPurpose.PASSWORD_RESET,
+				userId: user.id,
+				expiresAt: new Date(Date.now() + 60_000),
+			},
+		});
+
+		const resetRes = await requestJson(app, "/auth/reset-password", {
+			method: "POST",
+			body: JSON.stringify({
+				token: resetToken,
+				password: "Passw0rd!Restored",
+			}),
+		});
+		expect(resetRes.response.status).toBe(200);
+
+		const loginRes = await requestJson(app, "/auth/login", {
+			method: "POST",
+			body: JSON.stringify({ email, password: "Passw0rd!Restored" }),
+		});
+		expect(loginRes.response.status).toBe(200);
+	});
+
+	it("password reset link can sign in without changing password or revoking browser sessions", async () => {
+		const email = uniqueEmail("reset-sign-in");
+		const first = await createTestUser({ email, password: "Passw0rd!" });
+
+		const secondLogin = await requestJson(app, "/auth/login", {
+			method: "POST",
+			body: JSON.stringify({ email, password: "Passw0rd!" }),
+		});
+		expect(secondLogin.response.status).toBe(200);
+		const secondToken = readSessionTokenFromSetCookie(secondLogin.response);
+
+		const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+		const resetToken = `test-reset-login-token-${Math.random().toString(36).slice(2)}`;
+		await prisma.emailVerificationToken.create({
+			data: {
+				email,
+				token: resetToken,
+				purpose: EmailTokenPurpose.PASSWORD_RESET,
+				userId: user.id,
+				expiresAt: new Date(Date.now() + 60_000),
+			},
+		});
+
+		const signInRes = await requestJson(app, "/auth/reset-password/sign-in", {
+			method: "POST",
+			body: JSON.stringify({ token: resetToken }),
+		});
+		expect(signInRes.response.status).toBe(200);
+		expect(signInRes.body).not.toHaveProperty("token");
+		expect(signInRes.body).toHaveProperty("user");
+		const resetLinkSessionToken = readSessionTokenFromSetCookie(
+			signInRes.response,
+		);
+
+		const firstAfter = await app.request("/users/me", {
+			headers: authHeader(first.token),
+		});
+		expect(firstAfter.status).toBe(200);
+
+		const secondAfter = await app.request("/users/me", {
+			headers: authHeader(secondToken),
+		});
+		expect(secondAfter.status).toBe(200);
+
+		const resetLinkSessionAfter = await app.request("/users/me", {
+			headers: authHeader(resetLinkSessionToken),
+		});
+		expect(resetLinkSessionAfter.status).toBe(200);
+
+		const oldPasswordStillWorks = await requestJson(app, "/auth/login", {
+			method: "POST",
+			body: JSON.stringify({ email, password: "Passw0rd!" }),
+		});
+		expect(oldPasswordStillWorks.response.status).toBe(200);
+
+		const reusedToken = await requestJson(app, "/auth/reset-password/sign-in", {
+			method: "POST",
+			body: JSON.stringify({ token: resetToken }),
+		});
+		expect(reusedToken.response.status).toBe(400);
 	});
 
 	it("GET /users/me/sessions lists sessions and marks the current one", async () => {

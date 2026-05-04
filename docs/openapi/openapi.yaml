@@ -164,6 +164,13 @@ components:
           type: string
           minLength: 8
 
+    PasswordResetTokenSignInRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+
     ChangeEmailRequest:
       type: object
       required: [email]
@@ -1290,6 +1297,35 @@ paths:
       responses:
         '200':
           description: Password reset successful. Auto-login session cookie issued.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResetPasswordResponse'
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/reset-password/sign-in:
+    post:
+      tags: [Auth]
+      summary: Sign in with a password reset token
+      description: |
+        Validates and consumes a password reset token without changing the
+        password or revoking existing browser sessions. Creates a fresh
+        untrusted browser session (7-day fixed), sets session cookie, and
+        returns `{ message, user }`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetTokenSignInRequest'
+      responses:
+        '200':
+          description: Signed in successfully. Auto-login session cookie issued.
           content:
             application/json:
               schema:

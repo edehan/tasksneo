@@ -393,10 +393,25 @@ export async function getClassDetail(classId: string, userId: string) {
 export async function updateClass(
 	classId: string,
 	userId: string,
-	input: { name?: string; description?: string | null; color?: string },
+	input: {
+		name?: string;
+		description?: string | null;
+		color?: string;
+		schoolId?: string | null;
+	},
 ) {
 	const membership = await getMembershipOrThrow(classId, userId);
 	requireOwnerOrAdmin(membership);
+
+	if (input.schoolId) {
+		const school = await prisma.school.findUnique({
+			where: { id: input.schoolId },
+		});
+
+		if (!school) {
+			throw new AppError(400, "SCHOOL_NOT_FOUND", "School does not exist");
+		}
+	}
 
 	const updatedClass = await prisma.class.update({
 		where: { id: classId },
@@ -404,6 +419,7 @@ export async function updateClass(
 			name: input.name,
 			description: input.description,
 			color: input.color,
+			schoolId: input.schoolId,
 		},
 		include: {
 			_count: {

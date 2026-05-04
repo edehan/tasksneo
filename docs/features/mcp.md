@@ -19,6 +19,7 @@ TaskFlow 提供 MCP key + MCP session 的双层认证模型，供 Claude Code、
 - MCP session 是连接级凭证，用于真正访问业务 API。
 - 撤销 MCP key 时，会立即删除关联的 MCP sessions。
 - 单独撤销某个 MCP session，只会断开那条连接，不会吊销底层 key。
+- 设置页的 MCP 连接列表不提供“只断开单条 MCP session”的确认路径；从该列表关闭访问权限时，会撤销底层 MCP key 并断开该 key 的全部 MCP sessions，避免客户端自动重连。
 - 修改密码、重置密码、批量登出其他浏览器会话，都不会影响 MCP keys。
 
 ## 当前范围

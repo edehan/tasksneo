@@ -1,24 +1,20 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { CURRENT_PATH_HEADER, isPublicPath } from "./lib/auth-paths";
 
 const SESSION_COOKIE_NAME = "tfses_session";
 
-const PUBLIC_PATHS = new Set([
-  "/login",
-  "/register",
-  "/forgot-password",
-  "/reset-password",
-  "/terms",
-  "/privacy",
-]);
-
-function isPublicPath(pathname: string): boolean {
-  if (PUBLIC_PATHS.has(pathname)) {
-    return true;
-  }
-
-  return (
-    pathname.startsWith("/register/") || pathname.startsWith("/reset-password/")
+function nextWithCurrentPath(request: NextRequest): NextResponse {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set(
+    CURRENT_PATH_HEADER,
+    `${request.nextUrl.pathname}${request.nextUrl.search}`,
   );
+
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 }
 
 export function middleware(request: NextRequest) {
@@ -40,11 +36,11 @@ export function middleware(request: NextRequest) {
 
   if (!hasSession && !isPublicPath(pathname)) {
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("next", pathname);
+    loginUrl.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  return nextWithCurrentPath(request);
 }
 
 export const config = {

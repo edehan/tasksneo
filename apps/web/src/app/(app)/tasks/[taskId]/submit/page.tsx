@@ -1,7 +1,12 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { useParams, usePathname, useRouter } from "next/navigation";
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
@@ -22,6 +27,7 @@ export default function SubmitTaskPage() {
   const params = useParams();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const t = useTranslations("taskEditorPage");
 
@@ -77,9 +83,11 @@ export default function SubmitTaskPage() {
     if (!authLoading && user) {
       void loadData();
     } else if (!authLoading && !user) {
-      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+      const search = searchParams.toString();
+      const next = search ? `${pathname}?${search}` : pathname;
+      router.replace(`/login?next=${encodeURIComponent(next)}`);
     }
-  }, [authLoading, user, loadData, router, pathname]);
+  }, [authLoading, user, loadData, router, pathname, searchParams]);
 
   if (authLoading || loading) {
     return (
