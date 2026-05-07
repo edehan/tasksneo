@@ -742,6 +742,7 @@
     },
     "table": {
       "student": "Student",
+      "read": "Read",
       "submitted": "Submitted",
       "score": "Score",
       "status": "Status",

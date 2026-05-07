@@ -207,6 +207,7 @@ export interface SubmissionListRow {
   schoolName: string | null;
   studentId: string | null;
   role: "OWNER" | "ADMIN" | "MEMBER";
+  viewedAt: string | null;
   submitted: boolean;
   submission: SubmissionSummary | null;
   attachments: AttachmentMeta[];

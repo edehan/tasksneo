@@ -742,6 +742,7 @@
     },
     "table": {
       "student": "Etudiant",
+      "read": "Lu",
       "submitted": "Rendu",
       "score": "Note",
       "status": "Statut",

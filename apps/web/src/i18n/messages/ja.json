@@ -742,6 +742,7 @@
     },
     "table": {
       "student": "学生",
+      "read": "既読",
       "submitted": "提出日時",
       "score": "点数",
       "status": "ステータス",

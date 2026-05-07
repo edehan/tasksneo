@@ -742,6 +742,7 @@
     },
     "table": {
       "student": "学生",
+      "read": "已读",
       "submitted": "提交时间",
       "score": "分数",
       "status": "状态",

@@ -1,10 +1,14 @@
 "use client";
 
 import {
+  ArrowDown,
   ArrowLeft,
+  ArrowUp,
   Award,
   BarChart3,
+  Check,
   CheckCircle2,
+  ChevronsUpDown,
   ClipboardCheck,
   Download,
   Eye,
@@ -32,6 +36,26 @@ interface SubmissionsListPageProps {
   initialRows: SubmissionListRow[];
 }
 
+type SortKey = "student" | "read" | "submitted" | "score" | "status";
+type SortDirection = "asc" | "desc";
+
+interface SortState {
+  key: SortKey | null;
+  direction: SortDirection | null;
+}
+
+function getDisplayName(row: SubmissionListRow) {
+  return row.nickname || row.studentId || "Student";
+}
+
+function getStatusRank(row: SubmissionListRow) {
+  if (row.submission?.score !== null && row.submission?.score !== undefined) {
+    return 2;
+  }
+  if (row.submitted && row.submission) return 1;
+  return 0;
+}
+
 export function SubmissionsListPage({
   initialTask,
   initialClass,
@@ -46,6 +70,10 @@ export function SubmissionsListPage({
 
   const [exporting, setExporting] = useState(false);
   const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
+  const [sort, setSort] = useState<SortState>({
+    key: null,
+    direction: null,
+  });
 
   const dateFormatter = new Intl.DateTimeFormat(locale, {
     month: "short",
@@ -98,6 +126,70 @@ export function SubmissionsListPage({
         : "\u2014";
     return { total, submitted, graded, avg };
   }, [rows]);
+
+  const sortedRows = useMemo(() => {
+    if (!sort.key || !sort.direction) return rows;
+
+    const direction = sort.direction;
+    const compareMissingLast = <T,>(
+      a: T | null | undefined,
+      b: T | null | undefined,
+      compare: (left: T, right: T) => number,
+    ) => {
+      const aMissing = a === null || a === undefined;
+      const bMissing = b === null || b === undefined;
+      if (aMissing && bMissing) return 0;
+      if (aMissing) return 1;
+      if (bMissing) return -1;
+      const result = compare(a, b);
+      return direction === "asc" ? result : -result;
+    };
+
+    return [...rows].sort((a, b) => {
+      switch (sort.key) {
+        case "student":
+          return direction === "asc"
+            ? getDisplayName(a).localeCompare(getDisplayName(b), locale)
+            : getDisplayName(b).localeCompare(getDisplayName(a), locale);
+        case "read": {
+          const result =
+            Number(Boolean(a.viewedAt)) - Number(Boolean(b.viewedAt));
+          return direction === "asc" ? result : -result;
+        }
+        case "submitted":
+          return compareMissingLast(
+            a.submission?.firstSubmittedAt,
+            b.submission?.firstSubmittedAt,
+            (left, right) =>
+              new Date(left).getTime() - new Date(right).getTime(),
+          );
+        case "score":
+          return compareMissingLast(
+            a.submission?.score ? Number.parseFloat(a.submission.score) : null,
+            b.submission?.score ? Number.parseFloat(b.submission.score) : null,
+            (left, right) => left - right,
+          );
+        case "status": {
+          const result = getStatusRank(a) - getStatusRank(b);
+          return direction === "asc" ? result : -result;
+        }
+        default:
+          return 0;
+      }
+    });
+  }, [locale, rows, sort]);
+
+  function handleSort(key: SortKey) {
+    setSort((current) => {
+      if (current.key !== key || current.direction === null) {
+        return { key, direction: "asc" };
+      }
+      if (current.direction === "asc") {
+        return { key, direction: "desc" };
+      }
+      return { key: null, direction: null };
+    });
+  }
 
   // ─── CSV export ─────────────────────────────────────────────────────────────
 
@@ -201,8 +293,47 @@ export function SubmissionsListPage({
 
   const accentColor = cls.color || "#7B6CB0";
 
+  function SortableHeader({
+    sortKey,
+    label,
+    align = "left",
+  }: {
+    sortKey: SortKey;
+    label: string;
+    align?: "left" | "center";
+  }) {
+    const active = sort.key === sortKey && sort.direction !== null;
+    const Icon = active
+      ? sort.direction === "asc"
+        ? ArrowUp
+        : ArrowDown
+      : ChevronsUpDown;
+
+    return (
+      <th
+        className={`px-4 py-3 text-[12px] font-semibold text-muted-foreground ${
+          align === "center" ? "text-center" : "text-left"
+        }`}
+      >
+        <button
+          type="button"
+          onClick={() => handleSort(sortKey)}
+          className={`inline-flex items-center gap-1 rounded-md text-[12px] font-semibold transition-colors hover:text-foreground ${
+            align === "center" ? "justify-center" : ""
+          }`}
+          style={active ? { color: accentColor } : undefined}
+          aria-label={`${label} sort`}
+          title={label}
+        >
+          <span>{label}</span>
+          <Icon size={12} strokeWidth={2} />
+        </button>
+      </th>
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-[960px] p-8">
+    <div className="mx-auto max-w-[1080px] p-8">
       {/* ── Back button ─────────────────────────────────────────────────── */}
       <button
         type="button"
@@ -285,34 +416,34 @@ export function SubmissionsListPage({
       </div>
 
       {/* ── Table ────────────────────────────────────────────────────────── */}
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-lg border border-border bg-card">
+        <table className="w-full min-w-[820px] text-sm">
           <thead>
             <tr className="border-b border-border bg-surface-subtle/60">
-              <th className="px-4 py-3 text-left text-[12px] font-semibold text-muted-foreground">
-                {t("table.student")}
-              </th>
-              <th className="px-4 py-3 text-left text-[12px] font-semibold text-muted-foreground">
-                {t("table.submitted")}
-              </th>
-              <th className="px-4 py-3 text-left text-[12px] font-semibold text-muted-foreground">
-                {t("table.score")}
-              </th>
-              <th className="px-4 py-3 text-left text-[12px] font-semibold text-muted-foreground">
-                {t("table.status")}
-              </th>
+              <SortableHeader sortKey="student" label={t("table.student")} />
+              <SortableHeader
+                sortKey="read"
+                label={t("table.read")}
+                align="center"
+              />
+              <SortableHeader
+                sortKey="submitted"
+                label={t("table.submitted")}
+              />
+              <SortableHeader sortKey="score" label={t("table.score")} />
+              <SortableHeader sortKey="status" label={t("table.status")} />
               <th className="px-4 py-3 text-right text-[12px] font-semibold text-muted-foreground">
                 {t("table.action")}
               </th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => {
+            {sortedRows.map((row) => {
               const hasSubmission = row.submitted && row.submission;
               const isGraded =
                 row.submission?.score !== null &&
                 row.submission?.score !== undefined;
-              const displayName = row.nickname || row.studentId || "Student";
+              const displayName = getDisplayName(row);
 
               return (
                 <tr
@@ -331,6 +462,19 @@ export function SubmissionsListPage({
                         </p>
                       )}
                     </div>
+                  </td>
+
+                  {/* Read */}
+                  <td className="px-4 py-3 text-center">
+                    {row.viewedAt && (
+                      <Check
+                        size={15}
+                        strokeWidth={2.5}
+                        className="mx-auto"
+                        style={{ color: accentColor }}
+                        aria-label={t("table.read")}
+                      />
+                    )}
                   </td>
 
                   {/* Submitted date */}
@@ -450,7 +594,7 @@ export function SubmissionsListPage({
             {rows.length === 0 && (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="px-4 py-12 text-center text-[13px] text-muted-foreground"
                 >
                   {t("table.noMembers")}
