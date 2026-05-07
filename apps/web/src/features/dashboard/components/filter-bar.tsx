@@ -20,6 +20,7 @@ const filterDefs: FilterDef[] = [
   { key: "overdue", labelKey: "overdue" },
   { key: "showSubmitted", labelKey: "showSubmitted", showCheck: true },
   { key: "showLongOverdue", labelKey: "showLongOverdue", showCheck: true },
+  { key: "showArchived", labelKey: "showArchived", showCheck: true },
 ];
 
 export function FilterBar({ filters, onChange }: FilterBarProps) {

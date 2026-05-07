@@ -60,10 +60,10 @@ export function getFooterText(
   status: DetailStatus,
   dueAt: string | null,
   t: TranslateFn,
-  formatDate: (iso: string | null) => string,
+  _formatDate: (iso: string | null) => string,
 ): string {
   if (status === "submitted") return t("footer.submitted");
   if (status === "overdue") return t("footer.overdue");
-  if (dueAt) return t("footer.dueAt", { date: formatDate(dueAt) });
-  return t("footer.noDueDate");
+  if (!dueAt) return t("footer.noDueDate");
+  return "";
 }

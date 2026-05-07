@@ -20,7 +20,10 @@ import {
   type ViewMode,
   ViewSwitcher,
 } from "@/features/tasks/components/view-switcher";
-import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
+import {
+  isTaskArchived,
+  type TaskWithClass,
+} from "@/features/tasks/lib/task-utils";
 import { useGanttZoom } from "@/hooks/use-gantt-zoom";
 import { useTaskFilterPrefs } from "@/hooks/use-task-filter-prefs";
 import type { ClassSummary, MyTaskSummary } from "@/lib/api";
@@ -79,6 +82,8 @@ export function DashboardPage({
   // Filter tasks
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
+      if (isTaskArchived(task) && !filters.showArchived) return false;
+
       const status = deriveDisplayStatus(task);
 
       // Hide submitted unless "Show Submitted" is active
@@ -108,6 +113,8 @@ export function DashboardPage({
     let overdue = 0;
     let notStarted = 0;
     for (const task of tasks) {
+      if (isTaskArchived(task) && !filters.showArchived) continue;
+
       const s = deriveDisplayStatus(task);
       total++;
       if (s === "in-progress") inProgress++;
@@ -115,7 +122,7 @@ export function DashboardPage({
       if (s === "not-started") notStarted++;
     }
     return { total, inProgress, overdue, notStarted };
-  }, [tasks]);
+  }, [tasks, filters.showArchived]);
 
   // Class legend for Gantt chart
   const classLegend = useMemo(() => {

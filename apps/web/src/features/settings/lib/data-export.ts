@@ -434,7 +434,7 @@ export async function exportFromGatheredData(
 
   // 4. Trigger download
   const today = new Date().toISOString().slice(0, 10);
-  triggerDownload(zipBlob, `TaskFlow-Export-${today}.zip`);
+  triggerDownload(zipBlob, `TaskNeo-Export-${today}.zip`);
 
   return { skippedCount };
 }

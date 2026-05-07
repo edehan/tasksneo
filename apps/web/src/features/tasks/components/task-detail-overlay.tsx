@@ -4,6 +4,9 @@ import { ArrowRight, Calendar, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { useSWRConfig } from "swr";
+
 import { useAuth } from "@/components/auth-provider";
 import { MarkdownPreview } from "@/features/editor/components/markdown-preview";
 import { TaskSidebar } from "@/features/tasks/components/task-sidebar";
@@ -13,9 +16,19 @@ import {
   getStatusBadge,
   isSubmissionLocked,
 } from "@/features/tasks/lib/task-detail-status";
-import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
+import {
+  getTaskTagsWithArchive,
+  isTaskArchived,
+  type TaskWithClass,
+} from "@/features/tasks/lib/task-utils";
 import type { TaskDetail } from "@/lib/api";
-import { deleteTask, getTask, markTaskViewed } from "@/lib/api";
+import {
+  deleteTask,
+  getTask,
+  markTaskViewed,
+  updateTaskState,
+} from "@/lib/api";
+import { webDataKeys } from "@/lib/web-data-keys";
 
 interface TaskDetailOverlayProps {
   task: TaskWithClass;
@@ -34,9 +47,12 @@ export function TaskDetailOverlay({
   const locale = useLocale();
   const { user } = useAuth();
   const router = useRouter();
+  const { mutate } = useSWRConfig();
   const [taskDetail, setTaskDetail] = useState<TaskDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+  const [archiveOverride, setArchiveOverride] = useState<boolean | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -60,6 +76,43 @@ export function TaskDetailOverlay({
   const badge = getStatusBadge(status, task.classColor, t);
   const isSubmitted = status === "submitted";
   const submissionLocked = isSubmissionLocked(task);
+  const taskForState = taskDetail ?? task;
+  const isArchived = archiveOverride ?? isTaskArchived(taskForState);
+
+  async function handleArchiveToggle() {
+    if (!user || archiving) return;
+
+    const nextArchived = !isArchived;
+    const tags = getTaskTagsWithArchive(
+      taskForState.userState?.tags,
+      nextArchived,
+    );
+
+    setArchiving(true);
+    try {
+      await updateTaskState(task.id, { tags });
+      setArchiveOverride(nextArchived);
+
+      await Promise.all([
+        mutate(webDataKeys.myTasks()),
+        mutate(webDataKeys.classTasks(task.classId)),
+        mutate(webDataKeys.task(task.id)),
+      ]);
+
+      if (nextArchived) {
+        toast.success(t("toast.archived"));
+        onClose();
+      } else {
+        toast.success(t("toast.unarchived"));
+      }
+    } catch {
+      toast.error(
+        nextArchived ? t("toast.failedArchive") : t("toast.failedUnarchive"),
+      );
+    } finally {
+      setArchiving(false);
+    }
+  }
 
   // ─── Load full task detail ──────────────────────────────────────────────────
 
@@ -198,9 +251,21 @@ export function TaskDetailOverlay({
               </div>
 
               {/* Row 2: Title */}
-              <h2 className="mt-2 font-serif text-2xl font-bold text-foreground">
-                {task.title}
-              </h2>
+              <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+                <h2 className="min-w-0 break-words font-serif text-2xl font-bold text-foreground">
+                  {task.title}
+                </h2>
+                <button
+                  type="button"
+                  disabled={archiving}
+                  onClick={handleArchiveToggle}
+                  className="rounded-md border border-border bg-transparent px-2 py-1 text-[11px] font-medium text-text-muted-soft transition-colors hover:bg-secondary hover:text-muted-foreground disabled:opacity-50"
+                >
+                  {isArchived
+                    ? t("actions.unarchiveTask")
+                    : t("actions.archiveTask")}
+                </button>
+              </div>
 
               {/* Row 3: Dates + status + actions */}
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">

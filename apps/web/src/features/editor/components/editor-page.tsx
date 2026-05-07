@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -78,6 +79,7 @@ interface EditorPageProps {
   initialAttachments?: AttachmentMeta[];
   isAlreadyPublished?: boolean;
   initialDueAt?: string;
+  initialAllowLateSubmission?: boolean;
   readOnly?: boolean;
   lockedReason?: string;
 }
@@ -95,6 +97,7 @@ export function EditorPage({
   initialAttachments,
   isAlreadyPublished,
   initialDueAt,
+  initialAllowLateSubmission,
   readOnly = false,
   lockedReason,
 }: EditorPageProps) {
@@ -135,12 +138,18 @@ export function EditorPage({
   const [dueAt, setDueAt] = useState<Date | null>(
     initialDueAt ? new Date(initialDueAt) : null,
   );
+  const [allowLateSubmission, setAllowLateSubmission] = useState(
+    initialAllowLateSubmission ?? true,
+  );
   const [showExtendDialog, setShowExtendDialog] = useState(false);
   const [extendMode, setExtendMode] = useState<
     "1h" | "3h" | "1d" | "3d" | "custom"
   >("1d");
   const [customAmount, setCustomAmount] = useState("1");
   const [customUnit, setCustomUnit] = useState<"hours" | "days">("days");
+  const [extendAllowLateSubmission, setExtendAllowLateSubmission] = useState(
+    initialAllowLateSubmission ?? true,
+  );
   const [extending, setExtending] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -154,6 +163,15 @@ export function EditorPage({
   useEffect(() => {
     if (initialAttachments !== undefined) setAttachments(initialAttachments);
   }, [initialAttachments]);
+
+  useEffect(() => {
+    setDueAt(initialDueAt ? new Date(initialDueAt) : null);
+  }, [initialDueAt]);
+
+  useEffect(() => {
+    setAllowLateSubmission(initialAllowLateSubmission ?? true);
+    setExtendAllowLateSubmission(initialAllowLateSubmission ?? true);
+  }, [initialAllowLateSubmission]);
 
   // Set CSS variable for class accent
   useEffect(() => {
@@ -424,8 +442,17 @@ export function EditorPage({
 
     setExtending(true);
     try {
-      await updateTask(taskId, { dueAt: newDueAt.toISOString() });
+      await updateTask(taskId, {
+        dueAt: newDueAt.toISOString(),
+        allowLateSubmission: extendAllowLateSubmission,
+      });
       setDueAt(newDueAt);
+      setAllowLateSubmission(extendAllowLateSubmission);
+      await Promise.all([
+        mutate(webDataKeys.classTasks(classId)),
+        mutate(webDataKeys.task(taskId)),
+        mutate(webDataKeys.myTasks()),
+      ]);
       setShowExtendDialog(false);
       toast.success(t("toast.deadlineExtended"));
     } catch (err) {
@@ -1021,7 +1048,13 @@ export function EditorPage({
       </Dialog>
 
       {/* Extend deadline dialog */}
-      <AlertDialog open={showExtendDialog} onOpenChange={setShowExtendDialog}>
+      <AlertDialog
+        open={showExtendDialog}
+        onOpenChange={(open) => {
+          setShowExtendDialog(open);
+          if (open) setExtendAllowLateSubmission(allowLateSubmission);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="font-serif">
@@ -1119,6 +1152,30 @@ export function EditorPage({
                 </p>
               );
             })()}
+
+            <div className="flex items-center gap-2 rounded-md border border-border px-3 py-2">
+              <Checkbox
+                id="extend-allow-late-submission"
+                checked={extendAllowLateSubmission}
+                onCheckedChange={(checked) =>
+                  setExtendAllowLateSubmission(checked === true)
+                }
+                style={
+                  extendAllowLateSubmission
+                    ? {
+                        backgroundColor: accentColor,
+                        borderColor: accentColor,
+                      }
+                    : undefined
+                }
+              />
+              <Label
+                htmlFor="extend-allow-late-submission"
+                className="cursor-pointer text-sm font-medium"
+              >
+                {t("extendDialog.allowLateSubmission")}
+              </Label>
+            </div>
           </div>
 
           <AlertDialogFooter>

@@ -703,6 +703,98 @@ describe("TaskFlow API e2e", () => {
 		});
 		expect(taskState.response.status).toBe(200);
 
+		const archiveTaskState = await requestJson(app, `/tasks/${taskId}/state`, {
+			method: "PATCH",
+			headers: authHeader(memberToken),
+			body: JSON.stringify({ tags: ["urgent", "__archived__"] }),
+		});
+		expect(archiveTaskState.response.status).toBe(200);
+		expect(
+			(
+				archiveTaskState.body as {
+					tags: string[];
+					sortOrder: number;
+					viewedAt: string | null;
+					submittedAt: string | null;
+				}
+			).tags,
+		).toEqual(["urgent", "__archived__"]);
+		expect(
+			(
+				archiveTaskState.body as {
+					tags: string[];
+					sortOrder: number;
+					viewedAt: string | null;
+					submittedAt: string | null;
+				}
+			).sortOrder,
+		).toBe(1);
+		expect(
+			(
+				archiveTaskState.body as {
+					tags: string[];
+					sortOrder: number;
+					viewedAt: string | null;
+					submittedAt: string | null;
+				}
+			).viewedAt,
+		).toBeTruthy();
+
+		const archivedTaskDetail = await requestJson(app, `/tasks/${taskId}`, {
+			headers: authHeader(memberToken),
+		});
+		expect(archivedTaskDetail.response.status).toBe(200);
+		expect(
+			(
+				archivedTaskDetail.body as {
+					userState: { tags: string[]; sortOrder: number };
+				}
+			).userState.tags,
+		).toContain("__archived__");
+
+		const unarchiveTaskState = await requestJson(
+			app,
+			`/tasks/${taskId}/state`,
+			{
+				method: "PATCH",
+				headers: authHeader(memberToken),
+				body: JSON.stringify({ tags: ["urgent"] }),
+			},
+		);
+		expect(unarchiveTaskState.response.status).toBe(200);
+		expect(
+			(
+				unarchiveTaskState.body as {
+					tags: string[];
+					sortOrder: number;
+					viewedAt: string | null;
+					submittedAt: string | null;
+				}
+			).tags,
+		).toEqual(["urgent"]);
+		expect(
+			(
+				unarchiveTaskState.body as {
+					tags: string[];
+					sortOrder: number;
+					viewedAt: string | null;
+					submittedAt: string | null;
+				}
+			).sortOrder,
+		).toBe(1);
+
+		const unarchivedTaskDetail = await requestJson(app, `/tasks/${taskId}`, {
+			headers: authHeader(memberToken),
+		});
+		expect(unarchivedTaskDetail.response.status).toBe(200);
+		expect(
+			(
+				unarchivedTaskDetail.body as {
+					userState: { tags: string[]; sortOrder: number };
+				}
+			).userState.tags,
+		).not.toContain("__archived__");
+
 		const memberTaskUploadUrlFail = await requestJson(
 			app,
 			`/tasks/${taskId}/attachments/upload-url`,

@@ -105,7 +105,7 @@
   "authLogin": {
     "loginFailed": "登录失败",
     "welcomeBack": "欢迎回来",
-    "signInToAccount": "登录你的 TaskFlow 账号",
+    "signInToAccount": "登录你的 TaskNeo 账号",
     "email": "邮箱",
     "emailPlaceholder": "you@example.com",
     "password": "密码",
@@ -363,7 +363,8 @@
     "notSubmitted": "未提交",
     "overdue": "已逾期",
     "showSubmitted": "显示已提交",
-    "showLongOverdue": "显示长期逾期"
+    "showLongOverdue": "显示长期逾期",
+    "showArchived": "显示归档"
   },
   "dashboardStatCards": {
     "totalTasks": "总任务数",
@@ -542,7 +543,15 @@
       "editSubmission": "编辑提交",
       "viewSubmission": "查看提交",
       "submissionsClosed": "已过截止时间 · 不允许迟交",
-      "submitAssignment": "提交作业"
+      "submitAssignment": "提交作业",
+      "archiveTask": "归档",
+      "unarchiveTask": "取消归档"
+    },
+    "toast": {
+      "archived": "任务已归档",
+      "failedArchive": "归档任务失败",
+      "unarchived": "已取消归档",
+      "failedUnarchive": "取消归档失败"
     }
   },
   "taskDetailPage": {
@@ -648,6 +657,7 @@
         "hours": "小时",
         "days": "天"
       },
+      "allowLateSubmission": "允许迟交",
       "cancel": "取消",
       "confirm": "延长",
       "error": {}
@@ -741,6 +751,7 @@
     },
     "table": {
       "student": "学生",
+      "read": "已读",
       "submitted": "提交时间",
       "score": "分数",
       "status": "状态",

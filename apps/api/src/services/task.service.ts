@@ -754,13 +754,22 @@ export async function listTaskSubmissions(taskId: string, userId: string) {
 	const submissions = await prisma.submission.findMany({
 		where: { taskId },
 	});
+	const states = await prisma.taskUserState.findMany({
+		where: { taskId },
+		select: {
+			userId: true,
+			viewedAt: true,
+		},
+	});
 
 	const submissionMap = new Map(
 		submissions.map((submission) => [submission.userId, submission]),
 	);
+	const stateMap = new Map(states.map((state) => [state.userId, state]));
 
 	return rows.map((row) => {
 		const submission = submissionMap.get(row.userId);
+		const state = stateMap.get(row.userId);
 
 		return {
 			userId: row.userId,
@@ -769,6 +778,7 @@ export async function listTaskSubmissions(taskId: string, userId: string) {
 			schoolName: row.user.school?.name ?? null,
 			studentId: row.user.studentId,
 			role: row.role,
+			viewedAt: state?.viewedAt?.toISOString() ?? null,
 			submitted: Boolean(submission),
 			submission: submission ? toSubmission(submission) : null,
 			attachments: [],
