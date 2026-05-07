@@ -752,11 +752,15 @@ describe("TaskFlow API e2e", () => {
 			).userState.tags,
 		).toContain("__archived__");
 
-		const unarchiveTaskState = await requestJson(app, `/tasks/${taskId}/state`, {
-			method: "PATCH",
-			headers: authHeader(memberToken),
-			body: JSON.stringify({ tags: ["urgent"] }),
-		});
+		const unarchiveTaskState = await requestJson(
+			app,
+			`/tasks/${taskId}/state`,
+			{
+				method: "PATCH",
+				headers: authHeader(memberToken),
+				body: JSON.stringify({ tags: ["urgent"] }),
+			},
+		);
 		expect(unarchiveTaskState.response.status).toBe(200);
 		expect(
 			(

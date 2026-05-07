@@ -105,7 +105,7 @@
   "authLogin": {
     "loginFailed": "Echec de la connexion",
     "welcomeBack": "Bon retour",
-    "signInToAccount": "Connectez-vous a votre compte TaskFlow",
+    "signInToAccount": "Connectez-vous a votre compte TaskNeo",
     "email": "E-mail",
     "emailPlaceholder": "you@example.com",
     "password": "Mot de passe",

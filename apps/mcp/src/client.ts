@@ -107,7 +107,7 @@ export class TaskFlowClient {
 			throw new TaskFlowApiError(
 				0,
 				"CONNECTION_ERROR",
-				`Cannot connect to TaskFlow API at ${this.apiUrl}. Make sure the server is running.`,
+				`Cannot connect to TaskNeo API at ${this.apiUrl}. Make sure the server is running.`,
 			);
 		}
 

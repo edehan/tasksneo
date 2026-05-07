@@ -1,4 +1,4 @@
-# TaskFlow
+# TaskNeo
 
 Class task management system for educators. Teachers create classes, publish tasks to members, collect file submissions, and grade them. Built as a university capstone project.
 

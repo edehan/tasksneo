@@ -105,7 +105,7 @@
   "authLogin": {
     "loginFailed": "ログインに失敗しました",
     "welcomeBack": "おかえりなさい",
-    "signInToAccount": "TaskFlowアカウントにサインイン",
+    "signInToAccount": "TaskNeoアカウントにサインイン",
     "email": "メール",
     "emailPlaceholder": "you@example.com",
     "password": "パスワード",

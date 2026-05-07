@@ -22,7 +22,7 @@ const client = new TaskFlowClient({
 	mcpKey: process.env.TASKFLOW_MCP_KEY,
 });
 
-const instructions = `TaskFlow is a class task management system for educators. Teachers create classes, publish tasks, collect submissions, and grade them.
+const instructions = `TaskNeo is a class task management system for educators. Teachers create classes, publish tasks, collect submissions, and grade them.
 
 Common workflows:
 - Browse: list_my_classes → list_class_tasks → get_task

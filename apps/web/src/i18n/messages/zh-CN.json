@@ -105,7 +105,7 @@
   "authLogin": {
     "loginFailed": "登录失败",
     "welcomeBack": "欢迎回来",
-    "signInToAccount": "登录你的 TaskFlow 账号",
+    "signInToAccount": "登录你的 TaskNeo 账号",
     "email": "邮箱",
     "emailPlaceholder": "you@example.com",
     "password": "密码",
