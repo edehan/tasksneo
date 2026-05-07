@@ -363,7 +363,8 @@
     "notSubmitted": "Not Submitted",
     "overdue": "Overdue",
     "showSubmitted": "Show Submitted",
-    "showLongOverdue": "Show Long Overdue"
+    "showLongOverdue": "Show Long Overdue",
+    "showArchived": "Show Archived"
   },
   "dashboardStatCards": {
     "totalTasks": "Total Tasks",
@@ -542,7 +543,15 @@
       "editSubmission": "Edit Submission",
       "viewSubmission": "View Submission",
       "submissionsClosed": "Past due · submissions closed",
-      "submitAssignment": "Submit Assignment"
+      "submitAssignment": "Submit Assignment",
+      "archiveTask": "Archive",
+      "unarchiveTask": "Unarchive"
+    },
+    "toast": {
+      "archived": "Task archived",
+      "failedArchive": "Failed to archive task",
+      "unarchived": "Task unarchived",
+      "failedUnarchive": "Failed to unarchive task"
     }
   },
   "taskDetailPage": {

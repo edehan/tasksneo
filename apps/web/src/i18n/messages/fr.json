@@ -363,7 +363,8 @@
     "notSubmitted": "Non rendu",
     "overdue": "En retard",
     "showSubmitted": "Afficher les rendus",
-    "showLongOverdue": "Afficher les longs retards"
+    "showLongOverdue": "Afficher les longs retards",
+    "showArchived": "Afficher les archives"
   },
   "dashboardStatCards": {
     "totalTasks": "Taches totales",
@@ -542,7 +543,15 @@
       "editSubmission": "Modifier le rendu",
       "viewSubmission": "Voir le rendu",
       "submissionsClosed": "En retard · rendus fermes",
-      "submitAssignment": "Rendre le devoir"
+      "submitAssignment": "Rendre le devoir",
+      "archiveTask": "Archiver",
+      "unarchiveTask": "Desarchiver"
+    },
+    "toast": {
+      "archived": "Tache archivee",
+      "failedArchive": "Echec de l'archivage de la tache",
+      "unarchived": "Tache desarchivee",
+      "failedUnarchive": "Echec du desarchivage de la tache"
     }
   },
   "taskDetailPage": {

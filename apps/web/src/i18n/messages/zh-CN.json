@@ -363,7 +363,8 @@
     "notSubmitted": "未提交",
     "overdue": "已逾期",
     "showSubmitted": "显示已提交",
-    "showLongOverdue": "显示长期逾期"
+    "showLongOverdue": "显示长期逾期",
+    "showArchived": "显示归档"
   },
   "dashboardStatCards": {
     "totalTasks": "总任务数",
@@ -542,7 +543,15 @@
       "editSubmission": "编辑提交",
       "viewSubmission": "查看提交",
       "submissionsClosed": "已过截止时间 · 不允许迟交",
-      "submitAssignment": "提交作业"
+      "submitAssignment": "提交作业",
+      "archiveTask": "归档",
+      "unarchiveTask": "取消归档"
+    },
+    "toast": {
+      "archived": "任务已归档",
+      "failedArchive": "归档任务失败",
+      "unarchived": "已取消归档",
+      "failedUnarchive": "取消归档失败"
     }
   },
   "taskDetailPage": {

@@ -6,6 +6,20 @@ export interface TaskWithClass extends TaskSummary {
   classColor: string;
 }
 
+export const TASK_ARCHIVED_TAG = "__archived__";
+
+export function isTaskArchived(task: Pick<TaskSummary, "userState">): boolean {
+  return task.userState?.tags.includes(TASK_ARCHIVED_TAG) ?? false;
+}
+
+export function getTaskTagsWithArchive(
+  tags: string[] | undefined,
+  archived: boolean,
+): string[] {
+  const current = tags?.filter((tag) => tag !== TASK_ARCHIVED_TAG) ?? [];
+  return archived ? [...current, TASK_ARCHIVED_TAG] : current;
+}
+
 export function getTaskStatus(task: TaskSummary): TaskStatus {
   if (task.userState?.viewedAt) return "read";
   return "unread";

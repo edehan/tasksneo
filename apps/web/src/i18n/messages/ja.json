@@ -363,7 +363,8 @@
     "notSubmitted": "未提出",
     "overdue": "期限超過",
     "showSubmitted": "提出済みを表示",
-    "showLongOverdue": "長期超過を表示"
+    "showLongOverdue": "長期超過を表示",
+    "showArchived": "アーカイブを表示"
   },
   "dashboardStatCards": {
     "totalTasks": "総タスク数",
@@ -542,7 +543,15 @@
       "editSubmission": "提出を編集",
       "viewSubmission": "提出を表示",
       "submissionsClosed": "締切後 · 提出不可",
-      "submitAssignment": "課題を提出"
+      "submitAssignment": "課題を提出",
+      "archiveTask": "アーカイブ",
+      "unarchiveTask": "アーカイブ解除"
+    },
+    "toast": {
+      "archived": "課題をアーカイブしました",
+      "failedArchive": "課題のアーカイブに失敗しました",
+      "unarchived": "アーカイブを解除しました",
+      "failedUnarchive": "アーカイブ解除に失敗しました"
     }
   },
   "taskDetailPage": {

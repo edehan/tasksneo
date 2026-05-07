@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Calendar, Loader2 } from "lucide-react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useSWRConfig } from "swr";
 
 import { useAuth } from "@/components/auth-provider";
@@ -16,8 +17,12 @@ import {
   getStatusBadge,
   isSubmissionLocked,
 } from "@/features/tasks/lib/task-detail-status";
+import {
+  getTaskTagsWithArchive,
+  isTaskArchived,
+} from "@/features/tasks/lib/task-utils";
 import type { ClassSummary, TaskDetail } from "@/lib/api";
-import { deleteTask, markTaskViewed } from "@/lib/api";
+import { deleteTask, markTaskViewed, updateTaskState } from "@/lib/api";
 import { useClassQuery, useTaskQuery } from "@/lib/web-data";
 import { webDataKeys } from "@/lib/web-data-keys";
 
@@ -52,6 +57,8 @@ export function TaskDetailPage({
   const initialSection = toSidebarSection(searchParams.get("section"));
 
   const [deleting, setDeleting] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+  const [archiveOverride, setArchiveOverride] = useState<boolean | null>(null);
 
   const dateFormatter = new Intl.DateTimeFormat(locale, {
     month: "short",
@@ -69,7 +76,11 @@ export function TaskDetailPage({
     [dateFormatter],
   );
 
-  const { data: task, isLoading: taskLoading } = useTaskQuery(taskId, {
+  const {
+    data: task,
+    isLoading: taskLoading,
+    mutate: mutateTask,
+  } = useTaskQuery(taskId, {
     fallbackData: initialTask ?? undefined,
   });
   const { data: cls, isLoading: classLoading } = useClassQuery(
@@ -108,10 +119,64 @@ export function TaskDetailPage({
   const isSubmitted = status === "submitted";
   const submissionLocked = isSubmissionLocked(task);
   const isAdmin = cls.myRole === "OWNER" || cls.myRole === "ADMIN";
+  const isArchived = archiveOverride ?? isTaskArchived(task);
   const attachments = (task.attachments ?? []).filter((attachment) =>
     isAdmin ? true : attachment.isVisible,
   );
   const bodyContent = task.description ?? "";
+
+  async function handleArchiveToggle() {
+    if (!user || !task || archiving) return;
+
+    const nextArchived = !isArchived;
+    const tags = getTaskTagsWithArchive(task.userState?.tags, nextArchived);
+
+    setArchiving(true);
+    try {
+      const updatedState = await updateTaskState(task.id, { tags });
+      setArchiveOverride(nextArchived);
+
+      await Promise.all([
+        mutateTask(
+          (current) =>
+            current
+              ? {
+                  ...current,
+                  userState: {
+                    viewedAt:
+                      updatedState.viewedAt ??
+                      current.userState?.viewedAt ??
+                      null,
+                    tags: updatedState.tags,
+                    sortOrder:
+                      updatedState.sortOrder ??
+                      current.userState?.sortOrder ??
+                      0,
+                    submittedAt: current.userState?.submittedAt ?? null,
+                  },
+                }
+              : current,
+          false,
+        ),
+        globalMutate(webDataKeys.myTasks()),
+        globalMutate(webDataKeys.classTasks(task.classId)),
+        globalMutate(webDataKeys.task(task.id)),
+      ]);
+
+      if (nextArchived) {
+        toast.success(t("toast.archived"));
+        router.push(`/classes/${task.classId}`);
+      } else {
+        toast.success(t("toast.unarchived"));
+      }
+    } catch {
+      toast.error(
+        nextArchived ? t("toast.failedArchive") : t("toast.failedUnarchive"),
+      );
+    } finally {
+      setArchiving(false);
+    }
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
@@ -147,9 +212,21 @@ export function TaskDetailPage({
                 </span>
               </div>
 
-              <h1 className="mt-2 font-serif text-2xl font-bold text-foreground">
-                {task.title}
-              </h1>
+              <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+                <h1 className="min-w-0 break-words font-serif text-2xl font-bold text-foreground">
+                  {task.title}
+                </h1>
+                <button
+                  type="button"
+                  disabled={archiving}
+                  onClick={handleArchiveToggle}
+                  className="rounded-md border border-border bg-transparent px-2 py-1 text-[11px] font-medium text-text-muted-soft transition-colors hover:bg-secondary hover:text-muted-foreground disabled:opacity-50"
+                >
+                  {isArchived
+                    ? t("actions.unarchiveTask")
+                    : t("actions.archiveTask")}
+                </button>
+              </div>
 
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
                 <div className="flex items-center gap-4 text-[12.5px] text-muted-foreground">

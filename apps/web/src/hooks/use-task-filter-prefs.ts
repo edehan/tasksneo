@@ -9,6 +9,7 @@ export interface TaskFilters {
   overdue: boolean;
   showSubmitted: boolean;
   showLongOverdue: boolean;
+  showArchived: boolean;
 }
 
 const DEFAULT_FILTERS: TaskFilters = {
@@ -16,15 +17,20 @@ const DEFAULT_FILTERS: TaskFilters = {
   overdue: false,
   showSubmitted: false,
   showLongOverdue: false,
+  showArchived: false,
 };
 
-function readPrefs(): Pick<TaskFilters, "showSubmitted" | "showLongOverdue"> {
+function readPrefs(): Pick<
+  TaskFilters,
+  "showSubmitted" | "showLongOverdue" | "showArchived"
+> {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) {
       return {
         showSubmitted: DEFAULT_FILTERS.showSubmitted,
         showLongOverdue: DEFAULT_FILTERS.showLongOverdue,
+        showArchived: DEFAULT_FILTERS.showArchived,
       };
     }
 
@@ -38,11 +44,16 @@ function readPrefs(): Pick<TaskFilters, "showSubmitted" | "showLongOverdue"> {
         typeof parsed.showLongOverdue === "boolean"
           ? parsed.showLongOverdue
           : DEFAULT_FILTERS.showLongOverdue,
+      showArchived:
+        typeof parsed.showArchived === "boolean"
+          ? parsed.showArchived
+          : DEFAULT_FILTERS.showArchived,
     };
   } catch {
     return {
       showSubmitted: DEFAULT_FILTERS.showSubmitted,
       showLongOverdue: DEFAULT_FILTERS.showLongOverdue,
+      showArchived: DEFAULT_FILTERS.showArchived,
     };
   }
 }
@@ -69,6 +80,7 @@ export function useTaskFilterPrefs(): [
         JSON.stringify({
           showSubmitted: next.showSubmitted,
           showLongOverdue: next.showLongOverdue,
+          showArchived: next.showArchived,
         }),
       );
     } catch {
