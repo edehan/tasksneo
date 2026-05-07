@@ -648,6 +648,7 @@
         "hours": "Heures",
         "days": "Jours"
       },
+      "allowLateSubmission": "Autoriser les retards",
       "cancel": "Annuler",
       "confirm": "Prolonger",
       "error": {}

@@ -648,6 +648,7 @@
         "hours": "Hours",
         "days": "Days"
       },
+      "allowLateSubmission": "Allow late submission",
       "cancel": "Cancel",
       "confirm": "Extend",
       "error": {}

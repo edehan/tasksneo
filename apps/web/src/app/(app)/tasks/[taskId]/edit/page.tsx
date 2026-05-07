@@ -111,6 +111,7 @@ export default function EditTaskPage() {
       initialAttachments={task.attachments}
       isAlreadyPublished={task.isPublished}
       initialDueAt={task.dueAt ?? undefined}
+      initialAllowLateSubmission={task.allowLateSubmission}
     />
   );
 }

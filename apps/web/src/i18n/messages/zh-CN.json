@@ -648,6 +648,7 @@
         "hours": "小时",
         "days": "天"
       },
+      "allowLateSubmission": "允许迟交",
       "cancel": "取消",
       "confirm": "延长",
       "error": {}
