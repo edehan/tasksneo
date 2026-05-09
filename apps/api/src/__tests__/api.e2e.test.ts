@@ -558,6 +558,37 @@ describe("TaskFlow API e2e", () => {
 		);
 		expect(ownerRemoveThird.response.status).toBe(204);
 
+		const equalTaskTime = new Date(Date.now() + 172_800_000).toISOString();
+		const createEqualTimeTask = await requestJson(
+			app,
+			`/classes/${classId}/tasks`,
+			{
+				method: "POST",
+				headers: authHeader(ownerToken),
+				body: JSON.stringify({
+					title: "Equal time task",
+					startAt: equalTaskTime,
+					dueAt: equalTaskTime,
+				}),
+			},
+		);
+		expect(createEqualTimeTask.response.status).toBe(201);
+
+		const createInvalidTimeTask = await requestJson(
+			app,
+			`/classes/${classId}/tasks`,
+			{
+				method: "POST",
+				headers: authHeader(ownerToken),
+				body: JSON.stringify({
+					title: "Invalid time task",
+					startAt: new Date(Date.now() + 172_800_000).toISOString(),
+					dueAt: new Date(Date.now() + 86_400_000).toISOString(),
+				}),
+			},
+		);
+		expect(createInvalidTimeTask.response.status).toBe(400);
+
 		const createTaskRes = await requestJson(app, `/classes/${classId}/tasks`, {
 			method: "POST",
 			headers: authHeader(ownerToken),
@@ -571,6 +602,16 @@ describe("TaskFlow API e2e", () => {
 		expect(createTaskRes.response.status).toBe(201);
 
 		const taskId = (createTaskRes.body as { id: string }).id;
+
+		const updateInvalidTimeTask = await requestJson(app, `/tasks/${taskId}`, {
+			method: "PATCH",
+			headers: authHeader(ownerToken),
+			body: JSON.stringify({
+				startAt: new Date(Date.now() + 172_800_000).toISOString(),
+				dueAt: new Date(Date.now() + 86_400_000).toISOString(),
+			}),
+		});
+		expect(updateInvalidTimeTask.response.status).toBe(400);
 
 		const createDraftRes = await requestJson(
 			app,

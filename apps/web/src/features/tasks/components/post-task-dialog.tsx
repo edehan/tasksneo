@@ -32,6 +32,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useStreamingTranscription } from "@/hooks/use-streaming-transcription";
 import {
   ApiError,
@@ -46,6 +52,7 @@ import {
   updateTask,
   uploadTaskAttachment,
 } from "@/lib/api";
+import { getClipboardImageFiles } from "@/lib/clipboard-images";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -57,6 +64,8 @@ interface PostTaskDialogProps {
   onOpenChange: (open: boolean) => void;
   onEditBody: (data: { taskId: string; title: string }) => void;
 }
+
+const FORCE_LATE_SUBMISSION_THRESHOLD_MS = 5 * 60 * 1000;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -156,6 +165,7 @@ export function PostTaskDialog({
   const [dueAt, setDueAt] = useState<Date | undefined>(undefined);
   const [allowLate, setAllowLate] = useState(false);
   const [blockedBy, setBlockedBy] = useState<string[]>([]);
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   // Attachments — real uploads
   const [attachments, setAttachments] = useState<AttachmentMeta[]>([]);
@@ -194,6 +204,7 @@ export function PostTaskDialog({
   } = useStreamingTranscription();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const rawTextAreaRef = useRef<HTMLTextAreaElement>(null);
 
   // Sync streaming transcript into rawText
   const prevTranscriptRef = useRef("");
@@ -259,8 +270,31 @@ export function PostTaskDialog({
 
   const titleValid = title.trim().length > 0;
   const dueAtValid = !!dueAt;
-  const datesValid = !startAt || !dueAt || dueAt > startAt;
+  const datesValid = !startAt || !dueAt || dueAt >= startAt;
+  const dueAtMs = dueAt?.getTime();
+  const lateSubmissionForced =
+    dueAtMs !== undefined &&
+    !Number.isNaN(dueAtMs) &&
+    dueAtMs - nowMs < FORCE_LATE_SUBMISSION_THRESHOLD_MS;
+  const effectiveAllowLate = allowLate || lateSubmissionForced;
   const formValid = titleValid && dueAtValid && datesValid;
+
+  useEffect(() => {
+    if (!open || !dueAt) return;
+
+    setNowMs(Date.now());
+    const intervalId = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, 15_000);
+
+    return () => window.clearInterval(intervalId);
+  }, [open, dueAt]);
+
+  useEffect(() => {
+    if (lateSubmissionForced && !allowLate) {
+      setAllowLate(true);
+    }
+  }, [lateSubmissionForced, allowLate]);
 
   // ─── Lazy draft creation ─────────────────────────────────────────────────
 
@@ -273,13 +307,23 @@ export function PostTaskDialog({
       sourceText: rawText.trim() || null,
       startAt: startAt ? startAt.toISOString() : null,
       dueAt: dueAt ? dueAt.toISOString() : null,
-      allowLateSubmission: allowLate,
+      allowLateSubmission: effectiveAllowLate,
       blockedBy,
     });
     setDraftId(draft.id);
     draftIdRef.current = draft.id;
     return draft.id;
-  }, [user, classId, title, rawText, startAt, dueAt, allowLate, blockedBy, t]);
+  }, [
+    user,
+    classId,
+    title,
+    rawText,
+    startAt,
+    dueAt,
+    effectiveAllowLate,
+    blockedBy,
+    t,
+  ]);
 
   // ─── Reset ─────────────────────────────────────────────────────────────
 
@@ -364,20 +408,20 @@ export function PostTaskDialog({
 
   // ─── File upload ───────────────────────────────────────────────────────
 
-  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = e.target.files;
-    if (!files || files.length === 0 || !user) return;
-    const fileArray = Array.from(files);
-    e.target.value = "";
-
+  async function uploadFiles(
+    fileArray: File[],
+    options: { isVisible?: boolean } = {},
+  ) {
+    if (fileArray.length === 0 || !user) return;
     setUploading(true);
     try {
       const taskId = await ensureDraft();
       const visibleAttachments: AttachmentMeta[] = [];
+      const isVisible = options.isVisible ?? true;
 
       for (const file of fileArray) {
         const visible = await uploadTaskAttachment(taskId, file, {
-          isVisible: true,
+          isVisible,
         });
         visibleAttachments.push(visible);
 
@@ -394,6 +438,7 @@ export function PostTaskDialog({
       }
 
       setAttachments((prev) => [...prev, ...visibleAttachments]);
+      if (parsed) setParsed(false);
       toast.success(
         t("toast.uploadedFiles", { count: visibleAttachments.length }),
       );
@@ -406,8 +451,59 @@ export function PostTaskDialog({
     }
   }
 
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !user) return;
+    e.target.value = "";
+
+    await uploadFiles(Array.from(files));
+  }
+
+  function insertRawTextAtSelection(
+    text: string,
+    selection: { start: number; end: number },
+  ) {
+    setRawText(
+      (prev) =>
+        prev.substring(0, selection.start) +
+        text +
+        prev.substring(selection.end),
+    );
+    if (parsed) setParsed(false);
+
+    requestAnimationFrame(() => {
+      const textarea = rawTextAreaRef.current;
+      if (!textarea) return;
+      const cursorPos = selection.start + text.length;
+      textarea.focus();
+      textarea.setSelectionRange(cursorPos, cursorPos);
+    });
+  }
+
+  function handleRawTextPaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    if (!user) return;
+
+    const imageFiles = getClipboardImageFiles(e.clipboardData);
+    if (imageFiles.length === 0) return;
+
+    e.preventDefault();
+
+    const pastedText = e.clipboardData.getData("text/plain");
+    if (pastedText) {
+      insertRawTextAtSelection(pastedText, {
+        start: e.currentTarget.selectionStart,
+        end: e.currentTarget.selectionEnd,
+      });
+    } else if (parsed) {
+      setParsed(false);
+    }
+
+    void uploadFiles(imageFiles, { isVisible: false });
+  }
+
   function removeAttachment(id: string) {
     setAttachments((prev) => prev.filter((a) => a.id !== id));
+    if (parsed) setParsed(false);
   }
 
   // ─── Submit (Create/Update Draft → Edit Body) ──────────────────────────
@@ -429,7 +525,7 @@ export function PostTaskDialog({
         sourceText: rawText.trim() || null,
         startAt: startAt ? startAt.toISOString() : null,
         dueAt: dueAt ? dueAt.toISOString() : null,
-        allowLateSubmission: allowLate,
+        allowLateSubmission: effectiveAllowLate,
         blockedBy,
       };
 
@@ -505,11 +601,13 @@ export function PostTaskDialog({
           {/* Textarea area */}
           <div className="rounded-lg border border-border bg-background">
             <textarea
+              ref={rawTextAreaRef}
               value={rawText}
               onChange={(e) => {
                 setRawText(e.target.value);
                 if (parsed) setParsed(false);
               }}
+              onPaste={handleRawTextPaste}
               placeholder={t("inputPlaceholder")}
               className="w-full resize-none rounded-t-lg bg-transparent px-4 py-3 text-sm text-foreground placeholder:text-text-muted-soft focus:outline-none"
               style={{ minHeight: 130 }}
@@ -604,7 +702,7 @@ export function PostTaskDialog({
                 <button
                   type="button"
                   onClick={handleAiParse}
-                  disabled={parsing || parsed}
+                  disabled={uploading || parsing || parsed}
                   className={`ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed ${
                     parsed
                       ? "border border-border bg-muted text-muted-foreground"
@@ -810,23 +908,52 @@ export function PostTaskDialog({
               </div>
 
               {/* Allow late */}
-              {/* biome-ignore lint/a11y/noLabelWithoutControl: wraps custom checkbox div */}
-              <label className="mb-4 flex cursor-pointer items-center gap-2">
-                <div
-                  className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] transition-all duration-150"
-                  style={{
-                    borderColor: allowLate ? themeColor : undefined,
-                    backgroundColor: allowLate ? themeColor : "transparent",
-                  }}
-                >
-                  {allowLate && (
-                    <Check size={11} strokeWidth={3} className="text-white" />
+              <TooltipProvider delayDuration={150}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-pressed={effectiveAllowLate}
+                      aria-disabled={lateSubmissionForced}
+                      onClick={() => {
+                        if (lateSubmissionForced) return;
+                        setAllowLate((prev) => !prev);
+                      }}
+                      className={`mb-4 flex items-center gap-2 text-left ${
+                        lateSubmissionForced ? "cursor-help" : "cursor-pointer"
+                      }`}
+                    >
+                      <div
+                        className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] transition-all duration-150"
+                        style={{
+                          borderColor: effectiveAllowLate
+                            ? themeColor
+                            : undefined,
+                          backgroundColor: effectiveAllowLate
+                            ? themeColor
+                            : "transparent",
+                        }}
+                      >
+                        {effectiveAllowLate && (
+                          <Check
+                            size={11}
+                            strokeWidth={3}
+                            className="text-white"
+                          />
+                        )}
+                      </div>
+                      <span className="text-sm text-foreground">
+                        {t("allowLateSubmission")}
+                      </span>
+                    </button>
+                  </TooltipTrigger>
+                  {lateSubmissionForced && (
+                    <TooltipContent side="top">
+                      {t("lateSubmissionForcedHint")}
+                    </TooltipContent>
                   )}
-                </div>
-                <span className="text-sm text-foreground">
-                  {t("allowLateSubmission")}
-                </span>
-              </label>
+                </Tooltip>
+              </TooltipProvider>
 
               {/* Prerequisites */}
               {classTasks.length > 0 && (

@@ -144,6 +144,30 @@ function normalizeParsedDatetime(value: string | null): string | null {
 	return trimmed;
 }
 
+function normalizeTimeOption(option: ParseTimeOption): ParseTimeOption {
+	const normalized: ParseTimeOption = {
+		startAt: normalizeParsedDatetime(option.startAt),
+		dueAt: normalizeParsedDatetime(option.dueAt),
+	};
+
+	if (!normalized.startAt || !normalized.dueAt) {
+		return normalized;
+	}
+
+	const startTime = new Date(normalized.startAt).getTime();
+	const dueTime = new Date(normalized.dueAt).getTime();
+
+	if (startTime > dueTime) {
+		return { startAt: null, dueAt: null };
+	}
+
+	if (startTime === dueTime) {
+		return { startAt: null, dueAt: normalized.dueAt };
+	}
+
+	return normalized;
+}
+
 // ─── Attachment helpers ──────────────────────────────────────────────────────
 
 function normalizeAttachmentMime(mimeType: string | null): string {
@@ -272,7 +296,9 @@ const PARSE_REQUIREMENTS = `
 
 - All startAt/dueAt values: ISO 8601 with timezone offset. Example: 2026-04-18T23:59:00+08:00
 - Resolve relative times ("tomorrow", "this Sunday") using the provided current datetime.
-- If the input omits timezone, use the user's timezone setting.`;
+- If the input omits timezone, use the user's timezone setting.
+- If startAt is later than dueAt, set both startAt and dueAt to null for that time option.
+- If startAt equals dueAt, set startAt to null and keep dueAt for that time option.`;
 
 function buildParseSystemPrompt(configuredBase: string): string {
 	const base = configuredBase.trim()
@@ -418,28 +444,13 @@ export async function parseTaskContent(input: {
 		}
 
 		const normalizedTimeOptions: ParseTimeOption[] =
-			parsed.data.timeOptions.map((opt) => ({
-				startAt: normalizeParsedDatetime(opt.startAt),
-				dueAt: normalizeParsedDatetime(opt.dueAt),
-			}));
-
-		// 验证时间关系：如果开始时间晚于或等于结束时间，则删除开始时间
-		const validatedTimeOptions = normalizedTimeOptions.map((opt) => {
-			if (opt.startAt && opt.dueAt) {
-				const start = new Date(opt.startAt);
-				const due = new Date(opt.dueAt);
-				if (start.getTime() >= due.getTime()) {
-					return { startAt: null, dueAt: opt.dueAt };
-				}
-			}
-			return opt;
-		});
+			parsed.data.timeOptions.map(normalizeTimeOption);
 
 		const normalized: ParseTaskResult = {
 			title: parsed.data.title?.trim() || null,
 			timeOptions:
-				validatedTimeOptions.length > 0
-					? validatedTimeOptions
+				normalizedTimeOptions.length > 0
+					? normalizedTimeOptions
 					: [{ startAt: null, dueAt: null }],
 			allowLateSubmission: parsed.data.allowLateSubmission,
 			description: parsed.data.description?.trim() || null,
