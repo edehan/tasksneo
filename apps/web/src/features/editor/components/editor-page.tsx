@@ -64,6 +64,7 @@ import {
   uploadTaskAttachment,
   upsertMySubmission,
 } from "@/lib/api";
+import { getClipboardImageFiles, isImageFile } from "@/lib/clipboard-images";
 import { webDataKeys } from "@/lib/web-data-keys";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -82,6 +83,15 @@ interface EditorPageProps {
   initialAllowLateSubmission?: boolean;
   readOnly?: boolean;
   lockedReason?: string;
+}
+
+interface TextSelection {
+  start: number;
+  end: number;
+}
+
+function escapeMarkdownAltText(value: string) {
+  return value.replace(/[\r\n]+/g, " ").replace(/]/g, "\\]");
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -295,23 +305,36 @@ export function EditorPage({
     imageInputRef.current?.click();
   }
 
-  function insertImageMarkdown(att: AttachmentMeta) {
+  function insertMarkdownAtSelection(
+    markdown: string,
+    selection?: TextSelection,
+  ) {
     const textarea = textareaRef.current;
-    const markdown = `![${att.originalName}](${getFileUrl(att.fileKey)})`;
+    const start =
+      selection?.start ?? textarea?.selectionStart ?? content.length;
+    const end = selection?.end ?? textarea?.selectionEnd ?? content.length;
+
+    setContent(
+      (prev) => prev.substring(0, start) + markdown + prev.substring(end),
+    );
+
     if (textarea) {
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      setContent(
-        (prev) => prev.substring(0, start) + markdown + prev.substring(end),
-      );
       requestAnimationFrame(() => {
         textarea.focus();
         const cursorPos = start + markdown.length;
         textarea.setSelectionRange(cursorPos, cursorPos);
       });
-    } else {
-      setContent((prev) => prev + markdown);
     }
+  }
+
+  function buildImageMarkdown(att: AttachmentMeta) {
+    return `![${escapeMarkdownAltText(att.originalName)}](${getFileUrl(
+      att.fileKey,
+    )})`;
+  }
+
+  function insertImageMarkdown(att: AttachmentMeta, selection?: TextSelection) {
+    insertMarkdownAtSelection(buildImageMarkdown(att), selection);
   }
 
   function handleInsertAttachmentImage(att: AttachmentMeta) {
@@ -324,26 +347,25 @@ export function EditorPage({
     insertImageMarkdown(att);
   }
 
-  async function handleImageFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
+  async function uploadInlineImage(file: File) {
+    return mode === "publish"
+      ? uploadTaskAttachment(taskId, file, {
+          isVisible: false,
+        })
+      : uploadSubmissionAttachment(taskId, file);
+  }
+
+  async function uploadInlineImages(files: File[], selection?: TextSelection) {
     if (readOnly) return;
-    if (!file || !user) return;
+    if (!user || files.length === 0) return;
 
     setUploading(true);
     try {
-      const att =
-        mode === "publish"
-          ? await uploadTaskAttachment(taskId, file, {
-              isVisible: false,
-            })
-          : await uploadSubmissionAttachment(taskId, file);
-      setAttachments((prev) => [...prev, att]);
+      const uploaded = await Promise.all(files.map(uploadInlineImage));
+      setAttachments((prev) => [...prev, ...uploaded]);
 
-      insertImageMarkdown({
-        ...att,
-        originalName: att.originalName ?? file.name,
-      });
+      const markdown = uploaded.map(buildImageMarkdown).join("\n");
+      insertMarkdownAtSelection(markdown, selection);
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("toast.failedUploadImage");
@@ -351,6 +373,26 @@ export function EditorPage({
     } finally {
       setUploading(false);
     }
+  }
+
+  async function handleImageFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    e.target.value = "";
+    await uploadInlineImages(files.filter(isImageFile));
+  }
+
+  function handleEditorPaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    if (readOnly || !user) return;
+
+    const files = getClipboardImageFiles(e.clipboardData);
+    if (files.length === 0) return;
+
+    e.preventDefault();
+    const selection = {
+      start: e.currentTarget.selectionStart,
+      end: e.currentTarget.selectionEnd,
+    };
+    void uploadInlineImages(files, selection);
   }
 
   // ─── AI Rewrite ────────────────────────────────────────────────────────────
@@ -730,6 +772,7 @@ export function EditorPage({
               ref={textareaRef}
               value={content}
               onChange={(e) => setContent(e.target.value)}
+              onPaste={handleEditorPaste}
               placeholder={t("editorPlaceholder")}
               className="min-h-0 flex-1 resize-none bg-transparent px-4 py-5 font-mono text-sm leading-relaxed text-foreground placeholder:text-text-muted-soft focus:outline-none md:px-8 md:py-7"
             />
@@ -921,6 +964,7 @@ export function EditorPage({
         ref={imageInputRef}
         type="file"
         accept="image/*"
+        multiple
         className="hidden"
         onChange={handleImageFileChange}
       />

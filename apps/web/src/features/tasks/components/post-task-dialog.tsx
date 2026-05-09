@@ -52,6 +52,7 @@ import {
   updateTask,
   uploadTaskAttachment,
 } from "@/lib/api";
+import { getClipboardImageFiles } from "@/lib/clipboard-images";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -203,6 +204,7 @@ export function PostTaskDialog({
   } = useStreamingTranscription();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const rawTextAreaRef = useRef<HTMLTextAreaElement>(null);
 
   // Sync streaming transcript into rawText
   const prevTranscriptRef = useRef("");
@@ -406,20 +408,20 @@ export function PostTaskDialog({
 
   // ─── File upload ───────────────────────────────────────────────────────
 
-  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = e.target.files;
-    if (!files || files.length === 0 || !user) return;
-    const fileArray = Array.from(files);
-    e.target.value = "";
-
+  async function uploadFiles(
+    fileArray: File[],
+    options: { isVisible?: boolean } = {},
+  ) {
+    if (fileArray.length === 0 || !user) return;
     setUploading(true);
     try {
       const taskId = await ensureDraft();
       const visibleAttachments: AttachmentMeta[] = [];
+      const isVisible = options.isVisible ?? true;
 
       for (const file of fileArray) {
         const visible = await uploadTaskAttachment(taskId, file, {
-          isVisible: true,
+          isVisible,
         });
         visibleAttachments.push(visible);
 
@@ -436,6 +438,7 @@ export function PostTaskDialog({
       }
 
       setAttachments((prev) => [...prev, ...visibleAttachments]);
+      if (parsed) setParsed(false);
       toast.success(
         t("toast.uploadedFiles", { count: visibleAttachments.length }),
       );
@@ -448,8 +451,59 @@ export function PostTaskDialog({
     }
   }
 
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !user) return;
+    e.target.value = "";
+
+    await uploadFiles(Array.from(files));
+  }
+
+  function insertRawTextAtSelection(
+    text: string,
+    selection: { start: number; end: number },
+  ) {
+    setRawText(
+      (prev) =>
+        prev.substring(0, selection.start) +
+        text +
+        prev.substring(selection.end),
+    );
+    if (parsed) setParsed(false);
+
+    requestAnimationFrame(() => {
+      const textarea = rawTextAreaRef.current;
+      if (!textarea) return;
+      const cursorPos = selection.start + text.length;
+      textarea.focus();
+      textarea.setSelectionRange(cursorPos, cursorPos);
+    });
+  }
+
+  function handleRawTextPaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    if (!user) return;
+
+    const imageFiles = getClipboardImageFiles(e.clipboardData);
+    if (imageFiles.length === 0) return;
+
+    e.preventDefault();
+
+    const pastedText = e.clipboardData.getData("text/plain");
+    if (pastedText) {
+      insertRawTextAtSelection(pastedText, {
+        start: e.currentTarget.selectionStart,
+        end: e.currentTarget.selectionEnd,
+      });
+    } else if (parsed) {
+      setParsed(false);
+    }
+
+    void uploadFiles(imageFiles, { isVisible: false });
+  }
+
   function removeAttachment(id: string) {
     setAttachments((prev) => prev.filter((a) => a.id !== id));
+    if (parsed) setParsed(false);
   }
 
   // ─── Submit (Create/Update Draft → Edit Body) ──────────────────────────
@@ -547,11 +601,13 @@ export function PostTaskDialog({
           {/* Textarea area */}
           <div className="rounded-lg border border-border bg-background">
             <textarea
+              ref={rawTextAreaRef}
               value={rawText}
               onChange={(e) => {
                 setRawText(e.target.value);
                 if (parsed) setParsed(false);
               }}
+              onPaste={handleRawTextPaste}
               placeholder={t("inputPlaceholder")}
               className="w-full resize-none rounded-t-lg bg-transparent px-4 py-3 text-sm text-foreground placeholder:text-text-muted-soft focus:outline-none"
               style={{ minHeight: 130 }}
@@ -646,7 +702,7 @@ export function PostTaskDialog({
                 <button
                   type="button"
                   onClick={handleAiParse}
-                  disabled={parsing || parsed}
+                  disabled={uploading || parsing || parsed}
                   className={`ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed ${
                     parsed
                       ? "border border-border bg-muted text-muted-foreground"
