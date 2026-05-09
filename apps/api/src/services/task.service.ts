@@ -94,6 +94,26 @@ function parseDate(value?: string | null): Date | null | undefined {
 	return date;
 }
 
+function assertValidTaskTimeRange(
+	startAt: Date | null | undefined,
+	dueAt: Date | null | undefined,
+) {
+	if (startAt && dueAt && startAt.getTime() > dueAt.getTime()) {
+		throw new AppError(
+			400,
+			"INVALID_TASK_TIME_RANGE",
+			"Start time cannot be after due time",
+		);
+	}
+}
+
+function resolveTaskDateUpdate(
+	current: Date | null,
+	next: Date | null | undefined,
+) {
+	return next === undefined ? current : next;
+}
+
 export async function assertTaskAccess(taskId: string, userId: string) {
 	const task = await prisma.task.findUnique({
 		where: { id: taskId },
@@ -374,6 +394,10 @@ export async function createClassTask(
 	const membership = await getMembershipOrThrow(classId, userId);
 	requireOwnerOrAdmin(membership);
 
+	const startAt = parseDate(input.startAt) ?? new Date();
+	const dueAt = parseDate(input.dueAt) ?? null;
+	assertValidTaskTimeRange(startAt, dueAt);
+
 	const task = await prisma.task.create({
 		data: {
 			classId,
@@ -381,8 +405,8 @@ export async function createClassTask(
 			title: input.title,
 			description: input.description ?? null,
 			sourceText: input.sourceText ?? null,
-			startAt: parseDate(input.startAt) ?? new Date(),
-			dueAt: parseDate(input.dueAt),
+			startAt,
+			dueAt,
 			allowLateSubmission: input.allowLateSubmission ?? true,
 			blockedBy: input.blockedBy ?? [],
 			isPublished: true,
@@ -425,6 +449,9 @@ export async function createClassTaskDraft(
 	requireOwnerOrAdmin(membership);
 
 	const title = input.title?.trim() || "Untitled Draft";
+	const startAt = parseDate(input.startAt) ?? new Date();
+	const dueAt = parseDate(input.dueAt) ?? null;
+	assertValidTaskTimeRange(startAt, dueAt);
 
 	const task = await prisma.task.create({
 		data: {
@@ -433,8 +460,8 @@ export async function createClassTaskDraft(
 			title,
 			description: input.description ?? null,
 			sourceText: input.sourceText ?? null,
-			startAt: parseDate(input.startAt) ?? new Date(),
-			dueAt: parseDate(input.dueAt),
+			startAt,
+			dueAt,
 			allowLateSubmission: input.allowLateSubmission ?? true,
 			blockedBy: input.blockedBy ?? [],
 			isPublished: false,
@@ -533,14 +560,21 @@ export async function updateTask(
 
 	requireOwnerOrAdmin(classMembership);
 
+	const nextStartAt = parseDate(input.startAt);
+	const nextDueAt = parseDate(input.dueAt);
+	assertValidTaskTimeRange(
+		resolveTaskDateUpdate(task.startAt, nextStartAt),
+		resolveTaskDateUpdate(task.dueAt, nextDueAt),
+	);
+
 	await prisma.task.update({
 		where: { id: taskId },
 		data: {
 			title: input.title,
 			description: input.description,
 			sourceText: input.sourceText,
-			startAt: parseDate(input.startAt),
-			dueAt: parseDate(input.dueAt),
+			startAt: nextStartAt,
+			dueAt: nextDueAt,
 			allowLateSubmission: input.allowLateSubmission,
 			blockedBy: input.blockedBy,
 			updatedAt: new Date(),
@@ -578,6 +612,12 @@ export async function publishTask(
 	}
 
 	const publishedAt = new Date();
+	const nextStartAt = parseDate(input.startAt);
+	const nextDueAt = parseDate(input.dueAt);
+	assertValidTaskTimeRange(
+		resolveTaskDateUpdate(task.startAt, nextStartAt),
+		resolveTaskDateUpdate(task.dueAt, nextDueAt),
+	);
 
 	const updatedTask = await prisma.task.update({
 		where: { id: taskId },
@@ -587,8 +627,8 @@ export async function publishTask(
 				input.description === undefined ? task.description : input.description,
 			sourceText:
 				input.sourceText === undefined ? task.sourceText : input.sourceText,
-			startAt: parseDate(input.startAt),
-			dueAt: parseDate(input.dueAt),
+			startAt: nextStartAt,
+			dueAt: nextDueAt,
 			allowLateSubmission: input.allowLateSubmission,
 			blockedBy: input.blockedBy,
 			isPublished: true,

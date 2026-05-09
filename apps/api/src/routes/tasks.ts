@@ -309,8 +309,8 @@ tasksRouter.post("/:taskId/parse", async (c) => {
 		updateTask(task.id, authUser.userId, {
 			sourceText: text,
 			title: parsed.structured.title ?? undefined,
-			startAt: firstOption?.startAt ?? undefined,
-			dueAt: firstOption?.dueAt ?? undefined,
+			startAt: firstOption ? firstOption.startAt : undefined,
+			dueAt: firstOption ? firstOption.dueAt : undefined,
 			allowLateSubmission: parsed.structured.allowLateSubmission ?? undefined,
 			description: parsed.structured.description ?? undefined,
 		}),

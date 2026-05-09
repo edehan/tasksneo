@@ -32,6 +32,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useStreamingTranscription } from "@/hooks/use-streaming-transcription";
 import {
   ApiError,
@@ -57,6 +63,8 @@ interface PostTaskDialogProps {
   onOpenChange: (open: boolean) => void;
   onEditBody: (data: { taskId: string; title: string }) => void;
 }
+
+const FORCE_LATE_SUBMISSION_THRESHOLD_MS = 5 * 60 * 1000;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -156,6 +164,7 @@ export function PostTaskDialog({
   const [dueAt, setDueAt] = useState<Date | undefined>(undefined);
   const [allowLate, setAllowLate] = useState(false);
   const [blockedBy, setBlockedBy] = useState<string[]>([]);
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   // Attachments — real uploads
   const [attachments, setAttachments] = useState<AttachmentMeta[]>([]);
@@ -259,8 +268,31 @@ export function PostTaskDialog({
 
   const titleValid = title.trim().length > 0;
   const dueAtValid = !!dueAt;
-  const datesValid = !startAt || !dueAt || dueAt > startAt;
+  const datesValid = !startAt || !dueAt || dueAt >= startAt;
+  const dueAtMs = dueAt?.getTime();
+  const lateSubmissionForced =
+    dueAtMs !== undefined &&
+    !Number.isNaN(dueAtMs) &&
+    dueAtMs - nowMs < FORCE_LATE_SUBMISSION_THRESHOLD_MS;
+  const effectiveAllowLate = allowLate || lateSubmissionForced;
   const formValid = titleValid && dueAtValid && datesValid;
+
+  useEffect(() => {
+    if (!open || !dueAt) return;
+
+    setNowMs(Date.now());
+    const intervalId = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, 15_000);
+
+    return () => window.clearInterval(intervalId);
+  }, [open, dueAt]);
+
+  useEffect(() => {
+    if (lateSubmissionForced && !allowLate) {
+      setAllowLate(true);
+    }
+  }, [lateSubmissionForced, allowLate]);
 
   // ─── Lazy draft creation ─────────────────────────────────────────────────
 
@@ -273,13 +305,23 @@ export function PostTaskDialog({
       sourceText: rawText.trim() || null,
       startAt: startAt ? startAt.toISOString() : null,
       dueAt: dueAt ? dueAt.toISOString() : null,
-      allowLateSubmission: allowLate,
+      allowLateSubmission: effectiveAllowLate,
       blockedBy,
     });
     setDraftId(draft.id);
     draftIdRef.current = draft.id;
     return draft.id;
-  }, [user, classId, title, rawText, startAt, dueAt, allowLate, blockedBy, t]);
+  }, [
+    user,
+    classId,
+    title,
+    rawText,
+    startAt,
+    dueAt,
+    effectiveAllowLate,
+    blockedBy,
+    t,
+  ]);
 
   // ─── Reset ─────────────────────────────────────────────────────────────
 
@@ -429,7 +471,7 @@ export function PostTaskDialog({
         sourceText: rawText.trim() || null,
         startAt: startAt ? startAt.toISOString() : null,
         dueAt: dueAt ? dueAt.toISOString() : null,
-        allowLateSubmission: allowLate,
+        allowLateSubmission: effectiveAllowLate,
         blockedBy,
       };
 
@@ -810,23 +852,52 @@ export function PostTaskDialog({
               </div>
 
               {/* Allow late */}
-              {/* biome-ignore lint/a11y/noLabelWithoutControl: wraps custom checkbox div */}
-              <label className="mb-4 flex cursor-pointer items-center gap-2">
-                <div
-                  className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] transition-all duration-150"
-                  style={{
-                    borderColor: allowLate ? themeColor : undefined,
-                    backgroundColor: allowLate ? themeColor : "transparent",
-                  }}
-                >
-                  {allowLate && (
-                    <Check size={11} strokeWidth={3} className="text-white" />
+              <TooltipProvider delayDuration={150}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-pressed={effectiveAllowLate}
+                      aria-disabled={lateSubmissionForced}
+                      onClick={() => {
+                        if (lateSubmissionForced) return;
+                        setAllowLate((prev) => !prev);
+                      }}
+                      className={`mb-4 flex items-center gap-2 text-left ${
+                        lateSubmissionForced ? "cursor-help" : "cursor-pointer"
+                      }`}
+                    >
+                      <div
+                        className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-[1.5px] transition-all duration-150"
+                        style={{
+                          borderColor: effectiveAllowLate
+                            ? themeColor
+                            : undefined,
+                          backgroundColor: effectiveAllowLate
+                            ? themeColor
+                            : "transparent",
+                        }}
+                      >
+                        {effectiveAllowLate && (
+                          <Check
+                            size={11}
+                            strokeWidth={3}
+                            className="text-white"
+                          />
+                        )}
+                      </div>
+                      <span className="text-sm text-foreground">
+                        {t("allowLateSubmission")}
+                      </span>
+                    </button>
+                  </TooltipTrigger>
+                  {lateSubmissionForced && (
+                    <TooltipContent side="top">
+                      {t("lateSubmissionForcedHint")}
+                    </TooltipContent>
                   )}
-                </div>
-                <span className="text-sm text-foreground">
-                  {t("allowLateSubmission")}
-                </span>
-              </label>
+                </Tooltip>
+              </TooltipProvider>
 
               {/* Prerequisites */}
               {classTasks.length > 0 && (
