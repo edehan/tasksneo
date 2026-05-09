@@ -1,5 +1,5 @@
 # ---- Builder ----
-FROM node:22.22.2-trixie-slim AS builder
+FROM node:26.1.0-trixie-slim AS builder
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
@@ -38,7 +38,7 @@ RUN node -e "\
   require('fs').writeFileSync(f,JSON.stringify(p,null,2));"
 
 # ---- Production ----
-FROM node:22.22.2-trixie-slim
+FROM node:26.1.0-trixie-slim
 
 ENV NODE_ENV=production
 WORKDIR /app
