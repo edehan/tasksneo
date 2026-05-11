@@ -550,6 +550,12 @@
       "archiveTask": "Archiver",
       "unarchiveTask": "Desarchiver"
     },
+    "prerequisites": {
+      "title": "Les taches prealables suivantes ne sont pas terminees",
+      "description": "Ouvrez d'abord une tache prealable, ou continuez a modifier cette soumission.",
+      "ignoreAndContinue": "Ignorer et continuer la modification",
+      "failedCheck": "Echec de la verification des prealables"
+    },
     "toast": {
       "archived": "Tache archivee",
       "failedArchive": "Echec de l'archivage de la tache",

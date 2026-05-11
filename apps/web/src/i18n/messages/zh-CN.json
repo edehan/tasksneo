@@ -550,6 +550,12 @@
       "archiveTask": "归档",
       "unarchiveTask": "取消归档"
     },
+    "prerequisites": {
+      "title": "以下前置任务没有完成",
+      "description": "可以先打开对应任务，也可以继续编辑当前提交。",
+      "ignoreAndContinue": "忽略并继续编辑提交",
+      "failedCheck": "检查前置任务失败"
+    },
     "toast": {
       "archived": "任务已归档",
       "failedArchive": "归档任务失败",

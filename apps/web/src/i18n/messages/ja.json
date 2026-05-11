@@ -550,6 +550,12 @@
       "archiveTask": "アーカイブ",
       "unarchiveTask": "アーカイブ解除"
     },
+    "prerequisites": {
+      "title": "次の前提課題が未完了です",
+      "description": "前提課題を先に開くか、この提出の編集を続行できます。",
+      "ignoreAndContinue": "無視して提出編集を続ける",
+      "failedCheck": "前提課題の確認に失敗しました"
+    },
     "toast": {
       "archived": "課題をアーカイブしました",
       "failedArchive": "課題のアーカイブに失敗しました",

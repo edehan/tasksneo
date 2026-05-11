@@ -9,6 +9,10 @@ import { useSWRConfig } from "swr";
 
 import { useAuth } from "@/components/auth-provider";
 import { MarkdownPreview } from "@/features/editor/components/markdown-preview";
+import {
+  PrerequisiteCheckingIcon,
+  PrerequisiteSubmitGate,
+} from "@/features/tasks/components/prerequisite-submit-gate";
 import { TaskSidebar } from "@/features/tasks/components/task-sidebar";
 import {
   deriveDetailStatus,
@@ -362,9 +366,10 @@ export function TaskDetailOverlay({
                         : t("actions.editSubmission")}
                     </button>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
+                    <PrerequisiteSubmitGate
+                      task={task}
+                      onOpenPrerequisite={onClose}
+                      onContinue={() => {
                         if (onSubmit) {
                           onSubmit(task);
                         } else {
@@ -372,12 +377,23 @@ export function TaskDetailOverlay({
                           router.push(`/tasks/${task.id}/submit`);
                         }
                       }}
-                      className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium text-white shadow-sm transition-colors duration-100"
-                      style={{ backgroundColor: task.classColor }}
                     >
-                      {t("actions.submitAssignment")}
-                      <ArrowRight size={12} strokeWidth={2} />
-                    </button>
+                      {({ checking, onClick }) => (
+                        <button
+                          type="button"
+                          disabled={checking}
+                          onClick={onClick}
+                          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium text-white shadow-sm transition-colors duration-100 disabled:opacity-70"
+                          style={{ backgroundColor: task.classColor }}
+                        >
+                          {checking && <PrerequisiteCheckingIcon />}
+                          {t("actions.submitAssignment")}
+                          {!checking && (
+                            <ArrowRight size={12} strokeWidth={2} />
+                          )}
+                        </button>
+                      )}
+                    </PrerequisiteSubmitGate>
                   )}
                 </div>
               </div>

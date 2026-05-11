@@ -550,6 +550,12 @@
       "archiveTask": "Archive",
       "unarchiveTask": "Unarchive"
     },
+    "prerequisites": {
+      "title": "The following prerequisites are incomplete",
+      "description": "Open a prerequisite task first, or continue editing this submission.",
+      "ignoreAndContinue": "Ignore and continue editing",
+      "failedCheck": "Failed to check prerequisites"
+    },
     "toast": {
       "archived": "Task archived",
       "failedArchive": "Failed to archive task",
