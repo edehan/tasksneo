@@ -322,7 +322,7 @@ describe("TaskFlow API e2e", () => {
 			password: "Passw0rd!",
 			nickname: "Owner",
 			schoolId: schoolAId,
-			studentId: "A001",
+			studentId: "1001",
 			timezone: "Asia/Shanghai",
 		});
 		expect(ownerRegisterBody.user.timezone).toBe("Asia/Shanghai");
@@ -335,7 +335,7 @@ describe("TaskFlow API e2e", () => {
 			password: "Passw0rd!",
 			nickname: "Member",
 			schoolId: schoolAId,
-			studentId: "A002",
+			studentId: "1002",
 		});
 
 		const memberToken = registerMember.token;
@@ -346,7 +346,7 @@ describe("TaskFlow API e2e", () => {
 			password: "Passw0rd!",
 			nickname: "Outsider",
 			schoolId: schoolBId,
-			studentId: "B001",
+			studentId: "2001",
 		});
 
 		const outsiderToken = registerOutsider.token;
@@ -371,13 +371,25 @@ describe("TaskFlow API e2e", () => {
 		});
 		expect(meOwner.status).toBe(200);
 
-		const patchMe = await requestJson(app, "/users/me", {
+		const patchInvalidStudentId = await requestJson(app, "/users/me", {
 			method: "PATCH",
 			headers: authHeader(ownerToken),
 			body: JSON.stringify({
 				nickname: "Owner Updated",
 				schoolId: schoolAId,
 				studentId: "A099",
+				timezone: "America/New_York",
+			}),
+		});
+		expect(patchInvalidStudentId.response.status).toBe(400);
+
+		const patchMe = await requestJson(app, "/users/me", {
+			method: "PATCH",
+			headers: authHeader(ownerToken),
+			body: JSON.stringify({
+				nickname: "Owner Updated",
+				schoolId: schoolAId,
+				studentId: "1099",
 				timezone: "America/New_York",
 			}),
 		});
@@ -537,7 +549,7 @@ describe("TaskFlow API e2e", () => {
 			email: thirdEmail,
 			password: "Passw0rd!",
 			schoolId: schoolAId,
-			studentId: "A333",
+			studentId: "1333",
 		});
 		const thirdToken = thirdRegister.token;
 		const thirdUserId = thirdRegister.user.id;

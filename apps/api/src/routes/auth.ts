@@ -34,12 +34,17 @@ const registerStep1Schema = z.object({
 	captchaToken: z.string().optional(),
 });
 
+const studentIdSchema = z
+	.string()
+	.trim()
+	.regex(/^\d+$/, "studentId must contain digits only");
+
 const registerCompleteSchema = z.object({
 	token: z.string().min(1),
 	password: z.string().min(8),
 	nickname: z.string().optional().nullable(),
 	schoolId: z.string().uuid().optional().nullable(),
-	studentId: z.string().optional().nullable(),
+	studentId: studentIdSchema.optional().nullable(),
 	timezone: z.string().max(64).optional(),
 	trustDevice: z.boolean().optional(),
 });

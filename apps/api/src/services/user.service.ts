@@ -22,6 +22,22 @@ import {
 } from "./task-cleanup.service.js";
 
 const USER_PROFILE_TTL_SECONDS = 300;
+const STUDENT_ID_PATTERN = /^\d+$/;
+
+function normalizeStudentId(studentId: string | null | undefined) {
+	if (studentId == null) return studentId;
+
+	const normalized = studentId.trim();
+	if (normalized && !STUDENT_ID_PATTERN.test(normalized)) {
+		throw new AppError(
+			400,
+			"STUDENT_ID_INVALID",
+			"studentId must contain digits only",
+		);
+	}
+
+	return normalized;
+}
 
 export async function getMyProfile(userId: string) {
 	return cacheGetOrSet(
@@ -57,7 +73,9 @@ export async function updateMyProfile(
 		timezone?: string;
 	},
 ) {
-	if (input.schoolId && !input.studentId) {
+	const studentId = normalizeStudentId(input.studentId);
+
+	if (input.schoolId && !studentId) {
 		throw new AppError(
 			400,
 			"STUDENT_ID_REQUIRED",
@@ -65,7 +83,7 @@ export async function updateMyProfile(
 		);
 	}
 
-	if (!input.schoolId && input.studentId) {
+	if (!input.schoolId && studentId) {
 		throw new AppError(
 			400,
 			"SCHOOL_ID_REQUIRED",
@@ -88,7 +106,7 @@ export async function updateMyProfile(
 		data: {
 			nickname: input.nickname,
 			schoolId: input.schoolId,
-			studentId: input.studentId,
+			studentId,
 			...(input.timezone !== undefined ? { timezone: input.timezone } : {}),
 		},
 		include: {
