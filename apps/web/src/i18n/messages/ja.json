@@ -63,6 +63,7 @@
     "invalidOrExpiredLink": "このリンクは無効か期限切れです。",
     "passwordsDoNotMatch": "パスワードが一致しません",
     "studentIdRequired": "学校を選択した場合は学籍番号が必要です",
+    "studentIdDigitsOnly": "学籍番号は整数のみ入力できます",
     "registrationFailed": "登録に失敗しました",
     "linkExpired": "リンクの有効期限が切れています",
     "backToRegistration": "登録に戻る",
@@ -300,6 +301,8 @@
     "none": "なし",
     "studentId": "学籍番号",
     "studentIdPlaceholder": "あなたの学籍番号",
+    "studentIdRequired": "学校を選択した場合は学籍番号が必要です",
+    "studentIdDigitsOnly": "学籍番号は整数のみ入力できます",
     "timezone": "タイムゾーン",
     "detected": "検出",
     "timezoneHint": "日時と締切をローカル時刻で表示するために使います。",
@@ -546,6 +549,12 @@
       "submitAssignment": "課題を提出",
       "archiveTask": "アーカイブ",
       "unarchiveTask": "アーカイブ解除"
+    },
+    "prerequisites": {
+      "title": "次の前提課題が未完了です",
+      "description": "前提課題を先に開くか、この提出の編集を続行できます。",
+      "ignoreAndContinue": "無視して提出編集を続ける",
+      "failedCheck": "前提課題の確認に失敗しました"
     },
     "toast": {
       "archived": "課題をアーカイブしました",

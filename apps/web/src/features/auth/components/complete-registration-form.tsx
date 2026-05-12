@@ -43,6 +43,8 @@ function detectBrowserTimezone(): string {
   return "UTC";
 }
 
+const STUDENT_ID_PATTERN = /^\d+$/;
+
 export function CompleteRegistrationForm() {
   const router = useRouter();
   const { setAuth } = useAuth();
@@ -113,9 +115,17 @@ export function CompleteRegistrationForm() {
       return;
     }
 
-    if (schoolId && !studentId.trim()) {
-      toast.error(t("studentIdRequired"));
-      return;
+    const normalizedStudentId = studentId.trim();
+    if (schoolId) {
+      if (!normalizedStudentId) {
+        toast.error(t("studentIdRequired"));
+        return;
+      }
+
+      if (!STUDENT_ID_PATTERN.test(normalizedStudentId)) {
+        toast.error(t("studentIdDigitsOnly"));
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -125,7 +135,7 @@ export function CompleteRegistrationForm() {
         password,
         nickname: nickname || undefined,
         schoolId: schoolId || undefined,
-        studentId: schoolId ? studentId : undefined,
+        studentId: schoolId ? normalizedStudentId : undefined,
         timezone: detectedTimezone,
       });
       setAuth(res.user);
@@ -254,7 +264,11 @@ export function CompleteRegistrationForm() {
                   <Input
                     id="comp-studentId"
                     value={studentId}
-                    onChange={(e) => setStudentId(e.target.value)}
+                    onChange={(e) =>
+                      setStudentId(e.target.value.replace(/\D/g, ""))
+                    }
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     required
                     placeholder={t("studentNumberPlaceholder")}
                   />

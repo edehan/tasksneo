@@ -1,0 +1,1885 @@
+{
+  "metadata": {
+    "model": "alibaba/qwen3.6-27b",
+    "api": "Anthropic Messages API",
+    "temperature": 0,
+    "maxTokens": 8192,
+    "timezone": "Asia/Shanghai",
+    "localNow": "2026-04-16 21:29:00 (Thursday, GMT+8)",
+    "baseUrlEnv": "DEV_SEED_LLM_BASE_URL",
+    "apiKeyEnv": "DEV_SEED_LLM_API_KEY",
+    "requestDelayMs": 1000,
+    "requestTimeoutMs": 90000,
+    "caseIds": [
+      "T01",
+      "T19"
+    ],
+    "generatedAt": "2026-05-09T17:14:36.177Z"
+  },
+  "results": [
+    {
+      "id": "T01",
+      "type": "绝对时间",
+      "excerpt": "2026年4月20日23:59前提交读书报告",
+      "text": "同学们，本周我们读完《乡土中国》前三章。请结合课堂讨论写一份不少于800字的读书报告，注意引用原文并写出自己的理解，2026年4月20日23:59前提交到平台。",
+      "expected": {
+        "dueAt": [
+          "2026-04-20T23:59:00+08:00"
+        ]
+      },
+      "groups": {
+        "noLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"《乡土中国》前三章读书报告\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": \"2026-04-20T23:59:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"结合课堂讨论撰写《乡土中国》前三章不少于800字的读书报告，需引用原文并阐述个人理解。\",\n  \"markdown\": \"# 《乡土中国》前三章读书报告\\n\\n## 概述\\n本周我们已读完《乡土中国》前三章。请结合课堂讨论，撰写一份读书报告。\\n\\n## 要求\\n- 字数不少于800字\\n- 注意引用原文\\n- 结合原文写出自己的理解\\n- 结合课堂讨论内容\\n\\n## 时间安排\\n- 截止时间：2026年4月20日 23:59 前\\n\\n## 提交说明\\n- 请将报告提交至教学平台。\"\n}",
+          "usage": {
+            "input_tokens": 401,
+            "output_tokens": 2546
+          },
+          "parsed": {
+            "title": "《乡土中国》前三章读书报告",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-20T23:59:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "结合课堂讨论撰写《乡土中国》前三章不少于800字的读书报告，需引用原文并阐述个人理解。",
+            "markdown": "# 《乡土中国》前三章读书报告\n\n## 概述\n本周我们已读完《乡土中国》前三章。请结合课堂讨论，撰写一份读书报告。\n\n## 要求\n- 字数不少于800字\n- 注意引用原文\n- 结合原文写出自己的理解\n- 结合课堂讨论内容\n\n## 时间安排\n- 截止时间：2026年4月20日 23:59 前\n\n## 提交说明\n- 请将报告提交至教学平台。"
+          },
+          "error": null
+        },
+        "withLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"《乡土中国》前三章读书报告\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": \"2026-04-20T23:59:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"结合课堂讨论撰写《乡土中国》前三章不少于800字的读书报告，需引用原文并阐述个人理解。\",\n  \"markdown\": \"# 《乡土中国》前三章读书报告\\n\\n## 概述\\n本周我们已读完《乡土中国》前三章，现需结合课堂讨论完成一份读书报告。\\n\\n## 要求\\n- 字数不少于800字\\n- 注意引用原文\\n- 结合课堂讨论，写出自己的理解\\n\\n## 时间安排\\n- 提交截止时间：2026年4月20日 23:59 前\\n\\n## 提交说明\\n- 请将报告提交至课程平台。\"\n}",
+          "usage": {
+            "input_tokens": 470,
+            "output_tokens": 2409
+          },
+          "parsed": {
+            "title": "《乡土中国》前三章读书报告",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-20T23:59:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "结合课堂讨论撰写《乡土中国》前三章不少于800字的读书报告，需引用原文并阐述个人理解。",
+            "markdown": "# 《乡土中国》前三章读书报告\n\n## 概述\n本周我们已读完《乡土中国》前三章，现需结合课堂讨论完成一份读书报告。\n\n## 要求\n- 字数不少于800字\n- 注意引用原文\n- 结合课堂讨论，写出自己的理解\n\n## 时间安排\n- 提交截止时间：2026年4月20日 23:59 前\n\n## 提交说明\n- 请将报告提交至课程平台。"
+          },
+          "error": null
+        },
+        "filtered": {
+          "ok": true,
+          "rawText": null,
+          "usage": null,
+          "parsed": {
+            "title": "《乡土中国》前三章读书报告",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-20T23:59:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "结合课堂讨论撰写《乡土中国》前三章不少于800字的读书报告，需引用原文并阐述个人理解。",
+            "markdown": "# 《乡土中国》前三章读书报告\n\n## 概述\n本周我们已读完《乡土中国》前三章，现需结合课堂讨论完成一份读书报告。\n\n## 要求\n- 字数不少于800字\n- 注意引用原文\n- 结合课堂讨论，写出自己的理解\n\n## 时间安排\n- 提交截止时间：2026年4月20日 23:59 前\n\n## 提交说明\n- 请将报告提交至课程平台。"
+          },
+          "error": null
+        }
+      },
+      "evaluation": {
+        "noLocal": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        },
+        "withLocal": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        },
+        "filtered": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "T02",
+      "type": "相对时间",
+      "excerpt": "本周五下午5点交实验记录",
+      "text": "今天实验课的数据大家已经记录在表格里。请整理成完整实验记录，补充误差分析和一张手绘装置图，本周五下午5点前交实验记录。",
+      "expected": {
+        "dueAt": [
+          "2026-04-17T17:00:00+08:00"
+        ]
+      },
+      "groups": {
+        "noLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"实验记录整理与提交\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": null\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"将今日实验课数据整理为完整实验记录，补充误差分析与手绘装置图，并于本周五下午5点前提交。\",\n  \"markdown\": \"# 实验记录整理与提交\\n\\n## 概述\\n将今日实验课已记录在表格中的数据整理成完整实验记录。\\n\\n## 要求\\n- 整理已有表格数据为完整实验记录\\n- 补充误差分析\\n- 附一张手绘装置图\\n\\n## 时间安排\\n- 截止时间：本周五下午5点前\\n\\n## 提交说明\\n- 请在此时间前提交实验记录\"\n}",
+          "usage": {
+            "input_tokens": 383,
+            "output_tokens": 2523
+          },
+          "parsed": {
+            "title": "实验记录整理与提交",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": null
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "将今日实验课数据整理为完整实验记录，补充误差分析与手绘装置图，并于本周五下午5点前提交。",
+            "markdown": "# 实验记录整理与提交\n\n## 概述\n将今日实验课已记录在表格中的数据整理成完整实验记录。\n\n## 要求\n- 整理已有表格数据为完整实验记录\n- 补充误差分析\n- 附一张手绘装置图\n\n## 时间安排\n- 截止时间：本周五下午5点前\n\n## 提交说明\n- 请在此时间前提交实验记录"
+          },
+          "error": null
+        },
+        "withLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"实验记录整理与提交\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": \"2026-04-17T17:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"整理实验课数据为完整记录，补充误差分析与手绘装置图，并于本周五下午5点前提交。\",\n  \"markdown\": \"# 实验记录整理与提交\\n\\n## 概述\\n本次任务要求将今日实验课已记录在表格中的数据整理为完整的实验记录。\\n\\n## 要求\\n- 整理现有表格数据，形成完整的实验记录。\\n- 补充误差分析部分。\\n- 绘制并附上一张手绘装置图。\\n\\n## 时间安排\\n- 截止时间：本周五（4月17日）下午5点前\\n\\n## 提交说明\\n- 请按时提交完整的实验记录文件。\"\n}",
+          "usage": {
+            "input_tokens": 452,
+            "output_tokens": 3113
+          },
+          "parsed": {
+            "title": "实验记录整理与提交",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-17T17:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "整理实验课数据为完整记录，补充误差分析与手绘装置图，并于本周五下午5点前提交。",
+            "markdown": "# 实验记录整理与提交\n\n## 概述\n本次任务要求将今日实验课已记录在表格中的数据整理为完整的实验记录。\n\n## 要求\n- 整理现有表格数据，形成完整的实验记录。\n- 补充误差分析部分。\n- 绘制并附上一张手绘装置图。\n\n## 时间安排\n- 截止时间：本周五（4月17日）下午5点前\n\n## 提交说明\n- 请按时提交完整的实验记录文件。"
+          },
+          "error": null
+        },
+        "filtered": {
+          "ok": true,
+          "rawText": null,
+          "usage": null,
+          "parsed": {
+            "title": "实验记录整理与提交",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-17T17:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "整理实验课数据为完整记录，补充误差分析与手绘装置图，并于本周五下午5点前提交。",
+            "markdown": "# 实验记录整理与提交\n\n## 概述\n本次任务要求将今日实验课已记录在表格中的数据整理为完整的实验记录。\n\n## 要求\n- 整理现有表格数据，形成完整的实验记录。\n- 补充误差分析部分。\n- 绘制并附上一张手绘装置图。\n\n## 时间安排\n- 截止时间：本周五（4月17日）下午5点前\n\n## 提交说明\n- 请按时提交完整的实验记录文件。"
+          },
+          "error": null
+        }
+      },
+      "evaluation": {
+        "noLocal": {
+          "startAt": "—",
+          "dueAt": "×",
+          "allowLateSubmission": "—"
+        },
+        "withLocal": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        },
+        "filtered": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "T03",
+      "type": "相对时间",
+      "excerpt": "明晚8点前上传作业",
+      "text": "数学作业请完成第5章第1到第8题，过程要写清楚，选择题也要保留必要推导。明晚8点前上传作业，文件名写姓名和学号。",
+      "expected": {
+        "dueAt": [
+          "2026-04-17T20:00:00+08:00"
+        ]
+      },
+      "groups": {
+        "noLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"数学作业：第5章第1-8题\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": null\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"完成数学第5章第1至8题，需详细写出解题过程及选择题推导，并于明晚8点前按要求命名上传。\",\n  \"markdown\": \"# 数学作业：第5章第1-8题\\n\\n## 概述\\n本次作业要求完成数学教材第5章的第1至第8题。\\n\\n## 要求\\n- 解题过程需书写清晰、完整。\\n- 选择题必须保留必要的推导步骤。\\n\\n## 时间安排\\n- 截止时间：明晚 20:00 前\\n\\n## 提交说明\\n- 提交方式：线上上传\\n- 文件命名格式：姓名+学号\"\n}",
+          "usage": {
+            "input_tokens": 387,
+            "output_tokens": 2722
+          },
+          "parsed": {
+            "title": "数学作业：第5章第1-8题",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": null
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "完成数学第5章第1至8题，需详细写出解题过程及选择题推导，并于明晚8点前按要求命名上传。",
+            "markdown": "# 数学作业：第5章第1-8题\n\n## 概述\n本次作业要求完成数学教材第5章的第1至第8题。\n\n## 要求\n- 解题过程需书写清晰、完整。\n- 选择题必须保留必要的推导步骤。\n\n## 时间安排\n- 截止时间：明晚 20:00 前\n\n## 提交说明\n- 提交方式：线上上传\n- 文件命名格式：姓名+学号"
+          },
+          "error": null
+        },
+        "withLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"数学作业：第5章第1-8题\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": \"2026-04-17T20:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"完成数学第5章第1至8题，要求过程清晰并保留选择题推导，于明晚8点前按指定格式上传。\",\n  \"markdown\": \"# 数学作业：第5章第1-8题\\n\\n## 作业概述\\n请完成数学教材第5章的第1至第8题。\\n\\n## 具体要求\\n- 解题过程需书写清晰。\\n- 选择题需保留必要的推导步骤。\\n\\n## 时间安排\\n- 截止时间：明晚（4月17日）20:00前\\n\\n## 提交说明\\n- 上传作业时，文件名需包含姓名和学号。\"\n}",
+          "usage": {
+            "input_tokens": 456,
+            "output_tokens": 2513
+          },
+          "parsed": {
+            "title": "数学作业：第5章第1-8题",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-17T20:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "完成数学第5章第1至8题，要求过程清晰并保留选择题推导，于明晚8点前按指定格式上传。",
+            "markdown": "# 数学作业：第5章第1-8题\n\n## 作业概述\n请完成数学教材第5章的第1至第8题。\n\n## 具体要求\n- 解题过程需书写清晰。\n- 选择题需保留必要的推导步骤。\n\n## 时间安排\n- 截止时间：明晚（4月17日）20:00前\n\n## 提交说明\n- 上传作业时，文件名需包含姓名和学号。"
+          },
+          "error": null
+        },
+        "filtered": {
+          "ok": true,
+          "rawText": null,
+          "usage": null,
+          "parsed": {
+            "title": "数学作业：第5章第1-8题",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-17T20:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "完成数学第5章第1至8题，要求过程清晰并保留选择题推导，于明晚8点前按指定格式上传。",
+            "markdown": "# 数学作业：第5章第1-8题\n\n## 作业概述\n请完成数学教材第5章的第1至第8题。\n\n## 具体要求\n- 解题过程需书写清晰。\n- 选择题需保留必要的推导步骤。\n\n## 时间安排\n- 截止时间：明晚（4月17日）20:00前\n\n## 提交说明\n- 上传作业时，文件名需包含姓名和学号。"
+          },
+          "error": null
+        }
+      },
+      "evaluation": {
+        "noLocal": {
+          "startAt": "—",
+          "dueAt": "×",
+          "allowLateSubmission": "—"
+        },
+        "withLocal": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        },
+        "filtered": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "T04",
+      "type": "相对时间",
+      "excerpt": "两天后上午8点课前完成预习",
+      "text": "下一次课会讨论线性回归的基本假设。请提前阅读教材相关小节，并把你不理解的两个问题写下来，两天后上午8点课前完成预习。",
+      "expected": {
+        "dueAt": [
+          "2026-04-18T08:00:00+08:00"
+        ]
+      },
+      "groups": {
+        "noLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"线性回归基本假设预习任务\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": null\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"阅读教材相关小节并记录两个疑问，于两天后上午8点课前完成预习。\",\n  \"markdown\": \"# 线性回归基本假设预习任务\\n\\n## 概述\\n下一次课将讨论线性回归的基本假设，请提前完成预习准备。\\n\\n## 要求\\n- 阅读教材中关于线性回归基本假设的相关小节。\\n- 写下你不理解的两个问题。\\n\\n## 时间安排\\n- 截止时间：两天后上午8点课前\\n\\n## 提交说明\\n请按时在课前完成阅读与问题记录。\"\n}",
+          "usage": {
+            "input_tokens": 380,
+            "output_tokens": 2334
+          },
+          "parsed": {
+            "title": "线性回归基本假设预习任务",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": null
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "阅读教材相关小节并记录两个疑问，于两天后上午8点课前完成预习。",
+            "markdown": "# 线性回归基本假设预习任务\n\n## 概述\n下一次课将讨论线性回归的基本假设，请提前完成预习准备。\n\n## 要求\n- 阅读教材中关于线性回归基本假设的相关小节。\n- 写下你不理解的两个问题。\n\n## 时间安排\n- 截止时间：两天后上午8点课前\n\n## 提交说明\n请按时在课前完成阅读与问题记录。"
+          },
+          "error": null
+        },
+        "withLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"线性回归基本假设预习任务\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": \"2026-04-18T08:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"请提前阅读教材相关小节，并写下两个不理解的问题，于两天后上午8点课前完成预习。\",\n  \"markdown\": \"# 线性回归基本假设预习任务\\n\\n## 概述\\n下一次课会讨论线性回归的基本假设，需提前完成预习准备。\\n\\n## 要求\\n- 阅读教材相关小节。\\n- 写下你不理解的**两个问题**。\\n\\n## 时间安排\\n- 截止时间：两天后（4月18日）上午8点课前。\\n\\n## 提交说明\\n请在课前完成预习并准备好所记录的问题。\"\n}",
+          "usage": {
+            "input_tokens": 449,
+            "output_tokens": 3003
+          },
+          "parsed": {
+            "title": "线性回归基本假设预习任务",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-18T08:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "请提前阅读教材相关小节，并写下两个不理解的问题，于两天后上午8点课前完成预习。",
+            "markdown": "# 线性回归基本假设预习任务\n\n## 概述\n下一次课会讨论线性回归的基本假设，需提前完成预习准备。\n\n## 要求\n- 阅读教材相关小节。\n- 写下你不理解的**两个问题**。\n\n## 时间安排\n- 截止时间：两天后（4月18日）上午8点课前。\n\n## 提交说明\n请在课前完成预习并准备好所记录的问题。"
+          },
+          "error": null
+        },
+        "filtered": {
+          "ok": true,
+          "rawText": null,
+          "usage": null,
+          "parsed": {
+            "title": "线性回归基本假设预习任务",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-18T08:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "请提前阅读教材相关小节，并写下两个不理解的问题，于两天后上午8点课前完成预习。",
+            "markdown": "# 线性回归基本假设预习任务\n\n## 概述\n下一次课会讨论线性回归的基本假设，需提前完成预习准备。\n\n## 要求\n- 阅读教材相关小节。\n- 写下你不理解的**两个问题**。\n\n## 时间安排\n- 截止时间：两天后（4月18日）上午8点课前。\n\n## 提交说明\n请在课前完成预习并准备好所记录的问题。"
+          },
+          "error": null
+        }
+      },
+      "evaluation": {
+        "noLocal": {
+          "startAt": "—",
+          "dueAt": "×",
+          "allowLateSubmission": "—"
+        },
+        "withLocal": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        },
+        "filtered": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "T05",
+      "type": "相对时间",
+      "excerpt": "下周五晚上8点之前提交",
+      "text": "小组项目的选题说明请每组提交一份，内容包括研究问题、数据来源、分工安排和初步计划。下周五晚上8点之前提交，后续课堂会抽几组汇报。",
+      "expected": {
+        "dueAt": [
+          "2026-04-24T20:00:00+08:00"
+        ]
+      },
+      "groups": {
+        "noLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"小组项目选题说明提交\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": null\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"请每组提交一份包含研究问题、数据来源、分工安排和初步计划的小组项目选题说明。\",\n  \"markdown\": \"# 小组项目选题说明提交\\n\\n## 概述\\n请各小组提交一份项目选题说明，后续课堂将随机抽取部分小组进行汇报。\\n\\n## 要求\\n提交内容需包含以下部分：\\n- 研究问题\\n- 数据来源\\n- 分工安排\\n- 初步计划\\n\\n## 时间安排\\n- 截止时间：下周五晚上 8:00 前\\n\\n## 提交说明\\n- 每组提交一份\\n- 后续课堂将安排部分小组进行汇报展示\"\n}",
+          "usage": {
+            "input_tokens": 384,
+            "output_tokens": 2742
+          },
+          "parsed": {
+            "title": "小组项目选题说明提交",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": null
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "请每组提交一份包含研究问题、数据来源、分工安排和初步计划的小组项目选题说明。",
+            "markdown": "# 小组项目选题说明提交\n\n## 概述\n请各小组提交一份项目选题说明，后续课堂将随机抽取部分小组进行汇报。\n\n## 要求\n提交内容需包含以下部分：\n- 研究问题\n- 数据来源\n- 分工安排\n- 初步计划\n\n## 时间安排\n- 截止时间：下周五晚上 8:00 前\n\n## 提交说明\n- 每组提交一份\n- 后续课堂将安排部分小组进行汇报展示"
+          },
+          "error": null
+        },
+        "withLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"小组项目选题说明提交\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": \"2026-04-24T20:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"请各小组提交包含研究问题、数据来源、分工安排和初步计划的项目选题说明。\",\n  \"markdown\": \"# 小组项目选题说明提交\\n\\n## 概述\\n请各小组提交一份项目选题说明，用于明确研究方向与团队安排。\\n\\n## 要求\\n- 每组提交一份选题说明\\n- 内容需包含：研究问题、数据来源、分工安排、初步计划\\n\\n## 时间安排\\n- 提交截止：下周五（4月24日）晚上8点前\\n\\n## 提交说明\\n- 后续课堂将随机抽取部分小组进行汇报，请提前做好准备。\"\n}",
+          "usage": {
+            "input_tokens": 453,
+            "output_tokens": 2414
+          },
+          "parsed": {
+            "title": "小组项目选题说明提交",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-24T20:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "请各小组提交包含研究问题、数据来源、分工安排和初步计划的项目选题说明。",
+            "markdown": "# 小组项目选题说明提交\n\n## 概述\n请各小组提交一份项目选题说明，用于明确研究方向与团队安排。\n\n## 要求\n- 每组提交一份选题说明\n- 内容需包含：研究问题、数据来源、分工安排、初步计划\n\n## 时间安排\n- 提交截止：下周五（4月24日）晚上8点前\n\n## 提交说明\n- 后续课堂将随机抽取部分小组进行汇报，请提前做好准备。"
+          },
+          "error": null
+        },
+        "filtered": {
+          "ok": true,
+          "rawText": null,
+          "usage": null,
+          "parsed": {
+            "title": "小组项目选题说明提交",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-24T20:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "请各小组提交包含研究问题、数据来源、分工安排和初步计划的项目选题说明。",
+            "markdown": "# 小组项目选题说明提交\n\n## 概述\n请各小组提交一份项目选题说明，用于明确研究方向与团队安排。\n\n## 要求\n- 每组提交一份选题说明\n- 内容需包含：研究问题、数据来源、分工安排、初步计划\n\n## 时间安排\n- 提交截止：下周五（4月24日）晚上8点前\n\n## 提交说明\n- 后续课堂将随机抽取部分小组进行汇报，请提前做好准备。"
+          },
+          "error": null
+        }
+      },
+      "evaluation": {
+        "noLocal": {
+          "startAt": "—",
+          "dueAt": "×",
+          "allowLateSubmission": "—"
+        },
+        "withLocal": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        },
+        "filtered": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "T06",
+      "type": "多义时间",
+      "excerpt": "本周日或下周一晚十点前交均可",
+      "text": "这次影评可以围绕镜头语言、人物塑造或叙事结构任选一个角度展开。字数不用太长，重点是观点清楚。本周日或下周一晚十点前交均可。",
+      "expected": {
+        "dueAt": [
+          "2026-04-19T22:00:00+08:00",
+          "2026-04-20T22:00:00+08:00"
+        ]
+      },
+      "groups": {
+        "noLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"影评作业\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": null\n    },\n    {\n      \"startAt\": null,\n      \"dueAt\": null\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"本次影评作业要求从镜头语言、人物塑造或叙事结构中任选一角度展开，篇幅适中，重点在于观点清晰。\",\n  \"markdown\": \"# 影评作业\\n\\n## 概述\\n本次作业要求撰写一篇影评，围绕指定角度展开分析。\\n\\n## 要求\\n- **角度选择**：可从镜头语言、人物塑造或叙事结构中任选其一。\\n- **篇幅要求**：字数不用太长。\\n- **核心重点**：观点必须清楚明确。\\n\\n## 时间安排\\n提交截止时间为本周日或下周一晚十点前。\\n\\n## 提交说明\\n两个截止时间任选其一提交即可。\"\n}",
+          "usage": {
+            "input_tokens": 383,
+            "output_tokens": 2831
+          },
+          "parsed": {
+            "title": "影评作业",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": null
+              },
+              {
+                "startAt": null,
+                "dueAt": null
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "本次影评作业要求从镜头语言、人物塑造或叙事结构中任选一角度展开，篇幅适中，重点在于观点清晰。",
+            "markdown": "# 影评作业\n\n## 概述\n本次作业要求撰写一篇影评，围绕指定角度展开分析。\n\n## 要求\n- **角度选择**：可从镜头语言、人物塑造或叙事结构中任选其一。\n- **篇幅要求**：字数不用太长。\n- **核心重点**：观点必须清楚明确。\n\n## 时间安排\n提交截止时间为本周日或下周一晚十点前。\n\n## 提交说明\n两个截止时间任选其一提交即可。"
+          },
+          "error": null
+        },
+        "withLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"影评作业\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": \"2026-04-19T22:00:00+08:00\"\n    },\n    {\n      \"startAt\": null,\n      \"dueAt\": \"2026-04-20T22:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"撰写一篇围绕镜头语言、人物塑造或叙事结构的影评，要求观点清晰，字数适中。\",\n  \"markdown\": \"# 影评作业\\n\\n## 概述\\n本次作业为影评撰写。\\n\\n## 要求\\n- 围绕镜头语言、人物塑造或叙事结构任选一个角度展开。\\n- 字数不用太长，重点是观点清楚。\\n\\n## 时间安排\\n- 截止时间：本周日（4月19日）或下周一（4月20日）晚十点前。\\n\\n## 提交说明\\n任选上述两个截止时间之一提交均可。\"\n}",
+          "usage": {
+            "input_tokens": 452,
+            "output_tokens": 3334
+          },
+          "parsed": {
+            "title": "影评作业",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-19T22:00:00+08:00"
+              },
+              {
+                "startAt": null,
+                "dueAt": "2026-04-20T22:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "撰写一篇围绕镜头语言、人物塑造或叙事结构的影评，要求观点清晰，字数适中。",
+            "markdown": "# 影评作业\n\n## 概述\n本次作业为影评撰写。\n\n## 要求\n- 围绕镜头语言、人物塑造或叙事结构任选一个角度展开。\n- 字数不用太长，重点是观点清楚。\n\n## 时间安排\n- 截止时间：本周日（4月19日）或下周一（4月20日）晚十点前。\n\n## 提交说明\n任选上述两个截止时间之一提交均可。"
+          },
+          "error": null
+        },
+        "filtered": {
+          "ok": true,
+          "rawText": null,
+          "usage": null,
+          "parsed": {
+            "title": "影评作业",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-19T22:00:00+08:00"
+              },
+              {
+                "startAt": null,
+                "dueAt": "2026-04-20T22:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "撰写一篇围绕镜头语言、人物塑造或叙事结构的影评，要求观点清晰，字数适中。",
+            "markdown": "# 影评作业\n\n## 概述\n本次作业为影评撰写。\n\n## 要求\n- 围绕镜头语言、人物塑造或叙事结构任选一个角度展开。\n- 字数不用太长，重点是观点清楚。\n\n## 时间安排\n- 截止时间：本周日（4月19日）或下周一（4月20日）晚十点前。\n\n## 提交说明\n任选上述两个截止时间之一提交均可。"
+          },
+          "error": null
+        }
+      },
+      "evaluation": {
+        "noLocal": {
+          "startAt": "—",
+          "dueAt": "×",
+          "allowLateSubmission": "—"
+        },
+        "withLocal": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        },
+        "filtered": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "T07",
+      "type": "起止时间",
+      "excerpt": "从明天早上9点开始，到下周五晚上8点提交",
+      "text": "调研任务从明天早上9点开始，各组可以联系访谈对象并整理问题清单。最终调研纪要和访谈提纲到下周五晚上8点提交，课堂上会选取两组展示。",
+      "expected": {
+        "startAt": [
+          "2026-04-17T09:00:00+08:00"
+        ],
+        "dueAt": [
+          "2026-04-24T20:00:00+08:00"
+        ]
+      },
+      "groups": {
+        "noLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"调研任务\",\n  \"timeOptions\": [\n    {\n      \"startAt\": \"2024-05-16T09:00:00+08:00\",\n      \"dueAt\": \"2024-05-24T20:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"各组需联系访谈对象并整理问题清单，最终提交调研纪要和访谈提纲。\",\n  \"markdown\": \"# 调研任务\\n\\n## 概述\\n各组需联系访谈对象并整理问题清单，最终提交调研纪要和访谈提纲。\\n\\n## 要求\\n- 联系访谈对象\\n- 整理问题清单\\n- 撰写最终调研纪要和访谈提纲\\n\\n## 时间安排\\n- 开始时间：明天早上9点\\n- 截止时间：下周五晚上8点\\n\\n## 提交与展示说明\\n- 按时提交最终调研纪要和访谈提纲。\\n- 课堂上将选取两组进行展示。\"\n}",
+          "usage": {
+            "input_tokens": 385,
+            "output_tokens": 5458
+          },
+          "parsed": {
+            "title": "调研任务",
+            "timeOptions": [
+              {
+                "startAt": "2024-05-16T09:00:00+08:00",
+                "dueAt": "2024-05-24T20:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "各组需联系访谈对象并整理问题清单，最终提交调研纪要和访谈提纲。",
+            "markdown": "# 调研任务\n\n## 概述\n各组需联系访谈对象并整理问题清单，最终提交调研纪要和访谈提纲。\n\n## 要求\n- 联系访谈对象\n- 整理问题清单\n- 撰写最终调研纪要和访谈提纲\n\n## 时间安排\n- 开始时间：明天早上9点\n- 截止时间：下周五晚上8点\n\n## 提交与展示说明\n- 按时提交最终调研纪要和访谈提纲。\n- 课堂上将选取两组进行展示。"
+          },
+          "error": null
+        },
+        "withLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"调研任务与访谈提纲提交\",\n  \"timeOptions\": [\n    {\n      \"startAt\": \"2026-04-17T09:00:00+08:00\",\n      \"dueAt\": \"2026-04-24T20:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"各组需联系访谈对象并整理问题清单，最终提交调研纪要和访谈提纲。\",\n  \"markdown\": \"# 调研任务与访谈提纲提交\\n\\n## 概述\\n调研任务从明天早上9点开始，各组可以联系访谈对象并整理问题清单。\\n\\n## 要求\\n- 联系访谈对象并整理问题清单。\\n- 完成并提交最终调研纪要和访谈提纲。\\n- 课堂上将选取两组进行成果展示。\\n\\n## 时间安排\\n- **开始时间**：4月17日（周五）早上 9:00\\n- **截止时间**：4月24日（下周五）晚上 20:00\\n\\n## 提交说明\\n请按时提交相关材料，以便课堂展示环节顺利进行。\"\n}",
+          "usage": {
+            "input_tokens": 454,
+            "output_tokens": 3105
+          },
+          "parsed": {
+            "title": "调研任务与访谈提纲提交",
+            "timeOptions": [
+              {
+                "startAt": "2026-04-17T09:00:00+08:00",
+                "dueAt": "2026-04-24T20:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "各组需联系访谈对象并整理问题清单，最终提交调研纪要和访谈提纲。",
+            "markdown": "# 调研任务与访谈提纲提交\n\n## 概述\n调研任务从明天早上9点开始，各组可以联系访谈对象并整理问题清单。\n\n## 要求\n- 联系访谈对象并整理问题清单。\n- 完成并提交最终调研纪要和访谈提纲。\n- 课堂上将选取两组进行成果展示。\n\n## 时间安排\n- **开始时间**：4月17日（周五）早上 9:00\n- **截止时间**：4月24日（下周五）晚上 20:00\n\n## 提交说明\n请按时提交相关材料，以便课堂展示环节顺利进行。"
+          },
+          "error": null
+        },
+        "filtered": {
+          "ok": true,
+          "rawText": null,
+          "usage": null,
+          "parsed": {
+            "title": "调研任务与访谈提纲提交",
+            "timeOptions": [
+              {
+                "startAt": "2026-04-17T09:00:00+08:00",
+                "dueAt": "2026-04-24T20:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "各组需联系访谈对象并整理问题清单，最终提交调研纪要和访谈提纲。",
+            "markdown": "# 调研任务与访谈提纲提交\n\n## 概述\n调研任务从明天早上9点开始，各组可以联系访谈对象并整理问题清单。\n\n## 要求\n- 联系访谈对象并整理问题清单。\n- 完成并提交最终调研纪要和访谈提纲。\n- 课堂上将选取两组进行成果展示。\n\n## 时间安排\n- **开始时间**：4月17日（周五）早上 9:00\n- **截止时间**：4月24日（下周五）晚上 20:00\n\n## 提交说明\n请按时提交相关材料，以便课堂展示环节顺利进行。"
+          },
+          "error": null
+        }
+      },
+      "evaluation": {
+        "noLocal": {
+          "startAt": "×",
+          "dueAt": "×",
+          "allowLateSubmission": "—"
+        },
+        "withLocal": {
+          "startAt": "✓",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        },
+        "filtered": {
+          "startAt": "✓",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "T08",
+      "type": "绝对时间",
+      "excerpt": "今天晚上10点前完成课堂小测",
+      "text": "今天课堂小测开放时间比较短，主要检查大家对概念的理解。请在今天晚上10点前完成课堂小测，提交后系统会自动显示得分。",
+      "expected": {
+        "dueAt": [
+          "2026-04-16T22:00:00+08:00"
+        ]
+      },
+      "groups": {
+        "noLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"课堂小测\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": null\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"本次课堂小测主要检查大家对概念的理解，需在今晚10点前完成。\",\n  \"markdown\": \"# 课堂小测\\n\\n## 概述\\n本次课堂小测开放时间较短，主要目的是检查大家对相关概念的理解情况。\\n\\n## 要求\\n- 在规定时间内完成小测题目。\\n- 重点考察对核心概念的掌握程度。\\n\\n## 时间线\\n- 截止时间：今天晚上10点前\\n\\n## 提交说明\\n- 提交后系统将自动显示得分。\\n- 请注意开放时间较短，合理安排答题时间。\"\n}",
+          "usage": {
+            "input_tokens": 379,
+            "output_tokens": 3218
+          },
+          "parsed": {
+            "title": "课堂小测",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": null
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "本次课堂小测主要检查大家对概念的理解，需在今晚10点前完成。",
+            "markdown": "# 课堂小测\n\n## 概述\n本次课堂小测开放时间较短，主要目的是检查大家对相关概念的理解情况。\n\n## 要求\n- 在规定时间内完成小测题目。\n- 重点考察对核心概念的掌握程度。\n\n## 时间线\n- 截止时间：今天晚上10点前\n\n## 提交说明\n- 提交后系统将自动显示得分。\n- 请注意开放时间较短，合理安排答题时间。"
+          },
+          "error": null
+        },
+        "withLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"课堂小测\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": \"2026-04-16T22:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"完成今天的课堂小测以检查对概念的理解，并于今晚10点前提交。\",\n  \"markdown\": \"# 课堂小测\\n\\n## 概述\\n今天课堂小测开放时间比较短，主要检查大家对概念的理解。\\n\\n## 要求\\n- 完成课堂小测\\n\\n## 时间安排\\n- 截止时间：今天晚上10点前\\n\\n## 提交说明\\n- 提交后系统会自动显示得分。\"\n}",
+          "usage": {
+            "input_tokens": 448,
+            "output_tokens": 2568
+          },
+          "parsed": {
+            "title": "课堂小测",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-16T22:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "完成今天的课堂小测以检查对概念的理解，并于今晚10点前提交。",
+            "markdown": "# 课堂小测\n\n## 概述\n今天课堂小测开放时间比较短，主要检查大家对概念的理解。\n\n## 要求\n- 完成课堂小测\n\n## 时间安排\n- 截止时间：今天晚上10点前\n\n## 提交说明\n- 提交后系统会自动显示得分。"
+          },
+          "error": null
+        },
+        "filtered": {
+          "ok": true,
+          "rawText": null,
+          "usage": null,
+          "parsed": {
+            "title": "课堂小测",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-16T22:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "完成今天的课堂小测以检查对概念的理解，并于今晚10点前提交。",
+            "markdown": "# 课堂小测\n\n## 概述\n今天课堂小测开放时间比较短，主要检查大家对概念的理解。\n\n## 要求\n- 完成课堂小测\n\n## 时间安排\n- 截止时间：今天晚上10点前\n\n## 提交说明\n- 提交后系统会自动显示得分。"
+          },
+          "error": null
+        }
+      },
+      "evaluation": {
+        "noLocal": {
+          "startAt": "—",
+          "dueAt": "×",
+          "allowLateSubmission": "—"
+        },
+        "withLocal": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        },
+        "filtered": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "T09",
+      "type": "缺失或噪声",
+      "excerpt": "完成第5章习题",
+      "text": "请大家完成第5章习题，重点关注证明题的书写规范。下次课我会挑几道题讲，但这条通知里不单独设置提交时间。",
+      "expected": {},
+      "groups": {
+        "noLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"完成第5章习题\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": null\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"完成第5章习题并重点关注证明题的书写规范，本次不设置单独提交时间。\",\n  \"markdown\": \"# 完成第5章习题\\n\\n## 概述\\n请大家完成第5章习题，重点关注证明题的书写规范。\\n\\n## 要求\\n- 完成第5章习题\\n- 重点关注证明题的书写规范\\n\\n## 时间安排\\n本次通知不单独设置提交时间。\\n\\n## 提交说明\\n下次课将挑选几道题进行讲解，请提前完成练习。\"\n}",
+          "usage": {
+            "input_tokens": 379,
+            "output_tokens": 2356
+          },
+          "parsed": {
+            "title": "完成第5章习题",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": null
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "完成第5章习题并重点关注证明题的书写规范，本次不设置单独提交时间。",
+            "markdown": "# 完成第5章习题\n\n## 概述\n请大家完成第5章习题，重点关注证明题的书写规范。\n\n## 要求\n- 完成第5章习题\n- 重点关注证明题的书写规范\n\n## 时间安排\n本次通知不单独设置提交时间。\n\n## 提交说明\n下次课将挑选几道题进行讲解，请提前完成练习。"
+          },
+          "error": null
+        },
+        "withLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"第5章习题练习\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": null\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"完成第5章习题，重点关注证明题的书写规范。\",\n  \"markdown\": \"# 第5章习题练习\\n\\n## 概述\\n请大家完成第5章习题，重点关注证明题的书写规范。\\n\\n## 要求\\n- 完成第5章相关习题\\n- 严格遵循证明题的书写规范\\n\\n## 时间安排\\n本次任务不单独设置提交截止时间。下次课教师将挑选部分题目进行讲解。\\n\\n## 提交说明\\n无需单独提交作业，请提前完成练习并做好课堂讨论准备。\"\n}",
+          "usage": {
+            "input_tokens": 448,
+            "output_tokens": 2179
+          },
+          "parsed": {
+            "title": "第5章习题练习",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": null
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "完成第5章习题，重点关注证明题的书写规范。",
+            "markdown": "# 第5章习题练习\n\n## 概述\n请大家完成第5章习题，重点关注证明题的书写规范。\n\n## 要求\n- 完成第5章相关习题\n- 严格遵循证明题的书写规范\n\n## 时间安排\n本次任务不单独设置提交截止时间。下次课教师将挑选部分题目进行讲解。\n\n## 提交说明\n无需单独提交作业，请提前完成练习并做好课堂讨论准备。"
+          },
+          "error": null
+        },
+        "filtered": {
+          "ok": true,
+          "rawText": null,
+          "usage": null,
+          "parsed": {
+            "title": "第5章习题练习",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": null
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "完成第5章习题，重点关注证明题的书写规范。",
+            "markdown": "# 第5章习题练习\n\n## 概述\n请大家完成第5章习题，重点关注证明题的书写规范。\n\n## 要求\n- 完成第5章相关习题\n- 严格遵循证明题的书写规范\n\n## 时间安排\n本次任务不单独设置提交截止时间。下次课教师将挑选部分题目进行讲解。\n\n## 提交说明\n无需单独提交作业，请提前完成练习并做好课堂讨论准备。"
+          },
+          "error": null
+        }
+      },
+      "evaluation": {
+        "noLocal": {
+          "startAt": "—",
+          "dueAt": "—",
+          "allowLateSubmission": "—"
+        },
+        "withLocal": {
+          "startAt": "—",
+          "dueAt": "—",
+          "allowLateSubmission": "—"
+        },
+        "filtered": {
+          "startAt": "—",
+          "dueAt": "—",
+          "allowLateSubmission": "—"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "T10",
+      "type": "缺失或噪声",
+      "excerpt": "按平时要求提交报告",
+      "text": "这次报告按平时要求提交即可，格式、命名和查重要求都沿用课程说明。请大家自己检查附件和封面信息，这里不再重复具体截止时间。",
+      "expected": {},
+      "groups": {
+        "noLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"课程报告提交\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": null\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"本次报告需按课程说明中的格式、命名和查重要求提交，请自行核对附件与封面信息。\",\n  \"markdown\": \"# 课程报告提交\\n\\n## 概述\\n本次报告需按照课程平时的要求进行提交。\\n\\n## 要求\\n- 格式、文件命名及查重标准均沿用课程说明中的规定。\\n- 请自行仔细检查附件内容及封面信息。\\n\\n## 时间安排\\n具体截止时间请参照课程说明，此处不再重复。\\n\\n## 提交说明\\n按平时要求提交即可。\"\n}",
+          "usage": {
+            "input_tokens": 381,
+            "output_tokens": 2397
+          },
+          "parsed": {
+            "title": "课程报告提交",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": null
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "本次报告需按课程说明中的格式、命名和查重要求提交，请自行核对附件与封面信息。",
+            "markdown": "# 课程报告提交\n\n## 概述\n本次报告需按照课程平时的要求进行提交。\n\n## 要求\n- 格式、文件命名及查重标准均沿用课程说明中的规定。\n- 请自行仔细检查附件内容及封面信息。\n\n## 时间安排\n具体截止时间请参照课程说明，此处不再重复。\n\n## 提交说明\n按平时要求提交即可。"
+          },
+          "error": null
+        },
+        "withLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"本次报告提交说明\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": null\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"本次报告提交沿用课程说明中的格式、命名、查重及截止时间要求，请自行核对附件与封面信息。\",\n  \"markdown\": \"# 本次报告提交说明\\n\\n## 概述\\n本次报告按平时要求提交即可。\\n\\n## 要求\\n- 格式、命名和查重要求均沿用课程说明。\\n- 请自行检查附件和封面信息。\\n\\n## 时间线\\n具体截止时间按平时要求执行，此处不再重复。\\n\\n## 提交说明\\n请参照课程说明完成提交。\"\n}",
+          "usage": {
+            "input_tokens": 450,
+            "output_tokens": 1816
+          },
+          "parsed": {
+            "title": "本次报告提交说明",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": null
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "本次报告提交沿用课程说明中的格式、命名、查重及截止时间要求，请自行核对附件与封面信息。",
+            "markdown": "# 本次报告提交说明\n\n## 概述\n本次报告按平时要求提交即可。\n\n## 要求\n- 格式、命名和查重要求均沿用课程说明。\n- 请自行检查附件和封面信息。\n\n## 时间线\n具体截止时间按平时要求执行，此处不再重复。\n\n## 提交说明\n请参照课程说明完成提交。"
+          },
+          "error": null
+        },
+        "filtered": {
+          "ok": true,
+          "rawText": null,
+          "usage": null,
+          "parsed": {
+            "title": "本次报告提交说明",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": null
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "本次报告提交沿用课程说明中的格式、命名、查重及截止时间要求，请自行核对附件与封面信息。",
+            "markdown": "# 本次报告提交说明\n\n## 概述\n本次报告按平时要求提交即可。\n\n## 要求\n- 格式、命名和查重要求均沿用课程说明。\n- 请自行检查附件和封面信息。\n\n## 时间线\n具体截止时间按平时要求执行，此处不再重复。\n\n## 提交说明\n请参照课程说明完成提交。"
+          },
+          "error": null
+        }
+      },
+      "evaluation": {
+        "noLocal": {
+          "startAt": "—",
+          "dueAt": "—",
+          "allowLateSubmission": "—"
+        },
+        "withLocal": {
+          "startAt": "—",
+          "dueAt": "—",
+          "allowLateSubmission": "—"
+        },
+        "filtered": {
+          "startAt": "—",
+          "dueAt": "—",
+          "allowLateSubmission": "—"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "T11",
+      "type": "迟交字段",
+      "excerpt": "允许迟交，下周三晚上11点前交论文初稿",
+      "text": "论文初稿请写出题目、摘要、研究问题和至少5条参考文献。考虑到有同学还在查资料，本次允许迟交，但请尽量在下周三晚上11点前交论文初稿。",
+      "expected": {
+        "dueAt": [
+          "2026-04-22T23:00:00+08:00"
+        ],
+        "allowLateSubmission": true
+      },
+      "groups": {
+        "noLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"论文初稿\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": null\n    }\n  ],\n  \"allowLateSubmission\": true,\n  \"description\": \"提交包含题目、摘要、研究问题和至少5条参考文献的论文初稿。\",\n  \"markdown\": \"# 论文初稿\\n\\n## 概述\\n本次作业要求提交论文初稿，旨在帮助同学们梳理研究思路并初步构建论文框架。\\n\\n## 要求\\n- 论文题目\\n- 摘要\\n- 研究问题\\n- 至少5条参考文献\\n\\n## 时间安排\\n- 建议提交时间：下周三晚上11点前\\n\\n## 提交说明\\n- 考虑到部分同学仍在查阅资料，本次作业允许迟交，但请尽量按时提交。\"\n}",
+          "usage": {
+            "input_tokens": 390,
+            "output_tokens": 2628
+          },
+          "parsed": {
+            "title": "论文初稿",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": null
+              }
+            ],
+            "allowLateSubmission": true,
+            "description": "提交包含题目、摘要、研究问题和至少5条参考文献的论文初稿。",
+            "markdown": "# 论文初稿\n\n## 概述\n本次作业要求提交论文初稿，旨在帮助同学们梳理研究思路并初步构建论文框架。\n\n## 要求\n- 论文题目\n- 摘要\n- 研究问题\n- 至少5条参考文献\n\n## 时间安排\n- 建议提交时间：下周三晚上11点前\n\n## 提交说明\n- 考虑到部分同学仍在查阅资料，本次作业允许迟交，但请尽量按时提交。"
+          },
+          "error": null
+        },
+        "withLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"论文初稿\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": \"2026-04-22T23:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": true,\n  \"description\": \"提交包含题目、摘要、研究问题和至少5条参考文献的论文初稿。\",\n  \"markdown\": \"# 论文初稿\\n\\n## 概述\\n本次作业要求提交论文初稿。\\n\\n## 要求\\n- 题目\\n- 摘要\\n- 研究问题\\n- 至少5条参考文献\\n\\n## 时间安排\\n建议提交时间：下周三（4月22日）晚上11点前。\\n\\n## 提交说明\\n考虑到有同学还在查资料，本次允许迟交，但请尽量按时提交。\"\n}",
+          "usage": {
+            "input_tokens": 459,
+            "output_tokens": 2273
+          },
+          "parsed": {
+            "title": "论文初稿",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-22T23:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": true,
+            "description": "提交包含题目、摘要、研究问题和至少5条参考文献的论文初稿。",
+            "markdown": "# 论文初稿\n\n## 概述\n本次作业要求提交论文初稿。\n\n## 要求\n- 题目\n- 摘要\n- 研究问题\n- 至少5条参考文献\n\n## 时间安排\n建议提交时间：下周三（4月22日）晚上11点前。\n\n## 提交说明\n考虑到有同学还在查资料，本次允许迟交，但请尽量按时提交。"
+          },
+          "error": null
+        },
+        "filtered": {
+          "ok": true,
+          "rawText": null,
+          "usage": null,
+          "parsed": {
+            "title": "论文初稿",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-22T23:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": true,
+            "description": "提交包含题目、摘要、研究问题和至少5条参考文献的论文初稿。",
+            "markdown": "# 论文初稿\n\n## 概述\n本次作业要求提交论文初稿。\n\n## 要求\n- 题目\n- 摘要\n- 研究问题\n- 至少5条参考文献\n\n## 时间安排\n建议提交时间：下周三（4月22日）晚上11点前。\n\n## 提交说明\n考虑到有同学还在查资料，本次允许迟交，但请尽量按时提交。"
+          },
+          "error": null
+        }
+      },
+      "evaluation": {
+        "noLocal": {
+          "startAt": "—",
+          "dueAt": "×",
+          "allowLateSubmission": "✓"
+        },
+        "withLocal": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "✓"
+        },
+        "filtered": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "✓"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "T12",
+      "type": "迟交字段",
+      "excerpt": "不接受迟交，今天23:59截止",
+      "text": "课堂反思请围绕今天讨论的问题写300字左右，不需要引用文献。这个小作业不接受迟交，今天23:59截止，请大家不要卡最后一分钟。",
+      "expected": {
+        "dueAt": [
+          "2026-04-16T23:59:00+08:00"
+        ],
+        "allowLateSubmission": false
+      },
+      "groups": {
+        "noLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"课堂反思\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": \"2024-01-01T23:59:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": false,\n  \"description\": \"围绕今日课堂讨论问题撰写约300字的反思，无需引用文献。\",\n  \"markdown\": \"# 课堂反思\\n\\n## 概述\\n请围绕今天课堂讨论的问题撰写一篇反思短文。\\n\\n## 要求\\n- 字数：300字左右\\n- 文献引用：不需要引用文献\\n\\n## 时间线\\n- 截止时间：今天 23:59\\n\\n## 提交说明\\n- 本作业不接受迟交，请务必提前完成，不要卡在最后一分钟提交。\"\n}",
+          "usage": {
+            "input_tokens": 385,
+            "output_tokens": 3705
+          },
+          "parsed": {
+            "title": "课堂反思",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2024-01-01T23:59:00+08:00"
+              }
+            ],
+            "allowLateSubmission": false,
+            "description": "围绕今日课堂讨论问题撰写约300字的反思，无需引用文献。",
+            "markdown": "# 课堂反思\n\n## 概述\n请围绕今天课堂讨论的问题撰写一篇反思短文。\n\n## 要求\n- 字数：300字左右\n- 文献引用：不需要引用文献\n\n## 时间线\n- 截止时间：今天 23:59\n\n## 提交说明\n- 本作业不接受迟交，请务必提前完成，不要卡在最后一分钟提交。"
+          },
+          "error": null
+        },
+        "withLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"课堂反思作业\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": \"2026-04-16T23:59:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": false,\n  \"description\": \"围绕今日课堂讨论问题撰写约300字的反思，无需引用文献。\",\n  \"markdown\": \"# 课堂反思作业\\n\\n## 概述\\n请围绕今天课堂讨论的问题撰写一篇反思短文。\\n\\n## 要求\\n- 字数：300字左右\\n- 无需引用文献\\n\\n## 时间线\\n- 截止时间：2026年4月16日 23:59\\n\\n## 提交说明\\n- 本作业不接受迟交，请务必提前完成，避免卡在最后一分钟提交。\"\n}",
+          "usage": {
+            "input_tokens": 454,
+            "output_tokens": 3098
+          },
+          "parsed": {
+            "title": "课堂反思作业",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-16T23:59:00+08:00"
+              }
+            ],
+            "allowLateSubmission": false,
+            "description": "围绕今日课堂讨论问题撰写约300字的反思，无需引用文献。",
+            "markdown": "# 课堂反思作业\n\n## 概述\n请围绕今天课堂讨论的问题撰写一篇反思短文。\n\n## 要求\n- 字数：300字左右\n- 无需引用文献\n\n## 时间线\n- 截止时间：2026年4月16日 23:59\n\n## 提交说明\n- 本作业不接受迟交，请务必提前完成，避免卡在最后一分钟提交。"
+          },
+          "error": null
+        },
+        "filtered": {
+          "ok": true,
+          "rawText": null,
+          "usage": null,
+          "parsed": {
+            "title": "课堂反思作业",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-16T23:59:00+08:00"
+              }
+            ],
+            "allowLateSubmission": false,
+            "description": "围绕今日课堂讨论问题撰写约300字的反思，无需引用文献。",
+            "markdown": "# 课堂反思作业\n\n## 概述\n请围绕今天课堂讨论的问题撰写一篇反思短文。\n\n## 要求\n- 字数：300字左右\n- 无需引用文献\n\n## 时间线\n- 截止时间：2026年4月16日 23:59\n\n## 提交说明\n- 本作业不接受迟交，请务必提前完成，避免卡在最后一分钟提交。"
+          },
+          "error": null
+        }
+      },
+      "evaluation": {
+        "noLocal": {
+          "startAt": "—",
+          "dueAt": "×",
+          "allowLateSubmission": "✓"
+        },
+        "withLocal": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "✓"
+        },
+        "filtered": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "✓"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "T13",
+      "type": "迟交字段",
+      "excerpt": "可以补交，明天晚上9点前交实验报告",
+      "text": "实验报告要包含实验目的、步骤、数据表和结论分析。明天晚上9点前交实验报告，如果确实有设备数据整理问题，可以补交，但需要在备注里说明原因。",
+      "expected": {
+        "dueAt": [
+          "2026-04-17T21:00:00+08:00"
+        ],
+        "allowLateSubmission": true
+      },
+      "groups": {
+        "noLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"实验报告提交\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": \"2024-01-02T21:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": true,\n  \"description\": \"提交包含实验目的、步骤、数据表和结论分析的实验报告。\",\n  \"markdown\": \"# 实验报告提交\\n\\n## 概述\\n本次任务要求提交完整的实验报告。\\n\\n## 要求\\n- 实验目的\\n- 实验步骤\\n- 数据表\\n- 结论分析\\n\\n## 时间安排\\n- 截止时间：明天晚上 9:00 前\\n\\n## 提交说明\\n- 若确实有设备数据整理问题，可以补交。\\n- 补交时需要在备注里说明原因。\"\n}",
+          "usage": {
+            "input_tokens": 389,
+            "output_tokens": 4210
+          },
+          "parsed": {
+            "title": "实验报告提交",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2024-01-02T21:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": true,
+            "description": "提交包含实验目的、步骤、数据表和结论分析的实验报告。",
+            "markdown": "# 实验报告提交\n\n## 概述\n本次任务要求提交完整的实验报告。\n\n## 要求\n- 实验目的\n- 实验步骤\n- 数据表\n- 结论分析\n\n## 时间安排\n- 截止时间：明天晚上 9:00 前\n\n## 提交说明\n- 若确实有设备数据整理问题，可以补交。\n- 补交时需要在备注里说明原因。"
+          },
+          "error": null
+        },
+        "withLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"实验报告提交\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": \"2026-04-17T21:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": true,\n  \"description\": \"提交包含实验目的、步骤、数据表和结论分析的实验报告，截止时间为明天晚上9点，特殊情况可补交并备注原因。\",\n  \"markdown\": \"# 实验报告提交\\n\\n## 概述\\n本次任务要求提交实验报告，报告需涵盖实验目的、步骤、数据表及结论分析。\\n\\n## 要求\\n- 实验目的\\n- 实验步骤\\n- 数据表\\n- 结论分析\\n\\n## 时间安排\\n- 截止时间：明天（4月17日）晚上9点前\\n\\n## 提交说明\\n- 如确实存在设备数据整理问题，允许补交。\\n- 补交时必须在备注中详细说明原因。\"\n}",
+          "usage": {
+            "input_tokens": 458,
+            "output_tokens": 2282
+          },
+          "parsed": {
+            "title": "实验报告提交",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-17T21:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": true,
+            "description": "提交包含实验目的、步骤、数据表和结论分析的实验报告，截止时间为明天晚上9点，特殊情况可补交并备注原因。",
+            "markdown": "# 实验报告提交\n\n## 概述\n本次任务要求提交实验报告，报告需涵盖实验目的、步骤、数据表及结论分析。\n\n## 要求\n- 实验目的\n- 实验步骤\n- 数据表\n- 结论分析\n\n## 时间安排\n- 截止时间：明天（4月17日）晚上9点前\n\n## 提交说明\n- 如确实存在设备数据整理问题，允许补交。\n- 补交时必须在备注中详细说明原因。"
+          },
+          "error": null
+        },
+        "filtered": {
+          "ok": true,
+          "rawText": null,
+          "usage": null,
+          "parsed": {
+            "title": "实验报告提交",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-17T21:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": true,
+            "description": "提交包含实验目的、步骤、数据表和结论分析的实验报告，截止时间为明天晚上9点，特殊情况可补交并备注原因。",
+            "markdown": "# 实验报告提交\n\n## 概述\n本次任务要求提交实验报告，报告需涵盖实验目的、步骤、数据表及结论分析。\n\n## 要求\n- 实验目的\n- 实验步骤\n- 数据表\n- 结论分析\n\n## 时间安排\n- 截止时间：明天（4月17日）晚上9点前\n\n## 提交说明\n- 如确实存在设备数据整理问题，允许补交。\n- 补交时必须在备注中详细说明原因。"
+          },
+          "error": null
+        }
+      },
+      "evaluation": {
+        "noLocal": {
+          "startAt": "—",
+          "dueAt": "×",
+          "allowLateSubmission": "✓"
+        },
+        "withLocal": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "✓"
+        },
+        "filtered": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "✓"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "T14",
+      "type": "起止时间",
+      "excerpt": "4月20日上午9点开始，4月18日下午6点截止",
+      "text": "为了测试系统对异常时间的处理，我把这条任务写得有点别扭：请4月20日上午9点开始准备材料，但表格里写的是4月18日下午6点截止提交。",
+      "expected": {
+        "startAt": [
+          "2026-04-20T09:00:00+08:00"
+        ],
+        "dueAt": [
+          "2026-04-18T18:00:00+08:00"
+        ],
+        "expectSystemBlank": true
+      },
+      "groups": {
+        "noLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"准备材料\",\n  \"timeOptions\": [\n    {\n      \"startAt\": \"2024-04-20T09:00:00+08:00\",\n      \"dueAt\": \"2024-04-18T18:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"请按要求准备材料，注意任务设定的开始与截止时间存在先后矛盾。\",\n  \"markdown\": \"# 准备材料\\n\\n## 概述\\n本任务旨在测试系统对异常时间设定的处理能力。\\n\\n## 要求\\n请按要求准备相关材料。\\n\\n## 时间安排\\n- 开始时间：4月20日上午9点\\n- 截止时间：4月18日下午6点\\n\\n## 提交说明\\n请注意，本任务的时间设定存在先后矛盾，仅用于系统测试。\"\n}",
+          "usage": {
+            "input_tokens": 389,
+            "output_tokens": 2828
+          },
+          "parsed": {
+            "title": "准备材料",
+            "timeOptions": [
+              {
+                "startAt": "2024-04-20T09:00:00+08:00",
+                "dueAt": "2024-04-18T18:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "请按要求准备材料，注意任务设定的开始与截止时间存在先后矛盾。",
+            "markdown": "# 准备材料\n\n## 概述\n本任务旨在测试系统对异常时间设定的处理能力。\n\n## 要求\n请按要求准备相关材料。\n\n## 时间安排\n- 开始时间：4月20日上午9点\n- 截止时间：4月18日下午6点\n\n## 提交说明\n请注意，本任务的时间设定存在先后矛盾，仅用于系统测试。"
+          },
+          "error": null
+        },
+        "withLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"材料准备与提交任务\",\n  \"timeOptions\": [\n    {\n      \"startAt\": \"2026-04-20T09:00:00+08:00\",\n      \"dueAt\": \"2026-04-18T18:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"按要求准备材料并在规定时间前提交。\",\n  \"markdown\": \"# 材料准备与提交任务\\n\\n## 概述\\n本任务用于测试系统对异常时间的处理，描述中存在时间先后矛盾，请留意。\\n\\n## 要求\\n准备相关材料。\\n\\n## 时间安排\\n- 开始准备：4月20日上午9点\\n- 截止提交：4月18日下午6点\\n\\n## 提交说明\\n请按照表格中的截止时间要求完成提交。\"\n}",
+          "usage": {
+            "input_tokens": 458,
+            "output_tokens": 3150
+          },
+          "parsed": {
+            "title": "材料准备与提交任务",
+            "timeOptions": [
+              {
+                "startAt": "2026-04-20T09:00:00+08:00",
+                "dueAt": "2026-04-18T18:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "按要求准备材料并在规定时间前提交。",
+            "markdown": "# 材料准备与提交任务\n\n## 概述\n本任务用于测试系统对异常时间的处理，描述中存在时间先后矛盾，请留意。\n\n## 要求\n准备相关材料。\n\n## 时间安排\n- 开始准备：4月20日上午9点\n- 截止提交：4月18日下午6点\n\n## 提交说明\n请按照表格中的截止时间要求完成提交。"
+          },
+          "error": null
+        },
+        "filtered": {
+          "ok": true,
+          "rawText": null,
+          "usage": null,
+          "parsed": {
+            "title": "材料准备与提交任务",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": null
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "按要求准备材料并在规定时间前提交。",
+            "markdown": "# 材料准备与提交任务\n\n## 概述\n本任务用于测试系统对异常时间的处理，描述中存在时间先后矛盾，请留意。\n\n## 要求\n准备相关材料。\n\n## 时间安排\n- 开始准备：4月20日上午9点\n- 截止提交：4月18日下午6点\n\n## 提交说明\n请按照表格中的截止时间要求完成提交。"
+          },
+          "error": null
+        }
+      },
+      "evaluation": {
+        "noLocal": {
+          "startAt": "×",
+          "dueAt": "×",
+          "allowLateSubmission": "—"
+        },
+        "withLocal": {
+          "startAt": "✓",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        },
+        "filtered": {
+          "startAt": "置空",
+          "dueAt": "置空",
+          "allowLateSubmission": "—"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "T15",
+      "type": "起止时间",
+      "excerpt": "4月20日20:00开始，4月20日20:00截止",
+      "text": "这条用于检查模型是否会把同一个截止点同时填进开始和结束。请记录为4月20日20:00开始，4月20日20:00截止，内容是提交一页项目摘要。",
+      "expected": {
+        "startAt": [
+          "2026-04-20T20:00:00+08:00"
+        ],
+        "dueAt": [
+          "2026-04-20T20:00:00+08:00"
+        ],
+        "expectEqualTimeStartBlank": true
+      },
+      "groups": {
+        "noLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"提交一页项目摘要\",\n  \"timeOptions\": [\n    {\n      \"startAt\": \"2024-04-20T20:00:00+08:00\",\n      \"dueAt\": \"2024-04-20T20:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"提交一页项目摘要。\",\n  \"markdown\": \"# 提交一页项目摘要\\n\\n## 概述\\n本任务要求提交一页项目摘要。\\n\\n## 要求\\n- 内容：一页项目摘要\\n\\n## 时间线\\n- 开始时间：4月20日 20:00\\n- 截止时间：4月20日 20:00\\n\\n## 提交说明\\n无额外说明。\"\n}",
+          "usage": {
+            "input_tokens": 396,
+            "output_tokens": 3768
+          },
+          "parsed": {
+            "title": "提交一页项目摘要",
+            "timeOptions": [
+              {
+                "startAt": "2024-04-20T20:00:00+08:00",
+                "dueAt": "2024-04-20T20:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "提交一页项目摘要。",
+            "markdown": "# 提交一页项目摘要\n\n## 概述\n本任务要求提交一页项目摘要。\n\n## 要求\n- 内容：一页项目摘要\n\n## 时间线\n- 开始时间：4月20日 20:00\n- 截止时间：4月20日 20:00\n\n## 提交说明\n无额外说明。"
+          },
+          "error": null
+        },
+        "withLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"提交一页项目摘要\",\n  \"timeOptions\": [\n    {\n      \"startAt\": \"2026-04-20T20:00:00+08:00\",\n      \"dueAt\": \"2026-04-20T20:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"提交一页项目摘要。\",\n  \"markdown\": \"# 提交一页项目摘要\\n\\n## 概述\\n本任务要求提交一页项目摘要。\\n\\n## 要求\\n- 提交内容为一页项目摘要。\\n\\n## 时间线\\n- 开始时间：4月20日 20:00\\n- 截止时间：4月20日 20:00\\n\\n## 提交说明\\n请按要求完成提交。\"\n}",
+          "usage": {
+            "input_tokens": 465,
+            "output_tokens": 2354
+          },
+          "parsed": {
+            "title": "提交一页项目摘要",
+            "timeOptions": [
+              {
+                "startAt": "2026-04-20T20:00:00+08:00",
+                "dueAt": "2026-04-20T20:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "提交一页项目摘要。",
+            "markdown": "# 提交一页项目摘要\n\n## 概述\n本任务要求提交一页项目摘要。\n\n## 要求\n- 提交内容为一页项目摘要。\n\n## 时间线\n- 开始时间：4月20日 20:00\n- 截止时间：4月20日 20:00\n\n## 提交说明\n请按要求完成提交。"
+          },
+          "error": null
+        },
+        "filtered": {
+          "ok": true,
+          "rawText": null,
+          "usage": null,
+          "parsed": {
+            "title": "提交一页项目摘要",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-20T20:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "提交一页项目摘要。",
+            "markdown": "# 提交一页项目摘要\n\n## 概述\n本任务要求提交一页项目摘要。\n\n## 要求\n- 提交内容为一页项目摘要。\n\n## 时间线\n- 开始时间：4月20日 20:00\n- 截止时间：4月20日 20:00\n\n## 提交说明\n请按要求完成提交。"
+          },
+          "error": null
+        }
+      },
+      "evaluation": {
+        "noLocal": {
+          "startAt": "×",
+          "dueAt": "×",
+          "allowLateSubmission": "—"
+        },
+        "withLocal": {
+          "startAt": "✓",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        },
+        "filtered": {
+          "startAt": "置空",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "T16",
+      "type": "起止时间",
+      "excerpt": "明天上午9点开始，后天晚上9点交",
+      "text": "线上互评环节明天上午9点开始开放，大家需要先阅读两位同学的草稿并留下建议。互评记录后天晚上9点交，字数不限但要具体。",
+      "expected": {
+        "startAt": [
+          "2026-04-17T09:00:00+08:00"
+        ],
+        "dueAt": [
+          "2026-04-18T21:00:00+08:00"
+        ]
+      },
+      "groups": {
+        "noLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"线上互评任务\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": null\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"完成线上互评环节，阅读两位同学草稿并留下具体建议，按时提交互评记录。\",\n  \"markdown\": \"# 线上互评任务\\n\\n## 概述\\n线上互评环节将于明天上午9点开放，需阅读两位同学的草稿并留下建议。\\n\\n## 要求\\n- 阅读两位同学的草稿\\n- 留下具体建议（字数不限，但内容需具体）\\n\\n## 时间安排\\n- 开始时间：明天上午 9:00\\n- 截止时间：后天晚上 9:00\\n\\n## 提交说明\\n互评记录需于后天晚上9点前提交。\"\n}",
+          "usage": {
+            "input_tokens": 382,
+            "output_tokens": 3415
+          },
+          "parsed": {
+            "title": "线上互评任务",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": null
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "完成线上互评环节，阅读两位同学草稿并留下具体建议，按时提交互评记录。",
+            "markdown": "# 线上互评任务\n\n## 概述\n线上互评环节将于明天上午9点开放，需阅读两位同学的草稿并留下建议。\n\n## 要求\n- 阅读两位同学的草稿\n- 留下具体建议（字数不限，但内容需具体）\n\n## 时间安排\n- 开始时间：明天上午 9:00\n- 截止时间：后天晚上 9:00\n\n## 提交说明\n互评记录需于后天晚上9点前提交。"
+          },
+          "error": null
+        },
+        "withLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"线上互评任务\",\n  \"timeOptions\": [\n    {\n      \"startAt\": \"2026-04-17T09:00:00+08:00\",\n      \"dueAt\": \"2026-04-18T21:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"阅读两位同学的草稿并留下具体建议，按时完成线上互评记录提交。\",\n  \"markdown\": \"# 线上互评任务\\n\\n## 概述\\n线上互评环节将于明天上午9点开放，需阅读两位同学的草稿并留下建议。\\n\\n## 要求\\n- 阅读两位同学的草稿。\\n- 留下具体建议（字数不限，但内容需具体）。\\n\\n## 时间安排\\n- 开始时间：明天（4月17日）上午 9:00\\n- 截止时间：后天（4月18日）晚上 9:00\\n\\n## 提交说明\\n互评记录需于截止时间前提交。\"\n}",
+          "usage": {
+            "input_tokens": 451,
+            "output_tokens": 2887
+          },
+          "parsed": {
+            "title": "线上互评任务",
+            "timeOptions": [
+              {
+                "startAt": "2026-04-17T09:00:00+08:00",
+                "dueAt": "2026-04-18T21:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "阅读两位同学的草稿并留下具体建议，按时完成线上互评记录提交。",
+            "markdown": "# 线上互评任务\n\n## 概述\n线上互评环节将于明天上午9点开放，需阅读两位同学的草稿并留下建议。\n\n## 要求\n- 阅读两位同学的草稿。\n- 留下具体建议（字数不限，但内容需具体）。\n\n## 时间安排\n- 开始时间：明天（4月17日）上午 9:00\n- 截止时间：后天（4月18日）晚上 9:00\n\n## 提交说明\n互评记录需于截止时间前提交。"
+          },
+          "error": null
+        },
+        "filtered": {
+          "ok": true,
+          "rawText": null,
+          "usage": null,
+          "parsed": {
+            "title": "线上互评任务",
+            "timeOptions": [
+              {
+                "startAt": "2026-04-17T09:00:00+08:00",
+                "dueAt": "2026-04-18T21:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "阅读两位同学的草稿并留下具体建议，按时完成线上互评记录提交。",
+            "markdown": "# 线上互评任务\n\n## 概述\n线上互评环节将于明天上午9点开放，需阅读两位同学的草稿并留下建议。\n\n## 要求\n- 阅读两位同学的草稿。\n- 留下具体建议（字数不限，但内容需具体）。\n\n## 时间安排\n- 开始时间：明天（4月17日）上午 9:00\n- 截止时间：后天（4月18日）晚上 9:00\n\n## 提交说明\n互评记录需于截止时间前提交。"
+          },
+          "error": null
+        }
+      },
+      "evaluation": {
+        "noLocal": {
+          "startAt": "×",
+          "dueAt": "×",
+          "allowLateSubmission": "—"
+        },
+        "withLocal": {
+          "startAt": "✓",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        },
+        "filtered": {
+          "startAt": "✓",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "T17",
+      "type": "相对时间",
+      "excerpt": "见附件要求，周一晚上10点前完成",
+      "text": "附件里有案例分析模板，请按照模板完成，不需要额外设计封面。重点看第二部分的数据解释，见附件要求，周一晚上10点前完成。",
+      "expected": {
+        "dueAt": [
+          "2026-04-20T22:00:00+08:00"
+        ]
+      },
+      "groups": {
+        "noLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"案例分析作业\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": \"2024-05-20T22:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"请按照附件模板完成案例分析，重点撰写第二部分数据解释，无需额外设计封面。\",\n  \"markdown\": \"# 案例分析作业\\n\\n## 概述\\n请根据附件提供的案例分析模板完成本次作业。\\n\\n## 要求\\n- 严格按照附件模板格式撰写，无需额外设计封面。\\n- 重点完成第二部分“数据解释”，具体要求详见附件说明。\\n\\n## 时间安排\\n- 截止时间：周一晚上 22:00 前\\n\\n## 提交说明\\n- 请确保内容符合模板规范，按时提交。\"\n}",
+          "usage": {
+            "input_tokens": 379,
+            "output_tokens": 2937
+          },
+          "parsed": {
+            "title": "案例分析作业",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2024-05-20T22:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "请按照附件模板完成案例分析，重点撰写第二部分数据解释，无需额外设计封面。",
+            "markdown": "# 案例分析作业\n\n## 概述\n请根据附件提供的案例分析模板完成本次作业。\n\n## 要求\n- 严格按照附件模板格式撰写，无需额外设计封面。\n- 重点完成第二部分“数据解释”，具体要求详见附件说明。\n\n## 时间安排\n- 截止时间：周一晚上 22:00 前\n\n## 提交说明\n- 请确保内容符合模板规范，按时提交。"
+          },
+          "error": null
+        },
+        "withLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"案例分析作业\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": \"2026-04-20T22:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"请按照附件模板完成案例分析，重点关注第二部分的数据解释，并于周一晚上10点前提交。\",\n  \"markdown\": \"# 案例分析作业\\n\\n## 概述\\n请根据附件提供的案例分析模板完成本次作业，无需额外设计封面。\\n\\n## 要求\\n- 严格按照附件模板格式进行撰写。\\n- 重点关注第二部分的数据解释，具体要求详见附件说明。\\n\\n## 时间安排\\n- 截止时间：周一晚上10点前\\n\\n## 提交说明\\n- 请确保内容符合模板规范，按时提交。\"\n}",
+          "usage": {
+            "input_tokens": 448,
+            "output_tokens": 2163
+          },
+          "parsed": {
+            "title": "案例分析作业",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-20T22:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "请按照附件模板完成案例分析，重点关注第二部分的数据解释，并于周一晚上10点前提交。",
+            "markdown": "# 案例分析作业\n\n## 概述\n请根据附件提供的案例分析模板完成本次作业，无需额外设计封面。\n\n## 要求\n- 严格按照附件模板格式进行撰写。\n- 重点关注第二部分的数据解释，具体要求详见附件说明。\n\n## 时间安排\n- 截止时间：周一晚上10点前\n\n## 提交说明\n- 请确保内容符合模板规范，按时提交。"
+          },
+          "error": null
+        },
+        "filtered": {
+          "ok": true,
+          "rawText": null,
+          "usage": null,
+          "parsed": {
+            "title": "案例分析作业",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-20T22:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "请按照附件模板完成案例分析，重点关注第二部分的数据解释，并于周一晚上10点前提交。",
+            "markdown": "# 案例分析作业\n\n## 概述\n请根据附件提供的案例分析模板完成本次作业，无需额外设计封面。\n\n## 要求\n- 严格按照附件模板格式进行撰写。\n- 重点关注第二部分的数据解释，具体要求详见附件说明。\n\n## 时间安排\n- 截止时间：周一晚上10点前\n\n## 提交说明\n- 请确保内容符合模板规范，按时提交。"
+          },
+          "error": null
+        }
+      },
+      "evaluation": {
+        "noLocal": {
+          "startAt": "—",
+          "dueAt": "×",
+          "allowLateSubmission": "—"
+        },
+        "withLocal": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        },
+        "filtered": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "T18",
+      "type": "多义时间",
+      "excerpt": "报告、展示、代码都下周三18:00前完成",
+      "text": "期中项目需要提交报告、展示PPT和代码压缩包。三项内容都下周三18:00前完成，文件可以分开上传，但请在说明里写清楚各成员贡献。",
+      "expected": {
+        "dueAt": [
+          "2026-04-22T18:00:00+08:00"
+        ]
+      },
+      "groups": {
+        "noLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"期中项目提交\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": null\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"期中项目需提交报告、展示PPT和代码压缩包，并附成员贡献说明。\",\n  \"markdown\": \"# 期中项目提交\\n\\n## 概述\\n本次期中项目需提交三项核心材料：项目报告、展示PPT以及代码压缩包。\\n\\n## 要求\\n- 提交内容包含：报告、展示PPT、代码压缩包。\\n- 请在提交说明中清晰写明各成员的贡献情况。\\n\\n## 时间线\\n- 截止时间：下周三 18:00 前\\n\\n## 提交说明\\n- 三项文件可以分开上传。\\n- 务必在说明栏中详细列出每位成员的具体贡献。\"\n}",
+          "usage": {
+            "input_tokens": 388,
+            "output_tokens": 2646
+          },
+          "parsed": {
+            "title": "期中项目提交",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": null
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "期中项目需提交报告、展示PPT和代码压缩包，并附成员贡献说明。",
+            "markdown": "# 期中项目提交\n\n## 概述\n本次期中项目需提交三项核心材料：项目报告、展示PPT以及代码压缩包。\n\n## 要求\n- 提交内容包含：报告、展示PPT、代码压缩包。\n- 请在提交说明中清晰写明各成员的贡献情况。\n\n## 时间线\n- 截止时间：下周三 18:00 前\n\n## 提交说明\n- 三项文件可以分开上传。\n- 务必在说明栏中详细列出每位成员的具体贡献。"
+          },
+          "error": null
+        },
+        "withLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"期中项目提交任务\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": \"2026-04-22T18:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"提交期中项目的报告、展示PPT和代码压缩包，并在说明中注明各成员贡献。\",\n  \"markdown\": \"# 期中项目提交任务\\n\\n## 概述\\n期中项目需要提交报告、展示PPT和代码压缩包。\\n\\n## 要求\\n- 三项内容均需完成。\\n- 请在提交说明中写清楚各成员贡献。\\n\\n## 时间安排\\n- 截止日期：下周三（4月22日）18:00前\\n\\n## 提交说明\\n- 文件可以分开上传。\"\n}",
+          "usage": {
+            "input_tokens": 457,
+            "output_tokens": 2772
+          },
+          "parsed": {
+            "title": "期中项目提交任务",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-22T18:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "提交期中项目的报告、展示PPT和代码压缩包，并在说明中注明各成员贡献。",
+            "markdown": "# 期中项目提交任务\n\n## 概述\n期中项目需要提交报告、展示PPT和代码压缩包。\n\n## 要求\n- 三项内容均需完成。\n- 请在提交说明中写清楚各成员贡献。\n\n## 时间安排\n- 截止日期：下周三（4月22日）18:00前\n\n## 提交说明\n- 文件可以分开上传。"
+          },
+          "error": null
+        },
+        "filtered": {
+          "ok": true,
+          "rawText": null,
+          "usage": null,
+          "parsed": {
+            "title": "期中项目提交任务",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-04-22T18:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "提交期中项目的报告、展示PPT和代码压缩包，并在说明中注明各成员贡献。",
+            "markdown": "# 期中项目提交任务\n\n## 概述\n期中项目需要提交报告、展示PPT和代码压缩包。\n\n## 要求\n- 三项内容均需完成。\n- 请在提交说明中写清楚各成员贡献。\n\n## 时间安排\n- 截止日期：下周三（4月22日）18:00前\n\n## 提交说明\n- 文件可以分开上传。"
+          },
+          "error": null
+        }
+      },
+      "evaluation": {
+        "noLocal": {
+          "startAt": "—",
+          "dueAt": "×",
+          "allowLateSubmission": "—"
+        },
+        "withLocal": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        },
+        "filtered": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "T19",
+      "type": "绝对时间",
+      "excerpt": "2026年5月4日20:00前交",
+      "text": "五一假期期间请完成一次课程观察记录，选择一个你熟悉的学习场景即可。为了避免大家忘记，统一要求2026年5月4日20:00前交。",
+      "expected": {
+        "dueAt": [
+          "2026-05-04T20:00:00+08:00"
+        ]
+      },
+      "groups": {
+        "noLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"课程观察记录\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": \"2026-05-04T20:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"五一假期期间完成一次熟悉学习场景的课程观察记录。\",\n  \"markdown\": \"# 课程观察记录\\n\\n## 概述\\n五一假期期间，请完成一次课程观察记录。\\n\\n## 要求\\n- 选择一个你熟悉的学习场景进行观察。\\n\\n## 时间安排\\n- 任务期间：五一假期期间\\n- 截止时间：2026年5月4日 20:00 前\\n\\n## 提交说明\\n- 为避免遗忘，请严格遵守统一截止时间提交。\"\n}",
+          "usage": {
+            "input_tokens": 387,
+            "output_tokens": 1810
+          },
+          "parsed": {
+            "title": "课程观察记录",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-05-04T20:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "五一假期期间完成一次熟悉学习场景的课程观察记录。",
+            "markdown": "# 课程观察记录\n\n## 概述\n五一假期期间，请完成一次课程观察记录。\n\n## 要求\n- 选择一个你熟悉的学习场景进行观察。\n\n## 时间安排\n- 任务期间：五一假期期间\n- 截止时间：2026年5月4日 20:00 前\n\n## 提交说明\n- 为避免遗忘，请严格遵守统一截止时间提交。"
+          },
+          "error": null
+        },
+        "withLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"五一假期课程观察记录\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": \"2026-05-04T20:00:00+08:00\"\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"在五一假期期间完成一次熟悉学习场景的课程观察记录，并于5月4日20:00前提交。\",\n  \"markdown\": \"# 五一假期课程观察记录\\n\\n## 概述\\n本次作业要求在五一假期期间完成一次课程观察记录。\\n\\n## 要求\\n- 选择一个你熟悉的学习场景进行观察。\\n- 完成相应的观察记录。\\n\\n## 时间安排\\n- 任务周期：五一假期期间\\n- 截止时间：2026年5月4日 20:00 前\\n\\n## 提交说明\\n为避免遗忘，请严格遵守统一截止时间提交作业。\"\n}",
+          "usage": {
+            "input_tokens": 456,
+            "output_tokens": 3208
+          },
+          "parsed": {
+            "title": "五一假期课程观察记录",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-05-04T20:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "在五一假期期间完成一次熟悉学习场景的课程观察记录，并于5月4日20:00前提交。",
+            "markdown": "# 五一假期课程观察记录\n\n## 概述\n本次作业要求在五一假期期间完成一次课程观察记录。\n\n## 要求\n- 选择一个你熟悉的学习场景进行观察。\n- 完成相应的观察记录。\n\n## 时间安排\n- 任务周期：五一假期期间\n- 截止时间：2026年5月4日 20:00 前\n\n## 提交说明\n为避免遗忘，请严格遵守统一截止时间提交作业。"
+          },
+          "error": null
+        },
+        "filtered": {
+          "ok": true,
+          "rawText": null,
+          "usage": null,
+          "parsed": {
+            "title": "五一假期课程观察记录",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": "2026-05-04T20:00:00+08:00"
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "在五一假期期间完成一次熟悉学习场景的课程观察记录，并于5月4日20:00前提交。",
+            "markdown": "# 五一假期课程观察记录\n\n## 概述\n本次作业要求在五一假期期间完成一次课程观察记录。\n\n## 要求\n- 选择一个你熟悉的学习场景进行观察。\n- 完成相应的观察记录。\n\n## 时间安排\n- 任务周期：五一假期期间\n- 截止时间：2026年5月4日 20:00 前\n\n## 提交说明\n为避免遗忘，请严格遵守统一截止时间提交作业。"
+          },
+          "error": null
+        }
+      },
+      "evaluation": {
+        "noLocal": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        },
+        "withLocal": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        },
+        "filtered": {
+          "startAt": "—",
+          "dueAt": "✓",
+          "allowLateSubmission": "—"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "T20",
+      "type": "缺失或噪声",
+      "excerpt": "尽快提交，越早越好",
+      "text": "课程资料整理任务请大家尽快提交，越早越好。主要是把本周阅读时发现的问题发上来，方便我下次课统一回应，但这里没有设置硬性截止时间。",
+      "expected": {},
+      "groups": {
+        "noLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"课程资料整理任务\",\n  \"timeOptions\": [\n    {\n      \"startAt\": null,\n      \"dueAt\": null\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"提交本周阅读中发现的问题，以便下次课统一回应，无硬性截止时间。\",\n  \"markdown\": \"# 课程资料整理任务\\n\\n## 概述\\n本任务旨在收集大家在本周阅读过程中发现的问题，以便下次课统一回应。\\n\\n## 要求\\n- 提交本周阅读时发现的问题。\\n\\n## 时间安排\\n- 建议尽快提交，越早越好。\\n- 未设置硬性截止时间。\\n\\n## 提交说明\\n- 无硬性截止时间限制，请尽早提交。\"\n}",
+          "usage": {
+            "input_tokens": 381,
+            "output_tokens": 3140
+          },
+          "parsed": {
+            "title": "课程资料整理任务",
+            "timeOptions": [
+              {
+                "startAt": null,
+                "dueAt": null
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "提交本周阅读中发现的问题，以便下次课统一回应，无硬性截止时间。",
+            "markdown": "# 课程资料整理任务\n\n## 概述\n本任务旨在收集大家在本周阅读过程中发现的问题，以便下次课统一回应。\n\n## 要求\n- 提交本周阅读时发现的问题。\n\n## 时间安排\n- 建议尽快提交，越早越好。\n- 未设置硬性截止时间。\n\n## 提交说明\n- 无硬性截止时间限制，请尽早提交。"
+          },
+          "error": null
+        },
+        "withLocal": {
+          "ok": true,
+          "rawText": "{\n  \"title\": \"课程资料整理任务\",\n  \"timeOptions\": [\n    {\n      \"startAt\": \"2026-04-16T21:29:00+08:00\",\n      \"dueAt\": null\n    }\n  ],\n  \"allowLateSubmission\": null,\n  \"description\": \"提交本周阅读中发现的问题，以便下次课统一回应。\",\n  \"markdown\": \"# 课程资料整理任务\\n\\n## 概述\\n请大家尽快提交本周阅读时发现的问题，方便老师下次课统一回应。\\n\\n## 要求\\n- 整理并提交本周阅读过程中遇到的疑问或问题。\\n\\n## 时间安排\\n- 建议尽早提交，越早越好。\\n- 本次任务未设置硬性截止时间。\\n\\n## 提交说明\\n- 提交内容将用于下次课程的统一答疑准备。\"\n}",
+          "usage": {
+            "input_tokens": 450,
+            "output_tokens": 3116
+          },
+          "parsed": {
+            "title": "课程资料整理任务",
+            "timeOptions": [
+              {
+                "startAt": "2026-04-16T21:29:00+08:00",
+                "dueAt": null
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "提交本周阅读中发现的问题，以便下次课统一回应。",
+            "markdown": "# 课程资料整理任务\n\n## 概述\n请大家尽快提交本周阅读时发现的问题，方便老师下次课统一回应。\n\n## 要求\n- 整理并提交本周阅读过程中遇到的疑问或问题。\n\n## 时间安排\n- 建议尽早提交，越早越好。\n- 本次任务未设置硬性截止时间。\n\n## 提交说明\n- 提交内容将用于下次课程的统一答疑准备。"
+          },
+          "error": null
+        },
+        "filtered": {
+          "ok": true,
+          "rawText": null,
+          "usage": null,
+          "parsed": {
+            "title": "课程资料整理任务",
+            "timeOptions": [
+              {
+                "startAt": "2026-04-16T21:29:00+08:00",
+                "dueAt": null
+              }
+            ],
+            "allowLateSubmission": null,
+            "description": "提交本周阅读中发现的问题，以便下次课统一回应。",
+            "markdown": "# 课程资料整理任务\n\n## 概述\n请大家尽快提交本周阅读时发现的问题，方便老师下次课统一回应。\n\n## 要求\n- 整理并提交本周阅读过程中遇到的疑问或问题。\n\n## 时间安排\n- 建议尽早提交，越早越好。\n- 本次任务未设置硬性截止时间。\n\n## 提交说明\n- 提交内容将用于下次课程的统一答疑准备。"
+          },
+          "error": null
+        }
+      },
+      "evaluation": {
+        "noLocal": {
+          "startAt": "—",
+          "dueAt": "—",
+          "allowLateSubmission": "—"
+        },
+        "withLocal": {
+          "startAt": "—",
+          "dueAt": "—",
+          "allowLateSubmission": "—"
+        },
+        "filtered": {
+          "startAt": "—",
+          "dueAt": "—",
+          "allowLateSubmission": "—"
+        }
+      },
+      "note": ""
+    }
+  ],
+  "summary": {
+    "noLocal": {
+      "startAtCorrect": 0,
+      "dueAtCorrect": 2,
+      "allowLateCorrect": 3,
+      "errorFields": 19,
+      "fallbacks": 0,
+      "blankedBySystem": 0
+    },
+    "withLocal": {
+      "startAtCorrect": 4,
+      "dueAtCorrect": 17,
+      "allowLateCorrect": 3,
+      "errorFields": 0,
+      "fallbacks": 0,
+      "blankedBySystem": 0
+    },
+    "filtered": {
+      "startAtCorrect": 2,
+      "dueAtCorrect": 16,
+      "allowLateCorrect": 3,
+      "errorFields": 0,
+      "fallbacks": 0,
+      "blankedBySystem": 3
+    }
+  }
+}

@@ -63,6 +63,7 @@
     "invalidOrExpiredLink": "此链接无效或已过期。",
     "passwordsDoNotMatch": "两次密码输入不一致",
     "studentIdRequired": "选择学校后需填写学号",
+    "studentIdDigitsOnly": "学号只能填写整数",
     "registrationFailed": "注册失败",
     "linkExpired": "链接已过期",
     "backToRegistration": "返回注册",
@@ -300,6 +301,8 @@
     "none": "无",
     "studentId": "学号",
     "studentIdPlaceholder": "你的学号",
+    "studentIdRequired": "选择学校后需填写学号",
+    "studentIdDigitsOnly": "学号只能填写整数",
     "timezone": "时区",
     "detected": "检测到",
     "timezoneHint": "用于以你的本地时间显示日期和截止时间。",
@@ -546,6 +549,12 @@
       "submitAssignment": "提交作业",
       "archiveTask": "归档",
       "unarchiveTask": "取消归档"
+    },
+    "prerequisites": {
+      "title": "以下前置任务没有完成",
+      "description": "可以先打开对应任务，也可以继续编辑当前提交。",
+      "ignoreAndContinue": "忽略并继续编辑提交",
+      "failedCheck": "检查前置任务失败"
     },
     "toast": {
       "archived": "任务已归档",

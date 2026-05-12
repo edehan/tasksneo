@@ -12,6 +12,22 @@ import {
 import { assertRegistrationOpen } from "./system-config.service.js";
 
 const PERSONAL_CLASS_NAME = "个人空间";
+const STUDENT_ID_PATTERN = /^\d+$/;
+
+function normalizeStudentId(studentId: string | null | undefined) {
+	if (studentId == null) return studentId;
+
+	const normalized = studentId.trim();
+	if (normalized && !STUDENT_ID_PATTERN.test(normalized)) {
+		throw new AppError(
+			400,
+			"STUDENT_ID_INVALID",
+			"studentId must contain digits only",
+		);
+	}
+
+	return normalized;
+}
 
 export interface RegisterInput {
 	email: string;
@@ -43,10 +59,11 @@ export async function createUserWithPersonalClass(
 	sessionMeta: SessionMetadata,
 ) {
 	const email = normalizeEmail(input.email);
+	const studentId = normalizeStudentId(input.studentId);
 
 	await assertRegistrationOpen();
 
-	if (input.schoolId && !input.studentId) {
+	if (input.schoolId && !studentId) {
 		throw new AppError(
 			400,
 			"STUDENT_ID_REQUIRED",
@@ -54,7 +71,7 @@ export async function createUserWithPersonalClass(
 		);
 	}
 
-	if (!input.schoolId && input.studentId) {
+	if (!input.schoolId && studentId) {
 		throw new AppError(
 			400,
 			"SCHOOL_ID_REQUIRED",
@@ -87,7 +104,7 @@ export async function createUserWithPersonalClass(
 				email,
 				nickname: input.nickname ?? null,
 				schoolId: input.schoolId ?? null,
-				studentId: input.studentId ?? null,
+				studentId: studentId ?? null,
 				...(input.timezone ? { timezone: input.timezone } : {}),
 			},
 		});

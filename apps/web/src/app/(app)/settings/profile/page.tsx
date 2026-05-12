@@ -94,6 +94,8 @@ function groupTimezones(timezones: string[]): Record<string, string[]> {
   return groups;
 }
 
+const STUDENT_ID_PATTERN = /^\d+$/;
+
 export default function ProfilePage() {
   const { user, updateUser } = useAuth();
   const t = useTranslations("settingsProfile");
@@ -143,12 +145,26 @@ export default function ProfilePage() {
 
   async function handleSave() {
     if (!user) return;
+
+    const normalizedStudentId = studentId.trim();
+    if (schoolId) {
+      if (!normalizedStudentId) {
+        toast.error(t("studentIdRequired"));
+        return;
+      }
+
+      if (!STUDENT_ID_PATTERN.test(normalizedStudentId)) {
+        toast.error(t("studentIdDigitsOnly"));
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       const updated = await updateProfile({
         nickname: nickname.trim() || null,
         schoolId,
-        studentId: schoolId ? studentId.trim() || null : null,
+        studentId: schoolId ? normalizedStudentId : null,
         timezone,
       });
       updateUser(updated);
@@ -258,7 +274,9 @@ export default function ProfilePage() {
           <Input
             id="student-id"
             value={studentId}
-            onChange={(e) => setStudentId(e.target.value)}
+            onChange={(e) => setStudentId(e.target.value.replace(/\D/g, ""))}
+            inputMode="numeric"
+            pattern="[0-9]*"
             placeholder={t("studentIdPlaceholder")}
             disabled={saving}
           />

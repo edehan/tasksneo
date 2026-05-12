@@ -37,10 +37,15 @@ import {
 } from "../services/user.service.js";
 import type { AppVariables } from "../types/context.js";
 
+const studentIdSchema = z
+	.string()
+	.trim()
+	.regex(/^\d+$/, "studentId must contain digits only");
+
 const updateProfileSchema = z.object({
 	nickname: z.string().optional().nullable(),
 	schoolId: z.string().uuid().optional().nullable(),
-	studentId: z.string().optional().nullable(),
+	studentId: studentIdSchema.optional().nullable(),
 	timezone: z.string().max(64).optional(),
 });
 

@@ -63,6 +63,7 @@
     "invalidOrExpiredLink": "This link is invalid or has expired.",
     "passwordsDoNotMatch": "Passwords do not match",
     "studentIdRequired": "Student ID is required when a school is selected",
+    "studentIdDigitsOnly": "Student ID must be an integer",
     "registrationFailed": "Registration failed",
     "linkExpired": "Link expired",
     "backToRegistration": "Back to registration",
@@ -300,6 +301,8 @@
     "none": "None",
     "studentId": "Student ID",
     "studentIdPlaceholder": "Your student ID",
+    "studentIdRequired": "Student ID is required when a school is selected",
+    "studentIdDigitsOnly": "Student ID must be an integer",
     "timezone": "Timezone",
     "detected": "Detected",
     "timezoneHint": "Used for displaying dates and deadlines in your local time.",
@@ -546,6 +549,12 @@
       "submitAssignment": "Submit Assignment",
       "archiveTask": "Archive",
       "unarchiveTask": "Unarchive"
+    },
+    "prerequisites": {
+      "title": "The following prerequisites are incomplete",
+      "description": "Open a prerequisite task first, or continue editing this submission.",
+      "ignoreAndContinue": "Ignore and continue editing",
+      "failedCheck": "Failed to check prerequisites"
     },
     "toast": {
       "archived": "Task archived",
