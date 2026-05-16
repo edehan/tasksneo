@@ -8,6 +8,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  calendarDateToZonedDateTime,
+  formatZonedDateTime,
+  getCalendarDateInTimeZone,
+  getZonedDateTimeParts,
+  normalizeTimeZone,
+  zonedDateTimeToDate,
+} from "@/lib/timezone";
 import { cn } from "@/lib/utils";
 
 interface DateTimePickerProps {
@@ -16,14 +24,11 @@ interface DateTimePickerProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  timeZone?: string;
 }
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
-}
-
-function formatDateTime(date: Date): string {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 // ── Scroll column for hours or minutes ──────────────────────────────────────
@@ -135,39 +140,43 @@ export function DateTimePicker({
   placeholder = "Pick date & time",
   disabled = false,
   className,
+  timeZone,
 }: DateTimePickerProps) {
   const [open, setOpen] = React.useState(false);
+  const zone = normalizeTimeZone(timeZone);
+  const selectedCalendarDate = value
+    ? getCalendarDateInTimeZone(value, zone)
+    : undefined;
+  const zonedParts = value ? getZonedDateTimeParts(value, zone) : null;
 
-  const hours = value ? value.getHours() : 0;
-  const minutes = value ? value.getMinutes() : 0;
-  const roundedMinutes = (Math.round(minutes / 5) * 5) % 60;
+  const hours = zonedParts?.hour ?? 0;
+  const minutes = zonedParts?.minute ?? 0;
+  function getBaseParts(): ReturnType<typeof getZonedDateTimeParts> {
+    return zonedParts ?? getZonedDateTimeParts(new Date(), zone);
+  }
 
   function handleDateSelect(day: Date | undefined) {
     if (!day) {
       onChange(undefined);
       return;
     }
-    const next = new Date(day);
-    if (value) {
-      next.setHours(value.getHours(), value.getMinutes(), 0, 0);
-    } else {
-      next.setHours(23, 59, 0, 0);
-    }
-    onChange(next);
+
+    onChange(
+      calendarDateToZonedDateTime(day, zone, {
+        hour: zonedParts?.hour ?? 23,
+        minute: zonedParts?.minute ?? 59,
+      }),
+    );
   }
 
   function handleHourSelect(h: number) {
-    const next = value ? new Date(value) : new Date();
-    if (!value) next.setMinutes(0, 0, 0);
-    next.setHours(h);
-    onChange(next);
+    const parts = getBaseParts();
+    onChange(zonedDateTimeToDate({ ...parts, hour: h }, zone));
   }
 
   function handleMinuteSelect(m: number) {
-    const next = value ? new Date(value) : new Date();
-    if (!value) next.setHours(0, 0, 0);
-    next.setMinutes(m);
-    onChange(next);
+    const parts = getBaseParts();
+    onChange(zonedDateTimeToDate({ ...parts, minute: m }, zone));
   }
 
   function handleClear(e: React.MouseEvent) {
@@ -191,7 +200,7 @@ export function DateTimePicker({
         >
           <span className="flex items-center gap-2">
             <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-            {value ? formatDateTime(value) : placeholder}
+            {value ? formatZonedDateTime(value, zone) : placeholder}
           </span>
           {value && !disabled && (
             // biome-ignore lint/a11y/useKeyWithClickEvents: clear button
@@ -210,9 +219,10 @@ export function DateTimePicker({
       <PopoverContent className="flex w-auto items-stretch p-0" align="start">
         <Calendar
           mode="single"
-          selected={value}
+          selected={selectedCalendarDate}
           onSelect={handleDateSelect}
-          defaultMonth={value}
+          defaultMonth={selectedCalendarDate}
+          today={getCalendarDateInTimeZone(new Date(), zone)}
           cellSize="1.8rem"
         />
         {/* Time picker */}
@@ -234,9 +244,8 @@ export function DateTimePicker({
             </div>
             <ScrollColumn
               count={60}
-              selected={roundedMinutes}
+              selected={minutes}
               onSelect={handleMinuteSelect}
-              step={5}
             />
           </div>
         </div>

@@ -78,6 +78,7 @@ export interface ClassSummary {
   id: string;
   name: string;
   description: string | null;
+  taskAiPrompt: string | null;
   color: string;
   isPersonal: boolean;
   ownerId: string;
@@ -652,6 +653,7 @@ export async function updateClass(
   input: {
     name?: string;
     description?: string | null;
+    taskAiPrompt?: string | null;
     color?: string;
     schoolId?: string | null;
   },

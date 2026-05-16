@@ -305,7 +305,7 @@
     "studentIdDigitsOnly": "学号只能填写整数",
     "timezone": "时区",
     "detected": "检测到",
-    "timezoneHint": "用于以你的本地时间显示日期和截止时间。",
+    "timezoneHint": "用于显示日期、编辑截止时间、AI 解析和通知。",
     "saveChanges": "保存更改",
     "changeEmail": {
       "failedSendVerification": "发送验证失败",
@@ -348,12 +348,13 @@
   "timezonePrompt": {
     "updatedTo": "时区已更新为 {timezone}",
     "failedUpdate": "更新时区失败",
-    "browserTimezonePrefix": "你的浏览器时区是",
-    "accountTimezonePrefix": "，但你的账号设置为",
-    "updateQuestion": "。是否更新为当前位置时区？",
-    "dismiss": "忽略",
+    "accountTimezonePrefix": "当前界面按账号时区",
+    "accountTimePrefix": "显示时间，现在是",
+    "browserTimezonePrefix": "。检测到设备时区为",
+    "updateQuestion": "，是否更新？",
+    "continueUsing": "继续使用 {timezone}",
     "updating": "更新中...",
-    "update": "更新"
+    "updateTo": "更新为 {timezone}"
   },
   "taskEditorPage": {
     "failedLoadTask": "加载作业失败",
@@ -469,6 +470,9 @@
     "classNamePlaceholder": "例如：高等数学",
     "description": "描述",
     "descriptionPlaceholder": "可选描述...",
+    "taskAiPrompt": "任务 AI Prompt",
+    "taskAiPromptPlaceholder": "例如：Title tasks by deliverable, not course name. Include topic, artifact, or milestone. Max 12 words.",
+    "taskAiPromptHint": "用于该班级创建任务和改写任务正文时的 AI 偏好。清空后不会注入自定义 prompt。",
     "themeColor": "主题色",
     "saveChanges": "保存更改",
     "classSettingsSaved": "班级设置已保存",
@@ -845,6 +849,17 @@
     "createDescription": "为密钥命名，以便日后识别。",
     "installCommandsHeading": "使用新密钥安装",
     "installCommandsHint": "选择下方任一客户端并执行命令。命令中已自动注入你的密钥。",
+    "installMode": {
+      "standard": "标准",
+      "simple": "简单安装"
+    },
+    "simpleInstall": {
+      "title": "复制给 AI 助手的安装指令",
+      "hint": "复制下方的消息，并发送给你正在使用的 AI 助手。",
+      "promptHint": "让 AI 助手根据它所在平台推荐的方式替你完成安装。",
+      "prompt": "帮助我安装 TaskNeo 的 MCP 工具，这个 MCP 的安装指令为：\n\n{command}\n\n但我不知道正确的安装方法是什么，请使用你的平台所推荐的安装方式帮我安装。",
+      "note": "这种安装方式可能会失败，取决于智能体（Agent）的智能程度。OpenClaw、Hermers、Claude Code、Codex、Kiro 等助手通常可以很好地完成安装。"
+    },
     "claudeCode": {
       "name": "Claude Code",
       "tagline": "Anthropic 的终端 AI 编码助手"

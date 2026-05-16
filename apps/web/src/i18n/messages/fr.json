@@ -305,7 +305,7 @@
     "studentIdDigitsOnly": "L'identifiant etudiant doit etre un entier",
     "timezone": "Fuseau horaire",
     "detected": "Detecte",
-    "timezoneHint": "Utilise pour afficher les dates et echeances a l'heure locale.",
+    "timezoneHint": "Utilise pour l'affichage des dates, les echeances, l'analyse IA et les notifications.",
     "saveChanges": "Enregistrer les modifications",
     "changeEmail": {
       "failedSendVerification": "Echec de l'envoi de verification",
@@ -348,12 +348,13 @@
   "timezonePrompt": {
     "updatedTo": "Fuseau horaire mis a jour vers {timezone}",
     "failedUpdate": "Echec de la mise a jour du fuseau horaire",
-    "browserTimezonePrefix": "Le fuseau horaire du navigateur est",
-    "accountTimezonePrefix": ", mais votre compte est regle sur",
-    "updateQuestion": ". Mettre a jour pour correspondre a votre emplacement actuel ?",
-    "dismiss": "Ignorer",
+    "accountTimezonePrefix": "L'interface utilise le fuseau horaire du compte",
+    "accountTimePrefix": ". Il est actuellement",
+    "browserTimezonePrefix": ". Le fuseau horaire de l'appareil est",
+    "updateQuestion": ". Mettre a jour ?",
+    "continueUsing": "Garder {timezone}",
     "updating": "Mise a jour...",
-    "update": "Mettre a jour"
+    "updateTo": "Mettre a jour vers {timezone}"
   },
   "taskEditorPage": {
     "failedLoadTask": "Impossible de charger la tache",
@@ -469,6 +470,9 @@
     "classNamePlaceholder": "ex. Mathematiques avancees",
     "description": "Description",
     "descriptionPlaceholder": "Description optionnelle...",
+    "taskAiPrompt": "Prompt IA des taches",
+    "taskAiPromptPlaceholder": "ex. Title tasks by deliverable, not course name. Include topic, artifact, or milestone. Max 12 words.",
+    "taskAiPromptHint": "Preferences IA de la classe pour creer des taches et reviser leur contenu. Laissez vide pour desactiver le prompt personnalise.",
     "themeColor": "Couleur du theme",
     "saveChanges": "Enregistrer les modifications",
     "classSettingsSaved": "Parametres de la classe enregistres",
@@ -845,6 +849,17 @@
     "createDescription": "Donnez un nom à votre clé pour l'identifier plus tard.",
     "installCommandsHeading": "Installer avec votre nouvelle clé",
     "installCommandsHint": "Choisissez un client ci-dessous et exécutez la commande. Votre clé est déjà injectée.",
+    "installMode": {
+      "standard": "Standard",
+      "simple": "Installation simple"
+    },
+    "simpleInstall": {
+      "title": "Instruction d'installation pour votre assistant IA",
+      "hint": "Copiez l'instruction ci-dessous et envoyez-la à l'assistant IA que vous utilisez.",
+      "promptHint": "Demandez à votre assistant IA de l'installer avec la méthode recommandée pour sa plateforme.",
+      "prompt": "Aidez-moi à installer l'outil MCP de TaskNeo. La commande d'installation de ce MCP est :\n\n{command}\n\nJe ne connais pas la bonne méthode d'installation, alors veuillez utiliser la méthode recommandée pour votre plateforme afin de l'installer pour moi.",
+      "note": "Cette méthode d'installation peut échouer selon les capacités de l'agent. Les assistants comme OpenClaw, Hermers, Claude Code, Codex et Kiro peuvent généralement l'installer correctement."
+    },
     "claudeCode": {
       "name": "Claude Code",
       "tagline": "Assistant de code IA d'Anthropic dans votre terminal"

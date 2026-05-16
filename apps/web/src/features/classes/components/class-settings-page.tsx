@@ -71,6 +71,7 @@ export function ClassSettingsPage() {
   // Form state
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [taskAiPrompt, setTaskAiPrompt] = useState("");
   const [color, setColor] = useState(PRESET_COLORS[0]);
   const [schoolId, setSchoolId] = useState<string | null>(null);
   const [inviteCode, setInviteCode] = useState("");
@@ -86,6 +87,7 @@ export function ClassSettingsPage() {
       setSchools(schoolList);
       setName(classData.name);
       setDescription(classData.description ?? "");
+      setTaskAiPrompt(classData.taskAiPrompt ?? "");
       setColor(classData.color || PRESET_COLORS[0]);
       setSchoolId(classData.schoolId);
       setInviteCode(classData.inviteCode ?? "");
@@ -107,6 +109,7 @@ export function ClassSettingsPage() {
       const updated = await updateClass(classId, {
         name: name.trim(),
         description: description.trim() || null,
+        taskAiPrompt: taskAiPrompt.trim() || null,
         color,
         schoolId,
       });
@@ -241,6 +244,20 @@ export function ClassSettingsPage() {
           />
         </div>
         <div className="space-y-2">
+          <Label htmlFor="class-task-ai-prompt">{t("taskAiPrompt")}</Label>
+          <Textarea
+            id="class-task-ai-prompt"
+            value={taskAiPrompt}
+            onChange={(e) => setTaskAiPrompt(e.target.value)}
+            placeholder={t("taskAiPromptPlaceholder")}
+            rows={4}
+            disabled={saving}
+          />
+          <p className="text-xs text-muted-foreground">
+            {t("taskAiPromptHint")}
+          </p>
+        </div>
+        <div className="space-y-2">
           <Label>{t("themeColor")}</Label>
           <div className="flex flex-wrap gap-2.5">
             {PRESET_COLORS.map((c) => (
@@ -289,6 +306,7 @@ export function ClassSettingsPage() {
               updateClass(classId, {
                 name: name.trim(),
                 description: description.trim() || null,
+                taskAiPrompt: taskAiPrompt.trim() || null,
                 color,
                 schoolId: newSchoolId,
               })

@@ -21,6 +21,9 @@ const DEFAULT_CLASS_COLOR = "#6366f1";
 const INVITE_CODE_LENGTH = 10;
 const INVITE_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const USER_CLASSES_TTL_SECONDS = 60;
+export const DEFAULT_TASK_AI_PROMPT =
+	"Title tasks by deliverable, not course name. Include topic, artifact, or milestone. Max 12 words.";
+const MAX_TASK_AI_PROMPT_LENGTH = 2000;
 
 export interface CreateClassInput {
 	name: string;
@@ -45,6 +48,31 @@ export interface JoinClassPreview {
 	memberCount: number;
 	status: JoinClassPreviewStatus;
 	myRole: ClassRole | null;
+}
+
+function normalizeTaskAiPrompt(input: string | null | undefined) {
+	if (input === undefined) {
+		return undefined;
+	}
+
+	if (input === null) {
+		return null;
+	}
+
+	const trimmed = input.trim();
+	if (!trimmed) {
+		return null;
+	}
+
+	if (trimmed.length > MAX_TASK_AI_PROMPT_LENGTH) {
+		throw new AppError(
+			400,
+			"INVALID_TASK_AI_PROMPT",
+			"Task AI prompt must be at most 2000 characters",
+		);
+	}
+
+	return trimmed;
 }
 
 function generateInviteCode(length: number): string {
@@ -150,6 +178,7 @@ export async function createClass(userId: string, input: CreateClassInput) {
 			data: {
 				name: input.name,
 				description: input.description ?? null,
+				taskAiPrompt: DEFAULT_TASK_AI_PROMPT,
 				color: input.color ?? DEFAULT_CLASS_COLOR,
 				schoolId: input.schoolId ?? null,
 				ownerId: userId,
@@ -344,6 +373,7 @@ interface ClassDetailCacheEntry {
 	id: string;
 	name: string;
 	description: string | null;
+	taskAiPrompt: string | null;
 	color: string;
 	schoolId: string | null;
 	ownerId: string;
@@ -365,6 +395,7 @@ export async function getClassDetail(classId: string, userId: string) {
 				id: row.id,
 				name: row.name,
 				description: row.description,
+				taskAiPrompt: row.taskAiPrompt,
 				color: row.color,
 				schoolId: row.schoolId,
 				ownerId: row.ownerId,
@@ -396,12 +427,14 @@ export async function updateClass(
 	input: {
 		name?: string;
 		description?: string | null;
+		taskAiPrompt?: string | null;
 		color?: string;
 		schoolId?: string | null;
 	},
 ) {
 	const membership = await getMembershipOrThrow(classId, userId);
 	requireOwnerOrAdmin(membership);
+	const taskAiPrompt = normalizeTaskAiPrompt(input.taskAiPrompt);
 
 	if (input.schoolId) {
 		const school = await prisma.school.findUnique({
@@ -418,6 +451,7 @@ export async function updateClass(
 		data: {
 			name: input.name,
 			description: input.description,
+			taskAiPrompt,
 			color: input.color,
 			schoolId: input.schoolId,
 		},

@@ -305,7 +305,7 @@
     "studentIdDigitsOnly": "学籍番号は整数のみ入力できます",
     "timezone": "タイムゾーン",
     "detected": "検出",
-    "timezoneHint": "日時と締切をローカル時刻で表示するために使います。",
+    "timezoneHint": "日付表示、締切編集、AI解析、通知に使用します。",
     "saveChanges": "変更を保存",
     "changeEmail": {
       "failedSendVerification": "確認メール送信に失敗しました",
@@ -348,12 +348,13 @@
   "timezonePrompt": {
     "updatedTo": "タイムゾーンを {timezone} に更新しました",
     "failedUpdate": "タイムゾーン更新に失敗しました",
-    "browserTimezonePrefix": "ブラウザのタイムゾーンは",
-    "accountTimezonePrefix": "、アカウント設定は",
-    "updateQuestion": "です。現在地に合わせて更新しますか？",
-    "dismiss": "閉じる",
+    "accountTimezonePrefix": "現在の画面はアカウントのタイムゾーン",
+    "accountTimePrefix": "で時刻を表示しています。現在時刻は",
+    "browserTimezonePrefix": "です。デバイスのタイムゾーンは",
+    "updateQuestion": "です。更新しますか？",
+    "continueUsing": "{timezone} を使い続ける",
     "updating": "更新中...",
-    "update": "更新"
+    "updateTo": "{timezone} に更新"
   },
   "taskEditorPage": {
     "failedLoadTask": "課題の読み込みに失敗しました",
@@ -469,6 +470,9 @@
     "classNamePlaceholder": "例: 応用数学",
     "description": "説明",
     "descriptionPlaceholder": "説明（任意）...",
+    "taskAiPrompt": "タスク AI プロンプト",
+    "taskAiPromptPlaceholder": "例: Title tasks by deliverable, not course name. Include topic, artifact, or milestone. Max 12 words.",
+    "taskAiPromptHint": "このクラスでタスクを作成・本文を修正するときの AI 設定です。空にするとカスタムプロンプトを注入しません。",
     "themeColor": "テーマカラー",
     "saveChanges": "変更を保存",
     "classSettingsSaved": "クラス設定を保存しました",
@@ -845,6 +849,17 @@
     "createDescription": "後で識別できるようにキーに名前を付けてください。",
     "installCommandsHeading": "新しいキーでインストール",
     "installCommandsHint": "以下からクライアントを選んでコマンドを実行してください。キーはコマンド内に自動挿入されています。",
+    "installMode": {
+      "standard": "標準",
+      "simple": "簡単インストール"
+    },
+    "simpleInstall": {
+      "title": "AIアシスタントに送るインストール指示",
+      "hint": "下のプロンプトをコピーして、使用しているAIアシスタントに送信してください。",
+      "promptHint": "AIアシスタントに、そのプラットフォームで推奨される方法でインストールしてもらいます。",
+      "prompt": "TaskNeo の MCP ツールのインストールを手伝ってください。この MCP のインストールコマンドは次のとおりです：\n\n{command}\n\n正しいインストール方法がわからないため、あなたのプラットフォームで推奨される方法を使ってインストールしてください。",
+      "note": "このインストール方法は、エージェント（Agent）の能力によって失敗する場合があります。OpenClaw、Hermers、Claude Code、Codex、Kiro などのアシスタントは通常うまくインストールできます。"
+    },
     "claudeCode": {
       "name": "Claude Code",
       "tagline": "ターミナルで使える Anthropic のAIコーディングアシスタント"

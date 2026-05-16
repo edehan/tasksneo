@@ -19,6 +19,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useAuth } from "@/components/auth-provider";
 import type { ClassSummary, SubmissionListRow, TaskDetail } from "@/lib/api";
 import { ApiError, exportSubmissionsCsv, toggleExemplary } from "@/lib/api";
 import {
@@ -63,6 +64,7 @@ export function SubmissionsListPage({
 }: SubmissionsListPageProps) {
   const t = useTranslations("submissionsListPage");
   const locale = useLocale();
+  const { user } = useAuth();
   const params = useParams();
   const router = useRouter();
 
@@ -76,6 +78,7 @@ export function SubmissionsListPage({
   });
 
   const dateFormatter = new Intl.DateTimeFormat(locale, {
+    timeZone: user?.timezone ?? "UTC",
     month: "short",
     day: "numeric",
     hour: "numeric",

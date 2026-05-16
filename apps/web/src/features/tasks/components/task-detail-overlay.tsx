@@ -61,6 +61,7 @@ export function TaskDetailOverlay({
   const modalRef = useRef<HTMLDivElement>(null);
 
   const dateFormatter = new Intl.DateTimeFormat(locale, {
+    timeZone: user?.timezone ?? "UTC",
     month: "short",
     day: "numeric",
     hour: "numeric",

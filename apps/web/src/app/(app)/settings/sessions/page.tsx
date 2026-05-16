@@ -10,7 +10,7 @@ import {
   Smartphone,
   Tablet,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth-provider";
@@ -33,6 +33,10 @@ import {
   revokeSession,
   type SessionInfo,
 } from "@/lib/api";
+import {
+  formatDateInTimeZone,
+  getCalendarDateInTimeZone,
+} from "@/lib/timezone";
 
 interface ParsedUserAgent {
   browser: string;
@@ -104,21 +108,15 @@ function DeviceIcon({ kind }: { kind: ParsedUserAgent["deviceKind"] | "mcp" }) {
 function formatLastSeen(
   iso: string,
   t: ReturnType<typeof useTranslations>,
+  locale: string,
+  timeZone: string,
 ): string {
   const date = new Date(iso);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
 
-  const startOfToday = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-  );
-  const startOfDate = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate(),
-  );
+  const startOfToday = getCalendarDateInTimeZone(now, timeZone);
+  const startOfDate = getCalendarDateInTimeZone(date, timeZone);
   const dayDiff = Math.round(
     (startOfToday.getTime() - startOfDate.getTime()) / (24 * 3600 * 1000),
   );
@@ -134,7 +132,7 @@ function formatLastSeen(
   }
   if (dayDiff === 1) return t("yesterday");
   if (dayDiff <= 7) return t("daysAgo", { count: dayDiff });
-  return date.toLocaleDateString(undefined, {
+  return formatDateInTimeZone(date, locale, timeZone, {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -144,6 +142,8 @@ function formatLastSeen(
 export default function SessionsPage() {
   const { user } = useAuth();
   const t = useTranslations("settingsSessions");
+  const locale = useLocale();
+  const timeZone = user?.timezone ?? "UTC";
 
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -299,7 +299,8 @@ export default function SessionsPage() {
                           </span>
                         )}
                         <span>
-                          {t("lastActive")} {formatLastSeen(s.lastSeenAt, t)}
+                          {t("lastActive")}{" "}
+                          {formatLastSeen(s.lastSeenAt, t, locale, timeZone)}
                         </span>
                       </div>
                     </div>
@@ -352,7 +353,8 @@ export default function SessionsPage() {
                         </span>
                       )}
                       <span>
-                        {t("lastActive")} {formatLastSeen(s.lastSeenAt, t)}
+                        {t("lastActive")}{" "}
+                        {formatLastSeen(s.lastSeenAt, t, locale, timeZone)}
                       </span>
                     </div>
                   </div>
@@ -412,7 +414,7 @@ export default function SessionsPage() {
                         {s.country ?? t("unknownLocation")}
                       </span>
                       <span className="min-w-0 truncate text-muted-foreground">
-                        {formatLastSeen(s.lastSeenAt, t)}
+                        {formatLastSeen(s.lastSeenAt, t, locale, timeZone)}
                       </span>
                     </div>
                   ))}

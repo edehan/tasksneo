@@ -11,6 +11,7 @@ import {
   useState,
 } from "react";
 
+import { useAuth } from "@/components/auth-provider";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Slider } from "@/components/ui/slider";
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
@@ -20,6 +21,7 @@ import {
   sortTasksWithBlockedBy,
 } from "@/features/tasks/lib/task-utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { formatDateInTimeZone, getZonedDateTimeParts } from "@/lib/timezone";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -48,10 +50,15 @@ interface TaskGanttViewProps {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function startOfDay(d: Date): Date {
-  const r = new Date(d);
-  r.setHours(0, 0, 0, 0);
-  return r;
+function addDays(day: Date, days: number): Date {
+  const next = new Date(day);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+function startOfDayInTimeZone(d: Date, timeZone: string): Date {
+  const parts = getZonedDateTimeParts(d, timeZone);
+  return new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
 }
 
 function diffDays(a: Date, b: Date): number {
@@ -72,17 +79,37 @@ function getEffectiveStartLabel(task: TaskWithClass): string {
   return task.startAt ?? task.createdAt;
 }
 
-function formatShortDate(iso: string, locale: string): string {
-  const d = new Date(iso);
-  const month = d.toLocaleString(locale, { month: "short" });
-  const day = d.getDate();
-  return `${month} ${day}`;
+function formatShortDate(
+  iso: string,
+  locale: string,
+  timeZone: string,
+): string {
+  return formatDateInTimeZone(new Date(iso), locale, timeZone, {
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function formatMarkerDate(d: Date, locale: string): string {
-  const month = d.toLocaleString(locale, { month: "short" }).toUpperCase();
-  const day = d.getDate();
+  const month = new Intl.DateTimeFormat(locale, {
+    timeZone: "UTC",
+    month: "short",
+  })
+    .format(d)
+    .toUpperCase();
+  const day = d.getUTCDate();
   return `${month} ${day}`;
+}
+
+function zonedOffsetDays(
+  timelineStart: Date,
+  date: Date,
+  timeZone: string,
+): number {
+  const parts = getZonedDateTimeParts(date, timeZone);
+  const day = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
+  const minutes = parts.hour * 60 + parts.minute + parts.second / 60;
+  return diffDays(timelineStart, day) + minutes / (24 * 60);
 }
 
 function isSubmitted(task: TaskWithClass): boolean {
@@ -91,35 +118,38 @@ function isSubmitted(task: TaskWithClass): boolean {
 
 // ─── Timeline Range (zoom-independent) ──────────────────────────────────────
 
-function computeTimelineRange(tasks: TaskWithClass[]): {
+function computeTimelineRange(
+  tasks: TaskWithClass[],
+  timeZone: string,
+): {
   start: Date;
   end: Date;
 } {
-  const today = startOfDay(new Date());
+  const today = startOfDayInTimeZone(new Date(), timeZone);
 
   let earliest = today;
-  let latest = new Date(today);
-  latest.setDate(latest.getDate() + MIN_SPAN_DAYS);
+  let latest = addDays(today, MIN_SPAN_DAYS);
 
   for (const task of tasks) {
-    const taskStart = startOfDay(getEffectiveStartDate(task));
+    const taskStart = startOfDayInTimeZone(
+      getEffectiveStartDate(task),
+      timeZone,
+    );
     const taskEnd = task.dueAt
-      ? startOfDay(new Date(task.dueAt))
-      : startOfDay(getEffectiveEndDate(task, taskStart));
+      ? startOfDayInTimeZone(new Date(task.dueAt), timeZone)
+      : startOfDayInTimeZone(getEffectiveEndDate(task, taskStart), timeZone);
 
     if (taskStart < earliest) earliest = new Date(taskStart);
     if (taskEnd > latest) latest = new Date(taskEnd);
   }
 
-  const start = new Date(earliest);
-  start.setDate(start.getDate() - PADDING_DAYS);
-  const end = new Date(latest);
-  end.setDate(end.getDate() + PADDING_DAYS);
+  const start = addDays(earliest, -PADDING_DAYS);
+  let end = addDays(latest, PADDING_DAYS);
 
   // Enforce minimum span
   const span = diffDays(start, end);
   if (span < MIN_SPAN_DAYS) {
-    end.setDate(start.getDate() + MIN_SPAN_DAYS);
+    end = addDays(start, MIN_SPAN_DAYS);
   }
 
   return { start, end };
@@ -135,7 +165,7 @@ function computeMarkers(
 ): { label: string; dayOffset: number }[] {
   const interval = dayWidth >= 50 ? 1 : dayWidth >= 20 ? 7 : 14;
   const markers: { label: string; dayOffset: number }[] = [];
-  const cursor = new Date(start);
+  let cursor = new Date(start);
 
   while (cursor <= end) {
     const offset = diffDays(start, cursor);
@@ -143,7 +173,7 @@ function computeMarkers(
       label: formatMarkerDate(cursor, locale),
       dayOffset: offset,
     });
-    cursor.setDate(cursor.getDate() + interval);
+    cursor = addDays(cursor, interval);
   }
 
   return markers;
@@ -162,6 +192,7 @@ function computeBarGeometries(
   timelineStart: Date,
   totalDays: number,
   dayWidth: number,
+  timeZone: string,
 ): Map<string, BarGeometry> {
   const map = new Map<string, BarGeometry>();
   for (let i = 0; i < sortedTasks.length; i++) {
@@ -169,8 +200,8 @@ function computeBarGeometries(
     const barStartDate = getEffectiveStartDate(task);
     const barEndDate = getEffectiveEndDate(task, barStartDate);
 
-    const startOffset = diffDays(timelineStart, barStartDate);
-    const endOffset = diffDays(timelineStart, barEndDate);
+    const startOffset = zonedOffsetDays(timelineStart, barStartDate, timeZone);
+    const endOffset = zonedOffsetDays(timelineStart, barEndDate, timeZone);
 
     const left = Math.max(0, startOffset) * dayWidth;
     const right = Math.min(totalDays, endOffset) * dayWidth;
@@ -298,6 +329,8 @@ export function TaskGanttView({
 }: TaskGanttViewProps) {
   const t = useTranslations("taskGanttView");
   const locale = useLocale();
+  const { user } = useAuth();
+  const timeZone = user?.timezone ?? "UTC";
   const scrollRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const now = useNow(NOW_TICK_MS);
@@ -319,25 +352,30 @@ export function TaskGanttView({
 
   // Timeline range depends only on tasks (not zoom)
   const { timelineStart, totalDays } = useMemo(() => {
-    const { start, end } = computeTimelineRange(tasks);
+    const { start, end } = computeTimelineRange(tasks, timeZone);
     return { timelineStart: start, totalDays: Math.ceil(diffDays(start, end)) };
-  }, [tasks]);
+  }, [tasks, timeZone]);
 
   // Markers adapt to zoom level
   const markers = useMemo(() => {
-    const end = new Date(
-      timelineStart.getTime() + totalDays * 24 * 60 * 60 * 1000,
-    );
+    const end = addDays(timelineStart, totalDays);
     return computeMarkers(timelineStart, end, dayWidth, locale);
   }, [timelineStart, totalDays, dayWidth, locale]);
 
-  const todayOffset = diffDays(timelineStart, now);
+  const todayOffset = zonedOffsetDays(timelineStart, now, timeZone);
   const totalWidth = totalDays * dayWidth;
 
   // Bar geometries for connector lines
   const barGeometries = useMemo(
-    () => computeBarGeometries(sortedTasks, timelineStart, totalDays, dayWidth),
-    [sortedTasks, timelineStart, totalDays, dayWidth],
+    () =>
+      computeBarGeometries(
+        sortedTasks,
+        timelineStart,
+        totalDays,
+        dayWidth,
+        timeZone,
+      ),
+    [sortedTasks, timelineStart, totalDays, dayWidth, timeZone],
   );
 
   // Helper to access the Radix ScrollArea viewport element
@@ -721,7 +759,7 @@ export function TaskGanttView({
                               whiteSpace: "nowrap",
                             }}
                           >
-                            {formatShortDate(startLabelIso, locale)}
+                            {formatShortDate(startLabelIso, locale, timeZone)}
                           </span>
                         )}
                         {/* Due date — right of bar */}
@@ -741,7 +779,7 @@ export function TaskGanttView({
                               whiteSpace: "nowrap",
                             }}
                           >
-                            {formatShortDate(task.dueAt, locale)}
+                            {formatShortDate(task.dueAt, locale, timeZone)}
                           </span>
                         )}
                       </>

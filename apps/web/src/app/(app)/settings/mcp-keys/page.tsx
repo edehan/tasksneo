@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   ApiError,
   createMcpKey,
@@ -86,6 +87,8 @@ function getOpenClawCommand(key: string): string {
   };
   return `openclaw mcp set taskflow '${JSON.stringify(config)}'`;
 }
+
+type InstallMode = "standard" | "simple";
 
 interface GuideCardProps {
   icon: React.ReactNode;
@@ -141,6 +144,62 @@ function GuideCard({
   );
 }
 
+interface SimpleInstallCardProps {
+  prompt: string;
+  title: string;
+  hint: string;
+  note: string;
+  copyLabel: string;
+}
+
+function SimpleInstallCard({
+  prompt,
+  title,
+  hint,
+  note,
+  copyLabel,
+}: SimpleInstallCardProps) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(prompt);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="text-lg font-semibold leading-tight">{title}</h3>
+            <p className="text-xs text-muted-foreground mt-1">{hint}</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 shrink-0"
+            onClick={handleCopy}
+          >
+            {copied ? (
+              <Check className="h-3.5 w-3.5 text-green-600" />
+            ) : (
+              <Copy className="h-3.5 w-3.5" />
+            )}
+            <span className="ml-1.5 text-xs">{copyLabel}</span>
+          </Button>
+        </div>
+        <pre className="rounded-lg border border-border bg-surface-subtle/60 p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap break-words text-foreground leading-relaxed">
+          {prompt}
+        </pre>
+      </div>
+      <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+        {note}
+      </p>
+    </div>
+  );
+}
+
 export default function McpKeysPage() {
   const { user } = useAuth();
   const t = useTranslations("settingsMcpKeys");
@@ -154,6 +213,7 @@ export default function McpKeysPage() {
   const [creating, setCreating] = useState(false);
   const [createdKey, setCreatedKey] = useState<McpKeyCreated | null>(null);
   const [copied, setCopied] = useState(false);
+  const [installMode, setInstallMode] = useState<InstallMode>("standard");
 
   // Revoke dialog
   const [revokeTarget, setRevokeTarget] = useState<McpKeyInfo | null>(null);
@@ -225,6 +285,7 @@ export default function McpKeysPage() {
     setCreatedKey(null);
     setKeyName("");
     setCopied(false);
+    setInstallMode("standard");
   }
 
   const activeKeys = keys.filter((k) => !k.revokedAt);
@@ -388,30 +449,71 @@ export default function McpKeysPage() {
               </div>
 
               <div className="space-y-1">
-                <h3 className="text-sm font-medium">
-                  {t("installCommandsHeading")}
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  {t("installCommandsHint")}
-                </p>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-medium">
+                      {t("installCommandsHeading")}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {installMode === "standard"
+                        ? t("installCommandsHint")
+                        : t("simpleInstall.hint")}
+                    </p>
+                  </div>
+                  <ToggleGroup
+                    type="single"
+                    value={installMode}
+                    onValueChange={(value) => {
+                      if (value === "standard" || value === "simple") {
+                        setInstallMode(value);
+                      }
+                    }}
+                    className="w-fit justify-start rounded-full border border-border bg-surface-subtle p-1"
+                  >
+                    <ToggleGroupItem
+                      value="standard"
+                      className="h-8 rounded-full border-0 px-3 text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm"
+                    >
+                      {t("installMode.standard")}
+                    </ToggleGroupItem>
+                    <ToggleGroupItem
+                      value="simple"
+                      className="h-8 rounded-full border-0 px-3 text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm"
+                    >
+                      {t("installMode.simple")}
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
               </div>
 
-              <div className="space-y-4">
-                <GuideCard
-                  icon={<Terminal className="h-5 w-5" />}
-                  name={t("claudeCode.name")}
-                  tagline={t("claudeCode.tagline")}
-                  command={getClaudeCodeCommand(createdKey.key)}
+              {installMode === "standard" ? (
+                <div className="space-y-4">
+                  <GuideCard
+                    icon={<Terminal className="h-5 w-5" />}
+                    name={t("claudeCode.name")}
+                    tagline={t("claudeCode.tagline")}
+                    command={getClaudeCodeCommand(createdKey.key)}
+                    copyLabel={t("copy")}
+                  />
+                  <GuideCard
+                    icon={<Bot className="h-5 w-5" />}
+                    name={t("openClaw.name")}
+                    tagline={t("openClaw.tagline")}
+                    command={getOpenClawCommand(createdKey.key)}
+                    copyLabel={t("copy")}
+                  />
+                </div>
+              ) : (
+                <SimpleInstallCard
+                  title={t("simpleInstall.title")}
+                  hint={t("simpleInstall.promptHint")}
+                  note={t("simpleInstall.note")}
+                  prompt={t("simpleInstall.prompt", {
+                    command: getClaudeCodeCommand(createdKey.key),
+                  })}
                   copyLabel={t("copy")}
                 />
-                <GuideCard
-                  icon={<Bot className="h-5 w-5" />}
-                  name={t("openClaw.name")}
-                  tagline={t("openClaw.tagline")}
-                  command={getOpenClawCommand(createdKey.key)}
-                  copyLabel={t("copy")}
-                />
-              </div>
+              )}
 
               <DialogFooter>
                 <Button onClick={handleCloseCreate}>{t("done")}</Button>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import { useAuth } from "@/components/auth-provider";
 import type { TaskWithClass } from "@/features/tasks/lib/task-utils";
 
 type TranslateFn = ReturnType<typeof useTranslations>;
@@ -59,7 +60,9 @@ export function TaskListView({
 }: TaskListViewProps) {
   const t = useTranslations("taskListView");
   const locale = useLocale();
+  const { user } = useAuth();
   const dateFormatter = new Intl.DateTimeFormat(locale, {
+    timeZone: user?.timezone ?? "UTC",
     month: "short",
     day: "numeric",
     hour: "numeric",

@@ -17,6 +17,13 @@ const intro = {
       the service, you agree to these Terms.
     </>,
     <>
+      Important: TaskNeo is currently operated as a personal hobby project and
+      public beta. We will try to keep it useful and reliable, but we cannot
+      guarantee long-term stability, availability, or data persistence. Please
+      keep your own backups and do not store the only copy of important files,
+      legal records, or critical information here.
+    </>,
+    <>
       If a translated version of these Terms is provided, it is for convenience
       only. The English version controls in case of any inconsistency.
     </>,
@@ -27,6 +34,10 @@ const intro = {
       的规则。创建账号或使用服务即表示你同意本条款。
     </>,
     <>
+      重要提示：TaskNeo
+      目前是个人兴趣运营的公测服务。我们会尽力保持它可用、好用，但无法保证长期稳定、持续可用或数据持久保存。请自行保留备份，不要把重要文件、法律记录或关键资料的唯一副本存放在这里。
+    </>,
+    <>
       如本条款提供翻译版本，翻译仅为方便阅读。如不同语言版本存在不一致，以英文版本为准。
     </>,
   ],
@@ -34,65 +45,42 @@ const intro = {
 
 const sections: LegalSection[] = [
   {
-    enTitle: "1. Service Scope and Public Beta Status",
+    enTitle: "1. Service Status and Changes",
     en: [
       <>
-        TaskNeo is currently provided as a public beta, pre-release, and
-        personal hobby project. Features may change, be interrupted, or be
-        removed at any time.
-      </>,
-      <>
-        We do not guarantee long-term availability or persistence of user data.
-        Please do not upload or store important files, legal records, or other
-        critical information in this service.
+        TaskNeo is provided &quot;as available.&quot; Features may change, be
+        interrupted, or be removed at any time, especially while the service is
+        in public beta.
       </>,
     ],
-    zhTitle: "1. 服务范围和公测状态",
+    zhTitle: "1. 服务状态和变更",
     zh: [
       <>
-        TaskNeo 目前作为公测、预发布和个人 hobby
-        项目提供。功能可能随时变更、中断或移除。
-      </>,
-      <>
-        我们不保证服务的长期可用性或用户数据的持久保存。请不要在本服务中上传或存储重要文件、法律记录或其他关键资料。
+        TaskNeo 按“可用时”提供。尤其在公测期间，功能可能随时变更、中断或移除。
       </>,
     ],
   },
   {
-    enTitle: "2. Eligibility and Account Responsibility",
+    enTitle: "2. Accounts and Acceptable Use",
     en: [
       <>
         You must use the service in compliance with applicable law. You are
         responsible for activities under your account and for keeping your
-        credentials secure.
+        credentials secure. You must not misuse the service, interfere with
+        security or performance, attempt unauthorized access, upload unlawful
+        content, or use TaskNeo in a way that harms other users or the platform.
       </>,
     ],
-    zhTitle: "2. 资格和账号责任",
+    zhTitle: "2. 账号和可接受使用",
     zh: [
       <>
-        你必须遵守适用法律使用本服务。你需要对账号下的活动负责，并妥善保管账号凭证。
-      </>,
-    ],
-  },
-  {
-    enTitle: "3. Acceptable Use",
-    en: [
-      <>
-        You must not misuse the service, interfere with security or performance,
-        attempt unauthorized access, upload unlawful content, or use TaskNeo in
-        a way that harms other users or the platform.
-      </>,
-    ],
-    zhTitle: "3. 可接受使用",
-    zh: [
-      <>
-        你不得滥用服务、干扰安全或性能、尝试未经授权的访问、上传违法内容，或以伤害其他用户或平台的方式使用
+        你必须遵守适用法律使用本服务，并对账号下的活动负责、妥善保管账号凭证。你不得滥用服务、干扰安全或性能、尝试未经授权的访问、上传违法内容，或以伤害其他用户或平台的方式使用
         TaskNeo。
       </>,
     ],
   },
   {
-    enTitle: "4. Content",
+    enTitle: "3. Your Content",
     en: [
       <>
         You retain ownership of your content. By uploading content, you grant
@@ -100,7 +88,7 @@ const sections: LegalSection[] = [
         content only as needed to operate the service features you request.
       </>,
     ],
-    zhTitle: "4. 内容",
+    zhTitle: "3. 你的内容",
     zh: [
       <>
         你保留对自己内容的所有权。上传内容即表示你授予 TaskNeo
@@ -109,74 +97,7 @@ const sections: LegalSection[] = [
     ],
   },
   {
-    enTitle: "5. Data Storage and International Processing",
-    en: [
-      <>
-        Our primary servers and user data are currently hosted in Hong Kong SAR,
-        China. Depending on the features you use, selected data may be processed
-        by subprocessors outside your country or region.
-      </>,
-    ],
-    zhTitle: "5. 数据存储和跨境处理",
-    zh: [
-      <>
-        我们的主要服务器和用户数据目前托管在中国香港特别行政区。根据你使用的功能，部分选定数据可能会由你所在国家或地区以外的次级处理方处理。
-      </>,
-    ],
-  },
-  {
-    enTitle: "6. AI and Speech Processing Features",
-    en: [
-      <>
-        If you use AI-assisted features, selected task content may be sent to
-        our subprocessor OpenAI for processing. If you use speech recognition
-        features, audio or speech data is processed by our subprocessor
-        AssemblyAI.
-      </>,
-      <>
-        OpenAI and AssemblyAI are used as zero data retention (ZDR)
-        subprocessors for these requests. We design these integrations not to
-        intentionally include directly identifiable personal information unless
-        it is part of the content you choose to submit.
-      </>,
-    ],
-    zhTitle: "6. AI 和语音处理功能",
-    zh: [
-      <>
-        如果你使用 AI 辅助功能，选定的任务内容可能会发送给我们的次级处理方
-        OpenAI
-        进行处理。如果你使用语音识别功能，音频或语音数据由我们的次级处理方
-        AssemblyAI 处理。
-      </>,
-      <>
-        OpenAI 和 AssemblyAI
-        在这些请求中作为零数据保留（ZDR）次级处理方使用。除非你主动提交的内容中包含可直接识别个人身份的信息，我们会尽量避免在这些集成中主动包含此类信息。
-      </>,
-    ],
-  },
-  {
-    enTitle: "7. Public Beta Analytics",
-    en: [
-      <>
-        During the public beta, frontend pages may include scripts from New
-        Relic, Inc. that collect real user monitoring (RUM), performance, and
-        usage analytics. This data is used only to understand reliability,
-        latency, errors, and product usage during the beta, is not linked to
-        your user account, and will be deleted within 30 days after the public
-        beta ends.
-      </>,
-    ],
-    zhTitle: "7. 公测分析",
-    zh: [
-      <>
-        公测期间，前端页面可能包含来自 New Relic, Inc.
-        的脚本，用于收集真实用户监控（RUM）、性能和使用分析数据。这些数据仅用于了解公测期间的可靠性、延迟、错误和产品使用情况，不会与你的用户账号关联，并将在公测结束后
-        30 天内删除。
-      </>,
-    ],
-  },
-  {
-    enTitle: "8. Schools and Minors",
+    enTitle: "4. Schools and Minors",
     en: [
       <>
         TaskNeo may be used by educators, schools, and students. If you are
@@ -190,7 +111,7 @@ const sections: LegalSection[] = [
         consistent with their own student data obligations.
       </>,
     ],
-    zhTitle: "8. 学校和未成年人",
+    zhTitle: "4. 学校和未成年人",
     zh: [
       <>
         TaskNeo
@@ -203,31 +124,37 @@ const sections: LegalSection[] = [
     ],
   },
   {
-    enTitle: "9. Data Controls and Deletion Retention",
+    enTitle: "5. Providers, Privacy, and Data Controls",
     en: [
       <>
-        You may export and delete your data through available product controls.
-        Data deletion and lifecycle handling follow our platform rules and
-        technical design.
+        Some features depend on third-party providers, including hosting,
+        storage, email, analytics, AI, and speech recognition providers. Their
+        services may have separate terms, privacy practices, and availability
+        conditions.
       </>,
       <>
-        After account deletion, relevant data may remain in backup systems for
-        up to 30 days and will then be deleted on a rolling basis.
+        See the <a href="/privacy">Privacy Policy</a> for how we collect, use,
+        store, share, retain, and delete personal data. You may export and
+        delete your data through available product controls, subject to the
+        service design and any legal, security, or abuse-prevention
+        requirements.
       </>,
     ],
-    zhTitle: "9. 数据控制和删除保留",
+    zhTitle: "5. 服务商、隐私和数据控制",
     zh: [
       <>
-        你可以通过产品内可用控制功能导出和删除数据。数据删除和生命周期处理遵循我们的平台规则和技术设计。
+        部分功能依赖第三方服务商，包括托管、存储、邮件、分析、AI
+        和语音识别服务商。其服务可能适用单独的条款、隐私实践和可用性条件。
       </>,
       <>
-        账号删除后，相关数据可能会在备份系统中保留最多 30
-        天，随后按滚动机制删除。
+        我们如何收集、使用、存储、共享、保留和删除个人数据，见
+        <a href="/privacy">隐私政策</a>
+        。你可以通过产品内可用控制功能导出和删除数据，但仍需受服务设计以及法律、安全或防滥用要求限制。
       </>,
     ],
   },
   {
-    enTitle: "10. Content Removal for Legal and Terms Violations",
+    enTitle: "6. Removal, Suspension, and Termination",
     en: [
       <>
         If user-uploaded content contains terrorist content, child sexual abuse
@@ -238,18 +165,6 @@ const sections: LegalSection[] = [
         For removed violating content, we do not provide restoration, export, or
         re-download.
       </>,
-    ],
-    zhTitle: "10. 因违法或违反条款而移除内容",
-    zh: [
-      <>
-        如果用户上传内容包含恐怖主义内容、儿童性虐待材料（CSAM）或其他违反适用法律或本条款的内容，我们可能会移除相关违规内容。
-      </>,
-      <>对于被移除的违规内容，我们不提供恢复、导出或重新下载。</>,
-    ],
-  },
-  {
-    enTitle: "11. Suspension and Termination",
-    en: [
       <>
         We may update, suspend, or discontinue any part of the service at any
         time. We may suspend or terminate access for violations of these Terms
@@ -260,8 +175,12 @@ const sections: LegalSection[] = [
         serious or repeated violations.
       </>,
     ],
-    zhTitle: "11. 暂停和终止",
+    zhTitle: "6. 内容移除、暂停和终止",
     zh: [
+      <>
+        如果用户上传内容包含恐怖主义内容、儿童性虐待材料（CSAM）或其他违反适用法律或本条款的内容，我们可能会移除相关违规内容。
+      </>,
+      <>对于被移除的违规内容，我们不提供恢复、导出或重新下载。</>,
       <>
         我们可能随时更新、暂停或停止服务的任何部分。对于违反本条款，或出于安全、法律或运营原因，我们可能暂停或终止访问。
       </>,
@@ -269,25 +188,7 @@ const sections: LegalSection[] = [
     ],
   },
   {
-    enTitle: "12. Third-Party Services",
-    en: [
-      <>
-        The service may rely on third-party providers, including hosting,
-        storage, email, analytics, AI, and speech recognition providers. Their
-        services may have separate terms, privacy practices, and availability
-        conditions.
-      </>,
-    ],
-    zhTitle: "12. 第三方服务",
-    zh: [
-      <>
-        本服务可能依赖第三方服务商，包括托管、存储、邮件、分析、AI
-        和语音识别服务商。其服务可能适用单独的条款、隐私实践和可用性条件。
-      </>,
-    ],
-  },
-  {
-    enTitle: "13. Warranty Disclaimer",
+    enTitle: "7. Disclaimers and Liability",
     en: [
       <>
         To the maximum extent permitted by law, the service is provided &quot;as
@@ -295,53 +196,37 @@ const sections: LegalSection[] = [
         including availability, accuracy, fitness for a particular purpose, or
         non-infringement.
       </>,
-    ],
-    zhTitle: "13. 免责声明",
-    zh: [
-      <>
-        在法律允许的最大范围内，本服务按“现状”和“可用”提供，不作任何形式的保证，包括可用性、准确性、特定用途适用性或不侵权保证。
-      </>,
-    ],
-  },
-  {
-    enTitle: "14. Limitation of Liability",
-    en: [
       <>
         To the maximum extent permitted by law, we are not liable for indirect,
         incidental, special, consequential, or exemplary damages, including loss
         of data, revenue, or business opportunities.
       </>,
     ],
-    zhTitle: "14. 责任限制",
+    zhTitle: "7. 免责声明和责任限制",
     zh: [
+      <>
+        在法律允许的最大范围内，本服务按“现状”和“可用”提供，不作任何形式的保证，包括可用性、准确性、特定用途适用性或不侵权保证。
+      </>,
       <>
         在法律允许的最大范围内，我们不对间接、附带、特殊、后果性或惩罚性损害负责，包括数据、收入或商业机会损失。
       </>,
     ],
   },
   {
-    enTitle: "15. Changes to These Terms",
+    enTitle: "8. Updates and Contact",
     en: [
       <>
         We may update these Terms from time to time. Material changes will be
         posted on this page with a revised effective date.
       </>,
-    ],
-    zhTitle: "15. 条款变更",
-    zh: [
-      <>我们可能会不时更新本条款。重大变更将发布在本页面，并更新生效日期。</>,
-    ],
-  },
-  {
-    enTitle: "16. Contact",
-    en: [
       <>
         For legal or privacy-related questions about these Terms, contact us at
         <a href="mailto:privacy@taskneo.space"> privacy@taskneo.space </a>.
       </>,
     ],
-    zhTitle: "16. 联系方式",
+    zhTitle: "8. 更新和联系方式",
     zh: [
+      <>我们可能会不时更新本条款。重大变更将发布在本页面，并更新生效日期。</>,
       <>
         如有法律或隐私相关问题，请通过
         <a href="mailto:privacy@taskneo.space"> privacy@taskneo.space </a>

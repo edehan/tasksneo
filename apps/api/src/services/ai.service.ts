@@ -42,11 +42,18 @@ export interface ParseAttachmentInput {
 	mimeType: string | null;
 	presignedUrl: string;
 	sizeBytes?: number;
+	appUrl?: string;
 }
 
 export interface ParseTaskContext {
 	userTimezone: string;
 	localNowWithWeekday: string;
+}
+
+export interface ClassAiContext {
+	name: string;
+	description: string | null;
+	taskAiPrompt: string | null;
 }
 
 export interface ParseTaskArtifacts {
@@ -220,6 +227,44 @@ function buildUnsupportedAttachmentNote(
 	return `\nOther attached files (content not available, use filename as context):\n${lines.join("\n")}`;
 }
 
+function buildSingleImageMarkdownHint(
+	attachments: ParseAttachmentInput[],
+): string {
+	const imageAttachments = attachments.filter((att) =>
+		normalizeAttachmentMime(att.mimeType).startsWith("image/"),
+	);
+
+	if (imageAttachments.length !== 1 || !imageAttachments[0].appUrl) {
+		return "";
+	}
+
+	return `\nThe user-provided image material is available at ${imageAttachments[0].appUrl}. If you think this image is useful for the generated markdown, you may include it in the body. If the image only contains basic task information or irrelevant content, do not insert it into the body.`;
+}
+
+function buildClassContextText(classContext?: ClassAiContext): string {
+	if (!classContext) {
+		return "";
+	}
+
+	const lines = [
+		"Class context:",
+		`Name: ${classContext.name}`,
+		`Description: ${classContext.description?.trim() || "(none)"}`,
+	];
+
+	const prompt = classContext.taskAiPrompt?.trim();
+	if (prompt) {
+		lines.push(
+			"",
+			"Class-specific task instructions:",
+			"These are class-level preferences. Follow them only when they do not conflict with the system requirements, structured output schema, user input language, or source-content fidelity.",
+			prompt,
+		);
+	}
+
+	return lines.join("\n");
+}
+
 // ─── Anthropic Messages API caller ──────────────────────────────────────────
 
 async function callMessages(args: {
@@ -278,18 +323,18 @@ async function callMessages(args: {
 const PARSE_REQUIREMENTS = `
 ## Structured fields
 
-- title: Concise task title. Same language as the input.
+- title: Concise task title. Use the same language as the user input; do not copy the language of the system prompt or these instructions.
 - timeOptions: 1–3 deadline interpretations. Prefer exactly 1. Only return 2–3 when dates are genuinely ambiguous (e.g., "next Friday or Saturday"). Each has startAt and dueAt (nullable).
 - allowLateSubmission: true/false only if explicitly stated; otherwise null.
-- description: One-sentence task summary. Same language as the input.
+- description: One-sentence task summary. Use the same language as the user input; do not copy the language of the system prompt or these instructions.
 
 ## Markdown document (markdown field)
 
-- Same language as the input.
+- Use the same language as the user input for all prose and headings; do not copy the language of the system prompt or these instructions.
 - Strictly follow the source content — do NOT invent requirements or details not present in the input or attachments.
 - If files are attached, incorporate their relevant content into the document.
-- Suggested structure (only include sections with content):
-  Title heading → Overview → Requirements → Timeline → Submission notes
+- Suggested content order (only include sections with content; translate/localize headings naturally to match the user input language):
+  Task title as H1 → overview/summary → requirements → timeline → submission notes
 - Dates in the markdown must be written in natural, human-readable form (e.g., "Friday, April 18, 2026, 11:59 PM"). Do NOT use ISO 8601 format in the markdown.
 
 ## Datetime rules (for structured fields only)
@@ -370,6 +415,7 @@ export async function parseTaskContent(input: {
 	text: string;
 	context: ParseTaskContext;
 	attachments?: ParseAttachmentInput[];
+	classContext?: ClassAiContext;
 }): Promise<ParseTaskArtifacts> {
 	const llm = await loadLlmConfig();
 
@@ -393,13 +439,18 @@ export async function parseTaskContent(input: {
 			.filter((p): p is NonNullable<typeof p> => Boolean(p));
 
 		const unsupportedNote = buildUnsupportedAttachmentNote(limitedAttachments);
+		const singleImageMarkdownHint =
+			buildSingleImageMarkdownHint(limitedAttachments);
+		const classContextText = buildClassContextText(input.classContext);
 
 		const userText = [
 			`Timezone: ${input.context.userTimezone}`,
 			`Now: ${input.context.localNowWithWeekday}`,
+			classContextText,
 			"",
 			"Task input:",
 			input.text,
+			singleImageMarkdownHint,
 			unsupportedNote,
 		]
 			.filter(Boolean)
@@ -510,6 +561,7 @@ export async function reviseTaskContent(input: {
 	currentContent: string;
 	instruction: string;
 	context: ParseTaskContext;
+	classContext?: ClassAiContext;
 }): Promise<ReviseContentResult> {
 	const llm = await loadLlmConfig();
 
@@ -531,11 +583,14 @@ Requirements:
 - Dates must be in natural, human-readable form (e.g., "Friday, April 18, 2026, 11:59 PM"). Do NOT use ISO 8601 format.
 - If the instruction is unclear, make minimal, conservative changes.`;
 
+	const classContextText = buildClassContextText(input.classContext);
+
 	const userContent: MessageContentPart[] = [
 		{
 			type: "text",
 			text: `Timezone: ${input.context.userTimezone}
 Now: ${input.context.localNowWithWeekday}
+${classContextText ? `\n${classContextText}\n` : ""}
 
 --- CURRENT CONTENT ---
 ${input.currentContent}

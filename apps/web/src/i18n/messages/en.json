@@ -305,7 +305,7 @@
     "studentIdDigitsOnly": "Student ID must be an integer",
     "timezone": "Timezone",
     "detected": "Detected",
-    "timezoneHint": "Used for displaying dates and deadlines in your local time.",
+    "timezoneHint": "Used for date display, deadline editing, AI parsing, and notifications.",
     "saveChanges": "Save Changes",
     "changeEmail": {
       "failedSendVerification": "Failed to send verification",
@@ -348,12 +348,13 @@
   "timezonePrompt": {
     "updatedTo": "Timezone updated to {timezone}",
     "failedUpdate": "Failed to update timezone",
-    "browserTimezonePrefix": "Your browser timezone is",
-    "accountTimezonePrefix": ", but your account is set to",
-    "updateQuestion": ". Update to match your current location?",
-    "dismiss": "Dismiss",
+    "accountTimezonePrefix": "The interface is using account timezone",
+    "accountTimePrefix": ". Current time is",
+    "browserTimezonePrefix": ". Detected device timezone",
+    "updateQuestion": ". Update?",
+    "continueUsing": "Keep {timezone}",
     "updating": "Updating...",
-    "update": "Update"
+    "updateTo": "Update to {timezone}"
   },
   "taskEditorPage": {
     "failedLoadTask": "Failed to load task",
@@ -469,6 +470,9 @@
     "classNamePlaceholder": "e.g. Advanced Mathematics",
     "description": "Description",
     "descriptionPlaceholder": "Optional description...",
+    "taskAiPrompt": "Task AI Prompt",
+    "taskAiPromptPlaceholder": "e.g. Title tasks by deliverable, not course name. Include topic, artifact, or milestone. Max 12 words.",
+    "taskAiPromptHint": "Class-level AI preferences for creating tasks and revising task content. Leave empty to disable the custom prompt.",
     "themeColor": "Theme Color",
     "saveChanges": "Save Changes",
     "classSettingsSaved": "Class settings saved",
@@ -845,6 +849,17 @@
     "createDescription": "Give your key a name so you can identify it later.",
     "installCommandsHeading": "Install with your new key",
     "installCommandsHint": "Choose one client below and run the command. Your key is already injected.",
+    "installMode": {
+      "standard": "Standard",
+      "simple": "Simple install"
+    },
+    "simpleInstall": {
+      "title": "Install prompt for your AI assistant",
+      "hint": "Copy the prompt below and send it to the AI assistant you use.",
+      "promptHint": "Ask your AI assistant to install it using the recommended method for its platform.",
+      "prompt": "Help me install TaskNeo's MCP tool. The MCP install command is:\n\n{command}\n\nI do not know the correct installation method, so please use the installation approach recommended for your platform to install it for me.",
+      "note": "This installation method may fail depending on the agent's capability. Assistants including OpenClaw, Hermers, Claude Code, Codex, and Kiro can usually install it well."
+    },
     "claudeCode": {
       "name": "Claude Code",
       "tagline": "Anthropic's AI coding assistant in your terminal"
