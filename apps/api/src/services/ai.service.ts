@@ -42,6 +42,7 @@ export interface ParseAttachmentInput {
 	mimeType: string | null;
 	presignedUrl: string;
 	sizeBytes?: number;
+	appUrl?: string;
 }
 
 export interface ParseTaskContext {
@@ -224,6 +225,20 @@ function buildUnsupportedAttachmentNote(
 	);
 
 	return `\nOther attached files (content not available, use filename as context):\n${lines.join("\n")}`;
+}
+
+function buildSingleImageMarkdownHint(
+	attachments: ParseAttachmentInput[],
+): string {
+	const imageAttachments = attachments.filter((att) =>
+		normalizeAttachmentMime(att.mimeType).startsWith("image/"),
+	);
+
+	if (imageAttachments.length !== 1 || !imageAttachments[0].appUrl) {
+		return "";
+	}
+
+	return `\nThe user-provided image material is available at ${imageAttachments[0].appUrl}. If you think this image is useful for the generated markdown, you may include it in the body. If the image only contains basic task information or irrelevant content, do not insert it into the body.`;
 }
 
 function buildClassContextText(classContext?: ClassAiContext): string {
@@ -424,6 +439,8 @@ export async function parseTaskContent(input: {
 			.filter((p): p is NonNullable<typeof p> => Boolean(p));
 
 		const unsupportedNote = buildUnsupportedAttachmentNote(limitedAttachments);
+		const singleImageMarkdownHint =
+			buildSingleImageMarkdownHint(limitedAttachments);
 		const classContextText = buildClassContextText(input.classContext);
 
 		const userText = [
@@ -433,6 +450,7 @@ export async function parseTaskContent(input: {
 			"",
 			"Task input:",
 			input.text,
+			singleImageMarkdownHint,
 			unsupportedNote,
 		]
 			.filter(Boolean)

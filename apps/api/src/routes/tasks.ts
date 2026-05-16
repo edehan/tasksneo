@@ -295,11 +295,13 @@ tasksRouter.post("/:taskId/parse", async (c) => {
 	assertParseInput(text, { attachmentCount: attachments.length });
 
 	// Generate presigned URLs in parallel — no byte downloads
+	const apiOrigin = new URL(c.req.url).origin;
 	const attachmentPayload = await Promise.all(
 		attachments.map(async (att) => ({
 			originalName: att.originalName,
 			mimeType: att.mimeType,
 			presignedUrl: await getTaskAttachmentPresignedUrl(att.fileKey),
+			appUrl: `${apiOrigin}/files/${att.fileKey}`,
 			sizeBytes: att.sizeBytes != null ? Number(att.sizeBytes) : undefined,
 		})),
 	);

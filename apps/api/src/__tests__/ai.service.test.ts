@@ -240,6 +240,76 @@ describe("AI task parsing", () => {
 		expect(userText).not.toContain("Class-specific task instructions:");
 	});
 
+	it("adds a markdown image hint when exactly one image attachment is parsed", async () => {
+		mockLlmResponse({
+			title: "Lab report",
+			timeOptions: [{ startAt: null, dueAt: null }],
+			allowLateSubmission: null,
+			description: "Write the lab report.",
+			markdown: "# Lab report",
+		});
+
+		await parseTaskContent({
+			text: "Use the uploaded image if useful.",
+			context: {
+				userTimezone: "Asia/Singapore",
+				localNowWithWeekday: "2026-04-09 10:00:00 (Thursday, GMT+8)",
+			},
+			attachments: [
+				{
+					originalName: "lab.png",
+					mimeType: "image/png",
+					presignedUrl: "https://storage.test/lab.png",
+					appUrl: "https://api.test/files/tasks/task-1/lab.png",
+				},
+			],
+		});
+
+		const userText = getLastUserText();
+		expect(userText).toContain(
+			"The user-provided image material is available at https://api.test/files/tasks/task-1/lab.png",
+		);
+		expect(userText).toContain(
+			"If you think this image is useful for the generated markdown",
+		);
+	});
+
+	it("does not add the markdown image hint when multiple images are parsed", async () => {
+		mockLlmResponse({
+			title: "Lab report",
+			timeOptions: [{ startAt: null, dueAt: null }],
+			allowLateSubmission: null,
+			description: "Write the lab report.",
+			markdown: "# Lab report",
+		});
+
+		await parseTaskContent({
+			text: "Use the uploaded images if useful.",
+			context: {
+				userTimezone: "Asia/Singapore",
+				localNowWithWeekday: "2026-04-09 10:00:00 (Thursday, GMT+8)",
+			},
+			attachments: [
+				{
+					originalName: "lab-a.png",
+					mimeType: "image/png",
+					presignedUrl: "https://storage.test/lab-a.png",
+					appUrl: "https://api.test/files/tasks/task-1/lab-a.png",
+				},
+				{
+					originalName: "lab-b.png",
+					mimeType: "image/png",
+					presignedUrl: "https://storage.test/lab-b.png",
+					appUrl: "https://api.test/files/tasks/task-1/lab-b.png",
+				},
+			],
+		});
+
+		expect(getLastUserText()).not.toContain(
+			"The user-provided image material is available at",
+		);
+	});
+
 	it("injects class context for task revision", async () => {
 		mockLlmText("# Revised lab report");
 
