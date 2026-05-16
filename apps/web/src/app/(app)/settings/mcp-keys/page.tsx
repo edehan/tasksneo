@@ -88,6 +88,24 @@ function getOpenClawCommand(key: string): string {
   return `openclaw mcp set taskflow '${JSON.stringify(config)}'`;
 }
 
+function getMcpJsonConfig(key: string): string {
+  const apiUrl = getApiUrl();
+  const mcpPkgUrl = `${apiUrl}/mcp/taskflow-mcp-latest.tgz`;
+  const config = {
+    mcpServers: {
+      taskflow: {
+        command: "npx",
+        args: ["-y", mcpPkgUrl],
+        env: {
+          TASKFLOW_API_URL: apiUrl,
+          TASKFLOW_MCP_KEY: key,
+        },
+      },
+    },
+  };
+  return JSON.stringify(config);
+}
+
 type InstallMode = "standard" | "simple";
 
 interface GuideCardProps {
@@ -509,7 +527,7 @@ export default function McpKeysPage() {
                   hint={t("simpleInstall.promptHint")}
                   note={t("simpleInstall.note")}
                   prompt={t("simpleInstall.prompt", {
-                    command: getClaudeCodeCommand(createdKey.key),
+                    command: getMcpJsonConfig(createdKey.key),
                   })}
                   copyLabel={t("copy")}
                 />
