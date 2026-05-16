@@ -849,6 +849,17 @@
     "createDescription": "Give your key a name so you can identify it later.",
     "installCommandsHeading": "Install with your new key",
     "installCommandsHint": "Choose one client below and run the command. Your key is already injected.",
+    "installMode": {
+      "standard": "Standard",
+      "simple": "Simple install"
+    },
+    "simpleInstall": {
+      "title": "Install prompt for your AI assistant",
+      "hint": "Copy the prompt below and send it to the AI assistant you use.",
+      "promptHint": "Ask your AI assistant to install it using the recommended method for its platform.",
+      "prompt": "Help me install TaskNeo's MCP tool. The MCP install command is:\n\n{command}\n\nI do not know the correct installation method, so please use the installation approach recommended for your platform to install it for me.",
+      "note": "This installation method may fail depending on the agent's capability. Assistants including OpenClaw, Hermers, Claude Code, Codex, and Kiro can usually install it well."
+    },
     "claudeCode": {
       "name": "Claude Code",
       "tagline": "Anthropic's AI coding assistant in your terminal"

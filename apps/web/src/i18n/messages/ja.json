@@ -849,6 +849,17 @@
     "createDescription": "後で識別できるようにキーに名前を付けてください。",
     "installCommandsHeading": "新しいキーでインストール",
     "installCommandsHint": "以下からクライアントを選んでコマンドを実行してください。キーはコマンド内に自動挿入されています。",
+    "installMode": {
+      "standard": "標準",
+      "simple": "簡単インストール"
+    },
+    "simpleInstall": {
+      "title": "AIアシスタントに送るインストール指示",
+      "hint": "下のプロンプトをコピーして、使用しているAIアシスタントに送信してください。",
+      "promptHint": "AIアシスタントに、そのプラットフォームで推奨される方法でインストールしてもらいます。",
+      "prompt": "TaskNeo の MCP ツールのインストールを手伝ってください。この MCP のインストールコマンドは次のとおりです：\n\n{command}\n\n正しいインストール方法がわからないため、あなたのプラットフォームで推奨される方法を使ってインストールしてください。",
+      "note": "このインストール方法は、エージェント（Agent）の能力によって失敗する場合があります。OpenClaw、Hermers、Claude Code、Codex、Kiro などのアシスタントは通常うまくインストールできます。"
+    },
     "claudeCode": {
       "name": "Claude Code",
       "tagline": "ターミナルで使える Anthropic のAIコーディングアシスタント"

@@ -849,6 +849,17 @@
     "createDescription": "为密钥命名，以便日后识别。",
     "installCommandsHeading": "使用新密钥安装",
     "installCommandsHint": "选择下方任一客户端并执行命令。命令中已自动注入你的密钥。",
+    "installMode": {
+      "standard": "标准",
+      "simple": "简单安装"
+    },
+    "simpleInstall": {
+      "title": "复制给 AI 助手的安装指令",
+      "hint": "复制下方的消息，并发送给你正在使用的 AI 助手。",
+      "promptHint": "让 AI 助手根据它所在平台推荐的方式替你完成安装。",
+      "prompt": "帮助我安装 TaskNeo 的 MCP 工具，这个 MCP 的安装指令为：\n\n{command}\n\n但我不知道正确的安装方法是什么，请使用你的平台所推荐的安装方式帮我安装。",
+      "note": "这种安装方式可能会失败，取决于智能体（Agent）的智能程度。OpenClaw、Hermers、Claude Code、Codex、Kiro 等助手通常可以很好地完成安装。"
+    },
     "claudeCode": {
       "name": "Claude Code",
       "tagline": "Anthropic 的终端 AI 编码助手"
