@@ -441,6 +441,11 @@ describe("TaskFlow API e2e", () => {
 			}),
 		});
 		expect(createClassRes.response.status).toBe(201);
+		expect(
+			(createClassRes.body as { taskAiPrompt: string | null }).taskAiPrompt,
+		).toBe(
+			"Title tasks by deliverable, not course name. Include topic, artifact, or milestone. Max 12 words.",
+		);
 
 		const classId = (createClassRes.body as { id: string }).id;
 		const inviteCode = (createClassRes.body as { inviteCode: string })
@@ -489,6 +494,10 @@ describe("TaskFlow API e2e", () => {
 			headers: authHeader(memberToken),
 		});
 		expect(classDetail.status).toBe(200);
+		expect(
+			((await classDetail.json()) as { taskAiPrompt: string | null })
+				.taskAiPrompt,
+		).toBeNull();
 
 		const classPatch = await requestJson(app, `/classes/${classId}`, {
 			method: "PATCH",
@@ -499,6 +508,38 @@ describe("TaskFlow API e2e", () => {
 		expect((classPatch.body as { schoolId: string | null }).schoolId).toBe(
 			schoolAId,
 		);
+		expect(
+			(classPatch.body as { taskAiPrompt: string | null }).taskAiPrompt,
+		).toBe(
+			"Title tasks by deliverable, not course name. Include topic, artifact, or milestone. Max 12 words.",
+		);
+
+		const promptPatch = await requestJson(app, `/classes/${classId}`, {
+			method: "PATCH",
+			headers: authHeader(ownerToken),
+			body: JSON.stringify({ taskAiPrompt: "Prefer rubric-style titles." }),
+		});
+		expect(promptPatch.response.status).toBe(200);
+		expect(
+			(promptPatch.body as { taskAiPrompt: string | null }).taskAiPrompt,
+		).toBe("Prefer rubric-style titles.");
+
+		const clearPromptPatch = await requestJson(app, `/classes/${classId}`, {
+			method: "PATCH",
+			headers: authHeader(ownerToken),
+			body: JSON.stringify({ taskAiPrompt: "   " }),
+		});
+		expect(clearPromptPatch.response.status).toBe(200);
+		expect(
+			(clearPromptPatch.body as { taskAiPrompt: string | null }).taskAiPrompt,
+		).toBeNull();
+
+		const longPromptPatch = await requestJson(app, `/classes/${classId}`, {
+			method: "PATCH",
+			headers: authHeader(ownerToken),
+			body: JSON.stringify({ taskAiPrompt: "x".repeat(2001) }),
+		});
+		expect(longPromptPatch.response.status).toBe(400);
 
 		const clearClassSchool = await requestJson(app, `/classes/${classId}`, {
 			method: "PATCH",

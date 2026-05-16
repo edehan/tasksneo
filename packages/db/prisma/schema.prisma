@@ -116,6 +116,7 @@ model Class {
   id          String   @id @default(uuid())
   name        String
   description String?
+  taskAiPrompt String?  @default("Title tasks by deliverable, not course name. Include topic, artifact, or milestone. Max 12 words.") @map("task_ai_prompt")
   color       String   @default("#6366f1")
   isPersonal  Boolean  @default(false) @map("is_personal")
   inviteCode  String?  @unique @map("invite_code")

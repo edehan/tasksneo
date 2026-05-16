@@ -481,6 +481,10 @@ components:
         description:
           type: string
           nullable: true
+        taskAiPrompt:
+          type: string
+          nullable: true
+          description: 仅 OWNER 和 ADMIN 可见；为空时不注入班级自定义 AI prompt
         color:
           type: string
           description: Hex 颜色值，如 #6366f1
@@ -516,6 +520,10 @@ components:
         description:
           type: string
           nullable: true
+        taskAiPrompt:
+          type: string
+          nullable: true
+          description: 班级任务 AI prompt；空字符串保存为 null
         color:
           type: string
           default: "#6366f1"

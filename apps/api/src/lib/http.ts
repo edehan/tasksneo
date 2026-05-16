@@ -46,6 +46,7 @@ interface ClassSummarySource {
 	id: string;
 	name: string;
 	description: string | null;
+	taskAiPrompt: string | null;
 	color: string;
 	isPersonal: boolean;
 	ownerId: string;
@@ -65,6 +66,8 @@ export function toClassSummary(
 		id: classInfo.id,
 		name: classInfo.name,
 		description: classInfo.description,
+		taskAiPrompt:
+			myRole === "OWNER" || myRole === "ADMIN" ? classInfo.taskAiPrompt : null,
 		color: classInfo.color,
 		isPersonal: classInfo.isPersonal,
 		ownerId: classInfo.ownerId,

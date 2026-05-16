@@ -82,27 +82,35 @@ export function TimezonePrompt() {
 
   return (
     <div className="border-b border-border bg-card px-4 py-3">
-      <div className="mx-auto flex max-w-3xl items-center gap-3">
-        <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
-        <p className="flex-1 text-sm text-foreground">
-          {t("accountTimezonePrefix")}{" "}
-          <span className="font-medium">{user.timezone}</span>
-          {t("accountTimePrefix")}{" "}
-          <span className="font-medium">{accountTime}</span>
-          {t("browserTimezonePrefix")}{" "}
-          <span className="font-medium">{browserTz}</span>
-          {t("updateQuestion")}
-        </p>
-        <div className="flex shrink-0 items-center gap-2">
+      <div className="mx-auto flex max-w-3xl flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex min-w-0 flex-1 items-start gap-3 sm:items-center">
+          <Globe className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground sm:mt-0" />
+          <p className="min-w-0 flex-1 text-sm text-foreground">
+            {t("accountTimezonePrefix")}{" "}
+            <span className="font-medium">{user.timezone}</span>
+            {t("accountTimePrefix")}{" "}
+            <span className="font-medium">{accountTime}</span>
+            {t("browserTimezonePrefix")}{" "}
+            <span className="font-medium">{browserTz}</span>
+            {t("updateQuestion")}
+          </p>
+        </div>
+        <div className="flex w-full min-w-0 flex-col gap-2 pl-7 min-[420px]:flex-row sm:w-auto sm:shrink-0 sm:pl-0">
           <Button
             variant="ghost"
             size="sm"
             onClick={handleDismiss}
             disabled={updating}
+            className="w-full min-w-0 whitespace-normal sm:w-auto sm:whitespace-nowrap"
           >
             {t("continueUsing", { timezone: user.timezone })}
           </Button>
-          <Button size="sm" onClick={handleUpdate} disabled={updating}>
+          <Button
+            size="sm"
+            onClick={handleUpdate}
+            disabled={updating}
+            className="w-full min-w-0 whitespace-normal sm:w-auto sm:whitespace-nowrap"
+          >
             {updating ? t("updating") : t("updateTo", { timezone: browserTz })}
           </Button>
         </div>

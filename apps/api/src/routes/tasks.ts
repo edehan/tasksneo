@@ -244,6 +244,13 @@ tasksRouter.post("/:taskId/parse", async (c) => {
 				id: true,
 				classId: true,
 				sourceText: true,
+				class: {
+					select: {
+						name: true,
+						description: true,
+						taskAiPrompt: true,
+					},
+				},
 			},
 		}),
 	]);
@@ -301,6 +308,13 @@ tasksRouter.post("/:taskId/parse", async (c) => {
 		text,
 		context: buildParseTaskContext(user?.timezone),
 		attachments: attachmentPayload,
+		classContext: task.class
+			? {
+					name: task.class.name,
+					description: task.class.description,
+					taskAiPrompt: task.class.taskAiPrompt,
+				}
+			: undefined,
 	});
 
 	// Update task with first time option as default
@@ -345,7 +359,17 @@ tasksRouter.post("/:taskId/revise", async (c) => {
 		}),
 		prisma.task.findUnique({
 			where: { id: params.taskId },
-			select: { id: true, classId: true },
+			select: {
+				id: true,
+				classId: true,
+				class: {
+					select: {
+						name: true,
+						description: true,
+						taskAiPrompt: true,
+					},
+				},
+			},
 		}),
 	]);
 
@@ -377,6 +401,13 @@ tasksRouter.post("/:taskId/revise", async (c) => {
 		currentContent: body.currentContent,
 		instruction: body.instruction,
 		context: buildParseTaskContext(user?.timezone),
+		classContext: task.class
+			? {
+					name: task.class.name,
+					description: task.class.description,
+					taskAiPrompt: task.class.taskAiPrompt,
+				}
+			: undefined,
 	});
 
 	return c.json(result, 200);

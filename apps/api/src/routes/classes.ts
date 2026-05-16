@@ -48,6 +48,7 @@ const createClassBodySchema = z.object({
 const updateClassBodySchema = z.object({
 	name: z.string().trim().min(1).optional(),
 	description: z.string().optional().nullable(),
+	taskAiPrompt: z.string().optional().nullable(),
 	color: z
 		.string()
 		.regex(/^#[0-9a-fA-F]{6}$/)
