@@ -14,7 +14,7 @@ import {
   Upload,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
@@ -65,6 +65,7 @@ import {
   upsertMySubmission,
 } from "@/lib/api";
 import { getClipboardImageFiles, isImageFile } from "@/lib/clipboard-images";
+import { formatDateInTimeZone } from "@/lib/timezone";
 import { webDataKeys } from "@/lib/web-data-keys";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -112,7 +113,9 @@ export function EditorPage({
   lockedReason,
 }: EditorPageProps) {
   const t = useTranslations("editorPage");
+  const locale = useLocale();
   const { user } = useAuth();
+  const timeZone = user?.timezone ?? "UTC";
   const router = useRouter();
   const { mutate } = useSWRConfig();
 
@@ -475,6 +478,18 @@ export function EditorPage({
 
     result.setTime(result.getTime() + hours * 60 * 60 * 1000);
     return result;
+  }
+
+  function formatDeadline(date: Date | null | undefined): string {
+    if (!date) return "—";
+    return formatDateInTimeZone(date, locale, timeZone, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
   }
 
   async function handleExtendDeadline() {
@@ -1105,8 +1120,7 @@ export function EditorPage({
               {t("extendDialog.title")}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {t("extendDialog.currentDeadline")}:{" "}
-              {dueAt?.toLocaleString() ?? "—"}
+              {t("extendDialog.currentDeadline")}: {formatDeadline(dueAt)}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -1190,9 +1204,7 @@ export function EditorPage({
               return (
                 <p className="text-sm text-foreground">
                   {t("extendDialog.newDeadline")}:{" "}
-                  <span className="font-medium">
-                    {newDate.toLocaleString()}
-                  </span>
+                  <span className="font-medium">{formatDeadline(newDate)}</span>
                 </p>
               );
             })()}

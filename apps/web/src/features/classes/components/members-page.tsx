@@ -62,6 +62,7 @@ import {
   transferOwnership,
   updateMemberRole,
 } from "@/lib/api";
+import { formatDateInTimeZone } from "@/lib/timezone";
 
 function getRoleBadge(
   role: ClassMember["role"],
@@ -92,12 +93,12 @@ function getRoleBadge(
   }
 }
 
-function formatDate(dateStr: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
+function formatDate(dateStr: string, locale: string, timeZone: string): string {
+  return formatDateInTimeZone(new Date(dateStr), locale, timeZone, {
     year: "numeric",
     month: "short",
     day: "numeric",
-  }).format(new Date(dateStr));
+  });
 }
 
 export function MembersPage() {
@@ -308,7 +309,11 @@ export function MembersPage() {
                   </TableCell>
                   <TableCell>{getRoleBadge(member.role, t)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {formatDate(member.joinedAt, locale)}
+                    {formatDate(
+                      member.joinedAt,
+                      locale,
+                      user?.timezone ?? "UTC",
+                    )}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">

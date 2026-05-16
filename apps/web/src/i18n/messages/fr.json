@@ -305,7 +305,7 @@
     "studentIdDigitsOnly": "L'identifiant etudiant doit etre un entier",
     "timezone": "Fuseau horaire",
     "detected": "Detecte",
-    "timezoneHint": "Utilise pour afficher les dates et echeances a l'heure locale.",
+    "timezoneHint": "Utilise pour l'affichage des dates, les echeances, l'analyse IA et les notifications.",
     "saveChanges": "Enregistrer les modifications",
     "changeEmail": {
       "failedSendVerification": "Echec de l'envoi de verification",
@@ -348,12 +348,13 @@
   "timezonePrompt": {
     "updatedTo": "Fuseau horaire mis a jour vers {timezone}",
     "failedUpdate": "Echec de la mise a jour du fuseau horaire",
-    "browserTimezonePrefix": "Le fuseau horaire du navigateur est",
-    "accountTimezonePrefix": ", mais votre compte est regle sur",
-    "updateQuestion": ". Mettre a jour pour correspondre a votre emplacement actuel ?",
-    "dismiss": "Ignorer",
+    "accountTimezonePrefix": "L'interface utilise le fuseau horaire du compte",
+    "accountTimePrefix": ". Il est actuellement",
+    "browserTimezonePrefix": ". Le fuseau horaire de l'appareil est",
+    "updateQuestion": ". Mettre a jour ?",
+    "continueUsing": "Garder {timezone}",
     "updating": "Mise a jour...",
-    "update": "Mettre a jour"
+    "updateTo": "Mettre a jour vers {timezone}"
   },
   "taskEditorPage": {
     "failedLoadTask": "Impossible de charger la tache",

@@ -305,7 +305,7 @@
     "studentIdDigitsOnly": "Student ID must be an integer",
     "timezone": "Timezone",
     "detected": "Detected",
-    "timezoneHint": "Used for displaying dates and deadlines in your local time.",
+    "timezoneHint": "Used for date display, deadline editing, AI parsing, and notifications.",
     "saveChanges": "Save Changes",
     "changeEmail": {
       "failedSendVerification": "Failed to send verification",
@@ -348,12 +348,13 @@
   "timezonePrompt": {
     "updatedTo": "Timezone updated to {timezone}",
     "failedUpdate": "Failed to update timezone",
-    "browserTimezonePrefix": "Your browser timezone is",
-    "accountTimezonePrefix": ", but your account is set to",
-    "updateQuestion": ". Update to match your current location?",
-    "dismiss": "Dismiss",
+    "accountTimezonePrefix": "The interface is using account timezone",
+    "accountTimePrefix": ". Current time is",
+    "browserTimezonePrefix": ". Detected device timezone",
+    "updateQuestion": ". Update?",
+    "continueUsing": "Keep {timezone}",
     "updating": "Updating...",
-    "update": "Update"
+    "updateTo": "Update to {timezone}"
   },
   "taskEditorPage": {
     "failedLoadTask": "Failed to load task",

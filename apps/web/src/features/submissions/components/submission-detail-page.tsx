@@ -15,6 +15,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { useAuth } from "@/components/auth-provider";
 import { MarkdownPreview } from "@/features/editor/components/markdown-preview";
 import type {
   ClassSummary,
@@ -60,6 +61,7 @@ export function SubmissionDetailPage({
 }: SubmissionDetailPageProps) {
   const t = useTranslations("submissionDetailPage");
   const locale = useLocale();
+  const { user } = useAuth();
   const params = useParams();
   const router = useRouter();
 
@@ -76,6 +78,7 @@ export function SubmissionDetailPage({
   const [togglingExemplary, setTogglingExemplary] = useState(false);
 
   const dateFormatter = new Intl.DateTimeFormat(locale, {
+    timeZone: user?.timezone ?? "UTC",
     month: "short",
     day: "numeric",
     year: "numeric",

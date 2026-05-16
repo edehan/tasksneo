@@ -305,7 +305,7 @@
     "studentIdDigitsOnly": "学号只能填写整数",
     "timezone": "时区",
     "detected": "检测到",
-    "timezoneHint": "用于以你的本地时间显示日期和截止时间。",
+    "timezoneHint": "用于显示日期、编辑截止时间、AI 解析和通知。",
     "saveChanges": "保存更改",
     "changeEmail": {
       "failedSendVerification": "发送验证失败",
@@ -348,12 +348,13 @@
   "timezonePrompt": {
     "updatedTo": "时区已更新为 {timezone}",
     "failedUpdate": "更新时区失败",
-    "browserTimezonePrefix": "你的浏览器时区是",
-    "accountTimezonePrefix": "，但你的账号设置为",
-    "updateQuestion": "。是否更新为当前位置时区？",
-    "dismiss": "忽略",
+    "accountTimezonePrefix": "当前界面按账号时区",
+    "accountTimePrefix": "显示时间，现在是",
+    "browserTimezonePrefix": "。检测到设备时区为",
+    "updateQuestion": "，是否更新？",
+    "continueUsing": "继续使用 {timezone}",
     "updating": "更新中...",
-    "update": "更新"
+    "updateTo": "更新为 {timezone}"
   },
   "taskEditorPage": {
     "failedLoadTask": "加载作业失败",

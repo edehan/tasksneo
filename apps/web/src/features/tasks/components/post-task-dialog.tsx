@@ -53,6 +53,7 @@ import {
   uploadTaskAttachment,
 } from "@/lib/api";
 import { getClipboardImageFiles } from "@/lib/clipboard-images";
+import { formatDateInTimeZone } from "@/lib/timezone";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -75,10 +76,14 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function formatOptionDate(iso: string | null, locale: string): string {
+function formatOptionDate(
+  iso: string | null,
+  locale: string,
+  timeZone: string,
+): string {
   if (!iso) return "—";
   try {
-    return new Date(iso).toLocaleString(locale, {
+    return formatDateInTimeZone(new Date(iso), locale, timeZone, {
       month: "short",
       day: "numeric",
       hour: "numeric",
@@ -157,6 +162,7 @@ export function PostTaskDialog({
   const t = useTranslations("postTaskDialog");
   const locale = useLocale();
   const { user } = useAuth();
+  const timeZone = user?.timezone ?? "UTC";
 
   // Form state
   const [rawText, setRawText] = useState("");
@@ -797,8 +803,8 @@ export function PostTaskDialog({
                       style={{ backgroundColor: themeColor }}
                     />
                     <span className="text-foreground">
-                      {formatOptionDate(opt.startAt, locale)} →{" "}
-                      {formatOptionDate(opt.dueAt, locale)}
+                      {formatOptionDate(opt.startAt, locale, timeZone)} →{" "}
+                      {formatOptionDate(opt.dueAt, locale, timeZone)}
                     </span>
                   </button>
                 ))}
@@ -861,6 +867,7 @@ export function PostTaskDialog({
                         onChange={setStartAt}
                         placeholder={t("optional")}
                         disabled={submitting}
+                        timeZone={timeZone}
                       />
                     </div>
                     <button
@@ -888,6 +895,7 @@ export function PostTaskDialog({
                     }}
                     placeholder={t("selectDueDate")}
                     disabled={submitting}
+                    timeZone={timeZone}
                     className={
                       attempted && !dueAtValid
                         ? "border-destructive focus-visible:ring-destructive"

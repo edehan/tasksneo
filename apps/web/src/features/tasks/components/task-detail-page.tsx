@@ -65,6 +65,7 @@ export function TaskDetailPage({
   const [archiveOverride, setArchiveOverride] = useState<boolean | null>(null);
 
   const dateFormatter = new Intl.DateTimeFormat(locale, {
+    timeZone: user?.timezone ?? "UTC",
     month: "short",
     day: "numeric",
     hour: "numeric",

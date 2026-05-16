@@ -305,7 +305,7 @@
     "studentIdDigitsOnly": "学籍番号は整数のみ入力できます",
     "timezone": "タイムゾーン",
     "detected": "検出",
-    "timezoneHint": "日時と締切をローカル時刻で表示するために使います。",
+    "timezoneHint": "日付表示、締切編集、AI解析、通知に使用します。",
     "saveChanges": "変更を保存",
     "changeEmail": {
       "failedSendVerification": "確認メール送信に失敗しました",
@@ -348,12 +348,13 @@
   "timezonePrompt": {
     "updatedTo": "タイムゾーンを {timezone} に更新しました",
     "failedUpdate": "タイムゾーン更新に失敗しました",
-    "browserTimezonePrefix": "ブラウザのタイムゾーンは",
-    "accountTimezonePrefix": "、アカウント設定は",
-    "updateQuestion": "です。現在地に合わせて更新しますか？",
-    "dismiss": "閉じる",
+    "accountTimezonePrefix": "現在の画面はアカウントのタイムゾーン",
+    "accountTimePrefix": "で時刻を表示しています。現在時刻は",
+    "browserTimezonePrefix": "です。デバイスのタイムゾーンは",
+    "updateQuestion": "です。更新しますか？",
+    "continueUsing": "{timezone} を使い続ける",
     "updating": "更新中...",
-    "update": "更新"
+    "updateTo": "{timezone} に更新"
   },
   "taskEditorPage": {
     "failedLoadTask": "課題の読み込みに失敗しました",
