@@ -850,7 +850,7 @@
     "installCommandsHeading": "使用新密钥安装",
     "installCommandsHint": "选择下方任一客户端并执行命令。命令中已自动注入你的密钥。",
     "installMode": {
-      "standard": "标准",
+      "standard": "标准安装",
       "simple": "简单安装"
     },
     "simpleInstall": {
