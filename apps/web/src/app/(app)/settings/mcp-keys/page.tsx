@@ -103,7 +103,7 @@ function getMcpJsonConfig(key: string): string {
       },
     },
   };
-  return JSON.stringify(config, null, 2);
+  return JSON.stringify(config);
 }
 
 type InstallMode = "standard" | "simple";
@@ -209,7 +209,7 @@ function SimpleInstallCard({
             <span className="ml-1.5 text-xs">{copyLabel}</span>
           </Button>
         </div>
-        <pre className="max-w-full overflow-hidden rounded-lg border border-border bg-surface-subtle/60 p-3 text-xs font-mono whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-foreground leading-relaxed">
+        <pre className="max-w-full overflow-x-auto rounded-lg border border-border bg-surface-subtle/60 p-3 text-xs font-mono whitespace-pre text-foreground leading-relaxed">
           {prompt}
         </pre>
       </div>
