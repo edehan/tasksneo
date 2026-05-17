@@ -858,7 +858,8 @@
       "hint": "复制下方的消息，并发送给你正在使用的 AI 助手。",
       "promptHint": "让 AI 助手根据它所在平台推荐的方式替你完成安装。",
       "prompt": "帮我安装 TaskNeo 的 MCP 工具，这是标准 MCP 配置：\n\n{command}\n\n请用你平台推荐的方式安装。装完后手动调用一次测试连接。如果每次加载超过 2 秒，建议缓存到本地并改配置路径。",
-      "note": "此方式依赖 AI 助手能力。OpenClaw、Hermers、Claude Code、Codex、Kiro 等通常能很好完成。"
+      "note": "此方式依赖 AI 助手能力。OpenClaw、Hermers、Claude Code、Codex、Kiro 等通常能很好完成。",
+      "trustNote": "腾讯 WorkBuddy 用户安装 MCP 后，需要在其侧边栏「连接器」->「管理连接器」进行信任授权后使用。"
     },
     "claudeCode": {
       "name": "Claude Code",

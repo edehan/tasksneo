@@ -9,7 +9,7 @@ import {
 	revokeMcpSessionsByKeyId,
 } from "./session.service.js";
 
-const MAX_KEYS_PER_USER = 10;
+const MAX_KEYS_PER_USER = 20;
 const KEY_PREFIX = "tfmcp_";
 
 function generateKey(): { raw: string; hash: string; prefix: string } {
