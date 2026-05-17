@@ -116,6 +116,10 @@ function adminActor() {
 	return { type: AuditActorType.ADMIN };
 }
 
+function compareStringsAlphabetically(a: string, b: string): number {
+	return a.localeCompare(b, "en", { sensitivity: "variant" });
+}
+
 adminRouter.get("/config", async (c) => {
 	const config = await getAdminConfig();
 	return c.json(config, 200);
@@ -128,7 +132,7 @@ adminRouter.patch("/config", async (c) => {
 		action: "ADMIN_CONFIG_UPDATED",
 		actor: adminActor(),
 		targetType: "SYSTEM_CONFIG",
-		metadata: { keys: Object.keys(body).sort() },
+		metadata: { keys: Object.keys(body).sort(compareStringsAlphabetically) },
 		...auditRequestMeta(c),
 	});
 	return c.json(config, 200);

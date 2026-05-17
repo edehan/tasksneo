@@ -8,6 +8,7 @@ const HASH_ALGORITHM = "HMAC-SHA256";
 const HMAC_DIGEST = "sha256";
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
+const MAX_METADATA_CANONICAL_BYTES = 8 * 1024;
 
 type AuditMetadata = Prisma.InputJsonValue;
 
@@ -95,6 +96,10 @@ function getAuditHashKeyId(): string {
 	return process.env.AUDIT_LOG_HMAC_KEY_ID ?? "default:v1";
 }
 
+function compareStringsAlphabetically(a: string, b: string): number {
+	return a.localeCompare(b, "en", { sensitivity: "variant" });
+}
+
 function normalizeJson(value: Prisma.JsonValue | AuditMetadata | undefined) {
 	if (value === undefined) return null;
 	return value;
@@ -113,12 +118,35 @@ function stableStringify(value: unknown): string {
 	}
 	if (typeof value === "object") {
 		const record = value as Record<string, unknown>;
-		const keys = Object.keys(record).sort();
+		const keys = Object.keys(record).sort(compareStringsAlphabetically);
 		return `{${keys
 			.map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
 			.join(",")}}`;
 	}
 	return JSON.stringify(null);
+}
+
+function canonicalByteLength(value: unknown): number {
+	return Buffer.byteLength(stableStringify(value), "utf8");
+}
+
+function normalizeAuditMetadata(
+	value: Prisma.JsonValue | AuditMetadata | undefined,
+): AuditMetadata | null {
+	const metadata = normalizeJson(value);
+	if (metadata === null) return null;
+
+	const bytes = canonicalByteLength(metadata);
+	if (bytes <= MAX_METADATA_CANONICAL_BYTES) {
+		return metadata as AuditMetadata;
+	}
+
+	return {
+		truncated: true,
+		reason: "AUDIT_METADATA_TOO_LARGE",
+		originalCanonicalBytes: bytes,
+		maxCanonicalBytes: MAX_METADATA_CANONICAL_BYTES,
+	};
 }
 
 function canonicalAuditPayload(input: {
@@ -243,7 +271,7 @@ export async function writeAuditLog(input: RecordAuditLogInput) {
 			targetType: input.targetType ?? null,
 			targetId: input.targetId ?? null,
 			classId: input.classId ?? null,
-			metadata: normalizeJson(input.metadata),
+			metadata: normalizeAuditMetadata(input.metadata),
 			ipAddress: input.ipAddress?.slice(0, 45) ?? null,
 			userAgent: input.userAgent?.slice(0, 512) ?? null,
 			requestId: input.requestId?.slice(0, 128) ?? null,

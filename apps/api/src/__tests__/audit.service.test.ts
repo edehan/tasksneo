@@ -51,6 +51,33 @@ describe("audit service", () => {
 		expect(changed).not.toBe(first);
 	});
 
+	it("truncates oversized metadata before hashing and storage", async () => {
+		await writeAuditLog({
+			action: "ADMIN_CONFIG_UPDATED",
+			actor: { type: AuditActorType.ADMIN },
+			targetType: "SYSTEM_CONFIG",
+			metadata: { payload: "x".repeat(20_000) },
+		});
+
+		const row = await prisma.auditLog.findFirstOrThrow({
+			orderBy: { sequence: "asc" },
+		});
+		const metadata = row.metadata as Record<string, unknown>;
+
+		expect(metadata).toMatchObject({
+			truncated: true,
+			reason: "AUDIT_METADATA_TOO_LARGE",
+			maxCanonicalBytes: 8192,
+		});
+		expect(metadata.originalCanonicalBytes).toBeGreaterThan(8192);
+
+		await expect(verifyAuditLogs()).resolves.toMatchObject({
+			valid: true,
+			checkedCount: 1,
+			failure: null,
+		});
+	});
+
 	it("serializes concurrent writes into a valid global hash chain", async () => {
 		await Promise.all(
 			Array.from({ length: 10 }, (_, index) =>
