@@ -20,10 +20,11 @@
 
 ### Runtime Secrets
 
-The backend currently relies on two runtime secrets with different responsibilities:
+The backend currently relies on runtime secrets with different responsibilities:
 
 - `ADMIN_TOKEN`: authenticates `/admin` requests only.
 - `SYSTEM_CONFIG_SECRET`: encrypts and decrypts sensitive `system_config` entries such as SMTP and LLM credentials.
+- `AUDIT_LOG_HMAC_SECRET`: signs the append-only `audit_logs` hash chain. If unset, the API falls back to `SYSTEM_CONFIG_SECRET` for compatibility, but production deployments should keep it separate.
 
 These secrets should not be reused for each other. In particular, rotating `ADMIN_TOKEN` must not invalidate encrypted config rows.
 Rotating `SYSTEM_CONFIG_SECRET` does invalidate previously encrypted `system_config` secrets until those values are re-entered and saved again.
@@ -31,6 +32,34 @@ Rotating `SYSTEM_CONFIG_SECRET` does invalidate previously encrypted `system_con
 ---
 
 ## Tables
+
+### audit_logs
+
+Append-only audit trail for successful security-sensitive, admin, and class-governance actions.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | UUID PK | |
+| sequence | BigInt UNIQUE | monotonic chain order |
+| action | String | e.g. `AUTH_LOGIN`, `ADMIN_CONFIG_UPDATED`, `CLASS_MEMBER_JOINED` |
+| actorType | Enum | `USER` \| `ADMIN` \| `SYSTEM` |
+| actorUserId | UUID? | user actor when available; no FK so deleted-user IDs remain visible |
+| targetType | String? | resource category |
+| targetId | String? | resource ID |
+| classId | UUID? | class-scoped filter when relevant |
+| metadata | Json? | non-secret context only |
+| ipAddress | String? | max 45 chars |
+| userAgent | String? | max 512 chars |
+| requestId | String? | request correlation ID |
+| prevHash | String? | previous row `entryHash` |
+| entryHash | String | HMAC-SHA256 over canonical row payload |
+| hashAlgorithm | String | default `HMAC-SHA256` |
+| hashKeyId | String | identifies the signing key version |
+| createdAt | DateTime | timestamptz |
+
+The database migration installs triggers that reject `UPDATE` and `DELETE` on this table. Integrity verification is exposed through `/admin/audit-logs/verify`.
+
+---
 
 ### schools
 

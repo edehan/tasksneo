@@ -1253,6 +1253,87 @@ export async function getAdminQueueStats(): Promise<AdminQueueStats> {
   return apiRequest<AdminQueueStats>("/admin/queue", {});
 }
 
+export type AuditActorType = "USER" | "ADMIN" | "SYSTEM";
+
+export interface AdminAuditLog {
+  id: string;
+  sequence: string;
+  action: string;
+  actorType: AuditActorType;
+  actorUserId: string | null;
+  targetType: string | null;
+  targetId: string | null;
+  classId: string | null;
+  metadata: unknown;
+  ipAddress: string | null;
+  userAgent: string | null;
+  requestId: string | null;
+  prevHash: string | null;
+  entryHash: string;
+  hashAlgorithm: string;
+  hashKeyId: string;
+  createdAt: string;
+}
+
+export interface AdminAuditLogList {
+  items: AdminAuditLog[];
+  nextCursor: string | null;
+}
+
+export interface AdminAuditLogQuery {
+  limit?: number;
+  cursor?: string;
+  action?: string;
+  actorUserId?: string;
+  targetType?: string;
+  targetId?: string;
+  classId?: string;
+  from?: string;
+  to?: string;
+}
+
+export interface AdminAuditVerifyResult {
+  valid: boolean;
+  checkedCount: number;
+  lastSequence: string | null;
+  lastHash: string | null;
+  failure: {
+    sequence: string;
+    reason: string;
+    expectedHash?: string;
+    actualHash?: string;
+  } | null;
+}
+
+function adminAuditQueryString(query: AdminAuditLogQuery): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined && value !== "") {
+      params.set(key, String(value));
+    }
+  }
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
+}
+
+export async function listAdminAuditLogs(
+  query: AdminAuditLogQuery = {},
+): Promise<AdminAuditLogList> {
+  return apiRequest<AdminAuditLogList>(
+    `/admin/audit-logs${adminAuditQueryString(query)}`,
+    {},
+  );
+}
+
+export async function verifyAdminAuditLogs(
+  input: { from?: string; to?: string } = {},
+): Promise<AdminAuditVerifyResult> {
+  return apiRequest<AdminAuditVerifyResult>("/admin/audit-logs/verify", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
 export async function getAdminConfig(): Promise<Record<string, string>> {
   return apiRequest<Record<string, string>>("/admin/config", {});
 }

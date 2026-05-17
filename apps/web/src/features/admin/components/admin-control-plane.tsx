@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Send,
   Settings,
+  ShieldCheck,
   Sun,
   Users,
   X,
@@ -62,6 +63,8 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   ADMIN_TOKEN_STORAGE_KEY,
   type AdminAnnouncement,
+  type AdminAuditLog,
+  type AdminAuditVerifyResult,
   type AdminMetrics,
   type AdminQueueStats,
   type AdminSchool,
@@ -75,6 +78,7 @@ import {
   getAdminQueueStats,
   getAdminStorageStatus,
   listAdminAnnouncements,
+  listAdminAuditLogs,
   listAdminSchools,
   listAdminUsers,
   patchAdminConfig,
@@ -82,6 +86,7 @@ import {
   type StorageStatus,
   sendAdminTestEmail,
   type UserProfile,
+  verifyAdminAuditLogs,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -224,6 +229,7 @@ const ADMIN_TABS = [
   { value: "announcements", label: "Announcements", icon: Megaphone },
   { value: "metrics", label: "Metrics", icon: Activity },
   { value: "queue", label: "Queue", icon: ListChecks },
+  { value: "audit", label: "Audit", icon: ShieldCheck },
 ] as const;
 
 type AdminTab = (typeof ADMIN_TABS)[number]["value"];
@@ -257,6 +263,16 @@ function formatDateTime(value: string): string {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date);
+}
+
+function shortId(value: string | null | undefined): string {
+  if (!value) return "—";
+  return value.length <= 12 ? value : `${value.slice(0, 8)}…`;
+}
+
+function shortHash(value: string | null | undefined): string {
+  if (!value) return "—";
+  return value.length <= 16 ? value : `${value.slice(0, 12)}…`;
 }
 
 function isSecretDisplayValue(key: ConfigKey, value: string): boolean {
@@ -311,6 +327,22 @@ export function AdminControlPlane() {
   const [queueStats, setQueueStats] = useState<AdminQueueStats | null>(null);
   const [queueLoading, setQueueLoading] = useState(false);
 
+  const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>([]);
+  const [auditNextCursor, setAuditNextCursor] = useState<string | null>(null);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditVerifying, setAuditVerifying] = useState(false);
+  const [auditVerifyResult, setAuditVerifyResult] =
+    useState<AdminAuditVerifyResult | null>(null);
+  const [auditFilters, setAuditFilters] = useState({
+    action: "",
+    actorUserId: "",
+    targetType: "",
+    targetId: "",
+    classId: "",
+    from: "",
+    to: "",
+  });
+
   const [activeTab, setActiveTab] = useState<AdminTab>("config");
 
   const { resolvedTheme, setTheme } = useTheme();
@@ -343,6 +375,7 @@ export function AdminControlPlane() {
         storage,
         adminAnnouncements,
         initialMetrics,
+        initialAudit,
       ] = await Promise.all([
         getAdminConfig(),
         listAdminUsers(),
@@ -350,6 +383,7 @@ export function AdminControlPlane() {
         getAdminStorageStatus().catch(() => null),
         listAdminAnnouncements().catch(() => [] as AdminAnnouncement[]),
         getAdminMetrics().catch(() => null),
+        listAdminAuditLogs({ limit: 50 }).catch(() => null),
       ]);
 
       const normalized = normalizeConfig(config);
@@ -360,6 +394,10 @@ export function AdminControlPlane() {
       if (storage) setStorageStatus(storage);
       setAnnouncements(adminAnnouncements);
       setMetrics(initialMetrics);
+      if (initialAudit) {
+        setAuditLogs(initialAudit.items);
+        setAuditNextCursor(initialAudit.nextCursor);
+      }
     } finally {
       setDataLoading(false);
     }
@@ -390,6 +428,64 @@ export function AdminControlPlane() {
       setQueueLoading(false);
     }
   }, [token]);
+
+  const loadAuditLogs = useCallback(
+    async (cursor?: string | null) => {
+      if (!token) return;
+      setAuditLoading(true);
+      try {
+        const snapshot = await listAdminAuditLogs({
+          limit: 50,
+          cursor: cursor ?? undefined,
+          action: auditFilters.action.trim() || undefined,
+          actorUserId: auditFilters.actorUserId.trim() || undefined,
+          targetType: auditFilters.targetType.trim() || undefined,
+          targetId: auditFilters.targetId.trim() || undefined,
+          classId: auditFilters.classId.trim() || undefined,
+          from: auditFilters.from
+            ? new Date(auditFilters.from).toISOString()
+            : undefined,
+          to: auditFilters.to
+            ? new Date(auditFilters.to).toISOString()
+            : undefined,
+        });
+        setAuditLogs((current) =>
+          cursor ? [...current, ...snapshot.items] : snapshot.items,
+        );
+        setAuditNextCursor(snapshot.nextCursor);
+      } catch (error) {
+        toast.error(`Failed to load audit logs: ${getErrorMessage(error)}`);
+      } finally {
+        setAuditLoading(false);
+      }
+    },
+    [auditFilters, token],
+  );
+
+  const verifyAuditChain = useCallback(async () => {
+    if (!token) return;
+    setAuditVerifying(true);
+    try {
+      const result = await verifyAdminAuditLogs({
+        from: auditFilters.from
+          ? new Date(auditFilters.from).toISOString()
+          : undefined,
+        to: auditFilters.to
+          ? new Date(auditFilters.to).toISOString()
+          : undefined,
+      });
+      setAuditVerifyResult(result);
+      if (result.valid) {
+        toast.success(`Audit chain verified (${result.checkedCount} entries).`);
+      } else {
+        toast.error(`Audit chain failed at #${result.failure?.sequence}.`);
+      }
+    } catch (error) {
+      toast.error(`Failed to verify audit chain: ${getErrorMessage(error)}`);
+    } finally {
+      setAuditVerifying(false);
+    }
+  }, [auditFilters.from, auditFilters.to, token]);
 
   const authenticate = useCallback(
     async (nextToken: string) => {
@@ -1619,6 +1715,196 @@ export function AdminControlPlane() {
                         )}
                       </div>
                     </>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="audit" className="mt-0">
+              <Card>
+                <CardHeader className="flex flex-row items-start justify-between gap-4">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <ShieldCheck className="h-4 w-4" />
+                      Audit Log
+                    </CardTitle>
+                    <CardDescription>
+                      Append-only security, admin, and class governance events
+                      with HMAC chain verification.
+                    </CardDescription>
+                  </div>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void verifyAuditChain()}
+                      disabled={auditVerifying || !token}
+                    >
+                      {auditVerifying ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <ShieldCheck className="h-4 w-4" />
+                      )}
+                      Verify
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void loadAuditLogs(null)}
+                      disabled={auditLoading || !token}
+                    >
+                      {auditLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                      Refresh
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  <div className="grid gap-3 md:grid-cols-4 xl:grid-cols-7">
+                    {(
+                      [
+                        ["action", "Action"],
+                        ["actorUserId", "Actor User ID"],
+                        ["targetType", "Target Type"],
+                        ["targetId", "Target ID"],
+                        ["classId", "Class ID"],
+                      ] as const
+                    ).map(([key, label]) => (
+                      <div key={key} className="space-y-1.5">
+                        <Label className="text-xs">{label}</Label>
+                        <Input
+                          value={auditFilters[key]}
+                          onChange={(event) =>
+                            setAuditFilters((current) => ({
+                              ...current,
+                              [key]: event.target.value,
+                            }))
+                          }
+                          className="h-9 font-mono text-xs"
+                        />
+                      </div>
+                    ))}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">From</Label>
+                      <Input
+                        type="datetime-local"
+                        value={auditFilters.from}
+                        onChange={(event) =>
+                          setAuditFilters((current) => ({
+                            ...current,
+                            from: event.target.value,
+                          }))
+                        }
+                        className="h-9 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">To</Label>
+                      <Input
+                        type="datetime-local"
+                        value={auditFilters.to}
+                        onChange={(event) =>
+                          setAuditFilters((current) => ({
+                            ...current,
+                            to: event.target.value,
+                          }))
+                        }
+                        className="h-9 text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  {auditVerifyResult && (
+                    <div
+                      className={cn(
+                        "rounded-md border px-3 py-2 text-sm",
+                        auditVerifyResult.valid
+                          ? "border-green-500/40 bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-300"
+                          : "border-destructive/40 bg-destructive/10 text-destructive",
+                      )}
+                    >
+                      {auditVerifyResult.valid
+                        ? `Chain valid across ${auditVerifyResult.checkedCount} entries. Last hash ${shortHash(auditVerifyResult.lastHash)}.`
+                        : `Chain failed at #${auditVerifyResult.failure?.sequence}: ${auditVerifyResult.failure?.reason}.`}
+                    </div>
+                  )}
+
+                  {auditLogs.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      No audit entries loaded.
+                    </p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Seq</TableHead>
+                            <TableHead>Time</TableHead>
+                            <TableHead>Action</TableHead>
+                            <TableHead>Actor</TableHead>
+                            <TableHead>Target</TableHead>
+                            <TableHead>Class</TableHead>
+                            <TableHead>IP</TableHead>
+                            <TableHead>Hash</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {auditLogs.map((entry) => (
+                            <TableRow key={entry.id}>
+                              <TableCell className="font-mono text-xs">
+                                {entry.sequence}
+                              </TableCell>
+                              <TableCell className="whitespace-nowrap text-sm">
+                                {formatDateTime(entry.createdAt)}
+                              </TableCell>
+                              <TableCell className="font-mono text-xs">
+                                {entry.action}
+                              </TableCell>
+                              <TableCell className="font-mono text-xs">
+                                {entry.actorType}
+                                {entry.actorUserId
+                                  ? `:${shortId(entry.actorUserId)}`
+                                  : ""}
+                              </TableCell>
+                              <TableCell className="font-mono text-xs">
+                                {entry.targetType ?? "—"}
+                                {entry.targetId
+                                  ? `:${shortId(entry.targetId)}`
+                                  : ""}
+                              </TableCell>
+                              <TableCell className="font-mono text-xs">
+                                {entry.classId ? shortId(entry.classId) : "—"}
+                              </TableCell>
+                              <TableCell className="font-mono text-xs">
+                                {entry.ipAddress ?? "—"}
+                              </TableCell>
+                              <TableCell
+                                className="max-w-[180px] truncate font-mono text-xs text-muted-foreground"
+                                title={`${entry.entryHash}\n${JSON.stringify(entry.metadata ?? {})}`}
+                              >
+                                {shortHash(entry.entryHash)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+
+                  {auditNextCursor && (
+                    <Button
+                      variant="outline"
+                      onClick={() => void loadAuditLogs(auditNextCursor)}
+                      disabled={auditLoading}
+                    >
+                      {auditLoading && (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      )}
+                      Load More
+                    </Button>
                   )}
                 </CardContent>
               </Card>

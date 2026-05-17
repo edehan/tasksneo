@@ -123,6 +123,7 @@ TASKFLOW_DEV_SEED=true pnpm dev
 |---|---|
 | `ADMIN_TOKEN` | 管理员控制台访问令牌，只负责 `/admin` 鉴权 |
 | `SYSTEM_CONFIG_SECRET` | 敏感系统配置的数据库加密密钥，需保持稳定 |
+| `AUDIT_LOG_HMAC_SECRET` | 审计日志 HMAC 链密钥，生产环境建议与 `SYSTEM_CONFIG_SECRET` 分离 |
 | `DATABASE_URL` | PostgreSQL 连接串 |
 | `NEXT_PUBLIC_API_BASE_URL` | 前端访问后端 API 的地址，开发环境默认 `http://localhost:3001` |
 
