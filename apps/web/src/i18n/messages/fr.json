@@ -858,7 +858,8 @@
       "hint": "Copiez l'instruction ci-dessous et envoyez-la à l'assistant IA que vous utilisez.",
       "promptHint": "Demandez à votre assistant IA de l'installer avec la méthode recommandée pour sa plateforme.",
       "prompt": "Aidez-moi à installer l'outil MCP de TaskNeo. Voici la configuration MCP standard :\n\n{command}\n\nVeuillez l'installer en utilisant la méthode recommandée pour votre plateforme. Après l'installation, invoquez-le manuellement une fois pour tester la connexion. Si le chargement prend plus de 2 secondes à chaque fois, envisagez de le mettre en cache localement et de mettre à jour le chemin de configuration.",
-      "note": "Le succès dépend de la capacité de l'assistant IA. OpenClaw, Hermers, Claude Code, Codex et Kiro gèrent généralement cela bien."
+      "note": "Le succès dépend de la capacité de l'assistant IA. OpenClaw, Hermers, Claude Code, Codex et Kiro gèrent généralement cela bien.",
+      "trustNote": "Certains assistants exigent que l'utilisateur fasse confiance au MCP avant de pouvoir l'utiliser."
     },
     "claudeCode": {
       "name": "Claude Code",

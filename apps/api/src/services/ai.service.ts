@@ -238,7 +238,7 @@ function buildSingleImageMarkdownHint(
 		return "";
 	}
 
-	return `\nThe user-provided image material is available at ${imageAttachments[0].appUrl}. If you think this image is useful for the generated markdown, you may include it in the body. If the image only contains basic task information or irrelevant content, do not insert it into the body.`;
+	return `\nThe user-provided image material is available at ${imageAttachments[0].appUrl}. If you think this image is useful for the generated markdown, you may include it in the markdown. If the image only contains very limited task information or irrelevant content, do not insert it into the body.`;
 }
 
 function buildClassContextText(classContext?: ClassAiContext): string {
