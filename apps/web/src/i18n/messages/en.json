@@ -857,7 +857,7 @@
       "title": "Install prompt for your AI assistant",
       "hint": "Copy the prompt below and send it to the AI assistant you use.",
       "promptHint": "Ask your AI assistant to install it using the recommended method for its platform.",
-      "prompt": "Help me install TaskNeo's MCP tool. This is the standard MCP configuration:\n\n{command}\n\nPlease install it using your platform's recommended method. After installation, manually invoke it once to test the connection. If loading takes over 3 seconds each time, consider caching locally and updating the config path.",
+      "prompt": "Help me install TaskNeo's MCP tool. This is the standard MCP configuration:\n\n{command}\n\nPlease install it using your platform's recommended method. After installation, manually invoke it once to test the connection. If loading takes over 2 seconds each time, consider caching locally and updating the config path.",
       "note": "Success depends on the AI assistant's capability. OpenClaw, Hermers, Claude Code, Codex, and Kiro typically handle this well.",
       "trustNote": "Some assistants require users to trust the MCP before it can be used."
     },
