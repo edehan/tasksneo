@@ -59,6 +59,43 @@ model User {
   @@map("users")
 }
 
+// ─── Audit Logs ─────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id            String         @id @default(uuid())
+  sequence      BigInt         @unique @default(autoincrement())
+  action        String         @db.VarChar(100)
+  actorType     AuditActorType @map("actor_type")
+  actorUserId   String?        @map("actor_user_id")
+  targetType    String?        @map("target_type") @db.VarChar(100)
+  targetId      String?        @map("target_id")
+  classId       String?        @map("class_id")
+  metadata      Json?
+  ipAddress     String?        @map("ip_address") @db.VarChar(45)
+  userAgent     String?        @map("user_agent") @db.VarChar(512)
+  requestId     String?        @map("request_id") @db.VarChar(128)
+  prevHash      String?        @map("prev_hash") @db.Char(64)
+  entryHash     String         @map("entry_hash") @db.Char(64)
+  hashAlgorithm String         @default("HMAC-SHA256") @map("hash_algorithm") @db.VarChar(32)
+  hashKeyId     String         @map("hash_key_id") @db.VarChar(100)
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([createdAt(sort: Desc)], map: "idx_audit_logs_created")
+  @@index([action, createdAt(sort: Desc)], map: "idx_audit_logs_action_created")
+  @@index([actorUserId, createdAt(sort: Desc)], map: "idx_audit_logs_actor_created")
+  @@index([targetType, targetId], map: "idx_audit_logs_target")
+  @@index([classId, createdAt(sort: Desc)], map: "idx_audit_logs_class_created")
+  @@map("audit_logs")
+}
+
+enum AuditActorType {
+  USER
+  ADMIN
+  SYSTEM
+
+  @@map("audit_actor_type")
+}
+
 // ─── User Credentials ────────────────────────────────────────────────────────
 
 model UserCredential {

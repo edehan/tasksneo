@@ -342,6 +342,8 @@ When this variable is unset, the CAPTCHA widget is hidden and the backend skips 
 | `LISTEN_ADDR` | Server bind address (default `0.0.0.0:3001`) |
 | `ADMIN_TOKEN` | Admin panel authentication |
 | `SYSTEM_CONFIG_SECRET` | Encrypts secrets in system_config table |
+| `AUDIT_LOG_HMAC_SECRET` | Signs audit log hash-chain entries |
+| `AUDIT_LOG_HMAC_KEY_ID` | Audit signing key identifier (default `default:v1`) |
 | `DATABASE_URL` | PostgreSQL connection string |
 | `REDIS_URL` | Redis connection string (docker network) |
 | `S3_ENDPOINT` | S3 provider endpoint |

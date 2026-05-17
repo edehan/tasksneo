@@ -201,6 +201,167 @@ describe("TaskFlow API e2e", () => {
 		expect(body["smtp.password"]).toBe("[re-enter value]");
 	});
 
+	it("records successful auth audit logs without recording failed login attempts", async () => {
+		const adminToken = process.env.ADMIN_TOKEN ?? "test-admin-token";
+		const { user } = await createTestUser({
+			emailPrefix: "audit-auth",
+			password: "Passw0rd!",
+		});
+
+		const failed = await requestJson(app, "/auth/login", {
+			method: "POST",
+			body: JSON.stringify({
+				email: user.email,
+				password: "wrong-password",
+			}),
+		});
+		expect(failed.response.status).toBe(401);
+
+		const login = await requestJson(app, "/auth/login", {
+			method: "POST",
+			headers: { "user-agent": "audit-test" },
+			body: JSON.stringify({
+				email: user.email,
+				password: "Passw0rd!",
+				trustDevice: true,
+			}),
+		});
+		expect(login.response.status).toBe(200);
+
+		const logs = await requestJson(app, "/admin/audit-logs?action=AUTH_LOGIN", {
+			headers: { Authorization: `Bearer ${adminToken}` },
+		});
+		expect(logs.response.status).toBe(200);
+		const body = logs.body as {
+			items: Array<{ action: string; actorUserId: string | null }>;
+		};
+		expect(body.items).toHaveLength(1);
+		expect(body.items[0]).toMatchObject({
+			action: "AUTH_LOGIN",
+			actorUserId: user.id,
+		});
+
+		const verify = await requestJson(app, "/admin/audit-logs/verify", {
+			method: "POST",
+			headers: { Authorization: `Bearer ${adminToken}` },
+			body: JSON.stringify({}),
+		});
+		expect(verify.response.status).toBe(200);
+		expect(verify.body).toMatchObject({
+			valid: true,
+			checkedCount: 1,
+			failure: null,
+		});
+	});
+
+	it("records class membership and ownership audit logs once per high-level action", async () => {
+		const adminToken = process.env.ADMIN_TOKEN ?? "test-admin-token";
+		const owner = await createTestUser({ emailPrefix: "audit-owner" });
+		const member = await createTestUser({ emailPrefix: "audit-member" });
+		const extra = await createTestUser({ emailPrefix: "audit-extra" });
+
+		async function createSharedClass(name: string) {
+			const res = await requestJson(app, "/classes", {
+				method: "POST",
+				headers: authHeader(owner.token),
+				body: JSON.stringify({ name }),
+			});
+			expect(res.response.status).toBe(201);
+			return res.body as { id: string; inviteCode: string };
+		}
+
+		const joinedAndLeft = await createSharedClass("Audit Join Leave");
+		const joinRes = await requestJson(app, "/classes/join", {
+			method: "POST",
+			headers: authHeader(member.token),
+			body: JSON.stringify({ inviteCode: joinedAndLeft.inviteCode }),
+		});
+		expect(joinRes.response.status).toBe(200);
+		const leaveRes = await app.request(
+			`/classes/${joinedAndLeft.id}/members/${member.user.id}`,
+			{
+				method: "DELETE",
+				headers: authHeader(member.token),
+			},
+		);
+		expect(leaveRes.status).toBe(204);
+
+		const removed = await createSharedClass("Audit Remove");
+		await requestJson(app, "/classes/join", {
+			method: "POST",
+			headers: authHeader(member.token),
+			body: JSON.stringify({ inviteCode: removed.inviteCode }),
+		});
+		const removeRes = await app.request(
+			`/classes/${removed.id}/members/${member.user.id}`,
+			{
+				method: "DELETE",
+				headers: authHeader(owner.token),
+			},
+		);
+		expect(removeRes.status).toBe(204);
+
+		const transferred = await createSharedClass("Audit Transfer Delete");
+		await requestJson(app, "/classes/join", {
+			method: "POST",
+			headers: authHeader(member.token),
+			body: JSON.stringify({ inviteCode: transferred.inviteCode }),
+		});
+		await requestJson(app, "/classes/join", {
+			method: "POST",
+			headers: authHeader(extra.token),
+			body: JSON.stringify({ inviteCode: transferred.inviteCode }),
+		});
+		const roleRes = await requestJson(
+			app,
+			`/classes/${transferred.id}/members/${extra.user.id}`,
+			{
+				method: "PATCH",
+				headers: authHeader(owner.token),
+				body: JSON.stringify({ role: "ADMIN" }),
+			},
+		);
+		expect(roleRes.response.status).toBe(200);
+		const transferRes = await requestJson(
+			app,
+			`/classes/${transferred.id}/transfer`,
+			{
+				method: "POST",
+				headers: authHeader(owner.token),
+				body: JSON.stringify({ newOwnerId: member.user.id }),
+			},
+		);
+		expect(transferRes.response.status).toBe(200);
+		const deleteRes = await app.request(`/classes/${transferred.id}`, {
+			method: "DELETE",
+			headers: authHeader(member.token),
+		});
+		expect(deleteRes.status).toBe(204);
+
+		const logs = await requestJson(app, "/admin/audit-logs?targetType=CLASS", {
+			headers: { Authorization: `Bearer ${adminToken}` },
+		});
+		expect(logs.response.status).toBe(200);
+		const actions = (
+			logs.body as { items: Array<{ action: string }> }
+		).items.map((item) => item.action);
+		expect(actions).toContain("CLASS_OWNERSHIP_TRANSFERRED");
+		expect(actions).toContain("CLASS_DELETED");
+
+		const allLogs = await requestJson(app, "/admin/audit-logs", {
+			headers: { Authorization: `Bearer ${adminToken}` },
+		});
+		const allActions = (
+			allLogs.body as { items: Array<{ action: string }> }
+		).items.map((item) => item.action);
+		expect(allActions.filter((a) => a === "CLASS_MEMBER_JOINED")).toHaveLength(
+			4,
+		);
+		expect(allActions).toContain("CLASS_MEMBER_LEFT");
+		expect(allActions).toContain("CLASS_MEMBER_REMOVED");
+		expect(allActions).toContain("CLASS_MEMBER_ROLE_UPDATED");
+	});
+
 	it("round-trips encrypted system config values", () => {
 		const encrypted = encryptConfigValue("preview-pass-123");
 

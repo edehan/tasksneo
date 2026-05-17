@@ -1,8 +1,12 @@
+import { AuditActorType } from "@taskflow/db";
+import type { Context } from "hono";
 import { Hono } from "hono";
 import { z } from "zod";
 
 import { requireAuthUser } from "../lib/context.js";
+import { getClientIp } from "../lib/http.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { recordAuditLog } from "../services/audit.service.js";
 import {
 	createClass,
 	deleteClass,
@@ -96,6 +100,14 @@ export const classesRouter = new Hono<{ Variables: AppVariables }>();
 
 classesRouter.use("*", authMiddleware);
 
+function auditRequestMeta(c: Context<{ Variables: AppVariables }>) {
+	return {
+		ipAddress: getClientIp(c),
+		userAgent: c.req.header("user-agent") ?? null,
+		requestId: c.get("requestId") ?? null,
+	};
+}
+
 classesRouter.get("/", async (c) => {
 	const authUser = requireAuthUser(c);
 	const classes = await listMyClasses(authUser.userId);
@@ -113,6 +125,15 @@ classesRouter.post("/join", async (c) => {
 	const authUser = requireAuthUser(c);
 	const body = joinClassBodySchema.parse(await c.req.json());
 	const joinedClass = await joinClass(authUser.userId, body.inviteCode);
+	await recordAuditLog({
+		action: "CLASS_MEMBER_JOINED",
+		actor: { type: AuditActorType.USER, userId: authUser.userId },
+		targetType: "USER",
+		targetId: authUser.userId,
+		classId: joinedClass.id,
+		metadata: { className: joinedClass.name },
+		...auditRequestMeta(c),
+	});
 	return c.json(joinedClass, 200);
 });
 
@@ -142,6 +163,14 @@ classesRouter.delete("/:classId", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = classIdParamSchema.parse(c.req.param());
 	await deleteClass(params.classId, authUser.userId);
+	await recordAuditLog({
+		action: "CLASS_DELETED",
+		actor: { type: AuditActorType.USER, userId: authUser.userId },
+		targetType: "CLASS",
+		targetId: params.classId,
+		classId: params.classId,
+		...auditRequestMeta(c),
+	});
 	return c.body(null, 204);
 });
 
@@ -161,6 +190,19 @@ classesRouter.post("/:classId/transfer", async (c) => {
 		authUser.userId,
 		body.newOwnerId,
 	);
+	await recordAuditLog({
+		action: "CLASS_OWNERSHIP_TRANSFERRED",
+		actor: { type: AuditActorType.USER, userId: authUser.userId },
+		targetType: "CLASS",
+		targetId: params.classId,
+		classId: params.classId,
+		metadata: {
+			previousOwnerId: authUser.userId,
+			newOwnerId: body.newOwnerId,
+			className: classInfo.name,
+		},
+		...auditRequestMeta(c),
+	});
 	return c.json(classInfo, 200);
 });
 
@@ -215,6 +257,15 @@ classesRouter.patch("/:classId/members/:userId", async (c) => {
 		params.userId,
 		body.role,
 	);
+	await recordAuditLog({
+		action: "CLASS_MEMBER_ROLE_UPDATED",
+		actor: { type: AuditActorType.USER, userId: authUser.userId },
+		targetType: "USER",
+		targetId: params.userId,
+		classId: params.classId,
+		metadata: { role: body.role, updatedRole: member.role },
+		...auditRequestMeta(c),
+	});
 	return c.json(member, 200);
 });
 
@@ -222,5 +273,16 @@ classesRouter.delete("/:classId/members/:userId", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = memberParamSchema.parse(c.req.param());
 	await removeMember(params.classId, authUser.userId, params.userId);
+	await recordAuditLog({
+		action:
+			authUser.userId === params.userId
+				? "CLASS_MEMBER_LEFT"
+				: "CLASS_MEMBER_REMOVED",
+		actor: { type: AuditActorType.USER, userId: authUser.userId },
+		targetType: "USER",
+		targetId: params.userId,
+		classId: params.classId,
+		...auditRequestMeta(c),
+	});
 	return c.body(null, 204);
 });

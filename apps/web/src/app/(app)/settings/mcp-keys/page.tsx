@@ -133,7 +133,7 @@ function GuideCard({
 
   return (
     <div className="min-w-0 max-w-full rounded-xl border border-border bg-card p-4 space-y-3">
-      <div className="flex items-start gap-3">
+      <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-subtle text-foreground">
           {icon}
         </div>
@@ -188,12 +188,16 @@ function SimpleInstallCard({
   }
 
   return (
-    <div className="min-w-0 max-w-full space-y-3 overflow-hidden">
-      <div className="min-w-0 max-w-full overflow-hidden rounded-xl border border-border bg-card p-4 space-y-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h3 className="text-lg font-semibold leading-tight">{title}</h3>
-            <p className="text-xs text-muted-foreground mt-1">{hint}</p>
+    <div className="w-full min-w-0 max-w-full space-y-3 overflow-hidden">
+      <div className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-border bg-card p-4 space-y-3">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+          <div className="min-w-0 overflow-hidden">
+            <h3 className="truncate text-lg font-semibold leading-tight">
+              {title}
+            </h3>
+            <p className="mt-1 break-words text-xs text-muted-foreground [overflow-wrap:anywhere]">
+              {hint}
+            </p>
           </div>
           <Button
             variant="outline"
@@ -209,8 +213,8 @@ function SimpleInstallCard({
             <span className="ml-1.5 text-xs">{copyLabel}</span>
           </Button>
         </div>
-        <div className="max-w-full overflow-x-auto rounded-lg border border-border bg-surface-subtle/60">
-          <pre className="w-max min-w-full p-3 text-xs font-mono whitespace-pre text-foreground leading-relaxed">
+        <div className="max-w-full overflow-hidden rounded-lg border border-border bg-surface-subtle/60">
+          <pre className="block w-full whitespace-pre-wrap break-words p-3 font-mono text-xs leading-relaxed text-foreground [overflow-wrap:anywhere]">
             {prompt}
           </pre>
         </div>
@@ -408,7 +412,7 @@ export default function McpKeysPage() {
         onOpenChange={(open) => !open && handleCloseCreate()}
       >
         <DialogContent
-          className={`max-h-[88vh] overflow-y-auto overflow-x-hidden ${createdKey ? "sm:max-w-3xl" : "sm:max-w-lg"}`}
+          className={`max-h-[88vh] w-[calc(100vw-2rem)] min-w-0 overflow-y-auto overflow-x-hidden ${createdKey ? "sm:max-w-3xl" : "sm:max-w-lg"}`}
         >
           <DialogHeader>
             <DialogTitle>
@@ -445,7 +449,7 @@ export default function McpKeysPage() {
               </DialogFooter>
             </>
           ) : (
-            <div className="space-y-5">
+            <div className="min-w-0 space-y-5">
               <div className="rounded-xl border border-border bg-surface-subtle/40 p-4 space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <Label>{t("secretKey")}</Label>
@@ -473,11 +477,11 @@ export default function McpKeysPage() {
 
               <div className="space-y-1">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="space-y-1">
+                  <div className="min-w-0 space-y-1">
                     <h3 className="text-sm font-medium">
                       {t("installCommandsHeading")}
                     </h3>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="break-words text-xs text-muted-foreground [overflow-wrap:anywhere]">
                       {installMode === "standard"
                         ? t("installCommandsHint")
                         : t("simpleInstall.hint")}
@@ -491,17 +495,17 @@ export default function McpKeysPage() {
                         setInstallMode(value);
                       }
                     }}
-                    className="w-fit justify-start rounded-full border border-border bg-surface-subtle p-1"
+                    className="w-fit shrink-0 justify-start rounded-full border border-border bg-surface-subtle p-1"
                   >
                     <ToggleGroupItem
                       value="standard"
-                      className="h-8 rounded-full border-0 px-3 text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm"
+                      className="h-8 rounded-full border-0 px-3 text-xs text-muted-foreground hover:text-foreground data-[state=on]:bg-class-accent data-[state=on]:font-semibold data-[state=on]:text-class-accent-foreground data-[state=on]:ring-1 data-[state=on]:ring-class-accent/35 data-[state=on]:shadow-sm"
                     >
                       {t("installMode.standard")}
                     </ToggleGroupItem>
                     <ToggleGroupItem
                       value="simple"
-                      className="h-8 rounded-full border-0 px-3 text-xs data-[state=on]:bg-background data-[state=on]:shadow-sm"
+                      className="h-8 rounded-full border-0 px-3 text-xs text-muted-foreground hover:text-foreground data-[state=on]:bg-class-accent data-[state=on]:font-semibold data-[state=on]:text-class-accent-foreground data-[state=on]:ring-1 data-[state=on]:ring-class-accent/35 data-[state=on]:shadow-sm"
                     >
                       {t("installMode.simple")}
                     </ToggleGroupItem>

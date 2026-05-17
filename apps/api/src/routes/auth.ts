@@ -1,3 +1,4 @@
+import { AuditActorType } from "@taskflow/db";
 import { type Context, Hono } from "hono";
 import type { Logger } from "pino";
 import { z } from "zod";
@@ -13,6 +14,7 @@ import {
 	recordFailedLoginAttempt,
 } from "../lib/login-rate-limit.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { recordAuditLog } from "../services/audit.service.js";
 import { login, type SessionMetadata } from "../services/auth.service.js";
 import {
 	completeRegistration,
@@ -98,6 +100,14 @@ function dispatchPasswordResetEmail(email: string, logger: Logger | undefined) {
 	});
 }
 
+function auditRequestMeta(c: Context<{ Variables: AppVariables }>) {
+	return {
+		ipAddress: getClientIp(c),
+		userAgent: c.req.header("user-agent") ?? null,
+		requestId: c.get("requestId") ?? null,
+	};
+}
+
 // Step 1: send verification email
 authRouter.post("/register", async (c) => {
 	const body = registerStep1Schema.parse(await c.req.json());
@@ -121,6 +131,14 @@ authRouter.post("/register/complete", async (c) => {
 		readSessionMeta(c, body.trustDevice),
 	);
 	setSessionCookie(c, result.token, body.trustDevice === true);
+	await recordAuditLog({
+		action: "AUTH_REGISTER_COMPLETE",
+		actor: { type: AuditActorType.USER, userId: result.user.id },
+		targetType: "USER",
+		targetId: result.user.id,
+		metadata: { trusted: body.trustDevice === true },
+		...auditRequestMeta(c),
+	});
 	return c.json({ user: result.user }, 201);
 });
 
@@ -144,6 +162,14 @@ authRouter.post("/login", async (c) => {
 	}
 
 	setSessionCookie(c, result.token, body.trustDevice === true);
+	await recordAuditLog({
+		action: "AUTH_LOGIN",
+		actor: { type: AuditActorType.USER, userId: result.user.id },
+		targetType: "USER",
+		targetId: result.user.id,
+		metadata: { trusted: body.trustDevice === true },
+		...auditRequestMeta(c),
+	});
 	return c.json({ user: result.user }, 200);
 });
 
@@ -151,6 +177,13 @@ authRouter.post("/logout", authMiddleware, async (c) => {
 	const session = requireAuthSession(c);
 	await revokeSession(session.id);
 	clearSessionCookie(c);
+	await recordAuditLog({
+		action: "AUTH_LOGOUT",
+		actor: { type: AuditActorType.USER, userId: session.userId },
+		targetType: "SESSION",
+		targetId: session.id,
+		...auditRequestMeta(c),
+	});
 	return c.body(null, 204);
 });
 
@@ -168,6 +201,13 @@ authRouter.post("/reset-password", async (c) => {
 	const body = resetPasswordSchema.parse(await c.req.json());
 	const result = await resetPassword(body.token, body.password);
 	setSessionCookie(c, result.token, false);
+	await recordAuditLog({
+		action: "AUTH_PASSWORD_RESET",
+		actor: { type: AuditActorType.USER, userId: result.user.id },
+		targetType: "USER",
+		targetId: result.user.id,
+		...auditRequestMeta(c),
+	});
 	return c.json({ message: result.message, user: result.user }, 200);
 });
 
@@ -178,6 +218,14 @@ authRouter.post("/reset-password/sign-in", async (c) => {
 		readSessionMeta(c, false),
 	);
 	setSessionCookie(c, result.token, false);
+	await recordAuditLog({
+		action: "AUTH_LOGIN",
+		actor: { type: AuditActorType.USER, userId: result.user.id },
+		targetType: "USER",
+		targetId: result.user.id,
+		metadata: { via: "PASSWORD_RESET_TOKEN" },
+		...auditRequestMeta(c),
+	});
 	return c.json({ message: result.message, user: result.user }, 200);
 });
 
@@ -186,6 +234,13 @@ authRouter.post("/mcp", async (c) => {
 	const result = await exchangeMcpKey(body.key, {
 		userAgent: c.req.header("user-agent") ?? null,
 		ipAddress: getClientIp(c),
+	});
+	await recordAuditLog({
+		action: "MCP_SESSION_CREATED",
+		actor: { type: AuditActorType.USER, userId: result.user.id },
+		targetType: "USER",
+		targetId: result.user.id,
+		...auditRequestMeta(c),
 	});
 	return c.json(result, 200);
 });

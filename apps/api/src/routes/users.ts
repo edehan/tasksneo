@@ -1,12 +1,14 @@
-import { NotifChannel } from "@taskflow/db";
-import type { MiddlewareHandler } from "hono";
+import { AuditActorType, NotifChannel } from "@taskflow/db";
+import type { Context, MiddlewareHandler } from "hono";
 import { Hono } from "hono";
 import { z } from "zod";
 import { verifyCaptcha } from "../lib/captcha.js";
 import { requireAuthSession, requireAuthUser } from "../lib/context.js";
 import { clearSessionCookie } from "../lib/cookie.js";
 import { normalizeEmail } from "../lib/email.js";
+import { getClientIp } from "../lib/http.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { recordAuditLog } from "../services/audit.service.js";
 import {
 	confirmEmailChange,
 	sendEmailChangeVerification,
@@ -68,6 +70,14 @@ export const usersRouter = new Hono<{ Variables: AppVariables }>();
 
 usersRouter.use("*", authMiddleware);
 
+function auditRequestMeta(c: Context<{ Variables: AppVariables }>) {
+	return {
+		ipAddress: getClientIp(c),
+		userAgent: c.req.header("user-agent") ?? null,
+		requestId: c.get("requestId") ?? null,
+	};
+}
+
 usersRouter.get("/me", async (c) => {
 	const authUser = requireAuthUser(c);
 	const user = await getMyProfile(authUser.userId);
@@ -104,6 +114,14 @@ usersRouter.post("/me/email/confirm", async (c) => {
 	const authUser = requireAuthUser(c);
 	const body = confirmEmailSchema.parse(await c.req.json());
 	const user = await confirmEmailChange(body.token, authUser.userId);
+	await recordAuditLog({
+		action: "AUTH_EMAIL_CHANGED",
+		actor: { type: AuditActorType.USER, userId: authUser.userId },
+		targetType: "USER",
+		targetId: authUser.userId,
+		metadata: { email: user.email },
+		...auditRequestMeta(c),
+	});
 	return c.json(user, 200);
 });
 
@@ -117,6 +135,13 @@ usersRouter.patch("/me/password", async (c) => {
 		body.newPassword,
 		session.id,
 	);
+	await recordAuditLog({
+		action: "AUTH_PASSWORD_CHANGED",
+		actor: { type: AuditActorType.USER, userId: authUser.userId },
+		targetType: "USER",
+		targetId: authUser.userId,
+		...auditRequestMeta(c),
+	});
 	return c.body(null, 204);
 });
 
@@ -135,6 +160,14 @@ usersRouter.delete("/me/sessions", async (c) => {
 	// Delete all BROWSER sessions for the user except the current one. MCP
 	// sessions are revoked via the MCP keys UI.
 	await revokeAllBrowserSessions(authUser.userId, session.id);
+	await recordAuditLog({
+		action: "SESSIONS_REVOKED",
+		actor: { type: AuditActorType.USER, userId: authUser.userId },
+		targetType: "USER",
+		targetId: authUser.userId,
+		metadata: { exceptSessionId: session.id },
+		...auditRequestMeta(c),
+	});
 	return c.body(null, 204);
 });
 
@@ -153,6 +186,14 @@ usersRouter.delete("/me/sessions/:sessionId", async (c) => {
 	if (sessionId === currentSession.id) {
 		clearSessionCookie(c);
 	}
+	await recordAuditLog({
+		action: "SESSION_REVOKED",
+		actor: { type: AuditActorType.USER, userId: authUser.userId },
+		targetType: "SESSION",
+		targetId: sessionId,
+		metadata: { current: sessionId === currentSession.id },
+		...auditRequestMeta(c),
+	});
 	return c.body(null, 204);
 });
 
@@ -238,6 +279,14 @@ usersRouter.post("/me/mcp-keys", async (c) => {
 	const authUser = requireAuthUser(c);
 	const body = createMcpKeySchema.parse(await c.req.json());
 	const key = await createMcpKey(authUser.userId, body.name);
+	await recordAuditLog({
+		action: "MCP_KEY_CREATED",
+		actor: { type: AuditActorType.USER, userId: authUser.userId },
+		targetType: "MCP_KEY",
+		targetId: key.id,
+		metadata: { name: key.name, keyPrefix: key.keyPrefix },
+		...auditRequestMeta(c),
+	});
 	return c.json(key, 201);
 });
 
@@ -251,5 +300,13 @@ usersRouter.delete("/me/mcp-keys/:keyId", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = mcpKeyIdParamSchema.parse(c.req.param());
 	const key = await revokeMcpKey(authUser.userId, params.keyId);
+	await recordAuditLog({
+		action: "MCP_KEY_REVOKED",
+		actor: { type: AuditActorType.USER, userId: authUser.userId },
+		targetType: "MCP_KEY",
+		targetId: key.id,
+		metadata: { name: key.name, keyPrefix: key.keyPrefix },
+		...auditRequestMeta(c),
+	});
 	return c.json(key, 200);
 });
