@@ -188,7 +188,7 @@ function SimpleInstallCard({
   }
 
   return (
-    <div className="min-w-0 max-w-full space-y-3">
+    <div className="min-w-0 max-w-full space-y-3 overflow-hidden">
       <div className="min-w-0 max-w-full overflow-hidden rounded-xl border border-border bg-card p-4 space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -209,9 +209,11 @@ function SimpleInstallCard({
             <span className="ml-1.5 text-xs">{copyLabel}</span>
           </Button>
         </div>
-        <pre className="max-w-full overflow-x-auto rounded-lg border border-border bg-surface-subtle/60 p-3 text-xs font-mono whitespace-pre text-foreground leading-relaxed">
-          {prompt}
-        </pre>
+        <div className="max-w-full overflow-x-auto rounded-lg border border-border bg-surface-subtle/60">
+          <pre className="w-max min-w-full p-3 text-xs font-mono whitespace-pre text-foreground leading-relaxed">
+            {prompt}
+          </pre>
+        </div>
       </div>
       <div className="max-w-full space-y-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 break-words [overflow-wrap:anywhere] dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
         <p>{note}</p>
