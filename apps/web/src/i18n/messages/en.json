@@ -697,7 +697,9 @@
       "failedParseTask": "Failed to parse task",
       "uploadedFiles": "Uploaded {count, plural, one {# file} other {# files}}",
       "failedUploadFile": "Failed to upload file",
-      "failedCreateDraft": "Failed to create task draft"
+      "failedCreateDraft": "Failed to create task draft",
+      "importedTask": "Task imported",
+      "failedImportTask": "Failed to import task"
     },
     "title": "Post Task — {className}",
     "inputPlaceholder": "Describe your task here...\\ne.g. \"Complete Chapter 5 exercises, due in 2 weeks, allow late submissions\"",
@@ -708,6 +710,28 @@
     "parsing": "Parsing...",
     "parsed": "Parsed",
     "aiParse": "AI Parse",
+    "importTask": {
+      "button": "Import Task",
+      "title": "Import Task",
+      "allClasses": "All classes",
+      "unknownClass": "Unknown class",
+      "sort": {
+        "updatedAt": "Modified time",
+        "createdAt": "Created time"
+      },
+      "attachments": "{count, plural, =0 {No attachments} one {# attachment} other {# attachments}}",
+      "previewTitle": "Task",
+      "body": "Body",
+      "emptyBody": "No body",
+      "attachmentSummary": "Attachments",
+      "selectHint": "Select a task to preview its body and attachments.",
+      "empty": "No tasks available to import.",
+      "cancel": "Cancel",
+      "import": "Import",
+      "loadingDetail": "Loading details...",
+      "failedLoad": "Failed to load importable tasks",
+      "failedLoadDetail": "Failed to load task details"
+    },
     "record": "Record",
     "connecting": "Connecting...",
     "stopRecording": "Stop",
