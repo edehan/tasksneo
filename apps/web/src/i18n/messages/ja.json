@@ -257,8 +257,12 @@
     "deleteAccount": "アカウントを削除",
     "dataExport": {
       "title": "データをエクスポート",
-      "description": "提出物、管理クラスのタスク、アバター、メタデータを含むZIPアーカイブをダウンロードします。",
-      "exportButton": "データをエクスポート"
+      "myDataTitle": "自分のデータをエクスポート",
+      "myDataDescription": "提出物、管理クラスのタスク、アバター、メタデータを含むZIPアーカイブをダウンロードします。",
+      "myDataButton": "自分のデータをエクスポート",
+      "classDataTitle": "クラスデータをエクスポート",
+      "classDataDescription": "選択した管理クラスのタスクと、各タスクに提出された学生の提出物をダウンロードします。",
+      "classDataButton": "クラスデータをエクスポート"
     }
   },
   "dataExportDialog": {
@@ -285,6 +289,29 @@
       "exportComplete": "データのエクスポートが完了しました",
       "skippedFiles": "{count, plural, other {# ファイル}}のダウンロードに失敗し、スキップされました",
       "exportFailed": "データのエクスポートに失敗しました"
+    }
+  },
+  "classDataExportDialog": {
+    "title": "クラスデータをエクスポート",
+    "description": "ZIPアーカイブに含める管理クラスを選択してください。",
+    "loading": "管理クラスを読み込み中...",
+    "selectAll": "管理クラスをすべて選択（{count}）",
+    "memberCountHint": "{count, plural, other {# 人のメンバー}}",
+    "noClasses": "エクスポートできる管理クラスがありません。",
+    "progress": {
+      "gathering": "クラスデータを取得中...",
+      "downloading": "{completed} / {total} ファイルをダウンロード中...",
+      "generatingZip": "ZIPアーカイブを生成中..."
+    },
+    "actions": {
+      "exportSelected": "選択をエクスポート（{count}）",
+      "processing": "処理中..."
+    },
+    "toast": {
+      "loadFailed": "管理クラスの読み込みに失敗しました",
+      "exportComplete": "クラスデータのエクスポートが完了しました",
+      "skippedFiles": "{count, plural, other {# ファイル}}のダウンロードに失敗し、スキップされました",
+      "exportFailed": "クラスデータのエクスポートに失敗しました"
     }
   },
   "settingsProfile": {

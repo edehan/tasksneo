@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { ClassDataExportDialog } from "@/features/settings/components/class-data-export-dialog";
 import { DataExportDialog } from "@/features/settings/components/data-export-dialog";
 import type { ClassSummary } from "@/lib/api";
 import {
@@ -47,6 +48,7 @@ export default function AccountPage() {
 
   // Data export
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [classExportDialogOpen, setClassExportDialogOpen] = useState(false);
 
   // Check ownership
   const [ownedClasses, setOwnedClasses] = useState<ClassSummary[]>([]);
@@ -189,20 +191,51 @@ export default function AccountPage() {
       <Separator />
 
       {/* Data Export */}
-      <section className="space-y-3">
+      <section className="space-y-4">
         <h2 className="text-heading-md">{t("dataExport.title")}</h2>
-        <p className="text-sm text-muted-foreground">
-          {t("dataExport.description")}
-        </p>
-        <Button variant="outline" onClick={() => setExportDialogOpen(true)}>
-          <Download className="h-4 w-4" />
-          {t("dataExport.exportButton")}
-        </Button>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-sm font-medium">
+                {t("dataExport.myDataTitle")}
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t("dataExport.myDataDescription")}
+              </p>
+            </div>
+            <Button variant="outline" onClick={() => setExportDialogOpen(true)}>
+              <Download className="h-4 w-4" />
+              {t("dataExport.myDataButton")}
+            </Button>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-sm font-medium">
+                {t("dataExport.classDataTitle")}
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t("dataExport.classDataDescription")}
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setClassExportDialogOpen(true)}
+            >
+              <Download className="h-4 w-4" />
+              {t("dataExport.classDataButton")}
+            </Button>
+          </div>
+        </div>
       </section>
 
       <DataExportDialog
         open={exportDialogOpen}
         onOpenChange={setExportDialogOpen}
+      />
+      <ClassDataExportDialog
+        open={classExportDialogOpen}
+        onOpenChange={setClassExportDialogOpen}
       />
 
       <Separator />

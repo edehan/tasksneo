@@ -256,9 +256,13 @@
     "cancel": "Annuler",
     "deleteAccount": "Supprimer le compte",
     "dataExport": {
-      "title": "Exporter mes donnees",
-      "description": "Telechargez une archive ZIP contenant vos rendus, les taches de vos classes gerees, votre avatar et les metadonnees.",
-      "exportButton": "Exporter les donnees"
+      "title": "Exporter les donnees",
+      "myDataTitle": "Exporter mes donnees",
+      "myDataDescription": "Telechargez une archive ZIP contenant vos rendus, les taches de vos classes gerees, votre avatar et les metadonnees.",
+      "myDataButton": "Exporter mes donnees",
+      "classDataTitle": "Exporter les donnees de classe",
+      "classDataDescription": "Telechargez les taches des classes gerees et tous les rendus etudiants soumis pour les classes choisies.",
+      "classDataButton": "Exporter les donnees de classe"
     }
   },
   "dataExportDialog": {
@@ -285,6 +289,29 @@
       "exportComplete": "Exportation terminee",
       "skippedFiles": "{count, plural, =1 {1 fichier} other {# fichiers}} n'ont pas pu etre telecharges",
       "exportFailed": "Echec de l'exportation"
+    }
+  },
+  "classDataExportDialog": {
+    "title": "Exporter les donnees de classe",
+    "description": "Choisissez les classes gerees a inclure dans l'archive ZIP.",
+    "loading": "Chargement des classes gerees...",
+    "selectAll": "Tout selectionner ({count})",
+    "memberCountHint": "{count, plural, =1 {1 membre} other {# membres}}",
+    "noClasses": "Aucune classe geree a exporter.",
+    "progress": {
+      "gathering": "Recuperation des donnees de classe...",
+      "downloading": "Telechargement {completed} / {total} fichiers...",
+      "generatingZip": "Generation de l'archive ZIP..."
+    },
+    "actions": {
+      "exportSelected": "Exporter la selection ({count})",
+      "processing": "Traitement en cours..."
+    },
+    "toast": {
+      "loadFailed": "Echec du chargement des classes gerees",
+      "exportComplete": "Exportation des donnees de classe terminee",
+      "skippedFiles": "{count, plural, =1 {1 fichier} other {# fichiers}} n'ont pas pu etre telecharges",
+      "exportFailed": "Echec de l'exportation des donnees de classe"
     }
   },
   "settingsProfile": {
