@@ -177,8 +177,12 @@ describe("AI task parsing", () => {
 		);
 		expect(body.system).toContain("translate/localize headings naturally");
 		expect(body.system).toContain(
-			"Task title as H1 → overview/summary → requirements → timeline → submission notes",
+			"Task title as H1 → overview/summary → requirements → submission notes",
 		);
+		expect(body.system).toContain(
+			"Do not include a timeline/schedule/deadline section by default.",
+		);
+		expect(body.system).toContain("Return that timing in JSON only.");
 	});
 
 	it("injects class context and non-empty class task instructions when parsing", async () => {
