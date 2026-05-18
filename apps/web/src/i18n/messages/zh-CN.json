@@ -724,7 +724,9 @@
       "failedParseTask": "解析任务失败",
       "uploadedFiles": "已上传 {count, plural, one {# 个文件} other {# 个文件}}",
       "failedUploadFile": "上传文件失败",
-      "failedCreateDraft": "创建任务草稿失败"
+      "failedCreateDraft": "创建任务草稿失败",
+      "importedTask": "任务已导入",
+      "failedImportTask": "导入任务失败"
     },
     "title": "发布任务 — {className}",
     "inputPlaceholder": "在这里描述你的任务...\\n例如：\"完成第 5 章习题，两周后截止，允许迟交\"",
@@ -735,6 +737,28 @@
     "parsing": "解析中...",
     "parsed": "已解析",
     "aiParse": "AI 解析",
+    "importTask": {
+      "button": "导入任务",
+      "title": "导入任务",
+      "allClasses": "全部班级",
+      "unknownClass": "未知班级",
+      "sort": {
+        "updatedAt": "按修改时间",
+        "createdAt": "按创建时间"
+      },
+      "attachments": "{count, plural, =0 {无附件} one {# 个附件} other {# 个附件}}",
+      "previewTitle": "任务",
+      "body": "正文",
+      "emptyBody": "没有正文",
+      "attachmentSummary": "附件",
+      "selectHint": "选择一个任务以查看正文和附件情况。",
+      "empty": "没有可导入的任务。",
+      "cancel": "取消",
+      "import": "导入",
+      "loadingDetail": "加载详情中...",
+      "failedLoad": "加载可导入任务失败",
+      "failedLoadDetail": "加载任务详情失败"
+    },
     "timeOptions": {
       "title": "AI 检测到多个可能的时间解释。你想要的是哪一个？",
       "none": "都不是，我手动填写"

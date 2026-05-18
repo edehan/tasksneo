@@ -724,7 +724,9 @@
       "failedParseTask": "Echec de l'analyse de la tache",
       "uploadedFiles": "{count, plural, one {# fichier televerse} other {# fichiers televerses}}",
       "failedUploadFile": "Echec du televersement",
-      "failedCreateDraft": "Echec de creation du brouillon"
+      "failedCreateDraft": "Echec de creation du brouillon",
+      "importedTask": "Tache importee",
+      "failedImportTask": "Echec de l'import de la tache"
     },
     "title": "Publier une tache — {className}",
     "inputPlaceholder": "Decrivez votre tache ici...\\nex. \"Terminer les exercices du chapitre 5, dans 2 semaines, retard autorise\"",
@@ -735,6 +737,28 @@
     "parsing": "Analyse...",
     "parsed": "Analysee",
     "aiParse": "Analyse IA",
+    "importTask": {
+      "button": "Importer",
+      "title": "Importer une tache",
+      "allClasses": "Toutes les classes",
+      "unknownClass": "Classe inconnue",
+      "sort": {
+        "updatedAt": "Modification",
+        "createdAt": "Creation"
+      },
+      "attachments": "{count, plural, =0 {Aucune piece jointe} one {# piece jointe} other {# pieces jointes}}",
+      "previewTitle": "Tache",
+      "body": "Corps",
+      "emptyBody": "Aucun contenu",
+      "attachmentSummary": "Pieces jointes",
+      "selectHint": "Selectionnez une tache pour voir son contenu et ses pieces jointes.",
+      "empty": "Aucune tache disponible a importer.",
+      "cancel": "Annuler",
+      "import": "Importer",
+      "loadingDetail": "Chargement des details...",
+      "failedLoad": "Echec du chargement des taches importables",
+      "failedLoadDetail": "Echec du chargement des details de la tache"
+    },
     "timeOptions": {
       "title": "L'IA a detecte plusieurs interpretations de date. Laquelle vouliez-vous ?",
       "none": "Aucune de ces options — je saisis manuellement"
