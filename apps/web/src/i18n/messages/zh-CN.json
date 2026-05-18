@@ -740,7 +740,7 @@
     "importTask": {
       "button": "导入任务",
       "title": "导入任务",
-      "allClasses": "全部班级",
+      "allClasses": "全部其他班级",
       "unknownClass": "未知班级",
       "sort": {
         "updatedAt": "按修改时间",

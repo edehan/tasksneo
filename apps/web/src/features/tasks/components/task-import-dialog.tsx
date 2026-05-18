@@ -36,6 +36,7 @@ interface TaskImportDialogProps {
   onImport: (taskId: string, body: string | null) => Promise<void>;
   importing: boolean;
   timeZone: string;
+  currentClassId?: string;
 }
 
 const ALL_CLASSES = "__all__";
@@ -59,6 +60,7 @@ export function TaskImportDialog({
   onImport,
   importing,
   timeZone,
+  currentClassId,
 }: TaskImportDialogProps) {
   const t = useTranslations("postTaskDialog.importTask");
   const locale = useLocale();
@@ -77,9 +79,15 @@ export function TaskImportDialog({
     setLoading(true);
     listTaskImportCandidates({ sort })
       .then((items) => {
-        setTasks(items);
+        // Filter out tasks from current class
+        const filtered = currentClassId
+          ? items.filter((item) => item.classId !== currentClassId)
+          : items;
+        setTasks(filtered);
         setSelectedTaskId((current) =>
-          current && items.some((item) => item.id === current) ? current : null,
+          current && filtered.some((item) => item.id === current)
+            ? current
+            : null,
         );
       })
       .catch((err) => {
@@ -87,7 +95,7 @@ export function TaskImportDialog({
         toast.error(message);
       })
       .finally(() => setLoading(false));
-  }, [open, sort, t]);
+  }, [open, sort, currentClassId, t]);
 
   useEffect(() => {
     if (!open) {

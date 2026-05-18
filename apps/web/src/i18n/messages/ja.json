@@ -740,7 +740,7 @@
     "importTask": {
       "button": "課題をインポート",
       "title": "課題をインポート",
-      "allClasses": "すべてのクラス",
+      "allClasses": "他のすべてのクラス",
       "unknownClass": "不明なクラス",
       "sort": {
         "updatedAt": "更新日時",

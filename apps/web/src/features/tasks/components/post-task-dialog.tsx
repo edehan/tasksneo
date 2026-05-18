@@ -1149,6 +1149,7 @@ export function PostTaskDialog({
         onImport={handleImportTask}
         importing={importing}
         timeZone={timeZone}
+        currentClassId={classId}
       />
     </Dialog>
   );

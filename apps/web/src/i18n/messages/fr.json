@@ -740,7 +740,7 @@
     "importTask": {
       "button": "Importer",
       "title": "Importer une tache",
-      "allClasses": "Toutes les classes",
+      "allClasses": "Toutes les autres classes",
       "unknownClass": "Classe inconnue",
       "sort": {
         "updatedAt": "Modification",
