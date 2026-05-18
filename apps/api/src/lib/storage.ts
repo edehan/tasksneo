@@ -115,6 +115,12 @@ export async function removeObject(fileKey: string) {
 	});
 }
 
+export async function copyObject(sourceFileKey: string, targetFileKey: string) {
+	const { minio, bucket } = getClient();
+	await ensureBucketExists();
+	await minio.copyObject(bucket, targetFileKey, `/${bucket}/${sourceFileKey}`);
+}
+
 export async function getObjectBuffer(fileKey: string): Promise<Buffer | null> {
 	const { minio, bucket } = getClient();
 

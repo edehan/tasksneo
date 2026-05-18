@@ -1433,6 +1433,171 @@ describe("TaskFlow API e2e", () => {
 		expect(ownerUserId).not.toBe(memberUserId);
 	});
 
+	it("lists and imports published tasks for managed classes", async () => {
+		const owner = await createTestUser({ emailPrefix: "import-owner" });
+		const member = await createTestUser({ emailPrefix: "import-member" });
+
+		const classRow = await prisma.class.create({
+			data: {
+				name: "Import Source Class",
+				ownerId: owner.user.id,
+				color: "#7B6CB0",
+				members: {
+					create: [
+						{ userId: owner.user.id, role: ClassRole.OWNER },
+						{ userId: member.user.id, role: ClassRole.MEMBER },
+					],
+				},
+			},
+		});
+
+		const olderTask = await requestJson(app, `/classes/${classRow.id}/tasks`, {
+			method: "POST",
+			headers: authHeader(owner.token),
+			body: JSON.stringify({
+				title: "Older import source",
+				description: "Older description text",
+				dueAt: new Date(Date.now() + 86_400_000).toISOString(),
+			}),
+		});
+		expect(olderTask.response.status).toBe(201);
+
+		const newerTask = await requestJson(app, `/classes/${classRow.id}/tasks`, {
+			method: "POST",
+			headers: authHeader(owner.token),
+			body: JSON.stringify({
+				title: "Newer import source",
+				description: "Newer body text",
+				sourceText: "Newer source text",
+				dueAt: new Date(Date.now() + 172_800_000).toISOString(),
+			}),
+		});
+		expect(newerTask.response.status).toBe(201);
+
+		const olderTaskId = (olderTask.body as { id: string }).id;
+		const newerTaskId = (newerTask.body as { id: string }).id;
+
+		await prisma.task.update({
+			where: { id: olderTaskId },
+			data: { updatedAt: new Date("2026-01-01T00:00:00.000Z") },
+		});
+		await prisma.task.update({
+			where: { id: newerTaskId },
+			data: { updatedAt: new Date("2026-01-02T00:00:00.000Z") },
+		});
+
+		const sourceAttachment = (await uploadAttachmentDirect({
+			uploadUrlPath: `/tasks/${newerTaskId}/attachments/upload-url`,
+			completePath: `/tasks/${newerTaskId}/attachments`,
+			token: owner.token,
+			fileName: "source.txt",
+			content: "source attachment",
+			mimeType: "text/plain",
+		})) as Array<{ fileKey: string }>;
+
+		const ownerCandidates = await requestJson(
+			app,
+			"/tasks/import-candidates?sort=updatedAt",
+			{ headers: authHeader(owner.token) },
+		);
+		expect(ownerCandidates.response.status).toBe(200);
+		const candidateBody = ownerCandidates.body as {
+			tasks: Array<{
+				id: string;
+				classId: string;
+				attachmentCount: number;
+			}>;
+		};
+		expect(candidateBody.tasks.map((task) => task.id)).toEqual([
+			newerTaskId,
+			olderTaskId,
+		]);
+		expect(candidateBody.tasks[0]).toMatchObject({
+			classId: classRow.id,
+			attachmentCount: 1,
+		});
+		expect(candidateBody.tasks[0]).not.toHaveProperty("body");
+		expect(candidateBody.tasks[0]).not.toHaveProperty("sourceText");
+
+		const detailRes = await requestJson(
+			app,
+			`/tasks/import-candidates/${newerTaskId}`,
+			{ headers: authHeader(owner.token) },
+		);
+		expect(detailRes.response.status).toBe(200);
+		expect(detailRes.body).toMatchObject({
+			id: newerTaskId,
+			body: "Newer body text",
+			attachments: [{ originalName: "source.txt" }],
+		});
+
+		const memberDetailRes = await requestJson(
+			app,
+			`/tasks/import-candidates/${newerTaskId}`,
+			{ headers: authHeader(member.token) },
+		);
+		expect(memberDetailRes.response.status).toBe(403);
+
+		const memberCandidates = await requestJson(
+			app,
+			"/tasks/import-candidates",
+			{
+				headers: authHeader(member.token),
+			},
+		);
+		expect(memberCandidates.response.status).toBe(200);
+		expect((memberCandidates.body as { tasks: unknown[] }).tasks).toHaveLength(
+			0,
+		);
+
+		const draft = await requestJson(
+			app,
+			`/classes/${classRow.id}/tasks/drafts`,
+			{
+				method: "POST",
+				headers: authHeader(owner.token),
+				body: JSON.stringify({ sourceText: "Current draft text" }),
+			},
+		);
+		expect(draft.response.status).toBe(201);
+		const draftTaskId = (draft.body as { id: string }).id;
+
+		const importRes = await requestJson(app, `/tasks/${draftTaskId}/import`, {
+			method: "POST",
+			headers: authHeader(owner.token),
+			body: JSON.stringify({ sourceTaskId: newerTaskId }),
+		});
+		expect(importRes.response.status).toBe(201);
+		const importBody = importRes.body as {
+			attachments: Array<{ fileKey: string; originalName: string }>;
+		};
+		expect(importBody).not.toHaveProperty("body");
+		expect(importBody).not.toHaveProperty("sourceText");
+		expect(importBody.attachments).toHaveLength(1);
+		expect(importBody.attachments[0]).toMatchObject({
+			originalName: "source.txt",
+		});
+		expect(importBody.attachments[0]?.fileKey).not.toBe(
+			sourceAttachment[0]?.fileKey,
+		);
+		expect(importBody.attachments[0]?.fileKey).toMatch(
+			new RegExp(`^tasks/${draftTaskId}/`),
+		);
+
+		const sourceAttachments = await prisma.attachment.findMany({
+			where: { taskId: newerTaskId },
+		});
+		const copiedAttachments = await prisma.attachment.findMany({
+			where: { taskId: draftTaskId },
+		});
+		expect(sourceAttachments.map((a) => a.fileKey)).toEqual([
+			sourceAttachment[0]?.fileKey,
+		]);
+		expect(copiedAttachments.map((a) => a.fileKey)).toEqual([
+			importBody.attachments[0]?.fileKey,
+		]);
+	});
+
 	it("enforces allowLateSubmission for student submission mutations", async () => {
 		const owner = await createTestUser({ emailPrefix: "late-owner" });
 		const member = await createTestUser({ emailPrefix: "late-member" });

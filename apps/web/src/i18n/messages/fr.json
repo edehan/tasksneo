@@ -256,9 +256,13 @@
     "cancel": "Annuler",
     "deleteAccount": "Supprimer le compte",
     "dataExport": {
-      "title": "Exporter mes donnees",
-      "description": "Telechargez une archive ZIP contenant vos rendus, les taches de vos classes gerees, votre avatar et les metadonnees.",
-      "exportButton": "Exporter les donnees"
+      "title": "Exporter les donnees",
+      "myDataTitle": "Exporter mes donnees",
+      "myDataDescription": "Telechargez une archive ZIP contenant vos rendus, les taches de vos classes gerees, votre avatar et les metadonnees.",
+      "myDataButton": "Exporter mes donnees",
+      "classDataTitle": "Exporter les donnees de classe",
+      "classDataDescription": "Telechargez les taches des classes gerees et tous les rendus etudiants soumis pour les classes choisies.",
+      "classDataButton": "Exporter les donnees de classe"
     }
   },
   "dataExportDialog": {
@@ -285,6 +289,29 @@
       "exportComplete": "Exportation terminee",
       "skippedFiles": "{count, plural, =1 {1 fichier} other {# fichiers}} n'ont pas pu etre telecharges",
       "exportFailed": "Echec de l'exportation"
+    }
+  },
+  "classDataExportDialog": {
+    "title": "Exporter les donnees de classe",
+    "description": "Choisissez les classes gerees a inclure dans l'archive ZIP.",
+    "loading": "Chargement des classes gerees...",
+    "selectAll": "Tout selectionner ({count})",
+    "memberCountHint": "{count, plural, =1 {1 membre} other {# membres}}",
+    "noClasses": "Aucune classe geree a exporter.",
+    "progress": {
+      "gathering": "Recuperation des donnees de classe...",
+      "downloading": "Telechargement {completed} / {total} fichiers...",
+      "generatingZip": "Generation de l'archive ZIP..."
+    },
+    "actions": {
+      "exportSelected": "Exporter la selection ({count})",
+      "processing": "Traitement en cours..."
+    },
+    "toast": {
+      "loadFailed": "Echec du chargement des classes gerees",
+      "exportComplete": "Exportation des donnees de classe terminee",
+      "skippedFiles": "{count, plural, =1 {1 fichier} other {# fichiers}} n'ont pas pu etre telecharges",
+      "exportFailed": "Echec de l'exportation des donnees de classe"
     }
   },
   "settingsProfile": {
@@ -697,7 +724,9 @@
       "failedParseTask": "Echec de l'analyse de la tache",
       "uploadedFiles": "{count, plural, one {# fichier televerse} other {# fichiers televerses}}",
       "failedUploadFile": "Echec du televersement",
-      "failedCreateDraft": "Echec de creation du brouillon"
+      "failedCreateDraft": "Echec de creation du brouillon",
+      "importedTask": "Tache importee",
+      "failedImportTask": "Echec de l'import de la tache"
     },
     "title": "Publier une tache — {className}",
     "inputPlaceholder": "Decrivez votre tache ici...\\nex. \"Terminer les exercices du chapitre 5, dans 2 semaines, retard autorise\"",
@@ -708,6 +737,28 @@
     "parsing": "Analyse...",
     "parsed": "Analysee",
     "aiParse": "Analyse IA",
+    "importTask": {
+      "button": "Importer",
+      "title": "Importer une tache",
+      "allClasses": "Toutes les classes",
+      "unknownClass": "Classe inconnue",
+      "sort": {
+        "updatedAt": "Modification",
+        "createdAt": "Creation"
+      },
+      "attachments": "{count, plural, =0 {Aucune piece jointe} one {# piece jointe} other {# pieces jointes}}",
+      "previewTitle": "Tache",
+      "body": "Corps",
+      "emptyBody": "Aucun contenu",
+      "attachmentSummary": "Pieces jointes",
+      "selectHint": "Selectionnez une tache pour voir son contenu et ses pieces jointes.",
+      "empty": "Aucune tache disponible a importer.",
+      "cancel": "Annuler",
+      "import": "Importer",
+      "loadingDetail": "Chargement des details...",
+      "failedLoad": "Echec du chargement des taches importables",
+      "failedLoadDetail": "Echec du chargement des details de la tache"
+    },
     "timeOptions": {
       "title": "L'IA a detecte plusieurs interpretations de date. Laquelle vouliez-vous ?",
       "none": "Aucune de ces options — je saisis manuellement"

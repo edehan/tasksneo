@@ -256,9 +256,13 @@
     "cancel": "Cancel",
     "deleteAccount": "Delete Account",
     "dataExport": {
-      "title": "Export My Data",
-      "description": "Download a ZIP archive containing all your submissions, managed class tasks, and metadata.",
-      "exportButton": "Export Data"
+      "title": "Export Data",
+      "myDataTitle": "Export My Data",
+      "myDataDescription": "Download a ZIP archive containing all your submissions, managed class tasks, and metadata.",
+      "myDataButton": "Export My Data",
+      "classDataTitle": "Export Class Data",
+      "classDataDescription": "Download managed class tasks and every submitted student response for selected classes.",
+      "classDataButton": "Export Class Data"
     }
   },
   "dataExportDialog": {
@@ -285,6 +289,29 @@
       "exportComplete": "Data export complete",
       "skippedFiles": "{count, plural, =1 {1 file} other {# files}} failed to download and were skipped",
       "exportFailed": "Failed to export data"
+    }
+  },
+  "classDataExportDialog": {
+    "title": "Export Class Data",
+    "description": "Choose the managed classes to include in the ZIP archive.",
+    "loading": "Loading managed classes...",
+    "selectAll": "Select all managed classes ({count})",
+    "memberCountHint": "{count, plural, =1 {1 member} other {# members}}",
+    "noClasses": "No managed classes available to export.",
+    "progress": {
+      "gathering": "Fetching class data...",
+      "downloading": "Downloading {completed} / {total} files...",
+      "generatingZip": "Generating ZIP archive..."
+    },
+    "actions": {
+      "exportSelected": "Export Selected ({count})",
+      "processing": "Processing..."
+    },
+    "toast": {
+      "loadFailed": "Failed to load managed classes",
+      "exportComplete": "Class data export complete",
+      "skippedFiles": "{count, plural, =1 {1 file} other {# files}} failed to download and were skipped",
+      "exportFailed": "Failed to export class data"
     }
   },
   "settingsProfile": {
@@ -697,7 +724,9 @@
       "failedParseTask": "Failed to parse task",
       "uploadedFiles": "Uploaded {count, plural, one {# file} other {# files}}",
       "failedUploadFile": "Failed to upload file",
-      "failedCreateDraft": "Failed to create task draft"
+      "failedCreateDraft": "Failed to create task draft",
+      "importedTask": "Task imported",
+      "failedImportTask": "Failed to import task"
     },
     "title": "Post Task — {className}",
     "inputPlaceholder": "Describe your task here...\\ne.g. \"Complete Chapter 5 exercises, due in 2 weeks, allow late submissions\"",
@@ -708,6 +737,28 @@
     "parsing": "Parsing...",
     "parsed": "Parsed",
     "aiParse": "AI Parse",
+    "importTask": {
+      "button": "Import Task",
+      "title": "Import Task",
+      "allClasses": "All classes",
+      "unknownClass": "Unknown class",
+      "sort": {
+        "updatedAt": "Modified time",
+        "createdAt": "Created time"
+      },
+      "attachments": "{count, plural, =0 {No attachments} one {# attachment} other {# attachments}}",
+      "previewTitle": "Task",
+      "body": "Body",
+      "emptyBody": "No body",
+      "attachmentSummary": "Attachments",
+      "selectHint": "Select a task to preview its body and attachments.",
+      "empty": "No tasks available to import.",
+      "cancel": "Cancel",
+      "import": "Import",
+      "loadingDetail": "Loading details...",
+      "failedLoad": "Failed to load importable tasks",
+      "failedLoadDetail": "Failed to load task details"
+    },
     "record": "Record",
     "connecting": "Connecting...",
     "stopRecording": "Stop",

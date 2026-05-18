@@ -257,8 +257,12 @@
     "deleteAccount": "アカウントを削除",
     "dataExport": {
       "title": "データをエクスポート",
-      "description": "提出物、管理クラスのタスク、アバター、メタデータを含むZIPアーカイブをダウンロードします。",
-      "exportButton": "データをエクスポート"
+      "myDataTitle": "自分のデータをエクスポート",
+      "myDataDescription": "提出物、管理クラスのタスク、アバター、メタデータを含むZIPアーカイブをダウンロードします。",
+      "myDataButton": "自分のデータをエクスポート",
+      "classDataTitle": "クラスデータをエクスポート",
+      "classDataDescription": "選択した管理クラスのタスクと、各タスクに提出された学生の提出物をダウンロードします。",
+      "classDataButton": "クラスデータをエクスポート"
     }
   },
   "dataExportDialog": {
@@ -285,6 +289,29 @@
       "exportComplete": "データのエクスポートが完了しました",
       "skippedFiles": "{count, plural, other {# ファイル}}のダウンロードに失敗し、スキップされました",
       "exportFailed": "データのエクスポートに失敗しました"
+    }
+  },
+  "classDataExportDialog": {
+    "title": "クラスデータをエクスポート",
+    "description": "ZIPアーカイブに含める管理クラスを選択してください。",
+    "loading": "管理クラスを読み込み中...",
+    "selectAll": "管理クラスをすべて選択（{count}）",
+    "memberCountHint": "{count, plural, other {# 人のメンバー}}",
+    "noClasses": "エクスポートできる管理クラスがありません。",
+    "progress": {
+      "gathering": "クラスデータを取得中...",
+      "downloading": "{completed} / {total} ファイルをダウンロード中...",
+      "generatingZip": "ZIPアーカイブを生成中..."
+    },
+    "actions": {
+      "exportSelected": "選択をエクスポート（{count}）",
+      "processing": "処理中..."
+    },
+    "toast": {
+      "loadFailed": "管理クラスの読み込みに失敗しました",
+      "exportComplete": "クラスデータのエクスポートが完了しました",
+      "skippedFiles": "{count, plural, other {# ファイル}}のダウンロードに失敗し、スキップされました",
+      "exportFailed": "クラスデータのエクスポートに失敗しました"
     }
   },
   "settingsProfile": {
@@ -697,7 +724,9 @@
       "failedParseTask": "課題解析に失敗しました",
       "uploadedFiles": "{count}件のファイルをアップロードしました",
       "failedUploadFile": "ファイルのアップロードに失敗しました",
-      "failedCreateDraft": "下書き作成に失敗しました"
+      "failedCreateDraft": "下書き作成に失敗しました",
+      "importedTask": "課題をインポートしました",
+      "failedImportTask": "課題のインポートに失敗しました"
     },
     "title": "課題を投稿 — {className}",
     "inputPlaceholder": "ここに課題内容を入力...\\n例: 「第5章の演習を2週間以内に提出、遅延提出を許可」",
@@ -708,6 +737,28 @@
     "parsing": "解析中...",
     "parsed": "解析済み",
     "aiParse": "AI解析",
+    "importTask": {
+      "button": "課題をインポート",
+      "title": "課題をインポート",
+      "allClasses": "すべてのクラス",
+      "unknownClass": "不明なクラス",
+      "sort": {
+        "updatedAt": "更新日時",
+        "createdAt": "作成日時"
+      },
+      "attachments": "{count}件の添付",
+      "previewTitle": "課題",
+      "body": "本文",
+      "emptyBody": "本文なし",
+      "attachmentSummary": "添付",
+      "selectHint": "課題を選択すると本文と添付の概要が表示されます。",
+      "empty": "インポートできる課題がありません。",
+      "cancel": "キャンセル",
+      "import": "インポート",
+      "loadingDetail": "詳細を読み込み中...",
+      "failedLoad": "インポート可能な課題の読み込みに失敗しました",
+      "failedLoadDetail": "課題詳細の読み込みに失敗しました"
+    },
     "timeOptions": {
       "title": "AIが複数の日時解釈を検出しました。どれが意図ですか？",
       "none": "該当なし（手動入力）"

@@ -334,15 +334,16 @@ const PARSE_REQUIREMENTS = `
 - Strictly follow the source content — do NOT invent requirements or details not present in the input or attachments.
 - If files are attached, incorporate their relevant content into the document.
 - Suggested content order (only include sections with content; translate/localize headings naturally to match the user input language):
-  Task title as H1 → overview/summary → requirements → timeline → submission notes
-- Dates in the markdown must be written in natural, human-readable form (e.g., "Friday, April 18, 2026, 11:59 PM"). Do NOT use ISO 8601 format in the markdown.
+  Task title as H1 → overview/summary → requirements → submission notes
+- Do not include a timeline/schedule/deadline section by default.
+- Do not repeat task timing in the markdown when the timing can be represented clearly by the structured startAt (optional) and dueAt fields. Return that timing in JSON only.
+- Include timing details in the markdown only when the source contains timeline or schedule information that cannot be made clear with startAt and dueAt alone. If timing must appear in the markdown, write it in natural, human-readable language. Do NOT use ISO 8601 format in the markdown.
 
 ## Datetime rules (for structured fields only)
 
 - All startAt/dueAt values: ISO 8601 with timezone offset. Example: 2026-04-18T23:59:00+08:00
 - Resolve relative times ("tomorrow", "this Sunday") using the provided current datetime.
 - If the input omits timezone, use the user's timezone setting.
-- If startAt is later than dueAt, set both startAt and dueAt to null for that time option.
 - If startAt equals dueAt, set startAt to null and keep dueAt for that time option.`;
 
 function buildParseSystemPrompt(configuredBase: string): string {

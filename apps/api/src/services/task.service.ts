@@ -2,6 +2,11 @@ import { ClassRole, prisma } from "@taskflow/db";
 
 import { cacheDel, cacheGetOrSet, cacheKeys } from "../lib/cache.js";
 import { AppError } from "../lib/errors.js";
+import {
+	copyObject,
+	createTaskAttachmentObjectKey,
+	removeObject,
+} from "../lib/storage.js";
 
 const TASK_STATS_TTL_SECONDS = 60;
 
@@ -75,6 +80,8 @@ interface UpdateTaskUserStateInput {
 	tags?: string[];
 	sortOrder?: number;
 }
+
+type TaskImportSort = "updatedAt" | "createdAt";
 
 function parseDate(value?: string | null): Date | null | undefined {
 	if (value === undefined) {
@@ -384,6 +391,115 @@ export async function listMyTasks(userId: string) {
 		submittedCount: subCountMap.get(task.id) ?? 0,
 		memberCount: task.classId ? (memberCountMap.get(task.classId) ?? 0) : 0,
 	}));
+}
+
+export async function listTaskImportCandidates(
+	userId: string,
+	input: {
+		classId?: string;
+		sort?: TaskImportSort;
+	} = {},
+) {
+	const memberships = await prisma.classMember.findMany({
+		where: {
+			userId,
+			role: { in: [ClassRole.OWNER, ClassRole.ADMIN] },
+			...(input.classId ? { classId: input.classId } : {}),
+		},
+		select: { classId: true },
+	});
+
+	const classIds = memberships.map((membership) => membership.classId);
+
+	if (classIds.length === 0) {
+		return [];
+	}
+
+	const sort = input.sort ?? "updatedAt";
+	const tasks = await prisma.task.findMany({
+		where: {
+			classId: { in: classIds },
+			deletedAt: null,
+			isPublished: true,
+		},
+		select: {
+			id: true,
+			title: true,
+			classId: true,
+			startAt: true,
+			dueAt: true,
+			createdAt: true,
+			updatedAt: true,
+			class: {
+				select: { name: true },
+			},
+			_count: {
+				select: { attachments: true },
+			},
+		},
+		orderBy: {
+			[sort]: "desc",
+		},
+	});
+
+	return tasks.map((task) => ({
+		id: task.id,
+		title: task.title,
+		classId: task.classId,
+		className: task.class?.name ?? null,
+		startAt: task.startAt?.toISOString() ?? null,
+		dueAt: task.dueAt?.toISOString() ?? null,
+		createdAt: task.createdAt.toISOString(),
+		updatedAt: task.updatedAt.toISOString(),
+		attachmentCount: task._count.attachments,
+	}));
+}
+
+export async function getTaskImportCandidateDetail(
+	userId: string,
+	sourceTaskId: string,
+) {
+	const task = await prisma.task.findUnique({
+		where: { id: sourceTaskId },
+		select: {
+			id: true,
+			classId: true,
+			description: true,
+			isPublished: true,
+			deletedAt: true,
+			attachments: {
+				orderBy: { createdAt: "asc" },
+				select: {
+					id: true,
+					originalName: true,
+					mimeType: true,
+					sizeBytes: true,
+					isVisible: true,
+					createdAt: true,
+				},
+			},
+		},
+	});
+
+	if (!task || !task.classId || !task.isPublished || task.deletedAt) {
+		throw new AppError(404, "TASK_NOT_FOUND", "Task not found");
+	}
+
+	requireOwnerOrAdmin(await getMembershipOrThrow(task.classId, userId));
+
+	return {
+		id: task.id,
+		body: task.description,
+		attachments: task.attachments.map((attachment) => ({
+			id: attachment.id,
+			originalName: attachment.originalName,
+			mimeType: attachment.mimeType,
+			sizeBytes:
+				attachment.sizeBytes === null ? null : Number(attachment.sizeBytes),
+			isVisible: attachment.isVisible,
+			createdAt: attachment.createdAt.toISOString(),
+		})),
+	};
 }
 
 export async function createClassTask(
@@ -1166,6 +1282,132 @@ export async function addTaskAttachments(
 	});
 
 	return created.map(toAttachmentMeta);
+}
+
+export async function importTaskIntoDraft(
+	targetTaskId: string,
+	userId: string,
+	sourceTaskId: string,
+) {
+	if (targetTaskId === sourceTaskId) {
+		throw new AppError(
+			400,
+			"VALIDATION_ERROR",
+			"Cannot import a task into itself",
+		);
+	}
+
+	const targetTask = await prisma.task.findUnique({
+		where: { id: targetTaskId },
+		select: {
+			id: true,
+			classId: true,
+			isPublished: true,
+		},
+	});
+
+	if (!targetTask) {
+		throw new AppError(404, "TASK_NOT_FOUND", "Task not found");
+	}
+
+	if (!targetTask.classId || targetTask.isPublished) {
+		throw new AppError(
+			400,
+			"VALIDATION_ERROR",
+			"Target task must be an unpublished class draft",
+		);
+	}
+
+	requireOwnerOrAdmin(await getMembershipOrThrow(targetTask.classId, userId));
+
+	const sourceTask = await prisma.task.findUnique({
+		where: { id: sourceTaskId },
+		select: {
+			id: true,
+			classId: true,
+			isPublished: true,
+			deletedAt: true,
+			attachments: {
+				orderBy: { createdAt: "asc" },
+				select: {
+					fileKey: true,
+					originalName: true,
+					mimeType: true,
+					sizeBytes: true,
+					isVisible: true,
+				},
+			},
+		},
+	});
+
+	if (
+		!sourceTask ||
+		!sourceTask.classId ||
+		!sourceTask.isPublished ||
+		sourceTask.deletedAt
+	) {
+		throw new AppError(404, "TASK_NOT_FOUND", "Task not found");
+	}
+
+	requireOwnerOrAdmin(await getMembershipOrThrow(sourceTask.classId, userId));
+
+	const copiedAttachments: Array<{
+		fileKey: string;
+		originalName: string;
+		mimeType: string | null;
+		sizeBytes: bigint | null;
+		isVisible: boolean;
+	}> = [];
+
+	try {
+		for (const attachment of sourceTask.attachments) {
+			const fileKey = createTaskAttachmentObjectKey(
+				targetTask.id,
+				attachment.originalName,
+			);
+			await copyObject(attachment.fileKey, fileKey);
+			copiedAttachments.push({
+				fileKey,
+				originalName: attachment.originalName,
+				mimeType: attachment.mimeType,
+				sizeBytes: attachment.sizeBytes,
+				isVisible: attachment.isVisible,
+			});
+		}
+
+		if (copiedAttachments.length > 0) {
+			await prisma.attachment.createMany({
+				data: copiedAttachments.map((attachment) => ({
+					fileKey: attachment.fileKey,
+					originalName: attachment.originalName,
+					mimeType: attachment.mimeType,
+					sizeBytes: attachment.sizeBytes,
+					isVisible: attachment.isVisible,
+					uploadedBy: userId,
+					taskId: targetTask.id,
+				})),
+			});
+		}
+	} catch (err) {
+		await Promise.all(
+			copiedAttachments.map((attachment) => removeObject(attachment.fileKey)),
+		);
+		throw err;
+	}
+
+	const attachments = await prisma.attachment.findMany({
+		where: { fileKey: { in: copiedAttachments.map((a) => a.fileKey) } },
+		orderBy: { createdAt: "asc" },
+	});
+
+	await prisma.task.update({
+		where: { id: targetTaskId },
+		data: { importedFromTaskId: sourceTaskId },
+	});
+
+	return {
+		attachments: attachments.map(toAttachmentMeta),
+	};
 }
 
 export async function gradeSubmission(

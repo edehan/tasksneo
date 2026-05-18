@@ -214,6 +214,7 @@ model Task {
   isPublished          Boolean   @default(true) @map("is_published")
   publishedAt          DateTime? @map("published_at") @db.Timestamptz
   // 存储其他 Task 的 uuid 字符串数组，前端处理，后端不验证
+  importedFromTaskId   String?   @map("imported_from_task_id")
   deletedAt            DateTime? @map("deleted_at") @db.Timestamptz
   createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz

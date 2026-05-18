@@ -5,6 +5,7 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  Import,
   Loader2,
   Mic,
   Paperclip,
@@ -45,6 +46,7 @@ import {
   createTaskDraft,
   deleteTask,
   getMyClassDraft,
+  importTaskIntoDraft,
   listClassTasks,
   type ParseTimeOption,
   parseTaskDraft,
@@ -54,6 +56,7 @@ import {
 } from "@/lib/api";
 import { getClipboardImageFiles } from "@/lib/clipboard-images";
 import { formatDateInTimeZone } from "@/lib/timezone";
+import { TaskImportDialog } from "./task-import-dialog";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -188,6 +191,8 @@ export function PostTaskDialog({
   const [submitting, setSubmitting] = useState(false);
   const [titleTouched, setTitleTouched] = useState(false);
   const [attempted, setAttempted] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   // Time option selection (when AI returns multiple)
   const [pendingTimeOptions, setPendingTimeOptions] = useState<
@@ -350,6 +355,8 @@ export function PostTaskDialog({
     setSubmitting(false);
     setTitleTouched(false);
     setAttempted(false);
+    setImportOpen(false);
+    setImporting(false);
     setPendingTimeOptions(null);
     setClassTasks([]);
     resetTranscript();
@@ -512,6 +519,38 @@ export function PostTaskDialog({
     if (parsed) setParsed(false);
   }
 
+  async function handleImportTask(sourceTaskId: string, body: string | null) {
+    if (!user || importing) return;
+
+    setImporting(true);
+    try {
+      const taskId = await ensureDraft();
+      const result = await importTaskIntoDraft(taskId, sourceTaskId);
+      const importedText = body?.trim();
+
+      if (importedText) {
+        setRawText((prev) => {
+          const current = prev.trimEnd();
+          return current ? `${current}\n\n${importedText}` : importedText;
+        });
+      }
+
+      if (result.attachments.length > 0) {
+        setAttachments((prev) => [...prev, ...result.attachments]);
+      }
+
+      if (parsed) setParsed(false);
+      setImportOpen(false);
+      toast.success(t("toast.importedTask"));
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : t("toast.failedImportTask");
+      toast.error(message);
+    } finally {
+      setImporting(false);
+    }
+  }
+
   // ─── Submit (Create/Update Draft → Edit Body) ──────────────────────────
 
   async function handleEditBody() {
@@ -529,6 +568,8 @@ export function PostTaskDialog({
       const taskData = {
         title: title.trim(),
         sourceText: rawText.trim() || null,
+        // If user never used AI parse and has rawText, transfer it to description
+        description: !parsed && rawText.trim() ? rawText.trim() : undefined,
         startAt: startAt ? startAt.toISOString() : null,
         dueAt: dueAt ? dueAt.toISOString() : null,
         allowLateSubmission: effectiveAllowLate,
@@ -606,18 +647,65 @@ export function PostTaskDialog({
         <div className="max-h-[70vh] overflow-y-auto px-6 py-5">
           {/* Textarea area */}
           <div className="rounded-lg border border-border bg-background">
-            <textarea
-              ref={rawTextAreaRef}
-              value={rawText}
-              onChange={(e) => {
-                setRawText(e.target.value);
-                if (parsed) setParsed(false);
-              }}
-              onPaste={handleRawTextPaste}
-              placeholder={t("inputPlaceholder")}
-              className="w-full resize-none rounded-t-lg bg-transparent px-4 py-3 text-sm text-foreground placeholder:text-text-muted-soft focus:outline-none"
-              style={{ minHeight: 130 }}
-            />
+            <div className="relative">
+              <textarea
+                ref={rawTextAreaRef}
+                value={rawText}
+                onChange={(e) => {
+                  setRawText(e.target.value);
+                  if (parsed) setParsed(false);
+                }}
+                onPaste={handleRawTextPaste}
+                placeholder={t("inputPlaceholder")}
+                className="w-full resize-none rounded-t-lg bg-transparent px-4 py-3 pb-14 pr-16 text-sm text-foreground placeholder:text-text-muted-soft focus:outline-none"
+                style={{ minHeight: 130 }}
+              />
+
+              {/* Voice Streaming */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (isStreaming || isConnecting) {
+                    stopStreaming();
+                  } else if (user) {
+                    void startStreaming();
+                  }
+                }}
+                disabled={uploading || parsing}
+                aria-label={
+                  isStreaming
+                    ? t("stopRecording")
+                    : isConnecting
+                      ? t("connecting")
+                      : t("record")
+                }
+                title={
+                  isStreaming
+                    ? t("stopRecording")
+                    : isConnecting
+                      ? t("connecting")
+                      : t("record")
+                }
+                className={`absolute bottom-3 right-3 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border bg-background shadow-sm transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                  isStreaming
+                    ? "border-destructive text-destructive shadow-destructive/20"
+                    : isConnecting
+                      ? "border-border text-foreground"
+                      : "border-border text-muted-foreground hover:bg-surface-subtle hover:text-foreground"
+                }`}
+              >
+                {isStreaming ? (
+                  <span className="relative flex h-3 w-3">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
+                    <span className="relative inline-flex h-3 w-3 rounded-full bg-destructive" />
+                  </span>
+                ) : isConnecting ? (
+                  <Loader2 size={16} strokeWidth={2} className="animate-spin" />
+                ) : (
+                  <Mic size={16} strokeWidth={2} />
+                )}
+              </button>
+            </div>
 
             {/* Bottom bar */}
             <div className="flex items-center gap-2 border-t border-border px-3 py-2">
@@ -645,48 +733,19 @@ export function PostTaskDialog({
                 {uploading ? t("uploading") : t("attach")}
               </button>
 
-              {/* Voice Streaming */}
+              {/* Import Task */}
               <button
                 type="button"
-                onClick={() => {
-                  if (isStreaming || isConnecting) {
-                    stopStreaming();
-                  } else if (user) {
-                    void startStreaming();
-                  }
-                }}
-                disabled={uploading || parsing}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors disabled:opacity-50 ${
-                  isStreaming
-                    ? "border-destructive bg-destructive/10 text-destructive"
-                    : isConnecting
-                      ? "border-border bg-muted text-foreground"
-                      : "border-border text-muted-foreground hover:bg-surface-subtle hover:text-foreground"
-                }`}
+                onClick={() => setImportOpen(true)}
+                disabled={uploading || importing}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-surface-subtle hover:text-foreground disabled:opacity-50"
               >
-                {isStreaming ? (
-                  <>
-                    <span className="relative flex h-2 w-2">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
-                    </span>
-                    {t("stopRecording")}
-                  </>
-                ) : isConnecting ? (
-                  <>
-                    <Loader2
-                      size={13}
-                      strokeWidth={2}
-                      className="animate-spin"
-                    />
-                    {t("connecting")}
-                  </>
+                {importing ? (
+                  <Loader2 size={13} strokeWidth={2} className="animate-spin" />
                 ) : (
-                  <>
-                    <Mic size={13} strokeWidth={2} />
-                    {t("record")}
-                  </>
+                  <Import size={13} strokeWidth={2} />
                 )}
+                {t("importTask.button")}
               </button>
 
               {/* Expand Form */}
@@ -1084,6 +1143,13 @@ export function PostTaskDialog({
           </Button>
         </div>
       </DialogContent>
+      <TaskImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImport={handleImportTask}
+        importing={importing}
+        timeZone={timeZone}
+      />
     </Dialog>
   );
 }
