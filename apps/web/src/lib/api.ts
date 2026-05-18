@@ -738,6 +738,72 @@ export async function listMyTasks(): Promise<MyTaskSummary[]> {
   return apiRequest<MyTaskSummary[]>("/tasks/mine", {});
 }
 
+export type TaskImportSort = "updatedAt" | "createdAt";
+
+export interface TaskImportCandidate {
+  id: string;
+  title: string;
+  classId: string;
+  className: string | null;
+  startAt: string | null;
+  dueAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  attachmentCount: number;
+}
+
+export interface TaskImportCandidateAttachment {
+  id: string;
+  originalName: string;
+  mimeType: string | null;
+  sizeBytes: number | null;
+  isVisible: boolean;
+  createdAt: string;
+}
+
+export interface TaskImportCandidateDetail {
+  id: string;
+  body: string | null;
+  attachments: TaskImportCandidateAttachment[];
+}
+
+export async function listTaskImportCandidates(input: {
+  classId?: string;
+  sort?: TaskImportSort;
+} = {}): Promise<TaskImportCandidate[]> {
+  const params = new URLSearchParams();
+  if (input.classId) params.set("classId", input.classId);
+  if (input.sort) params.set("sort", input.sort);
+  const query = params.toString();
+  const res = await apiRequest<{ tasks: TaskImportCandidate[] }>(
+    `/tasks/import-candidates${query ? `?${query}` : ""}`,
+    {},
+  );
+  return res.tasks;
+}
+
+export async function getTaskImportCandidateDetail(
+  sourceTaskId: string,
+): Promise<TaskImportCandidateDetail> {
+  return apiRequest<TaskImportCandidateDetail>(
+    `/tasks/import-candidates/${sourceTaskId}`,
+    {},
+  );
+}
+
+export async function importTaskIntoDraft(
+  targetTaskId: string,
+  sourceTaskId: string,
+): Promise<{ attachments: AttachmentMeta[] }> {
+  return apiRequest<{ attachments: AttachmentMeta[] }>(
+    `/tasks/${targetTaskId}/import`,
+    {
+      method: "POST",
+      body: JSON.stringify({ sourceTaskId }),
+    },
+  );
+}
+
 export async function createTask(
   classId: string,
   input: {

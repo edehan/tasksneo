@@ -31,8 +31,11 @@ import {
 	exportTaskSubmissionsCsv,
 	getMySubmission,
 	getTaskDetail,
+	getTaskImportCandidateDetail,
 	getTaskSubmissionDetail,
 	gradeSubmission,
+	importTaskIntoDraft,
+	listTaskImportCandidates,
 	listMyTasks,
 	listTaskSubmissions,
 	markTaskViewed,
@@ -57,6 +60,11 @@ const parseSchema = z.object({
 
 const taskIdParamSchema = z.object({
 	taskId: z.string().uuid(),
+});
+
+const importCandidatesQuerySchema = z.object({
+	classId: z.string().uuid().optional(),
+	sort: z.enum(["updatedAt", "createdAt"]).optional(),
 });
 
 const gradeParamSchema = z.object({
@@ -95,6 +103,10 @@ const gradeBodySchema = z.object({
 
 const upsertSubmissionBodySchema = z.object({
 	content: z.string().nullable(),
+});
+
+const importTaskBodySchema = z.object({
+	sourceTaskId: z.string().uuid(),
 });
 
 const MAX_UPLOAD_FILES = 50;
@@ -213,6 +225,23 @@ tasksRouter.post("/parse", async (c) => {
 	);
 });
 
+tasksRouter.get("/import-candidates", async (c) => {
+	const authUser = requireAuthUser(c);
+	const query = importCandidatesQuerySchema.parse(c.req.query());
+	const tasks = await listTaskImportCandidates(authUser.userId, query);
+	return c.json({ tasks }, 200);
+});
+
+tasksRouter.get("/import-candidates/:taskId", async (c) => {
+	const authUser = requireAuthUser(c);
+	const params = taskIdParamSchema.parse(c.req.param());
+	const task = await getTaskImportCandidateDetail(
+		authUser.userId,
+		params.taskId,
+	);
+	return c.json(task, 200);
+});
+
 tasksRouter.get("/:taskId", async (c) => {
 	const authUser = requireAuthUser(c);
 	const params = taskIdParamSchema.parse(c.req.param());
@@ -226,6 +255,18 @@ tasksRouter.patch("/:taskId", async (c) => {
 	const body = updateTaskBodySchema.parse(await c.req.json());
 	const task = await updateTask(params.taskId, authUser.userId, body);
 	return c.json(task, 200);
+});
+
+tasksRouter.post("/:taskId/import", async (c) => {
+	const authUser = requireAuthUser(c);
+	const params = taskIdParamSchema.parse(c.req.param());
+	const body = importTaskBodySchema.parse(await c.req.json());
+	const result = await importTaskIntoDraft(
+		params.taskId,
+		authUser.userId,
+		body.sourceTaskId,
+	);
+	return c.json(result, 201);
 });
 
 tasksRouter.post("/:taskId/parse", async (c) => {

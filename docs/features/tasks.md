@@ -19,6 +19,25 @@
 - 草稿任务不会出现在成员任务列表中（`GET /classes/:classId/tasks` 仅返回已发布任务）。
 - 草稿附件在发布前后都复用同一 MinIO 对象与 `taskId` 关联，不做重复拷贝。
 
+### 导入已有任务
+
+创建任务对话框提供"导入任务"入口，用于复用当前用户管理范围内的已发布任务：
+
+1. `GET /tasks/import-candidates?classId=&sort=updatedAt|createdAt` 返回当前用户作为 `OWNER/ADMIN` 的班级中的已发布、未删除任务。
+   - 默认按 `updatedAt desc` 排序。
+   - 响应只包含列表展示所需的精简字段：`id/title/classId/className/createdAt/updatedAt/startAt/dueAt/attachmentCount`。
+   - 候选列表不返回任务正文，避免列表查询读取大段 Markdown。
+2. 用户单选任务后，前端调用 `GET /tasks/import-candidates/:taskId` 获取预览详情。
+   - 返回 `body`，对应 `tasks.description`，即任务最终正文。
+   - 返回附件摘要，不返回下载地址。
+   - 不使用 `sourceText`，因为 `sourceText` 只代表创建时的原始输入。
+3. 用户确认导入后，前端复用已预览的 `body` 追加到创建任务输入框。
+4. 同时调用 `POST /tasks/:targetTaskId/import`，body 为 `{ "sourceTaskId": "..." }`。
+   - 若当前没有目标草稿，前端先创建草稿。
+   - 后端校验用户对目标草稿和源任务所属班级均有 `OWNER/ADMIN` 权限。
+   - 后端用 MinIO/S3 server-side copy 复制源任务附件，生成新的 `tasks/{targetTaskId}/{uuid}.{ext}` 对象 key，并在 `attachments` 表写入新记录。
+   - 该接口只返回新建附件记录；正文不在导入接口中重复读取或返回。
+
 ### 页面结构
 
 任务创建页面分为上下两个区域：
