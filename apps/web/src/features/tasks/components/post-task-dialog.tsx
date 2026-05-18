@@ -568,6 +568,8 @@ export function PostTaskDialog({
       const taskData = {
         title: title.trim(),
         sourceText: rawText.trim() || null,
+        // If user never used AI parse and has rawText, transfer it to description
+        description: !parsed && rawText.trim() ? rawText.trim() : undefined,
         startAt: startAt ? startAt.toISOString() : null,
         dueAt: dueAt ? dueAt.toISOString() : null,
         allowLateSubmission: effectiveAllowLate,
