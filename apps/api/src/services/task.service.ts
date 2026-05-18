@@ -1400,6 +1400,11 @@ export async function importTaskIntoDraft(
 		orderBy: { createdAt: "asc" },
 	});
 
+	await prisma.task.update({
+		where: { id: targetTaskId },
+		data: { importedFromTaskId: sourceTaskId },
+	});
+
 	return {
 		attachments: attachments.map(toAttachmentMeta),
 	};
