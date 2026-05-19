@@ -12,7 +12,7 @@ const DOCS_URL = env.VITE_DOCS_URL ?? REPOSITORY_URL;
 const API_DOCS_URL = env.VITE_API_DOCS_URL ?? "";
 const CONTACT_EMAIL = env.VITE_CONTACT_EMAIL ?? "";
 const LINKS = {
-	getStarted: `${APP_URL}/dashboard`,
+	getStarted: APP_URL,
 	repository: REPOSITORY_URL,
 	docs: DOCS_URL,
 	apiDocs: API_DOCS_URL,
