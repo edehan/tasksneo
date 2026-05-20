@@ -18,7 +18,10 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useCooldown } from "@/hooks/use-cooldown";
 import { ApiError, register } from "@/lib/api";
+
+const EMAIL_SEND_COOLDOWN_SECONDS = 60;
 
 export function RegisterForm() {
   const t = useTranslations("authRegister");
@@ -28,6 +31,7 @@ export function RegisterForm() {
   const [sent, setSent] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const resetCaptcha = useCallback(() => setCaptchaToken(null), []);
+  const { coolingDown, remainingSeconds, startCooldown } = useCooldown();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -38,6 +42,7 @@ export function RegisterForm() {
       await register(email, captchaToken);
       setSent(true);
       setCaptchaToken(null);
+      startCooldown(EMAIL_SEND_COOLDOWN_SECONDS);
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("registrationFailed");
@@ -52,6 +57,7 @@ export function RegisterForm() {
     try {
       await register(email, captchaToken);
       setCaptchaToken(null);
+      startCooldown(EMAIL_SEND_COOLDOWN_SECONDS);
       toast.success(t("verificationEmailResent"));
     } catch (err) {
       const message =
@@ -92,9 +98,15 @@ export function RegisterForm() {
             variant="outline"
             className="w-full"
             onClick={handleResend}
-            disabled={submitting || (isCaptchaEnabled() && !captchaToken)}
+            disabled={
+              submitting || coolingDown || (isCaptchaEnabled() && !captchaToken)
+            }
           >
-            {submitting ? t("sending") : t("resendEmail")}
+            {submitting
+              ? t("sending")
+              : coolingDown
+                ? `${t("resendEmail")} (${remainingSeconds}s)`
+                : t("resendEmail")}
           </Button>
           <Button
             variant="ghost"
@@ -175,11 +187,16 @@ export function RegisterForm() {
             className="w-full"
             disabled={
               submitting ||
+              coolingDown ||
               !agreedToTerms ||
               (isCaptchaEnabled() && !captchaToken)
             }
           >
-            {submitting ? t("sending") : t("continueWithEmail")}
+            {submitting
+              ? t("sending")
+              : coolingDown
+                ? `${t("continueWithEmail")} (${remainingSeconds}s)`
+                : t("continueWithEmail")}
           </Button>
           <p className="text-sm text-muted-foreground">
             {t("alreadyHaveAccount")}{" "}

@@ -4,7 +4,15 @@ import {
 	EmailTokenPurpose,
 	prisma,
 } from "@taskflow/db";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import {
+	afterAll,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 
 import { createApp } from "../app.js";
 import {
@@ -1868,6 +1876,63 @@ describe("Session lifecycle", () => {
 		expect(existing.response.status).toBe(200);
 		expect(missing.response.status).toBe(200);
 		expect(existing.body).toEqual(missing.body);
+	});
+
+	it("requires CAPTCHA for password reset requests without revealing whether the email exists", async () => {
+		const previousEnabled = process.env.TURNSTILE_ENABLED;
+		const previousSecret = process.env.TURNSTILE_SECRET_KEY;
+		const previousFetch = globalThis.fetch;
+		const email = uniqueEmail("forgot-captcha");
+		await createTestUser({ email, password: "Passw0rd!" });
+
+		process.env.TURNSTILE_ENABLED = "true";
+		process.env.TURNSTILE_SECRET_KEY = "secret";
+
+		try {
+			const missingCaptcha = await requestJson(app, "/auth/forgot-password", {
+				method: "POST",
+				body: JSON.stringify({ email }),
+			});
+			expect(missingCaptcha.response.status).toBe(400);
+			expect((missingCaptcha.body as { code: string }).code).toBe(
+				"CAPTCHA_REQUIRED",
+			);
+
+			globalThis.fetch = vi.fn(async () => {
+				return new Response(
+					JSON.stringify({ success: true, action: "password_reset" }),
+					{ headers: { "Content-Type": "application/json" } },
+				);
+			}) as typeof fetch;
+
+			const existing = await requestJson(app, "/auth/forgot-password", {
+				method: "POST",
+				body: JSON.stringify({ email, captchaToken: "token" }),
+			});
+			const missing = await requestJson(app, "/auth/forgot-password", {
+				method: "POST",
+				body: JSON.stringify({
+					email: uniqueEmail("forgot-captcha-missing"),
+					captchaToken: "token",
+				}),
+			});
+
+			expect(existing.response.status).toBe(200);
+			expect(missing.response.status).toBe(200);
+			expect(existing.body).toEqual(missing.body);
+		} finally {
+			if (previousEnabled === undefined) {
+				delete process.env.TURNSTILE_ENABLED;
+			} else {
+				process.env.TURNSTILE_ENABLED = previousEnabled;
+			}
+			if (previousSecret === undefined) {
+				delete process.env.TURNSTILE_SECRET_KEY;
+			} else {
+				process.env.TURNSTILE_SECRET_KEY = previousSecret;
+			}
+			globalThis.fetch = previousFetch;
+		}
 	});
 
 	it("does not reveal whether an email already exists during registration", async () => {

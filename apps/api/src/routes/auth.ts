@@ -60,6 +60,7 @@ const loginBodySchema = z.object({
 
 const forgotPasswordSchema = z.object({
 	email: emailSchema,
+	captchaToken: z.string().optional(),
 });
 
 const resetPasswordSchema = z.object({
@@ -191,6 +192,7 @@ authRouter.post("/logout", authMiddleware, async (c) => {
 
 authRouter.post("/forgot-password", async (c) => {
 	const body = forgotPasswordSchema.parse(await c.req.json());
+	await verifyCaptcha(body.captchaToken, "password_reset", getClientIp(c));
 	dispatchPasswordResetEmail(body.email, c.get("logger"));
 	// Always return success to prevent email enumeration
 	return c.json(

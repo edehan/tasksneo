@@ -3,8 +3,9 @@
 import { Mail } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
+import { CaptchaWidget, isCaptchaEnabled } from "@/components/captcha-widget";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,13 +17,19 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useCooldown } from "@/hooks/use-cooldown";
 import { ApiError, requestPasswordReset } from "@/lib/api";
+
+const EMAIL_SEND_COOLDOWN_SECONDS = 60;
 
 export function ForgotPasswordForm() {
   const t = useTranslations("authForgotPassword");
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const resetCaptcha = useCallback(() => setCaptchaToken(null), []);
+  const { coolingDown, remainingSeconds, startCooldown } = useCooldown();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -30,8 +37,10 @@ export function ForgotPasswordForm() {
 
     setSubmitting(true);
     try {
-      await requestPasswordReset(email);
+      await requestPasswordReset(email, captchaToken);
       setSent(true);
+      setCaptchaToken(null);
+      startCooldown(EMAIL_SEND_COOLDOWN_SECONDS);
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("somethingWentWrong");
@@ -44,7 +53,9 @@ export function ForgotPasswordForm() {
   async function handleResend() {
     setSubmitting(true);
     try {
-      await requestPasswordReset(email);
+      await requestPasswordReset(email, captchaToken);
+      setCaptchaToken(null);
+      startCooldown(EMAIL_SEND_COOLDOWN_SECONDS);
       toast.success(t("resetEmailResent"));
     } catch (err) {
       const message =
@@ -73,14 +84,27 @@ export function ForgotPasswordForm() {
         <CardContent className="text-center text-sm text-muted-foreground">
           <p>{t("didNotReceive")}</p>
         </CardContent>
+        <CardContent>
+          <CaptchaWidget
+            action="password_reset"
+            onSolve={setCaptchaToken}
+            onReset={resetCaptcha}
+          />
+        </CardContent>
         <CardFooter className="flex flex-col gap-3">
           <Button
             variant="outline"
             className="w-full"
             onClick={handleResend}
-            disabled={submitting}
+            disabled={
+              submitting || coolingDown || (isCaptchaEnabled() && !captchaToken)
+            }
           >
-            {submitting ? t("sending") : t("resendEmail")}
+            {submitting
+              ? t("sending")
+              : coolingDown
+                ? `${t("resendEmail")} (${remainingSeconds}s)`
+                : t("resendEmail")}
           </Button>
           <Button variant="ghost" className="w-full" asChild>
             <Link href="/login">{t("backToSignIn")}</Link>
@@ -113,10 +137,25 @@ export function ForgotPasswordForm() {
               autoFocus
             />
           </div>
+          <CaptchaWidget
+            action="password_reset"
+            onSolve={setCaptchaToken}
+            onReset={resetCaptcha}
+          />
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
-          <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting ? t("sending") : t("sendResetLink")}
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={
+              submitting || coolingDown || (isCaptchaEnabled() && !captchaToken)
+            }
+          >
+            {submitting
+              ? t("sending")
+              : coolingDown
+                ? `${t("sendResetLink")} (${remainingSeconds}s)`
+                : t("sendResetLink")}
           </Button>
           <p className="text-sm text-muted-foreground">
             {t("rememberPassword")}{" "}
