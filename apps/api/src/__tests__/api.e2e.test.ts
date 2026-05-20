@@ -2324,6 +2324,44 @@ describe("Session lifecycle", () => {
 		expect(reusedToken.response.status).toBe(400);
 	});
 
+	it("does not allow inactive users to use password recovery links", async () => {
+		const email = uniqueEmail("reset-inactive");
+		await createTestUser({ email, password: "Passw0rd!" });
+		const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+		await prisma.user.update({
+			where: { id: user.id },
+			data: { isActive: false },
+		});
+
+		const resetToken = `test-reset-inactive-${Math.random().toString(36).slice(2)}`;
+		await prisma.emailVerificationToken.create({
+			data: {
+				email,
+				token: resetToken,
+				purpose: EmailTokenPurpose.PASSWORD_RESET,
+				userId: user.id,
+				expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+			},
+		});
+
+		const resetRes = await requestJson(app, "/auth/reset-password", {
+			method: "POST",
+			body: JSON.stringify({
+				token: resetToken,
+				password: "Passw0rd!Inactive",
+			}),
+		});
+		expect(resetRes.response.status).toBe(403);
+		expect((resetRes.body as { code: string }).code).toBe("USER_INACTIVE");
+
+		const signInRes = await requestJson(app, "/auth/reset-password/sign-in", {
+			method: "POST",
+			body: JSON.stringify({ token: resetToken }),
+		});
+		expect(signInRes.response.status).toBe(403);
+		expect((signInRes.body as { code: string }).code).toBe("USER_INACTIVE");
+	});
+
 	it("GET /users/me/sessions lists sessions and marks the current one", async () => {
 		const email = uniqueEmail("sessions-list");
 		const first = await createTestUser({ email });

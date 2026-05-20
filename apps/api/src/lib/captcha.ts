@@ -7,7 +7,7 @@ export type CaptchaAction = "register" | "email_change";
 
 interface TurnstileSiteVerifyResponse {
 	success: boolean;
-	action?: string;
+	action: string;
 	"error-codes"?: string[];
 }
 
@@ -80,7 +80,7 @@ export async function verifyCaptcha(
 		);
 	}
 
-	if (!result.success || (result.action && result.action !== action)) {
+	if (!result.success || result.action !== action) {
 		throw new AppError(403, "CAPTCHA_FAILED", "CAPTCHA verification failed");
 	}
 }

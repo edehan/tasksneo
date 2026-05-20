@@ -123,6 +123,18 @@ describe("Turnstile CAPTCHA verification", () => {
 		);
 	});
 
+	it("rejects Siteverify responses without the expected action", async () => {
+		process.env.TURNSTILE_ENABLED = "true";
+		process.env.TURNSTILE_SECRET_KEY = "secret";
+		mockFetch({ success: true });
+
+		await expectAppError(
+			verifyCaptcha("token", "register", "203.0.113.10"),
+			"CAPTCHA_FAILED",
+			403,
+		);
+	});
+
 	it("treats non-2xx Siteverify responses as unavailable", async () => {
 		process.env.TURNSTILE_ENABLED = "true";
 		process.env.TURNSTILE_SECRET_KEY = "secret";

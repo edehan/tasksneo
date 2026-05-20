@@ -203,7 +203,9 @@ export async function sendRegistrationEmail(email: string) {
 		where: { email: normalizedEmail },
 	});
 	if (existing) {
-		await sendExistingAccountEmail(normalizedEmail, existing.id);
+		if (existing.isActive) {
+			await sendExistingAccountEmail(normalizedEmail, existing.id);
+		}
 		return;
 	}
 
@@ -324,7 +326,7 @@ export async function sendPasswordResetEmail(email: string) {
 	});
 
 	// Silent return — do not reveal whether email exists
-	if (!user) {
+	if (!user || !user.isActive) {
 		return;
 	}
 
@@ -370,6 +372,10 @@ export async function resetPassword(token: string, newPassword: string) {
 
 	if (!user) {
 		throw new AppError(400, "INVALID_TOKEN", "User not found");
+	}
+
+	if (!user.isActive) {
+		throw new AppError(403, "USER_INACTIVE", "Account is disabled");
 	}
 
 	const passwordHash = await hashPassword(newPassword);
@@ -426,6 +432,10 @@ export async function signInWithPasswordResetToken(
 
 	if (!user) {
 		throw new AppError(400, "INVALID_TOKEN", "User not found");
+	}
+
+	if (!user.isActive) {
+		throw new AppError(403, "USER_INACTIVE", "Account is disabled");
 	}
 
 	const { token: sessionToken, session } = await createBrowserSession({
