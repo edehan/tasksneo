@@ -114,7 +114,7 @@ components:
           format: email
         captchaToken:
           type: string
-          description: Optional Cap.js token when CAPTCHA is enabled
+          description: Optional Cloudflare Turnstile token when CAPTCHA is enabled
       description: Step 1 — sends a verification email to the address.
 
     RegisterCompleteRequest:
@@ -180,7 +180,7 @@ components:
           format: email
         captchaToken:
           type: string
-          description: Optional Cap.js token when CAPTCHA is enabled
+          description: Optional Cloudflare Turnstile token when CAPTCHA is enabled
 
     ConfirmEmailRequest:
       type: object

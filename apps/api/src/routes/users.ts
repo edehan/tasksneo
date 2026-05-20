@@ -105,7 +105,7 @@ const confirmEmailSchema = z.object({
 usersRouter.post("/me/email/change", async (c) => {
 	const authUser = requireAuthUser(c);
 	const body = changeEmailSchema.parse(await c.req.json());
-	await verifyCaptcha(body.captchaToken);
+	await verifyCaptcha(body.captchaToken, "email_change", getClientIp(c));
 	await sendEmailChangeVerification(authUser.userId, body.email);
 	return c.json({ message: "Verification email sent" }, 200);
 });

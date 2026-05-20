@@ -405,7 +405,11 @@ function ChangeEmailDialog() {
                 className="mt-2"
               />
             </div>
-            <CaptchaWidget onSolve={setCaptchaToken} onReset={resetCaptcha} />
+            <CaptchaWidget
+              action="email_change"
+              onSolve={setCaptchaToken}
+              onReset={resetCaptcha}
+            />
             <DialogFooter>
               <Button
                 type="button"

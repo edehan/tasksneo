@@ -1,14 +1,25 @@
 import { AppError } from "./errors.js";
 
-interface CapSiteVerifyResponse {
+const TURNSTILE_SITEVERIFY_URL =
+	"https://challenges.cloudflare.com/turnstile/v0/siteverify";
+
+export type CaptchaAction = "register" | "email_change";
+
+interface TurnstileSiteVerifyResponse {
 	success: boolean;
+	action?: string;
+	"error-codes"?: string[];
 }
 
 export function isCaptchaEnabled(): boolean {
-	return process.env.CAP_ENABLED === "true";
+	return process.env.TURNSTILE_ENABLED === "true";
 }
 
-export async function verifyCaptcha(token: string | undefined): Promise<void> {
+export async function verifyCaptcha(
+	token: string | undefined,
+	action: CaptchaAction,
+	remoteIp?: string | null,
+): Promise<void> {
 	if (!isCaptchaEnabled()) {
 		return;
 	}
@@ -21,10 +32,9 @@ export async function verifyCaptcha(token: string | undefined): Promise<void> {
 		);
 	}
 
-	const capUrl = process.env.CAP_URL;
-	const capSecret = process.env.CAP_SECRET;
+	const secret = process.env.TURNSTILE_SECRET_KEY;
 
-	if (!capUrl || !capSecret) {
+	if (!secret) {
 		throw new AppError(
 			503,
 			"CAPTCHA_UNAVAILABLE",
@@ -34,10 +44,14 @@ export async function verifyCaptcha(token: string | undefined): Promise<void> {
 
 	let response: Response;
 	try {
-		response = await fetch(`${capUrl}/siteverify`, {
+		response = await fetch(TURNSTILE_SITEVERIFY_URL, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ secret: capSecret, response: token }),
+			body: JSON.stringify({
+				secret,
+				response: token,
+				...(remoteIp ? { remoteip: remoteIp } : {}),
+			}),
 		});
 	} catch {
 		throw new AppError(
@@ -55,9 +69,18 @@ export async function verifyCaptcha(token: string | undefined): Promise<void> {
 		);
 	}
 
-	const result = (await response.json()) as CapSiteVerifyResponse;
+	let result: TurnstileSiteVerifyResponse;
+	try {
+		result = (await response.json()) as TurnstileSiteVerifyResponse;
+	} catch {
+		throw new AppError(
+			503,
+			"CAPTCHA_UNAVAILABLE",
+			"CAPTCHA service is unavailable",
+		);
+	}
 
-	if (!result.success) {
+	if (!result.success || (result.action && result.action !== action)) {
 		throw new AppError(403, "CAPTCHA_FAILED", "CAPTCHA verification failed");
 	}
 }

@@ -112,7 +112,7 @@ function auditRequestMeta(c: Context<{ Variables: AppVariables }>) {
 // Step 1: send verification email
 authRouter.post("/register", async (c) => {
 	const body = registerStep1Schema.parse(await c.req.json());
-	await verifyCaptcha(body.captchaToken);
+	await verifyCaptcha(body.captchaToken, "register", getClientIp(c));
 	await assertRegistrationOpen();
 	await sendRegistrationEmail(body.email);
 	return c.json({ message: "Verification email sent" }, 200);

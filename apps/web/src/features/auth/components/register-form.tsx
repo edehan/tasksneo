@@ -81,7 +81,11 @@ export function RegisterForm() {
           <p>{t("didNotReceive")}</p>
         </CardContent>
         <CardContent>
-          <CaptchaWidget onSolve={setCaptchaToken} onReset={resetCaptcha} />
+          <CaptchaWidget
+            action="register"
+            onSolve={setCaptchaToken}
+            onReset={resetCaptcha}
+          />
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
           <Button
@@ -159,7 +163,11 @@ export function RegisterForm() {
               </Link>
             </Label>
           </div>
-          <CaptchaWidget onSolve={setCaptchaToken} onReset={resetCaptcha} />
+          <CaptchaWidget
+            action="register"
+            onSolve={setCaptchaToken}
+            onReset={resetCaptcha}
+          />
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
           <Button

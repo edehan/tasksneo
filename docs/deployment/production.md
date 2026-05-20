@@ -244,7 +244,7 @@ Do not long-cache HTML, RSC payloads, private API responses, or `register-sw.js`
 6. Environment variables:
    - `NEXT_PUBLIC_API_BASE_URL` = `https://api.yourdomain.com`
    - `API_INTERNAL_URL` = `https://api.yourdomain.com` (same as public URL in split mode)
-   - `NEXT_PUBLIC_CAP_API_ENDPOINT` = `https://cap.yourdomain.com/<site-key>/` (CAPTCHA, omit to disable)
+   - `NEXT_PUBLIC_TURNSTILE_SITE_KEY` = your Cloudflare Turnstile site key (CAPTCHA, omit to disable)
 7. **Pin the Function region** to the same region as your VPS (Project Settings → Functions → Region)
 8. Deploy
 
@@ -267,7 +267,7 @@ This Next.js app deploys to Cloudflare Workers via the [OpenNext adapter](https:
 | Variable | Value |
 |----------|-------|
 | `NEXT_PUBLIC_API_BASE_URL` | `https://api.yourdomain.com` |
-| `NEXT_PUBLIC_CAP_API_ENDPOINT` | `https://cap.yourdomain.com/<site-key>/` (omit to disable CAPTCHA) |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key (omit to disable CAPTCHA) |
 | `NODE_VERSION` | `22` |
 
 > The `deploy` script in `apps/web/package.json` runs `opennextjs-cloudflare build && opennextjs-cloudflare deploy`, which builds Next.js, transforms the output, and deploys via wrangler.
@@ -288,31 +288,44 @@ pnpm run preview
 
 > **Note**: `NEXT_PUBLIC_API_BASE_URL` is baked into the frontend at build time. If you change the API domain, redeploy the frontend.
 
-## 7. CAPTCHA Setup (Cap.js)
+## 7. CAPTCHA Setup (Cloudflare Turnstile)
 
-[Cap.js](https://capjs.js.org) is a privacy-first proof-of-work CAPTCHA that protects registration and email-change endpoints from spam bots. Cap is deployed independently (see [Cap Standalone docs](https://capjs.js.org/guide/standalone/)) — it is **not** part of the TaskFlow docker-compose stack.
+[Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) protects registration and email-change endpoints from spam bots. Create a Turnstile widget in the Cloudflare dashboard with:
+
+- Mode: Managed
+- Size: Flexible
+- Theme: Auto
+- Appearance: Always visible
+- Execution: Render automatically
+- Language: Auto
+- Cloudflare branding: enabled
+- Hostnames: add each production/staging hostname that serves the web app
 
 ### Backend
 
 Add to `infra/.env`:
 
 ```bash
-CAP_ENABLED=true
-CAP_URL=https://cap.yourdomain.com/<site-key>   # your Cap instance + site key
-CAP_SECRET=<site-secret-key>                     # from Cap dashboard (NOT admin key)
+TURNSTILE_ENABLED=true
+TURNSTILE_SECRET_KEY=<turnstile-secret-key>
 ```
 
 Restart the API to pick up the new vars.
 
 ### Frontend
 
-Add `NEXT_PUBLIC_CAP_API_ENDPOINT` to your frontend build environment (Vercel / Cloudflare dashboard):
+Add `NEXT_PUBLIC_TURNSTILE_SITE_KEY` to your frontend build environment (Vercel / Cloudflare dashboard):
 
 ```
-NEXT_PUBLIC_CAP_API_ENDPOINT=https://cap.yourdomain.com/<site-key>/
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=<turnstile-site-key>
 ```
 
-When this variable is unset, the CAPTCHA widget is hidden and the backend skips verification — no changes needed for dev/test.
+When this variable is unset, the CAPTCHA widget is hidden. Keep `TURNSTILE_ENABLED` unset on the API in the same environment so the backend also skips verification.
+
+If you use Content Security Policy headers, allow Turnstile's origin:
+
+- `script-src https://challenges.cloudflare.com`
+- `frame-src https://challenges.cloudflare.com`
 
 ## 8. Admin Setup
 
@@ -355,9 +368,8 @@ When this variable is unset, the CAPTCHA widget is hidden and the backend skips 
 | `S3_PATH_STYLE` | Path-style addressing (`true` for R2/MinIO) |
 | `CORS_ORIGINS` | Allowed frontend origins (comma-separated) |
 | `NOTIFICATION_WORKER_ENABLED` | Enable background notification processing |
-| `CAP_ENABLED` | Enable CAPTCHA verification (`true` / unset) |
-| `CAP_URL` | Cap instance URL with site key (e.g. `https://cap.example.com/<key>`) |
-| `CAP_SECRET` | Cap site secret key (from dashboard) |
+| `TURNSTILE_ENABLED` | Enable Cloudflare Turnstile verification (`true` / unset) |
+| `TURNSTILE_SECRET_KEY` | Turnstile secret key from Cloudflare dashboard |
 
 User authentication tokens are opaque session IDs stored in PostgreSQL `sessions`; Redis is used for BullMQ jobs and business caches only.
 
@@ -367,7 +379,7 @@ User authentication tokens are opaque session IDs stored in PostgreSQL `sessions
 |----------|-------------|
 | `NEXT_PUBLIC_API_BASE_URL` | Public API URL used by the browser (build-time) |
 | `API_INTERNAL_URL` | API URL used by SSR on the server side; set to internal address when co-located, or same as public URL in split mode |
-| `NEXT_PUBLIC_CAP_API_ENDPOINT` | Cap widget endpoint (build-time, omit to disable CAPTCHA) |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Turnstile site key (build-time, omit to disable CAPTCHA) |
 | `INSTRUMENTATION_SCRIPT_URLS` | Optional analytics/RUM script URLs, comma-separated (e.g., `/instrumentation/rum.js,https://cdn.example.com/analytics.js`) |
 
 ### Runtime (Admin panel → `/admin`)
