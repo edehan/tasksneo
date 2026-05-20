@@ -1490,7 +1490,10 @@ paths:
       description: |
         Sends a verification email to the new address. The user's email
         will not change until they click the verification link.
-        Rate limited to 5 emails per address per 24 hours.
+        This endpoint returns the same 200 response whether or not the target
+        email is already bound to an account. Per-address email throttling is
+        applied before existence-sensitive work and does not expose a distinct
+        public response.
       security:
         - userAuth: []
       requestBody:
@@ -1509,19 +1512,6 @@ paths:
                 properties:
                   message:
                     type: string
-        '409':
-          description: Email already in use
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '429':
-          description: Rate limit exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
   /users/me/email/confirm:
     post:
       tags: [Users]
@@ -1546,6 +1536,12 @@ paths:
                 $ref: '#/components/schemas/UserProfile'
         '400':
           description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Target email is already bound to another account
           content:
             application/json:
               schema:

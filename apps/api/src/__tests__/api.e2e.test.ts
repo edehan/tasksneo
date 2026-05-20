@@ -2021,6 +2021,223 @@ describe("Session lifecycle", () => {
 		);
 	});
 
+	it("does not reveal whether a target email already exists when requesting an email change", async () => {
+		const previousEnabled = process.env.TURNSTILE_ENABLED;
+		const previousFetch = globalThis.fetch;
+		const origin = await createTestUser({
+			emailPrefix: "email-change-origin",
+		});
+		const existingTarget = await createTestUser({
+			emailPrefix: "email-change-existing",
+		});
+		const newTargetEmail = uniqueEmail("email-change-new");
+		const sentEmails: Array<Record<string, unknown>> = [];
+
+		process.env.TURNSTILE_ENABLED = "false";
+		await prisma.systemConfig.createMany({
+			data: [
+				{ key: "email.provider", value: "cyberpanel" },
+				{ key: "cyberpanel.api_key", value: encryptConfigValue("test-key") },
+				{ key: "cyberpanel.from", value: "no-reply@example.com" },
+			],
+		});
+		globalThis.fetch = vi.fn(async (_url, init) => {
+			sentEmails.push(JSON.parse(String(init?.body)));
+			return new Response(JSON.stringify({ success: true }), {
+				status: 202,
+				headers: { "Content-Type": "application/json" },
+			});
+		}) as typeof fetch;
+
+		try {
+			const existing = await requestJson(app, "/users/me/email/change", {
+				method: "POST",
+				headers: authHeader(origin.token),
+				body: JSON.stringify({ email: existingTarget.user.email }),
+			});
+			const missing = await requestJson(app, "/users/me/email/change", {
+				method: "POST",
+				headers: authHeader(origin.token),
+				body: JSON.stringify({ email: newTargetEmail }),
+			});
+
+			expect(existing.response.status).toBe(200);
+			expect(missing.response.status).toBe(200);
+			expect(existing.body).toEqual(missing.body);
+			expect(existing.body).toEqual({ message: "Verification email sent" });
+
+			const existingToken = await prisma.emailVerificationToken.findFirst({
+				where: {
+					email: existingTarget.user.email,
+					purpose: EmailTokenPurpose.EMAIL_CHANGE,
+				},
+			});
+			const missingToken = await prisma.emailVerificationToken.findFirst({
+				where: {
+					email: newTargetEmail,
+					purpose: EmailTokenPurpose.EMAIL_CHANGE,
+				},
+			});
+			expect(existingToken?.userId).toBe(origin.user.id);
+			expect(missingToken?.userId).toBe(origin.user.id);
+			expect(sentEmails).toHaveLength(2);
+			expect(sentEmails[0]?.subject).toBe(sentEmails[1]?.subject);
+			expect(String(sentEmails[0]?.text)).toContain(
+				"正在尝试将一个 TaskNeo 账号的邮箱修改为本邮箱",
+			);
+		} finally {
+			if (previousEnabled === undefined) {
+				delete process.env.TURNSTILE_ENABLED;
+			} else {
+				process.env.TURNSTILE_ENABLED = previousEnabled;
+			}
+			globalThis.fetch = previousFetch;
+		}
+	});
+
+	it("blocks email change confirmation when the target email is already bound to another account", async () => {
+		const previousEnabled = process.env.TURNSTILE_ENABLED;
+		const previousFetch = globalThis.fetch;
+		const origin = await createTestUser({
+			emailPrefix: "email-change-conflict-origin",
+		});
+		const existingTarget = await createTestUser({
+			emailPrefix: "email-change-conflict-existing",
+		});
+
+		process.env.TURNSTILE_ENABLED = "false";
+		await prisma.systemConfig.createMany({
+			data: [
+				{ key: "email.provider", value: "cyberpanel" },
+				{ key: "cyberpanel.api_key", value: encryptConfigValue("test-key") },
+				{ key: "cyberpanel.from", value: "no-reply@example.com" },
+			],
+		});
+		globalThis.fetch = vi.fn(async () => {
+			return new Response(JSON.stringify({ success: true }), {
+				status: 202,
+				headers: { "Content-Type": "application/json" },
+			});
+		}) as typeof fetch;
+
+		try {
+			const request = await requestJson(app, "/users/me/email/change", {
+				method: "POST",
+				headers: authHeader(origin.token),
+				body: JSON.stringify({ email: existingTarget.user.email }),
+			});
+			expect(request.response.status).toBe(200);
+
+			const token = await prisma.emailVerificationToken.findFirstOrThrow({
+				where: {
+					email: existingTarget.user.email,
+					purpose: EmailTokenPurpose.EMAIL_CHANGE,
+				},
+				orderBy: { createdAt: "desc" },
+			});
+
+			const confirm = await requestJson(app, "/users/me/email/confirm", {
+				method: "POST",
+				headers: authHeader(origin.token),
+				body: JSON.stringify({ token: token.token }),
+			});
+
+			expect(confirm.response.status).toBe(409);
+			expect((confirm.body as { code: string }).code).toBe(
+				"EMAIL_BOUND_TO_OTHER_ACCOUNT",
+			);
+
+			const remainingTokens = await prisma.emailVerificationToken.count({
+				where: {
+					email: existingTarget.user.email,
+					purpose: EmailTokenPurpose.EMAIL_CHANGE,
+				},
+			});
+			const unchangedOrigin = await prisma.user.findUniqueOrThrow({
+				where: { id: origin.user.id },
+			});
+			expect(remainingTokens).toBe(0);
+			expect(unchangedOrigin.email).toBe(origin.user.email);
+		} finally {
+			if (previousEnabled === undefined) {
+				delete process.env.TURNSTILE_ENABLED;
+			} else {
+				process.env.TURNSTILE_ENABLED = previousEnabled;
+			}
+			globalThis.fetch = previousFetch;
+		}
+	});
+
+	it("notifies the previous email with a masked new address after a successful email change", async () => {
+		const previousEnabled = process.env.TURNSTILE_ENABLED;
+		const previousFetch = globalThis.fetch;
+		const origin = await createTestUser({
+			emailPrefix: "email-change-notify-origin",
+		});
+		const newTargetEmail = uniqueEmail("email-change-notify-new");
+		const [localPart, domain] = newTargetEmail.split("@");
+		const maskedNewEmail = `${localPart[0]}***${localPart[localPart.length - 1]}@${domain}`;
+		const sentEmails: Array<Record<string, unknown>> = [];
+
+		process.env.TURNSTILE_ENABLED = "false";
+		await prisma.systemConfig.createMany({
+			data: [
+				{ key: "email.provider", value: "cyberpanel" },
+				{ key: "cyberpanel.api_key", value: encryptConfigValue("test-key") },
+				{ key: "cyberpanel.from", value: "no-reply@example.com" },
+			],
+		});
+		globalThis.fetch = vi.fn(async (_url, init) => {
+			sentEmails.push(JSON.parse(String(init?.body)));
+			return new Response(JSON.stringify({ success: true }), {
+				status: 202,
+				headers: { "Content-Type": "application/json" },
+			});
+		}) as typeof fetch;
+
+		try {
+			const request = await requestJson(app, "/users/me/email/change", {
+				method: "POST",
+				headers: authHeader(origin.token),
+				body: JSON.stringify({ email: newTargetEmail }),
+			});
+			expect(request.response.status).toBe(200);
+
+			const token = await prisma.emailVerificationToken.findFirstOrThrow({
+				where: {
+					email: newTargetEmail,
+					purpose: EmailTokenPurpose.EMAIL_CHANGE,
+				},
+				orderBy: { createdAt: "desc" },
+			});
+
+			const confirm = await requestJson(app, "/users/me/email/confirm", {
+				method: "POST",
+				headers: authHeader(origin.token),
+				body: JSON.stringify({ token: token.token }),
+			});
+			expect(confirm.response.status).toBe(200);
+			expect((confirm.body as { email: string }).email).toBe(newTargetEmail);
+
+			const notification = sentEmails.find(
+				(message) => message.to === origin.user.email,
+			);
+			expect(notification).toBeTruthy();
+			expect(notification?.subject).toBe("[TaskNeo] 你的邮箱已修改");
+			expect(String(notification?.text)).toContain(maskedNewEmail);
+			expect(String(notification?.text)).not.toContain(newTargetEmail);
+			expect(String(notification?.html)).toContain(maskedNewEmail);
+			expect(String(notification?.html)).not.toContain(newTargetEmail);
+		} finally {
+			if (previousEnabled === undefined) {
+				delete process.env.TURNSTILE_ENABLED;
+			} else {
+				process.env.TURNSTILE_ENABLED = previousEnabled;
+			}
+			globalThis.fetch = previousFetch;
+		}
+	});
+
 	it("normalizes email addresses across registration and login", async () => {
 		const rawEmail = `  Normalize.${Date.now()}@Example.COM  `;
 		const normalizedEmail = rawEmail.trim().toLowerCase();

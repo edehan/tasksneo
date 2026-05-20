@@ -7,18 +7,18 @@ import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
-import { confirmEmailChange, getMe } from "@/lib/api";
+import { ApiError, confirmEmailChange, getMe } from "@/lib/api";
 
 function VerifyEmailInner() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const router = useRouter();
-  const { updateUser } = useAuth();
+  const { logout, updateUser } = useAuth();
   const t = useTranslations("settingsVerifyEmail");
 
-  const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading",
-  );
+  const [status, setStatus] = useState<
+    "loading" | "success" | "email-bound" | "error"
+  >("loading");
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
@@ -37,6 +37,14 @@ function VerifyEmailInner() {
         toast.success(t("emailAddressUpdated"));
       })
       .catch((err) => {
+        if (
+          err instanceof ApiError &&
+          err.code === "EMAIL_BOUND_TO_OTHER_ACCOUNT"
+        ) {
+          setStatus("email-bound");
+          return;
+        }
+
         setErrorMessage(
           err instanceof Error ? err.message : t("verificationFailed"),
         );
@@ -69,6 +77,31 @@ function VerifyEmailInner() {
         >
           {t("backToProfile")}
         </Button>
+      </div>
+    );
+  }
+
+  if (status === "email-bound") {
+    return (
+      <div className="flex flex-col items-center gap-4 py-12 text-center">
+        <XCircle className="h-12 w-12 text-destructive" />
+        <div>
+          <h2 className="text-lg font-serif font-semibold">
+            {t("emailAlreadyBound")}
+          </h2>
+          <p className="mt-1 max-w-md text-sm text-muted-foreground">
+            {t("emailAlreadyBoundDescription")}
+          </p>
+        </div>
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => router.push("/settings/profile")}
+          >
+            {t("backToProfile")}
+          </Button>
+          <Button onClick={() => void logout()}>{t("signOutAndSignIn")}</Button>
+        </div>
       </div>
     );
   }

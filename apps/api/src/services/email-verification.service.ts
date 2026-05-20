@@ -182,6 +182,56 @@ function buildVerificationHtml(
 </html>`;
 }
 
+function buildNotificationHtml(
+	appTitle: string,
+	heading: string,
+	bodyText: string,
+) {
+	const accentColor = "#2C6E91";
+	const safeTitle = escapeHtml(appTitle);
+
+	return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#faf7f2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#faf7f2;">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background-color:#fffdf8;border-radius:8px;overflow:hidden;border:1px solid #e8e2d8;">
+        <tr><td style="height:4px;background-color:${accentColor};"></td></tr>
+        <tr><td style="padding:24px 32px 16px;">
+          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#8a8078;">${safeTitle}</p>
+        </td></tr>
+        <tr><td style="padding:0 32px 24px;">
+          <h2 style="margin:0 0 12px;font-size:18px;font-weight:600;color:#2c2825;">${escapeHtml(heading)}</h2>
+          <p style="margin:0;font-size:15px;line-height:1.6;color:#2c2825;">${bodyText}</p>
+        </td></tr>
+        <tr><td style="padding:16px 32px;border-top:1px solid #e8e2d8;">
+          <p style="margin:0;font-size:12px;color:#c0b8ad;text-align:center;">
+            你收到这封邮件是因为 ${safeTitle} 账户发生了安全相关变更。
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
+function maskEmailForNotification(email: string) {
+	const normalizedEmail = normalizeEmail(email);
+	const [localPart, domain] = normalizedEmail.split("@");
+
+	if (!localPart || !domain) {
+		return "***";
+	}
+
+	if (localPart.length <= 2) {
+		return `${localPart[0]}***@${domain}`;
+	}
+
+	return `${localPart[0]}***${localPart[localPart.length - 1]}@${domain}`;
+}
+
 // ── Registration flow ───────────────────────────────────────────────────────
 
 export async function sendRegistrationEmail(email: string) {
@@ -462,14 +512,16 @@ export async function sendEmailChangeVerification(
 	newEmail: string,
 ) {
 	const normalizedEmail = normalizeEmail(newEmail);
-	const existing = await prisma.user.findUnique({
-		where: { email: normalizedEmail },
-	});
-	if (existing) {
-		throw new AppError(409, "EMAIL_EXISTS", "Email already in use");
+	const attempts = await countRecentVerificationTokens(
+		normalizedEmail,
+		EmailTokenPurpose.EMAIL_CHANGE,
+	);
+
+	if (attempts >= RATE_LIMIT_MAX) {
+		return;
 	}
 
-	const token = await createVerificationToken(
+	const token = await createVerificationTokenWithoutRateLimit(
 		normalizedEmail,
 		EmailTokenPurpose.EMAIL_CHANGE,
 		userId,
@@ -480,16 +532,37 @@ export async function sendEmailChangeVerification(
 	const confirmUrl = `${baseUrl}/settings/verify-email?token=${token}`;
 
 	const subject = `[${appTitle}] 确认你的新邮箱`;
-	const text = `你收到这封邮件，是因为 ${appTitle} 账户发起了邮箱修改请求。\n\n请确认将邮箱更改为 ${normalizedEmail}：\n${confirmUrl}\n\n出于安全考虑，该链接 1 小时内有效。若非本人操作，可忽略本邮件。`;
+	const text = `你收到这封邮件，是因为有人正在尝试将一个 ${appTitle} 账号的邮箱修改为本邮箱（${normalizedEmail}）。\n\n如果这是你本人操作，请打开以下链接确认改绑：\n${confirmUrl}\n\n确认前，该账号仍会继续使用原邮箱。出于安全考虑，该链接 1 小时内有效。若非本人操作，可忽略本邮件。`;
 	const html = buildVerificationHtml(
 		appTitle,
 		"确认新邮箱",
-		`请点击下方按钮，确认将 ${escapeHtml(appTitle)} 账户邮箱修改为 <strong>${escapeHtml(normalizedEmail)}</strong>。`,
+		`我们收到请求：将一个 ${escapeHtml(appTitle)} 账号的邮箱修改为本邮箱（<strong>${escapeHtml(normalizedEmail)}</strong>）。如果这是你本人操作，请点击下方按钮确认。确认前，该账号仍会继续使用原邮箱。`,
 		"确认邮箱修改",
 		confirmUrl,
 	);
 
 	await sendEmail(normalizedEmail, subject, text, html);
+}
+
+async function sendEmailChangeSuccessNotification(
+	oldEmail: string,
+	newEmail: string,
+) {
+	const appTitle = await getAppTitle();
+	const maskedNewEmail = maskEmailForNotification(newEmail);
+	const subject = `[${appTitle}] 你的邮箱已修改`;
+	const text = `你的 ${appTitle} 账号邮箱已成功修改为 ${maskedNewEmail}。\n\n如果这不是你本人操作，请立即联系支持团队。`;
+	const html = buildNotificationHtml(
+		appTitle,
+		"邮箱已修改",
+		`你的 ${escapeHtml(appTitle)} 账号邮箱已成功修改为 <strong>${escapeHtml(maskedNewEmail)}</strong>。<br><br>如果这不是你本人操作，请立即联系支持团队。`,
+	);
+
+	try {
+		await sendEmail(oldEmail, subject, text, html);
+	} catch (error) {
+		rootLogger.warn({ err: error }, "email_change_success_notification_failed");
+	}
 }
 
 export async function confirmEmailChange(
@@ -499,6 +572,20 @@ export async function confirmEmailChange(
 	const row = await validateToken(token, EmailTokenPurpose.EMAIL_CHANGE);
 	const email = normalizeEmail(row.email);
 
+	// Check email still available (race condition guard)
+	const existing = await prisma.user.findUnique({
+		where: { email },
+		include: { school: { select: { name: true } } },
+	});
+	if (existing && existing.id !== row.userId) {
+		await consumeToken(row.id, email, EmailTokenPurpose.EMAIL_CHANGE);
+		throw new AppError(
+			409,
+			"EMAIL_BOUND_TO_OTHER_ACCOUNT",
+			"This email is already bound to another account",
+		);
+	}
+
 	if (!row.userId || row.userId !== authenticatedUserId) {
 		throw new AppError(
 			403,
@@ -507,13 +594,16 @@ export async function confirmEmailChange(
 		);
 	}
 
-	// Check email still available (race condition guard)
-	const existing = await prisma.user.findUnique({
-		where: { email },
-	});
 	if (existing) {
-		throw new AppError(409, "EMAIL_EXISTS", "Email already in use");
+		await consumeToken(row.id, email, EmailTokenPurpose.EMAIL_CHANGE);
+		await cacheDel(cacheKeys.userProfile(row.userId));
+		return toUserProfile(existing, null);
 	}
+
+	const previousUser = await prisma.user.findUniqueOrThrow({
+		where: { id: row.userId },
+		select: { email: true },
+	});
 
 	const user = await prisma.user.update({
 		where: { id: row.userId },
@@ -523,6 +613,7 @@ export async function confirmEmailChange(
 
 	await consumeToken(row.id, email, EmailTokenPurpose.EMAIL_CHANGE);
 	await cacheDel(cacheKeys.userProfile(row.userId));
+	await sendEmailChangeSuccessNotification(previousUser.email, email);
 
 	return toUserProfile(user, null);
 }

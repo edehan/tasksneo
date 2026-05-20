@@ -15,6 +15,9 @@
     "verificationFailed": "验证失败",
     "verifyingEmail": "正在验证邮箱...",
     "backToProfile": "返回个人资料",
+    "emailAlreadyBound": "此邮箱已绑定其他账号",
+    "emailAlreadyBoundDescription": "你正在尝试将当前账号邮箱改为本邮箱，但本邮箱已经绑定了另一个账号。如需改绑，请先退出当前账号，登录该邮箱对应的账号，将其注销或更换为其他邮箱后，再回到当前账号重新发起修改。",
+    "signOutAndSignIn": "退出并登录该邮箱账号",
     "emailUpdated": "邮箱已更新",
     "emailChangedSuccessfully": "您的邮箱地址已成功修改。"
   },

@@ -15,6 +15,9 @@
     "verificationFailed": "確認に失敗しました",
     "verifyingEmail": "メールを確認しています...",
     "backToProfile": "プロフィールに戻る",
+    "emailAlreadyBound": "このメールは別のアカウントに紐づいています",
+    "emailAlreadyBoundDescription": "現在のアカウントのメールアドレスをこのメールに変更しようとしていますが、このメールはすでに別のアカウントに紐づいています。使用するには、現在のアカウントからログアウトし、このメールを使用しているアカウントでログインして、そのアカウントを削除するか別のメールに変更してから、現在のアカウントで再度変更を申請してください。",
+    "signOutAndSignIn": "ログアウトしてログイン",
     "emailUpdated": "メールを更新しました",
     "emailChangedSuccessfully": "メールアドレスの変更が完了しました。"
   },
