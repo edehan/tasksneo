@@ -114,7 +114,7 @@ components:
           format: email
         captchaToken:
           type: string
-          description: Optional Cap.js token when CAPTCHA is enabled
+          description: Optional Cloudflare Turnstile token when CAPTCHA is enabled
       description: Step 1 — sends a verification email to the address.
 
     RegisterCompleteRequest:
@@ -180,7 +180,7 @@ components:
           format: email
         captchaToken:
           type: string
-          description: Optional Cap.js token when CAPTCHA is enabled
+          description: Optional Cloudflare Turnstile token when CAPTCHA is enabled
 
     ConfirmEmailRequest:
       type: object
@@ -1134,7 +1134,8 @@ paths:
 
         - Rate limited to 5 emails per address per 24 hours.
         - If `auth.registration_open` is false, returns 403.
-        - If email is already registered, returns 409.
+        - If email is already registered, returns the same 200 response and sends
+          an account recovery email instead of revealing that the account exists.
       requestBody:
         required: true
         content:
@@ -1157,19 +1158,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-        '409':
-          description: Email already registered
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '429':
-          description: Rate limit exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
   /auth/register/complete:
     post:
       tags: [Auth]
@@ -1502,7 +1490,10 @@ paths:
       description: |
         Sends a verification email to the new address. The user's email
         will not change until they click the verification link.
-        Rate limited to 5 emails per address per 24 hours.
+        This endpoint returns the same 200 response whether or not the target
+        email is already bound to an account. Per-address email throttling is
+        applied before existence-sensitive work and does not expose a distinct
+        public response.
       security:
         - userAuth: []
       requestBody:
@@ -1521,19 +1512,6 @@ paths:
                 properties:
                   message:
                     type: string
-        '409':
-          description: Email already in use
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '429':
-          description: Rate limit exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
   /users/me/email/confirm:
     post:
       tags: [Users]
@@ -1558,6 +1536,12 @@ paths:
                 $ref: '#/components/schemas/UserProfile'
         '400':
           description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Target email is already bound to another account
           content:
             application/json:
               schema:

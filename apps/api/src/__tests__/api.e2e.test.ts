@@ -4,7 +4,15 @@ import {
 	EmailTokenPurpose,
 	prisma,
 } from "@taskflow/db";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import {
+	afterAll,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 
 import { createApp } from "../app.js";
 import {
@@ -1870,6 +1878,366 @@ describe("Session lifecycle", () => {
 		expect(existing.body).toEqual(missing.body);
 	});
 
+	it("requires CAPTCHA for password reset requests without revealing whether the email exists", async () => {
+		const previousEnabled = process.env.TURNSTILE_ENABLED;
+		const previousSecret = process.env.TURNSTILE_SECRET_KEY;
+		const previousFetch = globalThis.fetch;
+		const email = uniqueEmail("forgot-captcha");
+		await createTestUser({ email, password: "Passw0rd!" });
+
+		process.env.TURNSTILE_ENABLED = "true";
+		process.env.TURNSTILE_SECRET_KEY = "secret";
+
+		try {
+			const missingCaptcha = await requestJson(app, "/auth/forgot-password", {
+				method: "POST",
+				body: JSON.stringify({ email }),
+			});
+			expect(missingCaptcha.response.status).toBe(400);
+			expect((missingCaptcha.body as { code: string }).code).toBe(
+				"CAPTCHA_REQUIRED",
+			);
+
+			globalThis.fetch = vi.fn(async () => {
+				return new Response(
+					JSON.stringify({ success: true, action: "password_reset" }),
+					{ headers: { "Content-Type": "application/json" } },
+				);
+			}) as typeof fetch;
+
+			const existing = await requestJson(app, "/auth/forgot-password", {
+				method: "POST",
+				body: JSON.stringify({ email, captchaToken: "token" }),
+			});
+			const missing = await requestJson(app, "/auth/forgot-password", {
+				method: "POST",
+				body: JSON.stringify({
+					email: uniqueEmail("forgot-captcha-missing"),
+					captchaToken: "token",
+				}),
+			});
+
+			expect(existing.response.status).toBe(200);
+			expect(missing.response.status).toBe(200);
+			expect(existing.body).toEqual(missing.body);
+		} finally {
+			if (previousEnabled === undefined) {
+				delete process.env.TURNSTILE_ENABLED;
+			} else {
+				process.env.TURNSTILE_ENABLED = previousEnabled;
+			}
+			if (previousSecret === undefined) {
+				delete process.env.TURNSTILE_SECRET_KEY;
+			} else {
+				process.env.TURNSTILE_SECRET_KEY = previousSecret;
+			}
+			globalThis.fetch = previousFetch;
+		}
+	});
+
+	it("does not reveal whether an email already exists during registration", async () => {
+		const existingEmail = uniqueEmail("register-existing");
+		const newEmail = uniqueEmail("register-new");
+		const existingUser = await createTestUser({
+			email: existingEmail,
+			password: "Passw0rd!",
+		});
+		const responses: Array<{ response: Response; body: unknown }> = [];
+
+		for (let i = 0; i < 6; i += 1) {
+			responses.push(
+				await requestJson(app, "/auth/register", {
+					method: "POST",
+					body: JSON.stringify({ email: existingEmail }),
+				}),
+			);
+			responses.push(
+				await requestJson(app, "/auth/register", {
+					method: "POST",
+					body: JSON.stringify({ email: newEmail }),
+				}),
+			);
+		}
+
+		for (const result of responses) {
+			expect(result.response.status).toBe(200);
+			expect(result.body).toEqual({ message: "Verification email sent" });
+		}
+
+		const existingRegistrationAttempts =
+			await prisma.emailVerificationToken.count({
+				where: {
+					email: existingEmail,
+					purpose: EmailTokenPurpose.REGISTRATION,
+				},
+			});
+		const newRegistrationAttempts = await prisma.emailVerificationToken.count({
+			where: {
+				email: newEmail,
+				purpose: EmailTokenPurpose.REGISTRATION,
+			},
+		});
+		expect(existingRegistrationAttempts).toBe(5);
+		expect(newRegistrationAttempts).toBe(5);
+
+		const newRegistrationToken =
+			await prisma.emailVerificationToken.findFirstOrThrow({
+				where: {
+					email: newEmail,
+					purpose: EmailTokenPurpose.REGISTRATION,
+				},
+				orderBy: { createdAt: "desc" },
+			});
+		expect(newRegistrationToken.userId).toBeNull();
+
+		const existingResetToken =
+			await prisma.emailVerificationToken.findFirstOrThrow({
+				where: {
+					email: existingEmail,
+					purpose: EmailTokenPurpose.PASSWORD_RESET,
+				},
+				orderBy: { createdAt: "desc" },
+			});
+		expect(existingResetToken.userId).toBe(existingUser.user.id);
+
+		const verifyReset = await requestJson(
+			app,
+			`/auth/verify-token?purpose=PASSWORD_RESET&token=${existingResetToken.token}`,
+		);
+		expect(verifyReset.response.status).toBe(200);
+		expect(verifyReset.body).toEqual({ valid: true, email: existingEmail });
+
+		const directSignIn = await requestJson(
+			app,
+			"/auth/reset-password/sign-in",
+			{
+				method: "POST",
+				body: JSON.stringify({ token: existingResetToken.token }),
+			},
+		);
+		expect(directSignIn.response.status).toBe(200);
+		expect((directSignIn.body as { user: { email: string } }).user.email).toBe(
+			existingEmail,
+		);
+	});
+
+	it("does not reveal whether a target email already exists when requesting an email change", async () => {
+		const previousEnabled = process.env.TURNSTILE_ENABLED;
+		const previousFetch = globalThis.fetch;
+		const origin = await createTestUser({
+			emailPrefix: "email-change-origin",
+		});
+		const existingTarget = await createTestUser({
+			emailPrefix: "email-change-existing",
+		});
+		const newTargetEmail = uniqueEmail("email-change-new");
+		const sentEmails: Array<Record<string, unknown>> = [];
+
+		process.env.TURNSTILE_ENABLED = "false";
+		await prisma.systemConfig.createMany({
+			data: [
+				{ key: "email.provider", value: "cyberpanel" },
+				{ key: "cyberpanel.api_key", value: encryptConfigValue("test-key") },
+				{ key: "cyberpanel.from", value: "no-reply@example.com" },
+			],
+		});
+		globalThis.fetch = vi.fn(async (_url, init) => {
+			sentEmails.push(JSON.parse(String(init?.body)));
+			return new Response(JSON.stringify({ success: true }), {
+				status: 202,
+				headers: { "Content-Type": "application/json" },
+			});
+		}) as typeof fetch;
+
+		try {
+			const existing = await requestJson(app, "/users/me/email/change", {
+				method: "POST",
+				headers: authHeader(origin.token),
+				body: JSON.stringify({ email: existingTarget.user.email }),
+			});
+			const missing = await requestJson(app, "/users/me/email/change", {
+				method: "POST",
+				headers: authHeader(origin.token),
+				body: JSON.stringify({ email: newTargetEmail }),
+			});
+
+			expect(existing.response.status).toBe(200);
+			expect(missing.response.status).toBe(200);
+			expect(existing.body).toEqual(missing.body);
+			expect(existing.body).toEqual({ message: "Verification email sent" });
+
+			const existingToken = await prisma.emailVerificationToken.findFirst({
+				where: {
+					email: existingTarget.user.email,
+					purpose: EmailTokenPurpose.EMAIL_CHANGE,
+				},
+			});
+			const missingToken = await prisma.emailVerificationToken.findFirst({
+				where: {
+					email: newTargetEmail,
+					purpose: EmailTokenPurpose.EMAIL_CHANGE,
+				},
+			});
+			expect(existingToken?.userId).toBe(origin.user.id);
+			expect(missingToken?.userId).toBe(origin.user.id);
+			expect(sentEmails).toHaveLength(2);
+			expect(sentEmails[0]?.subject).toBe(sentEmails[1]?.subject);
+			expect(String(sentEmails[0]?.text)).toContain(
+				"正在尝试将一个 TaskNeo 账号的邮箱修改为本邮箱",
+			);
+		} finally {
+			if (previousEnabled === undefined) {
+				delete process.env.TURNSTILE_ENABLED;
+			} else {
+				process.env.TURNSTILE_ENABLED = previousEnabled;
+			}
+			globalThis.fetch = previousFetch;
+		}
+	});
+
+	it("blocks email change confirmation when the target email is already bound to another account", async () => {
+		const previousEnabled = process.env.TURNSTILE_ENABLED;
+		const previousFetch = globalThis.fetch;
+		const origin = await createTestUser({
+			emailPrefix: "email-change-conflict-origin",
+		});
+		const existingTarget = await createTestUser({
+			emailPrefix: "email-change-conflict-existing",
+		});
+
+		process.env.TURNSTILE_ENABLED = "false";
+		await prisma.systemConfig.createMany({
+			data: [
+				{ key: "email.provider", value: "cyberpanel" },
+				{ key: "cyberpanel.api_key", value: encryptConfigValue("test-key") },
+				{ key: "cyberpanel.from", value: "no-reply@example.com" },
+			],
+		});
+		globalThis.fetch = vi.fn(async () => {
+			return new Response(JSON.stringify({ success: true }), {
+				status: 202,
+				headers: { "Content-Type": "application/json" },
+			});
+		}) as typeof fetch;
+
+		try {
+			const request = await requestJson(app, "/users/me/email/change", {
+				method: "POST",
+				headers: authHeader(origin.token),
+				body: JSON.stringify({ email: existingTarget.user.email }),
+			});
+			expect(request.response.status).toBe(200);
+
+			const token = await prisma.emailVerificationToken.findFirstOrThrow({
+				where: {
+					email: existingTarget.user.email,
+					purpose: EmailTokenPurpose.EMAIL_CHANGE,
+				},
+				orderBy: { createdAt: "desc" },
+			});
+
+			const confirm = await requestJson(app, "/users/me/email/confirm", {
+				method: "POST",
+				headers: authHeader(origin.token),
+				body: JSON.stringify({ token: token.token }),
+			});
+
+			expect(confirm.response.status).toBe(409);
+			expect((confirm.body as { code: string }).code).toBe(
+				"EMAIL_BOUND_TO_OTHER_ACCOUNT",
+			);
+
+			const remainingTokens = await prisma.emailVerificationToken.count({
+				where: {
+					email: existingTarget.user.email,
+					purpose: EmailTokenPurpose.EMAIL_CHANGE,
+				},
+			});
+			const unchangedOrigin = await prisma.user.findUniqueOrThrow({
+				where: { id: origin.user.id },
+			});
+			expect(remainingTokens).toBe(0);
+			expect(unchangedOrigin.email).toBe(origin.user.email);
+		} finally {
+			if (previousEnabled === undefined) {
+				delete process.env.TURNSTILE_ENABLED;
+			} else {
+				process.env.TURNSTILE_ENABLED = previousEnabled;
+			}
+			globalThis.fetch = previousFetch;
+		}
+	});
+
+	it("notifies the previous email with a masked new address after a successful email change", async () => {
+		const previousEnabled = process.env.TURNSTILE_ENABLED;
+		const previousFetch = globalThis.fetch;
+		const origin = await createTestUser({
+			emailPrefix: "email-change-notify-origin",
+		});
+		const newTargetEmail = uniqueEmail("email-change-notify-new");
+		const [localPart, domain] = newTargetEmail.split("@");
+		const maskedNewEmail = `${localPart[0]}***${localPart[localPart.length - 1]}@${domain}`;
+		const sentEmails: Array<Record<string, unknown>> = [];
+
+		process.env.TURNSTILE_ENABLED = "false";
+		await prisma.systemConfig.createMany({
+			data: [
+				{ key: "email.provider", value: "cyberpanel" },
+				{ key: "cyberpanel.api_key", value: encryptConfigValue("test-key") },
+				{ key: "cyberpanel.from", value: "no-reply@example.com" },
+			],
+		});
+		globalThis.fetch = vi.fn(async (_url, init) => {
+			sentEmails.push(JSON.parse(String(init?.body)));
+			return new Response(JSON.stringify({ success: true }), {
+				status: 202,
+				headers: { "Content-Type": "application/json" },
+			});
+		}) as typeof fetch;
+
+		try {
+			const request = await requestJson(app, "/users/me/email/change", {
+				method: "POST",
+				headers: authHeader(origin.token),
+				body: JSON.stringify({ email: newTargetEmail }),
+			});
+			expect(request.response.status).toBe(200);
+
+			const token = await prisma.emailVerificationToken.findFirstOrThrow({
+				where: {
+					email: newTargetEmail,
+					purpose: EmailTokenPurpose.EMAIL_CHANGE,
+				},
+				orderBy: { createdAt: "desc" },
+			});
+
+			const confirm = await requestJson(app, "/users/me/email/confirm", {
+				method: "POST",
+				headers: authHeader(origin.token),
+				body: JSON.stringify({ token: token.token }),
+			});
+			expect(confirm.response.status).toBe(200);
+			expect((confirm.body as { email: string }).email).toBe(newTargetEmail);
+
+			const notification = sentEmails.find(
+				(message) => message.to === origin.user.email,
+			);
+			expect(notification).toBeTruthy();
+			expect(notification?.subject).toBe("[TaskNeo] 你的邮箱已修改");
+			expect(String(notification?.text)).toContain(maskedNewEmail);
+			expect(String(notification?.text)).not.toContain(newTargetEmail);
+			expect(String(notification?.html)).toContain(maskedNewEmail);
+			expect(String(notification?.html)).not.toContain(newTargetEmail);
+		} finally {
+			if (previousEnabled === undefined) {
+				delete process.env.TURNSTILE_ENABLED;
+			} else {
+				process.env.TURNSTILE_ENABLED = previousEnabled;
+			}
+			globalThis.fetch = previousFetch;
+		}
+	});
+
 	it("normalizes email addresses across registration and login", async () => {
 		const rawEmail = `  Normalize.${Date.now()}@Example.COM  `;
 		const normalizedEmail = rawEmail.trim().toLowerCase();
@@ -2236,6 +2604,44 @@ describe("Session lifecycle", () => {
 			body: JSON.stringify({ token: resetToken }),
 		});
 		expect(reusedToken.response.status).toBe(400);
+	});
+
+	it("does not allow inactive users to use password recovery links", async () => {
+		const email = uniqueEmail("reset-inactive");
+		await createTestUser({ email, password: "Passw0rd!" });
+		const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+		await prisma.user.update({
+			where: { id: user.id },
+			data: { isActive: false },
+		});
+
+		const resetToken = `test-reset-inactive-${Math.random().toString(36).slice(2)}`;
+		await prisma.emailVerificationToken.create({
+			data: {
+				email,
+				token: resetToken,
+				purpose: EmailTokenPurpose.PASSWORD_RESET,
+				userId: user.id,
+				expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+			},
+		});
+
+		const resetRes = await requestJson(app, "/auth/reset-password", {
+			method: "POST",
+			body: JSON.stringify({
+				token: resetToken,
+				password: "Passw0rd!Inactive",
+			}),
+		});
+		expect(resetRes.response.status).toBe(403);
+		expect((resetRes.body as { code: string }).code).toBe("USER_INACTIVE");
+
+		const signInRes = await requestJson(app, "/auth/reset-password/sign-in", {
+			method: "POST",
+			body: JSON.stringify({ token: resetToken }),
+		});
+		expect(signInRes.response.status).toBe(403);
+		expect((signInRes.body as { code: string }).code).toBe("USER_INACTIVE");
 	});
 
 	it("GET /users/me/sessions lists sessions and marks the current one", async () => {

@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
+import { useCooldown } from "@/hooks/use-cooldown";
 import type { School } from "@/lib/api";
 import {
   ApiError,
@@ -36,6 +37,8 @@ import {
   requestEmailChange,
   updateProfile,
 } from "@/lib/api";
+
+const EMAIL_SEND_COOLDOWN_SECONDS = 60;
 
 function getBrowserTimezone(): string {
   try {
@@ -334,6 +337,7 @@ function ChangeEmailDialog() {
   const [sent, setSent] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const resetCaptcha = useCallback(() => setCaptchaToken(null), []);
+  const { coolingDown, remainingSeconds, startCooldown } = useCooldown();
 
   function handleOpenChange(isOpen: boolean) {
     setOpen(isOpen);
@@ -352,6 +356,8 @@ function ChangeEmailDialog() {
     try {
       await requestEmailChange(newEmail, captchaToken);
       setSent(true);
+      setCaptchaToken(null);
+      startCooldown(EMAIL_SEND_COOLDOWN_SECONDS);
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : t("failedSendVerification");
@@ -405,7 +411,11 @@ function ChangeEmailDialog() {
                 className="mt-2"
               />
             </div>
-            <CaptchaWidget onSolve={setCaptchaToken} onReset={resetCaptcha} />
+            <CaptchaWidget
+              action="email_change"
+              onSolve={setCaptchaToken}
+              onReset={resetCaptcha}
+            />
             <DialogFooter>
               <Button
                 type="button"
@@ -418,11 +428,16 @@ function ChangeEmailDialog() {
                 type="submit"
                 disabled={
                   submitting ||
+                  coolingDown ||
                   !newEmail ||
                   (isCaptchaEnabled() && !captchaToken)
                 }
               >
-                {submitting ? t("sending") : t("sendVerification")}
+                {submitting
+                  ? t("sending")
+                  : coolingDown
+                    ? `${t("sendVerification")} (${remainingSeconds}s)`
+                    : t("sendVerification")}
               </Button>
             </DialogFooter>
           </form>

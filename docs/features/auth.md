@@ -15,18 +15,20 @@
 
 1. 用户在 `/register` 第一步只提交邮箱。
 2. 后端检查 `auth.registration_open`；若关闭则拒绝注册。
-3. 后端发送注册验证邮件，并把一次性 token 写入 `email_verification_tokens`。
-4. 用户点击邮件链接，前端先调用 `GET /auth/verify-token?purpose=REGISTRATION` 校验 token。
-5. 用户在 `/register/complete` 页面补充密码、昵称、学校、学号、时区，并提交到 `POST /auth/register/complete`。
-6. 后端创建 `users`、`user_credentials`、私人班级与首个浏览器 session。
-7. 响应返回 `{ user }`，并通过 `Set-Cookie` 写入浏览器会话 cookie。
+3. 后端先按邮箱记录注册尝试并执行限流，再判断邮箱是否已存在。
+4. 若邮箱未注册，后端发送注册验证邮件，并把一次性 token 写入 `email_verification_tokens`；若邮箱已注册，后端发送“账号已存在”提醒邮件，邮件中提供 `/reset-password?token=...` 链接用于重置密码或直接登入。
+5. 注册第一步对已注册邮箱和未注册邮箱返回相同的 200 响应，避免泄露账号是否存在。
+6. 用户点击注册验证邮件链接，前端先调用 `GET /auth/verify-token?purpose=REGISTRATION` 校验 token。
+7. 用户在 `/register/complete` 页面补充密码、昵称、学校、学号、时区，并提交到 `POST /auth/register/complete`。
+8. 后端创建 `users`、`user_credentials`、私人班级与首个浏览器 session。
+9. 响应返回 `{ user }`，并通过 `Set-Cookie` 写入浏览器会话 cookie。
 
 ### 规则
 
 - 学校已选时，学号必填。
 - `trustDevice=true` 时创建 30 天滑动续期浏览器会话；否则创建 7 天固定过期会话。
 - 昵称为空时存 `NULL`，前端可回退显示邮箱。
-- 注册邮件按邮箱地址限流：24 小时内最多 5 封。
+- 注册尝试按邮箱地址限流：24 小时内最多处理 5 次；超过后仍返回相同成功响应，但不再发送邮件。
 
 ---
 
@@ -127,6 +129,9 @@
 ## 邮箱修改
 
 1. 已登录用户发起 `POST /users/me/email/change`
-2. 系统向新邮箱发送确认邮件
-3. 用户登录状态下调用 `POST /users/me/email/confirm`
-4. 邮箱更新成功后，现有 sessions 保持可用
+2. 系统不在请求阶段返回目标邮箱是否已注册；可发送时总是向目标邮箱发送同一类确认邮件
+3. 确认邮件说明“正在尝试将一个账号邮箱修改为本邮箱”，不暴露原邮箱
+4. 用户登录状态下调用 `POST /users/me/email/confirm`
+5. 确认阶段才检查目标邮箱是否已绑定其他账号；若已绑定，页面提示需先登录该邮箱对应账号并注销或更换邮箱后再重试
+6. 邮箱更新成功后，系统向原邮箱发送安全通知，通知中只展示脱敏后的新邮箱地址
+7. 邮箱更新成功后，现有 sessions 保持可用

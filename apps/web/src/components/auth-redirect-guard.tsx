@@ -10,18 +10,12 @@ function getAuthenticatedRedirectTarget(): string {
 }
 
 export function AuthRedirectGuard({ children }: { children: React.ReactNode }) {
-  const { user, hasSessionCookie, setAuth } = useAuth();
+  const { user, setAuth } = useAuth();
 
   useEffect(() => {
     let cancelled = false;
 
     if (!user) {
-      if (!hasSessionCookie) {
-        return () => {
-          cancelled = true;
-        };
-      }
-
       getMe({ suppressAuthExpired: true })
         .then((currentUser) => {
           if (cancelled) {
@@ -42,7 +36,7 @@ export function AuthRedirectGuard({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [hasSessionCookie, setAuth, user]);
+  }, [setAuth, user]);
 
   if (user) {
     return null;

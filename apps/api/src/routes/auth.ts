@@ -27,6 +27,7 @@ import {
 } from "../services/email-verification.service.js";
 import { exchangeMcpKey } from "../services/mcp-key.service.js";
 import { revokeSession } from "../services/session.service.js";
+import { assertRegistrationOpen } from "../services/system-config.service.js";
 import type { AppVariables } from "../types/context.js";
 
 const emailSchema = z.string().trim().email().transform(normalizeEmail);
@@ -59,6 +60,7 @@ const loginBodySchema = z.object({
 
 const forgotPasswordSchema = z.object({
 	email: emailSchema,
+	captchaToken: z.string().optional(),
 });
 
 const resetPasswordSchema = z.object({
@@ -111,7 +113,8 @@ function auditRequestMeta(c: Context<{ Variables: AppVariables }>) {
 // Step 1: send verification email
 authRouter.post("/register", async (c) => {
 	const body = registerStep1Schema.parse(await c.req.json());
-	await verifyCaptcha(body.captchaToken);
+	await verifyCaptcha(body.captchaToken, "register", getClientIp(c));
+	await assertRegistrationOpen();
 	await sendRegistrationEmail(body.email);
 	return c.json({ message: "Verification email sent" }, 200);
 });
@@ -189,6 +192,7 @@ authRouter.post("/logout", authMiddleware, async (c) => {
 
 authRouter.post("/forgot-password", async (c) => {
 	const body = forgotPasswordSchema.parse(await c.req.json());
+	await verifyCaptcha(body.captchaToken, "password_reset", getClientIp(c));
 	dispatchPasswordResetEmail(body.email, c.get("logger"));
 	// Always return success to prevent email enumeration
 	return c.json(

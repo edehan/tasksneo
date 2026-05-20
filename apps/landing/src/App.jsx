@@ -1,12 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const APP_URL = (import.meta.env.VITE_APP_URL ?? "").replace(/\/$/, "");
-const DOCS_URL = import.meta.env.VITE_DOCS_URL ?? "";
+const env = import.meta.env;
+
+function stripTrailingSlash(value = "") {
+	return value.replace(/\/$/, "");
+}
+
+const APP_URL = stripTrailingSlash(env.VITE_APP_URL);
+const REPOSITORY_URL = env.VITE_REPOSITORY_URL ?? "";
+const DOCS_URL = env.VITE_DOCS_URL ?? REPOSITORY_URL;
+const API_DOCS_URL = env.VITE_API_DOCS_URL ?? "";
+const CONTACT_EMAIL = env.VITE_CONTACT_EMAIL ?? "";
 const LINKS = {
-	login: `${APP_URL}/login`,
-	register: `${APP_URL}/register`,
-	getStarted: `${APP_URL}/dashboard`,
+	getStarted: APP_URL,
+	repository: REPOSITORY_URL,
 	docs: DOCS_URL,
+	apiDocs: API_DOCS_URL,
+	contact: CONTACT_EMAIL ? `mailto:${CONTACT_EMAIL}` : "",
 	terms: `${APP_URL}/terms`,
 	privacy: `${APP_URL}/privacy`,
 };
@@ -63,6 +73,10 @@ function resolvePreferredLocale() {
 		return lang.toLowerCase().startsWith("zh");
 	});
 	return hasChinese ? "zh" : "en";
+}
+
+function getRandomPaletteIndex(locale) {
+	return Math.floor(Math.random() * PALETTES[locale].length);
 }
 
 function prefersDarkMode() {
@@ -138,6 +152,8 @@ function Reveal({ children, delay = 0, direction = "up", style = {} }) {
 const FeatureIcons = {
 	Workflow: ({ color }) => (
 		<svg
+			aria-hidden="true"
+			focusable="false"
 			width="20"
 			height="20"
 			viewBox="0 0 24 24"
@@ -156,6 +172,8 @@ const FeatureIcons = {
 	),
 	Grading: ({ color }) => (
 		<svg
+			aria-hidden="true"
+			focusable="false"
 			width="20"
 			height="20"
 			viewBox="0 0 24 24"
@@ -171,6 +189,8 @@ const FeatureIcons = {
 	),
 	Sync: ({ color }) => (
 		<svg
+			aria-hidden="true"
+			focusable="false"
 			width="20"
 			height="20"
 			viewBox="0 0 24 24"
@@ -190,7 +210,14 @@ const FeatureIcons = {
 
 function FeishuLogo({ s = 36 }) {
 	return (
-		<svg width={s} height={s} viewBox="0 0 48 48" fill="none">
+		<svg
+			aria-hidden="true"
+			focusable="false"
+			width={s}
+			height={s}
+			viewBox="0 0 48 48"
+			fill="none"
+		>
 			<path d="M8 14l14 8-4 14L8 28V14z" fill="#3370FF" />
 			<path d="M22 22l14-8v14l-10 8-4-14z" fill="#00D6B9" />
 			<path d="M22 22l-4 14 10 0 10-8-14-8-2 2z" fill="#0FC6C2" opacity=".7" />
@@ -199,7 +226,14 @@ function FeishuLogo({ s = 36 }) {
 }
 function SlackLogo({ s = 36 }) {
 	return (
-		<svg width={s} height={s} viewBox="0 0 48 48" fill="none">
+		<svg
+			aria-hidden="true"
+			focusable="false"
+			width={s}
+			height={s}
+			viewBox="0 0 48 48"
+			fill="none"
+		>
 			<path
 				d="M19 10a3 3 0 10-3 3h3v-3zm0 4H10a3 3 0 100 6h9v-6z"
 				fill="#E01E5A"
@@ -221,7 +255,14 @@ function SlackLogo({ s = 36 }) {
 }
 function EvernoteLogo({ s = 36 }) {
 	return (
-		<svg width={s} height={s} viewBox="0 0 48 48" fill="none">
+		<svg
+			aria-hidden="true"
+			focusable="false"
+			width={s}
+			height={s}
+			viewBox="0 0 48 48"
+			fill="none"
+		>
 			<path
 				d="M24 6C14 6 10 16 10 24s4 18 14 18 14-8 14-18S34 6 24 6z"
 				fill="#00A82D"
@@ -233,7 +274,14 @@ function EvernoteLogo({ s = 36 }) {
 }
 function NotionLogo({ s = 36, tone = "#333" }) {
 	return (
-		<svg width={s} height={s} viewBox="0 0 48 48" fill="none">
+		<svg
+			aria-hidden="true"
+			focusable="false"
+			width={s}
+			height={s}
+			viewBox="0 0 48 48"
+			fill="none"
+		>
 			<rect
 				x="10"
 				y="8"
@@ -259,7 +307,14 @@ function NotionLogo({ s = 36, tone = "#333" }) {
 }
 function GmailLogo({ s = 36, surface = "#fff", border = "#E0E0E0" }) {
 	return (
-		<svg width={s} height={s} viewBox="0 0 48 48" fill="none">
+		<svg
+			aria-hidden="true"
+			focusable="false"
+			width={s}
+			height={s}
+			viewBox="0 0 48 48"
+			fill="none"
+		>
 			<rect
 				x="8"
 				y="12"
@@ -284,7 +339,14 @@ function GmailLogo({ s = 36, surface = "#fff", border = "#E0E0E0" }) {
 }
 function DingTalkLogo({ s = 36 }) {
 	return (
-		<svg width={s} height={s} viewBox="0 0 48 48" fill="none">
+		<svg
+			aria-hidden="true"
+			focusable="false"
+			width={s}
+			height={s}
+			viewBox="0 0 48 48"
+			fill="none"
+		>
 			<circle cx="24" cy="24" r="16" fill="#3089EC" opacity=".85" />
 			<path
 				d="M30 18l-6 8h4l-6 8 2-5h-4l4-8h-4l6-6z"
@@ -503,8 +565,8 @@ const DAYS_BY_LOCALE = {
 export default function LandingPage() {
 	const [locale, setLocale] = useState(() => resolvePreferredLocale());
 	const [isDark, setIsDark] = useState(() => prefersDarkMode());
-	const [activeColor, setActiveColor] = useState(
-		() => PALETTES[resolvePreferredLocale()][1].color,
+	const [activeColorIndex, setActiveColorIndex] = useState(() =>
+		getRandomPaletteIndex(locale),
 	);
 	const [aiExample, setAiExample] = useState(0);
 	const [aiTyping, setAiTyping] = useState(false);
@@ -517,6 +579,7 @@ export default function LandingPage() {
 	const AI_EXAMPLES = AI_EXAMPLES_BY_LOCALE[locale];
 	const GANTT_TASKS = GANTT_TASKS_BY_LOCALE[locale];
 	const DAYS = DAYS_BY_LOCALE[locale];
+	const activeColor = PALETTE[activeColorIndex % PALETTE.length].color;
 	const theme = THEMES[isDark ? "dark" : "light"];
 	const { bg, textPrimary, textSecondary, textMuted, borderColor, cardBg } =
 		theme;
@@ -528,6 +591,13 @@ export default function LandingPage() {
 			: "'Source Serif 4', Georgia, serif";
 	const t = (zhText, enText) => (locale === "zh" ? zhText : enText);
 	const ganttScroll = useScrollProgress();
+	const setActiveColor = useCallback(
+		(color) => {
+			const nextIndex = PALETTE.findIndex((p) => p.color === color);
+			if (nextIndex >= 0) setActiveColorIndex(nextIndex);
+		},
+		[PALETTE],
+	);
 
 	useEffect(() => {
 		const check = () => setIsMobile(window.innerWidth < 900);
@@ -544,6 +614,13 @@ export default function LandingPage() {
 		);
 		return () => clearInterval(timer);
 	}, [hoveredIntg, INTEGRATIONS.length]);
+
+	useEffect(() => {
+		const timer = window.setTimeout(() => {
+			setActiveColorIndex((activeColorIndex + 1) % PALETTE.length);
+		}, 5000);
+		return () => window.clearTimeout(timer);
+	}, [activeColorIndex, PALETTE.length]);
 
 	useEffect(() => {
 		const media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -566,18 +643,29 @@ export default function LandingPage() {
 	useEffect(() => {
 		document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
 		document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-		document.title =
+		const pageTitle =
 			locale === "zh"
 				? "TaskNeo | 班级协作的智能控制台"
 				: "TaskNeo | A Poetic Console for Class Rhythm";
-		const meta = document.querySelector('meta[name="description"]');
-		if (meta) {
-			meta.setAttribute(
-				"content",
-				locale === "zh"
-					? "TaskNeo 让 AI 解析、班级切换、甘特图编排和 MCP 工作流在一个协作系统内闭环运行。"
-					: "TaskNeo turns AI parsing, timeline orchestration, and MCP workflows into one graceful class collaboration loop.",
-			);
+		const pageDescription =
+			locale === "zh"
+				? "TaskNeo 让 AI 解析、班级切换、甘特图编排和 MCP 工作流在一个协作系统内闭环运行。"
+				: "TaskNeo turns AI parsing, timeline orchestration, and MCP workflows into one graceful class collaboration loop.";
+		document.title = pageTitle;
+		for (const selector of [
+			'meta[name="description"]',
+			'meta[property="og:description"]',
+			'meta[name="twitter:description"]',
+		]) {
+			document
+				.querySelector(selector)
+				?.setAttribute("content", pageDescription);
+		}
+		for (const selector of [
+			'meta[property="og:title"]',
+			'meta[name="twitter:title"]',
+		]) {
+			document.querySelector(selector)?.setAttribute("content", pageTitle);
 		}
 	}, [isDark, locale]);
 
@@ -652,6 +740,8 @@ export default function LandingPage() {
 						}}
 					>
 						<svg
+							aria-hidden="true"
+							focusable="false"
 							width="14"
 							height="14"
 							viewBox="0 0 24 24"
@@ -721,26 +811,7 @@ export default function LandingPage() {
 						))}
 					<div style={{ display: "flex", gap: 8 }}>
 						<a
-							href={LINKS.register}
-							style={{
-								padding: "8px 18px",
-								borderRadius: 9,
-								border: `1.5px solid ${borderColor}`,
-								background: "transparent",
-								color: textSecondary,
-								fontSize: 13,
-								fontWeight: 500,
-								cursor: "pointer",
-								fontFamily: sansFont,
-								textDecoration: "none",
-								display: "flex",
-								alignItems: "center",
-							}}
-						>
-							{t("注册", "Sign up")}
-						</a>
-						<a
-							href={LINKS.login}
+							href={LINKS.getStarted}
 							style={{
 								padding: "8px 18px",
 								borderRadius: 9,
@@ -758,7 +829,7 @@ export default function LandingPage() {
 								alignItems: "center",
 							}}
 						>
-							{t("登录", "Log in")}
+							{t("开始使用", "Get started")}
 						</a>
 					</div>
 				</div>
@@ -777,20 +848,25 @@ export default function LandingPage() {
 				}}
 			>
 				{PALETTE.map((p, i) => (
-					<div
-						key={i}
+					<button
+						key={`${p.name}-halo`}
+						type="button"
+						aria-label={t(`切换到${p.name}强调色`, `Use ${p.name} accent`)}
 						onMouseEnter={() => setActiveColor(p.color)}
+						onFocus={() => setActiveColor(p.color)}
 						style={{
 							position: "absolute",
 							width: isMobile ? 100 : 180,
 							height: isMobile ? 100 : 180,
 							borderRadius: "50%",
+							border: 0,
 							background: `radial-gradient(circle, ${p.color}18, transparent 70%)`,
 							top: `${12 + (i % 3) * 25}%`,
 							left: `${3 + i * 16}%`,
 							animation: `float 3.5s ease-in-out ${i * 0.5}s infinite`,
 							cursor: "default",
 							zIndex: 0,
+							padding: 0,
 						}}
 					/>
 				))}
@@ -851,7 +927,10 @@ export default function LandingPage() {
 										fontFamily: sansFont,
 									}}
 								>
-									{t("公测中", "Public Beta")}
+									{t(
+										"公测中 · 2026.5.5-2027.1.31",
+										"Public Beta · May 5, 2026-Jan 31, 2027",
+									)}
 								</span>
 							</div>
 						</Reveal>
@@ -953,7 +1032,7 @@ export default function LandingPage() {
 										display: "inline-block",
 									}}
 								>
-									{t("阅读文档", "Read docs")}
+									{t("代码仓库", "Code repository")}
 								</a>
 							</div>
 						</Reveal>
@@ -966,18 +1045,26 @@ export default function LandingPage() {
 									justifyContent: isMobile ? "center" : "flex-start",
 								}}
 							>
-								{PALETTE.map((p, i) => (
-									<div
-										key={i}
+								{PALETTE.map((p) => (
+									<button
+										key={`${p.name}-swatch`}
+										type="button"
+										aria-label={t(
+											`切换到${p.name}强调色`,
+											`Use ${p.name} accent`,
+										)}
 										onMouseEnter={() => setActiveColor(p.color)}
+										onFocus={() => setActiveColor(p.color)}
 										style={{
 											width: activeColor === p.color ? 28 : 10,
 											height: 10,
 											borderRadius: 5,
+											border: 0,
 											background: p.color,
 											cursor: "pointer",
 											transition: "all 0.4s cubic-bezier(.16,1,.3,1)",
 											opacity: activeColor === p.color ? 1 : 0.35,
+											padding: 0,
 										}}
 									/>
 								))}
@@ -1057,9 +1144,9 @@ export default function LandingPage() {
 											gap: 6,
 										}}
 									>
-										{PALETTE.map((p, i) => (
+										{PALETTE.map((p) => (
 											<div
-												key={i}
+												key={`${p.name}-preview-line`}
 												style={{
 													width: "100%",
 													height: 6,
@@ -1087,9 +1174,9 @@ export default function LandingPage() {
 												marginBottom: 12,
 											}}
 										/>
-										{GANTT_TASKS.slice(0, 5).map((t, i) => (
+										{GANTT_TASKS.slice(0, 5).map((t) => (
 											<div
-												key={i}
+												key={`${t.title}-preview`}
 												style={{
 													display: "flex",
 													alignItems: "center",
@@ -1160,6 +1247,8 @@ export default function LandingPage() {
 						{t("向下滚动", "Scroll down")}
 					</span>
 					<svg
+						aria-hidden="true"
+						focusable="false"
 						width="14"
 						height="22"
 						viewBox="0 0 16 24"
@@ -1206,16 +1295,30 @@ export default function LandingPage() {
 						direction="right"
 						style={{ flex: 1.15, minWidth: 0 }}
 					>
-						<div
+						<button
+							type="button"
+							aria-label={t(
+								"切换 AI 解析示例",
+								"Show another AI parsing example",
+							)}
 							onMouseEnter={cycleAi}
+							onFocus={cycleAi}
 							className="hover-lift"
 							style={{
+								appearance: "none",
+								WebkitAppearance: "none",
 								background: cardBg,
 								borderRadius: 16,
 								border: `1px solid ${borderColor}`,
 								overflow: "hidden",
 								cursor: "default",
 								boxShadow: "0 4px 32px rgba(0,0,0,0.04)",
+								color: "inherit",
+								display: "block",
+								fontFamily: "inherit",
+								padding: 0,
+								textAlign: "left",
+								width: "100%",
 							}}
 						>
 							<div
@@ -1285,6 +1388,8 @@ export default function LandingPage() {
 									}}
 								>
 									<svg
+										aria-hidden="true"
+										focusable="false"
 										width="15"
 										height="15"
 										viewBox="0 0 24 24"
@@ -1349,9 +1454,9 @@ export default function LandingPage() {
 											label: t("截止日期", "Due"),
 											value: AI_EXAMPLES[aiExample].output.due,
 										},
-									].map((f, i) => (
+									].map((f) => (
 										<div
-											key={i}
+											key={f.key}
 											style={{
 												padding: "12px 16px",
 												borderRadius: 10,
@@ -1414,7 +1519,7 @@ export default function LandingPage() {
 									{t("悬停查看更多示例", "Hover for another example")}
 								</p>
 							</div>
-						</div>
+						</button>
 					</Reveal>
 
 					<div style={{ flex: 1, minWidth: 0 }}>
@@ -1490,9 +1595,9 @@ export default function LandingPage() {
 										"Smart extraction of dates, duration, and class",
 									),
 									t("支持 12 种语言", "Supports 12 languages"),
-								].map((t, i) => (
+								].map((item) => (
 									<div
-										key={i}
+										key={item}
 										style={{ display: "flex", alignItems: "center", gap: 10 }}
 									>
 										<div
@@ -1509,6 +1614,8 @@ export default function LandingPage() {
 											}}
 										>
 											<svg
+												aria-hidden="true"
+												focusable="false"
 												width="12"
 												height="12"
 												viewBox="0 0 24 24"
@@ -1530,7 +1637,7 @@ export default function LandingPage() {
 												fontFamily: sansFont,
 											}}
 										>
-											{t}
+											{item}
 										</span>
 									</div>
 								))}
@@ -1626,9 +1733,9 @@ export default function LandingPage() {
 							paddingLeft: isMobile ? 120 : 200,
 						}}
 					>
-						{DAYS.map((d, i) => (
+						{DAYS.map((d) => (
 							<div
-								key={i}
+								key={d}
 								style={{
 									width: isMobile ? 70 : 110,
 									flexShrink: 0,
@@ -1674,9 +1781,9 @@ export default function LandingPage() {
 						>
 							{t("今天", "Today")}
 						</div>
-						{GANTT_TASKS.map((task, i) => (
+						{GANTT_TASKS.map((task) => (
 							<div
-								key={i}
+								key={task.title}
 								style={{
 									display: "flex",
 									alignItems: "center",
@@ -1911,9 +2018,9 @@ export default function LandingPage() {
 											"Changes from Notion, Slack, or Feishu echo back instantly.",
 										),
 									},
-								].map((f, i) => (
+								].map((f) => (
 									<div
-										key={i}
+										key={f.title}
 										style={{
 											display: "flex",
 											gap: 14,
@@ -1998,6 +2105,8 @@ export default function LandingPage() {
 										}}
 									>
 										<svg
+											aria-hidden="true"
+											focusable="false"
 											width="26"
 											height="26"
 											viewBox="0 0 24 24"
@@ -2020,7 +2129,7 @@ export default function LandingPage() {
 									{INTEGRATIONS.map((intg, i) => {
 										const isHov = hoveredIntg === i;
 										return (
-											<div key={i} style={{ position: "relative" }}>
+											<div key={intg.name} style={{ position: "relative" }}>
 												<button
 													type="button"
 													onClick={() =>
@@ -2124,10 +2233,15 @@ export default function LandingPage() {
 							</div>
 						) : (
 							<div
-								style={{ position: "relative", width: 480, height: 480 }}
-								onMouseLeave={() => setHoveredIntg(null)}
+								style={{
+									position: "relative",
+									width: 480,
+									height: 480,
+								}}
 							>
 								<svg
+									aria-hidden="true"
+									focusable="false"
 									style={{
 										position: "absolute",
 										inset: 0,
@@ -2137,7 +2251,7 @@ export default function LandingPage() {
 										pointerEvents: "none",
 									}}
 								>
-									{INTEGRATIONS.map((_, i) => {
+									{INTEGRATIONS.map((intg, i) => {
 										const angle =
 											(i / INTEGRATIONS.length) * Math.PI * 2 - Math.PI / 2;
 										const r = 175,
@@ -2147,7 +2261,7 @@ export default function LandingPage() {
 											ey = cy + Math.sin(angle) * r;
 										const isActive = activeLineIdx === i;
 										return (
-											<g key={i}>
+											<g key={intg.name}>
 												<line
 													x1={cx}
 													y1={cy}
@@ -2238,6 +2352,8 @@ export default function LandingPage() {
 									}}
 								>
 									<svg
+										aria-hidden="true"
+										focusable="false"
 										width="32"
 										height="32"
 										viewBox="0 0 24 24"
@@ -2275,13 +2391,25 @@ export default function LandingPage() {
 									const isActiveLine = activeLineIdx === i;
 									const tooltipAbove = y < 0;
 									return (
-										<div
-											key={i}
+										<button
+											key={intg.name}
+											type="button"
 											onMouseEnter={() => setHoveredIntg(i)}
+											onMouseLeave={() => setHoveredIntg(null)}
+											onFocus={() => setHoveredIntg(i)}
+											onBlur={() => setHoveredIntg(null)}
 											style={{
+												appearance: "none",
+												WebkitAppearance: "none",
+												background: "transparent",
+												border: 0,
+												color: "inherit",
+												font: "inherit",
 												position: "absolute",
 												left: `calc(50% + ${x}px)`,
 												top: `calc(50% + ${y}px)`,
+												padding: 0,
+												textAlign: "center",
 												transform: `translate(-50%, -50%) scale(${isHov ? 1.18 : 1})`,
 												transition:
 													"transform 0.35s cubic-bezier(.16,1,.3,1), box-shadow 0.35s ease, border-color 0.3s ease",
@@ -2393,7 +2521,7 @@ export default function LandingPage() {
 													</p>
 												</div>
 											)}
-										</div>
+										</button>
 									);
 								})}
 							</div>
@@ -2421,12 +2549,15 @@ export default function LandingPage() {
 					}}
 				>
 					{[
-						{ num: "12,000+", label: t("已注册学生", "Registered students") },
-						{ num: "860", label: t("已创建班级", "Classes created") },
-						{ num: "98%", label: t("任务按时完成", "On-time completion") },
-						{ num: "4.9", label: t("平均评分", "Average rating") },
+						{
+							num: "182",
+							label: t("已注册学生", "Registered students"),
+						},
+						{ num: "31", label: t("已创建班级", "Classes created") },
+						{ num: "91%", label: t("任务按时完成", "On-time completion") },
+						{ num: "4.7", label: t("平均评分", "Average rating") },
 					].map((s, i) => (
-						<Reveal key={i} delay={i * 0.08}>
+						<Reveal key={s.label} delay={i * 0.08}>
 							<div style={{ padding: "20px 0" }}>
 								<div
 									style={{
@@ -2552,7 +2683,7 @@ export default function LandingPage() {
 					>
 						{PALETTE.map((p, i) => (
 							<div
-								key={i}
+								key={`${p.name}-cta-halo`}
 								style={{
 									position: "absolute",
 									width: 80,
@@ -2578,7 +2709,7 @@ export default function LandingPage() {
 							>
 								{t(
 									"准备好让课堂回归清晰了吗？",
-									"Ready to bring your classroom back to clarity?",
+									"Ready to try a tiny classwork toy?",
 								)}
 							</h2>
 							<p
@@ -2591,8 +2722,8 @@ export default function LandingPage() {
 								}}
 							>
 								{t(
-									"加入数千名已在使用 TaskNeo组织作业、节省时间、让学生保持进度的教育者。",
-									"Join educators already using TaskNeo to orchestrate assignments, reclaim time, and keep every learner in rhythm.",
+									"加入数百名正在试用 TaskNeo 的早期用户，用它组织作业、节省时间、让学生保持进度。",
+									"Join hundreds of early users trying TaskNeo to organize assignments, save time, and keep students on pace.",
 								)}
 							</p>
 						</div>
@@ -2631,160 +2762,6 @@ export default function LandingPage() {
 					</div>
 				</Reveal>
 			</section>
-
-			{/* ASK AI */}
-			{(() => {
-				const q = encodeURIComponent(
-					t(
-						`请告诉我 TaskNeo 是否适合我？这是产品文档：${LINKS.docs}`,
-						`Please tell me whether TaskNeo fits my teaching needs. Here is the product documentation: ${LINKS.docs}`,
-					),
-				);
-				const aiLinks = [
-					{
-						label: t("询问 ChatGPT", "Ask ChatGPT"),
-						href: `https://chat.openai.com/?q=${q}`,
-						icon: (
-							<svg
-								width="16"
-								height="16"
-								viewBox="0 0 24 24"
-								fill="currentColor"
-							>
-								<path d="M22.28 9.28a5.998 5.998 0 00-.52-4.93 6.07 6.07 0 00-6.53-2.92A6.007 6.007 0 0010.32 0a6.07 6.07 0 00-5.78 4.2 6.007 6.007 0 00-4 2.92 6.07 6.07 0 00.75 7.12 5.998 5.998 0 00.52 4.93 6.07 6.07 0 006.53 2.92A6.007 6.007 0 0013.68 24a6.07 6.07 0 005.78-4.2 6.007 6.007 0 004-2.92 6.07 6.07 0 00-.75-7.12l-.43.42zM13.68 22.5a4.5 4.5 0 01-2.89-1.05l.14-.08 4.8-2.77a.78.78 0 00.39-.68v-6.78l2.03 1.17a.07.07 0 01.04.05v5.6a4.51 4.51 0 01-4.51 4.54zM3.6 18.38a4.5 4.5 0 01-.54-3.02l.14.09 4.8 2.77a.78.78 0 00.78 0l5.86-3.38v2.34a.07.07 0 01-.03.06L9.74 19.9A4.51 4.51 0 013.6 18.38zm-1.17-9.9A4.49 4.49 0 014.8 6.14v5.67a.78.78 0 00.39.68l5.86 3.38-2.03 1.17a.07.07 0 01-.07 0L4.2 14.3a4.51 4.51 0 01-.77-5.82zm16.69 3.87l-5.86-3.38 2.03-1.17a.07.07 0 01.07 0l4.75 2.74a4.5 4.5 0 01-.7 8.12v-5.67a.78.78 0 00-.29-.64zm2.02-3.03l-.14-.09-4.8-2.77a.78.78 0 00-.78 0L9.56 10.84V8.5a.07.07 0 01.03-.06l4.75-2.74a4.51 4.51 0 016.8 4.68v-.06zM8.53 13.1L6.5 11.93a.07.07 0 01-.04-.05V6.3a4.51 4.51 0 017.39-3.46l-.14.08-4.8 2.77a.78.78 0 00-.39.68l.01 6.73zm1.1-2.37L12 9.25l2.37 1.37v2.74L12 14.73l-2.37-1.37V10.73z" />
-							</svg>
-						),
-					},
-					{
-						label: t("询问 Claude", "Ask Claude"),
-						href: `https://claude.ai/new?q=${q}`,
-						icon: (
-							<svg
-								width="16"
-								height="16"
-								viewBox="0 0 24 24"
-								fill="currentColor"
-							>
-								<path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-1.89-.17-.784-.243-.54-.492-.233-.68.36-.773.705-.494 1.048-.097.887.097 1.913.34 2.073.364 1.84.388h.222l.032-.137-.095-.106-1.203-1.664-1.622-2.01-1.236-1.556-.925-1.313-.56-1.121-.122-.88.439-.73.756-.43.932.064.714.43.581.63 1.2 1.896 1.3 1.856 1.106 1.664.205.34.16-.017.08-.119V8.395l-.042-2.017V4.49l.104-1.96.46-1.337.831-.704 1.08-.097.826.412.524.777.128 1.088-.048.992-.25 2.405-.2 2.017-.024.574.16.008.12-.137 1.267-1.735 1.3-1.63 1.186-1.28.975-.895.96-.526.847-.073.62.267.377.445.136.623-.16.851-.582.947-.992 1.023-1.622 1.461-1.186 1.234-.976 1.2.016.137.16.016h.128l2.103-.46 2.199-.315 1.889-.024 1.105.267.54.567.16.826-.33.728-.782.494-1.322.267-2.264.024-2.37-.145-1.817-.194h-.177l-.016.16.08.098 1.114 1.059 1.839 1.832 1.2 1.354.678 1.063.17.928-.281.832-.718.501-1.042-.024-.726-.43-.896-1.128-1.832-2.32-1.237-1.898-.629-.944-.24.008v.137l.073.79.104 2.586.016 1.9-.122 1.605-.378 1.023-.79.582-.99.049-.735-.364-.538-.753-.128-1.128.209-2.391z" />
-							</svg>
-						),
-					},
-					{
-						label: t("询问 Perplexity", "Ask Perplexity"),
-						href: `https://www.perplexity.ai/?q=${q}`,
-						icon: (
-							<svg
-								width="16"
-								height="16"
-								viewBox="0 0 24 24"
-								fill="currentColor"
-							>
-								<path d="M22.197 0h-3.052l-6.957 6.803H9.5V0H7.017v6.803H3.734L.031 2.995v4.625l2.486 2.43v7.209l-2.486 2.43V24l3.703-3.808h3.283V24H9.5v-3.808h2.688L22.197 24V0zm-3.57 2.432v16.714l-6.44-6.299V8.73l6.44-6.299zM3.53 9.4h3.487v5.268H3.53V9.4zm5.97 0h2.688v5.268H9.5V9.4z" />
-							</svg>
-						),
-					},
-				];
-				return (
-					<section
-						style={{
-							position: "relative",
-							overflow: "hidden",
-							padding: isMobile ? "64px 20px 80px" : "80px 56px 100px",
-							textAlign: "center",
-							background: bg,
-						}}
-					>
-						<div
-							style={{
-								position: "absolute",
-								inset: 0,
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								pointerEvents: "none",
-								userSelect: "none",
-							}}
-						>
-							<span
-								style={{
-									fontSize: isMobile ? 80 : 160,
-									fontWeight: 800,
-									fontFamily: "'Source Serif 4', Georgia, serif",
-									color: textPrimary,
-									opacity: 0.04,
-									letterSpacing: "-0.04em",
-									whiteSpace: "nowrap",
-								}}
-							>
-								TaskNeo
-							</span>
-						</div>
-						<Reveal>
-							<h2
-								style={{
-									fontSize: isMobile ? 22 : 30,
-									fontWeight: 700,
-									fontFamily: serifFont,
-									marginBottom: 32,
-									position: "relative",
-								}}
-							>
-								{t(
-									"不确定 TaskNeo 是否适合您？",
-									"Not sure whether TaskNeo is right for you?",
-								)}
-							</h2>
-							<div
-								style={{
-									display: "flex",
-									gap: 12,
-									justifyContent: "center",
-									flexWrap: "wrap",
-									position: "relative",
-								}}
-							>
-								{aiLinks.map(({ label, href, icon }) => (
-									<a
-										key={label}
-										href={href}
-										target="_blank"
-										rel="noopener noreferrer"
-										style={{
-											display: "inline-flex",
-											alignItems: "center",
-											gap: 8,
-											padding: "10px 22px",
-											borderRadius: 100,
-											border: `1.5px solid ${borderColor}`,
-											background: cardBg,
-											color: textPrimary,
-											fontSize: 13,
-											fontWeight: 500,
-											fontFamily: sansFont,
-											textDecoration: "none",
-											boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
-											transition: "border-color 0.2s, box-shadow 0.2s",
-										}}
-										onMouseEnter={(e) => {
-											e.currentTarget.style.borderColor = textMuted;
-											e.currentTarget.style.boxShadow =
-												"0 4px 20px rgba(0,0,0,0.08)";
-										}}
-										onMouseLeave={(e) => {
-											e.currentTarget.style.borderColor = borderColor;
-											e.currentTarget.style.boxShadow =
-												"0 2px 12px rgba(0,0,0,0.04)";
-										}}
-									>
-										{icon}
-										{label}
-									</a>
-								))}
-							</div>
-						</Reveal>
-					</section>
-				);
-			})()}
 
 			{/* FOOTER */}
 			<footer
@@ -2826,6 +2803,8 @@ export default function LandingPage() {
 									}}
 								>
 									<svg
+										aria-hidden="true"
+										focusable="false"
 										width="12"
 										height="12"
 										viewBox="0 0 24 24"
@@ -2874,7 +2853,7 @@ export default function LandingPage() {
 										{ label: t("帮助文档", "Docs"), href: LINKS.docs },
 										{ label: t("快速入门", "Quickstart"), href: "#" },
 										{ label: t("常见问题", "FAQ"), href: "#" },
-										{ label: "API Docs", href: "#" },
+										{ label: "API Docs", href: LINKS.apiDocs },
 									],
 								},
 								{
@@ -2882,7 +2861,7 @@ export default function LandingPage() {
 									links: [
 										{ label: t("关于我们", "About"), href: "#" },
 										{ label: t("博客", "Blog"), href: "#" },
-										{ label: t("联系我们", "Contact"), href: null },
+										{ label: t("联系我们", "Contact"), href: LINKS.contact },
 									],
 								},
 								{

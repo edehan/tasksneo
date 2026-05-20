@@ -15,6 +15,9 @@
     "verificationFailed": "La verification a echoue",
     "verifyingEmail": "Verification de votre e-mail...",
     "backToProfile": "Retour au profil",
+    "emailAlreadyBound": "Cet e-mail est deja lie a un autre compte",
+    "emailAlreadyBoundDescription": "Vous essayez d'utiliser cet e-mail pour le compte actuel, mais il est deja lie a un autre compte. Pour l'utiliser ici, deconnectez-vous, connectez-vous au compte qui utilise deja cet e-mail, supprimez ce compte ou changez son e-mail, puis revenez au compte actuel et relancez la modification.",
+    "signOutAndSignIn": "Se deconnecter et se connecter",
     "emailUpdated": "E-mail mis a jour",
     "emailChangedSuccessfully": "Votre adresse e-mail a bien ete modifiee."
   },
@@ -740,7 +743,7 @@
     "importTask": {
       "button": "Importer",
       "title": "Importer une tache",
-      "allClasses": "Toutes les classes",
+      "allClasses": "Toutes les autres classes",
       "unknownClass": "Classe inconnue",
       "sort": {
         "updatedAt": "Modification",

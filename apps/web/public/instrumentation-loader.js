@@ -1,4 +1,16 @@
 (() => {
+  const sensitiveTokenPaths = new Set([
+    "/register/complete",
+    "/reset-password",
+    "/settings/verify-email",
+  ]);
+  if (
+    sensitiveTokenPaths.has(window.location.pathname) &&
+    new URLSearchParams(window.location.search).has("token")
+  ) {
+    return;
+  }
+
   const el = document.getElementById("instrumentation-loader");
   if (!el) return;
   const raw = el.getAttribute("data-urls") || "";
