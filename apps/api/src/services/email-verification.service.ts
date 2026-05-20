@@ -172,7 +172,7 @@ function buildVerificationHtml(
         </td></tr>
         <tr><td style="padding:16px 32px;border-top:1px solid #e8e2d8;">
           <p style="margin:0;font-size:12px;color:#c0b8ad;text-align:center;">
-            你收到这封邮件是因为 ${safeTitle} 账户触发了安全操作请求。链接将在 1 小时后失效；如果不是你本人操作，可忽略本邮件。
+            你收到这封邮件是因为 ${safeTitle} 账户触发了安全操作请求。链接将在 1 小时后失效；如果不是你本人操作，可以安全忽略本邮件。
           </p>
         </td></tr>
       </table>
@@ -269,7 +269,7 @@ async function sendNewRegistrationEmail(email: string, token: string) {
 	const verifyUrl = `${baseUrl}/register/complete?token=${token}`;
 
 	const subject = `[${appTitle}] 请验证你的邮箱`;
-	const text = `你收到这封邮件，是因为有人使用此邮箱发起了 ${appTitle} 注册。\n\n请打开以下链接完成邮箱验证：\n${verifyUrl}\n\n出于安全考虑，该链接 1 小时内有效。若非本人操作，可忽略本邮件。`;
+	const text = `你收到这封邮件，是因为有人使用此邮箱发起了 ${appTitle} 注册。\n\n请打开以下链接完成邮箱验证：\n${verifyUrl}\n\n出于安全考虑，该链接 1 小时内有效。如果不是你本人操作，可以安全忽略本邮件。`;
 	const html = buildVerificationHtml(
 		appTitle,
 		"验证你的邮箱",
@@ -297,7 +297,7 @@ async function sendExistingAccountEmail(email: string, userId: string) {
 	const resetUrl = `${baseUrl}/reset-password?token=${token}`;
 
 	const subject = `您的 ${appTitle} 账号已存在`;
-	const text = `你收到这封邮件，是因为有人尝试使用此邮箱注册 ${appTitle} 账号。\n\n该邮箱已经有一个 ${appTitle} 账号。如果你忘记密码，可以使用下面的链接重置密码，或在页面上选择使用一次性链接直接登录：\n${resetUrl}\n\n出于安全考虑，该链接 1 小时内有效。若非本人操作，可忽略本邮件。`;
+	const text = `你收到这封邮件，是因为有人尝试使用此邮箱注册 ${appTitle} 账号。\n\n该邮箱已经有一个 ${appTitle} 账号。如果你忘记密码，可以使用下面的链接重置密码，或在页面上选择使用一次性链接直接登录：\n${resetUrl}\n\n出于安全考虑，该链接 1 小时内有效。如果不是你本人操作，可以安全忽略本邮件。`;
 	const html = buildVerificationHtml(
 		appTitle,
 		"账号已存在",
@@ -391,7 +391,7 @@ export async function sendPasswordResetEmail(email: string) {
 	const resetUrl = `${baseUrl}/reset-password?token=${token}`;
 
 	const subject = `[${appTitle}] 重置你的密码`;
-	const text = `你收到这封邮件，是因为你的 ${appTitle} 账户发起了密码重置请求。\n\n请打开以下链接设置新密码：\n${resetUrl}\n\n出于安全考虑，该链接 1 小时内有效。若非本人操作，可忽略本邮件。`;
+	const text = `你收到这封邮件，是因为有人为你的 ${appTitle} 账户发起了密码重置请求。\n\n请打开以下链接设置新密码：\n${resetUrl}\n\n出于安全考虑，该链接 1 小时内有效。如果不是你本人操作，可以安全忽略本邮件。`;
 	const html = buildVerificationHtml(
 		appTitle,
 		"重置密码",
@@ -532,7 +532,7 @@ export async function sendEmailChangeVerification(
 	const confirmUrl = `${baseUrl}/settings/verify-email?token=${token}`;
 
 	const subject = `[${appTitle}] 确认你的新邮箱`;
-	const text = `你收到这封邮件，是因为有人正在尝试将一个 ${appTitle} 账号的邮箱修改为本邮箱（${normalizedEmail}）。\n\n如果这是你本人操作，请打开以下链接确认改绑：\n${confirmUrl}\n\n确认前，该账号仍会继续使用原邮箱。出于安全考虑，该链接 1 小时内有效。若非本人操作，可忽略本邮件。`;
+	const text = `你收到这封邮件，是因为有人正在尝试将一个 ${appTitle} 账号的邮箱修改为本邮箱（${normalizedEmail}）。\n\n如果这是你本人操作，请打开以下链接确认改绑：\n${confirmUrl}\n\n确认前，该账号仍会继续使用原邮箱。出于安全考虑，该链接 1 小时内有效。如果不是你本人操作，可以安全忽略本邮件。`;
 	const html = buildVerificationHtml(
 		appTitle,
 		"确认新邮箱",
