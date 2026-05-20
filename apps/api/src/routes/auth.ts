@@ -27,6 +27,7 @@ import {
 } from "../services/email-verification.service.js";
 import { exchangeMcpKey } from "../services/mcp-key.service.js";
 import { revokeSession } from "../services/session.service.js";
+import { assertRegistrationOpen } from "../services/system-config.service.js";
 import type { AppVariables } from "../types/context.js";
 
 const emailSchema = z.string().trim().email().transform(normalizeEmail);
@@ -112,6 +113,7 @@ function auditRequestMeta(c: Context<{ Variables: AppVariables }>) {
 authRouter.post("/register", async (c) => {
 	const body = registerStep1Schema.parse(await c.req.json());
 	await verifyCaptcha(body.captchaToken);
+	await assertRegistrationOpen();
 	await sendRegistrationEmail(body.email);
 	return c.json({ message: "Verification email sent" }, 200);
 });

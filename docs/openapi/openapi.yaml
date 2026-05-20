@@ -1134,7 +1134,8 @@ paths:
 
         - Rate limited to 5 emails per address per 24 hours.
         - If `auth.registration_open` is false, returns 403.
-        - If email is already registered, returns 409.
+        - If email is already registered, returns the same 200 response and sends
+          an account recovery email instead of revealing that the account exists.
       requestBody:
         required: true
         content:
@@ -1157,19 +1158,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-        '409':
-          description: Email already registered
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '429':
-          description: Rate limit exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
   /auth/register/complete:
     post:
       tags: [Auth]

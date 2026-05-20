@@ -1870,6 +1870,92 @@ describe("Session lifecycle", () => {
 		expect(existing.body).toEqual(missing.body);
 	});
 
+	it("does not reveal whether an email already exists during registration", async () => {
+		const existingEmail = uniqueEmail("register-existing");
+		const newEmail = uniqueEmail("register-new");
+		const existingUser = await createTestUser({
+			email: existingEmail,
+			password: "Passw0rd!",
+		});
+		const responses: Array<{ response: Response; body: unknown }> = [];
+
+		for (let i = 0; i < 6; i += 1) {
+			responses.push(
+				await requestJson(app, "/auth/register", {
+					method: "POST",
+					body: JSON.stringify({ email: existingEmail }),
+				}),
+			);
+			responses.push(
+				await requestJson(app, "/auth/register", {
+					method: "POST",
+					body: JSON.stringify({ email: newEmail }),
+				}),
+			);
+		}
+
+		for (const result of responses) {
+			expect(result.response.status).toBe(200);
+			expect(result.body).toEqual({ message: "Verification email sent" });
+		}
+
+		const existingRegistrationAttempts =
+			await prisma.emailVerificationToken.count({
+				where: {
+					email: existingEmail,
+					purpose: EmailTokenPurpose.REGISTRATION,
+				},
+			});
+		const newRegistrationAttempts = await prisma.emailVerificationToken.count({
+			where: {
+				email: newEmail,
+				purpose: EmailTokenPurpose.REGISTRATION,
+			},
+		});
+		expect(existingRegistrationAttempts).toBe(5);
+		expect(newRegistrationAttempts).toBe(5);
+
+		const newRegistrationToken =
+			await prisma.emailVerificationToken.findFirstOrThrow({
+				where: {
+					email: newEmail,
+					purpose: EmailTokenPurpose.REGISTRATION,
+				},
+				orderBy: { createdAt: "desc" },
+			});
+		expect(newRegistrationToken.userId).toBeNull();
+
+		const existingResetToken =
+			await prisma.emailVerificationToken.findFirstOrThrow({
+				where: {
+					email: existingEmail,
+					purpose: EmailTokenPurpose.PASSWORD_RESET,
+				},
+				orderBy: { createdAt: "desc" },
+			});
+		expect(existingResetToken.userId).toBe(existingUser.user.id);
+
+		const verifyReset = await requestJson(
+			app,
+			`/auth/verify-token?purpose=PASSWORD_RESET&token=${existingResetToken.token}`,
+		);
+		expect(verifyReset.response.status).toBe(200);
+		expect(verifyReset.body).toEqual({ valid: true, email: existingEmail });
+
+		const directSignIn = await requestJson(
+			app,
+			"/auth/reset-password/sign-in",
+			{
+				method: "POST",
+				body: JSON.stringify({ token: existingResetToken.token }),
+			},
+		);
+		expect(directSignIn.response.status).toBe(200);
+		expect((directSignIn.body as { user: { email: string } }).user.email).toBe(
+			existingEmail,
+		);
+	});
+
 	it("normalizes email addresses across registration and login", async () => {
 		const rawEmail = `  Normalize.${Date.now()}@Example.COM  `;
 		const normalizedEmail = rawEmail.trim().toLowerCase();

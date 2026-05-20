@@ -6,6 +6,7 @@ import { cacheDel, cacheKeys } from "../lib/cache.js";
 import { normalizeEmail } from "../lib/email.js";
 import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
+import { rootLogger } from "../lib/logger.js";
 import { sendEmail } from "../lib/mailer.js";
 import { hashPassword } from "../lib/password.js";
 
@@ -25,6 +26,7 @@ const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
 const RATE_LIMIT_MAX = 5;
 const TOKEN_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
 const DEFAULT_APP_TITLE = "TaskNeo";
+const PRISMA_UNIQUE_ERROR_CODE = "P2002";
 
 async function getAppTitle() {
 	const title = await getConfigValue("app.title");
@@ -39,10 +41,7 @@ async function createVerificationToken(
 	userId?: string,
 ): Promise<string> {
 	const normalizedEmail = normalizeEmail(email);
-	const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS);
-	const count = await prisma.emailVerificationToken.count({
-		where: { email: normalizedEmail, purpose, createdAt: { gte: windowStart } },
-	});
+	const count = await countRecentVerificationTokens(normalizedEmail, purpose);
 
 	if (count >= RATE_LIMIT_MAX) {
 		throw new AppError(
@@ -52,6 +51,30 @@ async function createVerificationToken(
 		);
 	}
 
+	return createVerificationTokenWithoutRateLimit(
+		normalizedEmail,
+		purpose,
+		userId,
+	);
+}
+
+async function countRecentVerificationTokens(
+	email: string,
+	purpose: EmailTokenPurpose,
+) {
+	const normalizedEmail = normalizeEmail(email);
+	const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS);
+	return prisma.emailVerificationToken.count({
+		where: { email: normalizedEmail, purpose, createdAt: { gte: windowStart } },
+	});
+}
+
+async function createVerificationTokenWithoutRateLimit(
+	email: string,
+	purpose: EmailTokenPurpose,
+	userId?: string,
+): Promise<string> {
+	const normalizedEmail = normalizeEmail(email);
 	const token = randomBytes(32).toString("hex");
 
 	await prisma.emailVerificationToken.create({
@@ -65,6 +88,19 @@ async function createVerificationToken(
 	});
 
 	return token;
+}
+
+function isPrismaUniqueError(error: unknown) {
+	return (
+		typeof error === "object" &&
+		error !== null &&
+		"code" in error &&
+		error.code === PRISMA_UNIQUE_ERROR_CODE
+	);
+}
+
+function invalidRegistrationTokenError() {
+	return new AppError(400, "INVALID_TOKEN", "Token is invalid or expired");
 }
 
 async function validateToken(token: string, purpose: EmailTokenPurpose) {
@@ -150,17 +186,31 @@ function buildVerificationHtml(
 
 export async function sendRegistrationEmail(email: string) {
 	const normalizedEmail = normalizeEmail(email);
+	const registrationAttempts = await countRecentVerificationTokens(
+		normalizedEmail,
+		EmailTokenPurpose.REGISTRATION,
+	);
+
+	if (registrationAttempts >= RATE_LIMIT_MAX) {
+		return;
+	}
+
+	const registrationToken = await createVerificationTokenWithoutRateLimit(
+		normalizedEmail,
+		EmailTokenPurpose.REGISTRATION,
+	);
 	const existing = await prisma.user.findUnique({
 		where: { email: normalizedEmail },
 	});
 	if (existing) {
-		throw new AppError(409, "EMAIL_EXISTS", "Email already registered");
+		await sendExistingAccountEmail(normalizedEmail, existing.id);
+		return;
 	}
 
-	const token = await createVerificationToken(
-		normalizedEmail,
-		EmailTokenPurpose.REGISTRATION,
-	);
+	await sendNewRegistrationEmail(normalizedEmail, registrationToken);
+}
+
+async function sendNewRegistrationEmail(email: string, token: string) {
 	const baseUrl =
 		(await getConfigValue("app.base_url")) || "http://localhost:3000";
 	const appTitle = await getAppTitle();
@@ -176,7 +226,42 @@ export async function sendRegistrationEmail(email: string) {
 		verifyUrl,
 	);
 
-	await sendEmail(normalizedEmail, subject, text, html);
+	try {
+		await sendEmail(email, subject, text, html);
+	} catch (error) {
+		rootLogger.warn({ err: error }, "registration_email_failed");
+	}
+}
+
+async function sendExistingAccountEmail(email: string, userId: string) {
+	const token = await createVerificationTokenWithoutRateLimit(
+		email,
+		EmailTokenPurpose.PASSWORD_RESET,
+		userId,
+	);
+	const baseUrl =
+		(await getConfigValue("app.base_url")) || "http://localhost:3000";
+	const appTitle = await getAppTitle();
+	const resetUrl = `${baseUrl}/reset-password?token=${token}`;
+
+	const subject = `您的 ${appTitle} 账号已存在`;
+	const text = `你收到这封邮件，是因为有人尝试使用此邮箱注册 ${appTitle} 账号。\n\n该邮箱已经有一个 ${appTitle} 账号。如果你忘记密码，可以使用下面的链接重置密码，或在页面上选择使用一次性链接直接登录：\n${resetUrl}\n\n出于安全考虑，该链接 1 小时内有效。若非本人操作，可忽略本邮件。`;
+	const html = buildVerificationHtml(
+		appTitle,
+		"账号已存在",
+		`该邮箱已经有一个 ${escapeHtml(appTitle)} 账号。如果你忘记密码，可以使用下方链接重置密码，或在页面上选择使用一次性链接直接登录。`,
+		"前往账号恢复",
+		resetUrl,
+	);
+
+	try {
+		await sendEmail(email, subject, text, html);
+	} catch (error) {
+		rootLogger.warn(
+			{ err: error },
+			"existing_account_registration_email_failed",
+		);
+	}
 }
 
 export async function verifyRegistrationToken(token: string) {
@@ -187,7 +272,7 @@ export async function verifyRegistrationToken(token: string) {
 		where: { email: row.email },
 	});
 	if (existing) {
-		throw new AppError(409, "EMAIL_EXISTS", "Email already registered");
+		throw invalidRegistrationTokenError();
 	}
 
 	return { valid: true, email: row.email };
@@ -199,14 +284,31 @@ export async function completeRegistration(
 	sessionMeta: SessionMetadata,
 ) {
 	const row = await validateToken(token, EmailTokenPurpose.REGISTRATION);
+	const existing = await prisma.user.findUnique({
+		where: { email: row.email },
+	});
+	if (existing) {
+		throw invalidRegistrationTokenError();
+	}
 
-	const result = await createUserWithPersonalClass(
-		{
-			email: row.email,
-			...input,
-		},
-		sessionMeta,
-	);
+	let result: Awaited<ReturnType<typeof createUserWithPersonalClass>>;
+	try {
+		result = await createUserWithPersonalClass(
+			{
+				email: row.email,
+				...input,
+			},
+			sessionMeta,
+		);
+	} catch (error) {
+		if (
+			(error instanceof AppError && error.code === "EMAIL_EXISTS") ||
+			isPrismaUniqueError(error)
+		) {
+			throw invalidRegistrationTokenError();
+		}
+		throw error;
+	}
 
 	await consumeToken(row.id, row.email, EmailTokenPurpose.REGISTRATION);
 
