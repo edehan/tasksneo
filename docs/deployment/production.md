@@ -54,6 +54,7 @@ User → VPS API (business logic, BullMQ workers)
 - Domain name with DNS managed by Cloudflare
 - S3-compatible storage account (Cloudflare R2 recommended — zero egress fees)
 - Git access to the repository
+- `zstd`, `brotli`, and `gzip` installed on any machine that builds the landing page or runs `infra/sync-web-static.sh`
 - (Option B only) Managed PostgreSQL account (Neon `aws-ap-southeast-1` for Singapore, etc.)
 
 ## 1. S3 Bucket Setup
@@ -164,21 +165,23 @@ cd /opt/taskflow/infra
 ./sync-web-static.sh
 ```
 
+The sync script also generates `.zst`, `.br`, and `.gz` sidecar files for text static assets. It intentionally fails if `zstd`, `brotli`, or `gzip` is not installed, so missing compression tools are easy to catch during deployment.
+
 Set `TASKFLOW_STATIC_ROOT=/some/path` if you want Caddy to read static files from a different host directory.
 
 Configure Caddy:
 
 ```caddyfile
 taskflow.yourdomain.com {
-	encode zstd gzip
-
 	handle_path /_next/static/* {
 		root * /opt/taskflow-static/_next/static
 		header {
 			Cache-Control "public, max-age=31536000, immutable"
 			match status 2xx
 		}
-		file_server
+		file_server {
+			precompressed zstd br gzip
+		}
 	}
 
 	@publicAssets path /manifest.json /robots.txt /apple-touch-icon.png /icon-192.png /icon-512.png
@@ -188,14 +191,18 @@ taskflow.yourdomain.com {
 			Cache-Control "public, max-age=86400"
 			match status 2xx
 		}
-		file_server
+		file_server {
+			precompressed zstd br gzip
+		}
 	}
 
 	@serviceWorker path /register-sw.js /sw.js
 	handle @serviceWorker {
 		root * /opt/taskflow-static/public
 		header Cache-Control "no-cache"
-		file_server
+		file_server {
+			precompressed zstd br gzip
+		}
 	}
 
 	handle {
@@ -204,8 +211,6 @@ taskflow.yourdomain.com {
 }
 
 api.yourdomain.com {
-	encode zstd gzip
-
 	handle /health* {
 		header Cache-Control "no-store"
 		reverse_proxy 127.0.0.1:3001
@@ -217,6 +222,8 @@ api.yourdomain.com {
 	}
 }
 ```
+
+This example omits Caddy's runtime `encode` directive and serves only precompressed static files, which avoids per-request compression CPU on small VPS instances. In this mode, SSR, RSC, and API responses are sent uncompressed unless you add a separate compression layer for them.
 
 Validate and reload Caddy:
 

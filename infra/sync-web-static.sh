@@ -2,6 +2,7 @@
 set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+ROOT_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 COMPOSE_FILE="${COMPOSE_FILE:-$SCRIPT_DIR/docker-compose.prod.yml}"
 STATIC_ROOT="${TASKFLOW_STATIC_ROOT:-/opt/taskflow-static}"
 
@@ -15,6 +16,8 @@ mkdir -p "$TMP_DIR/_next/static" "$TMP_DIR/public"
 
 docker compose -f "$COMPOSE_FILE" cp web:/app/apps/web/.next/static/. "$TMP_DIR/_next/static/"
 docker compose -f "$COMPOSE_FILE" cp web:/app/apps/web/public/. "$TMP_DIR/public/"
+
+"$ROOT_DIR/scripts/precompress-static.sh" "$TMP_DIR/_next/static" "$TMP_DIR/public"
 
 mkdir -p "$STATIC_ROOT/_next"
 rm -rf "$STATIC_ROOT/_next/static" "$STATIC_ROOT/public"
