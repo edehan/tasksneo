@@ -256,6 +256,7 @@
     "deleteYourAccountDescription": "This will permanently delete your account, remove you from all classes, and delete all your submissions. This cannot be undone.",
     "typeToConfirmPrefix": "Type",
     "typeToConfirmSuffix": "to confirm",
+    "humanVerification": "Human verification",
     "cancel": "Cancel",
     "deleteAccount": "Delete Account",
     "dataExport": {

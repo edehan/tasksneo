@@ -290,7 +290,7 @@ pnpm run preview
 
 ## 7. CAPTCHA Setup (Cloudflare Turnstile)
 
-[Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) protects registration and email-change endpoints from spam bots. Create a Turnstile widget in the Cloudflare dashboard with:
+[Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) protects registration, password reset, email-change, and account-deletion endpoints from spam bots and destructive automation. The account-deletion API is intended for the first-party web app; automated clients should not call it directly because the backend expects a web-generated Turnstile token when CAPTCHA is enabled. Create a Turnstile widget in the Cloudflare dashboard with:
 
 - Mode: Managed
 - Size: Flexible

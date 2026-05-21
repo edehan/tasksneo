@@ -9,14 +9,18 @@ import {
 } from "../lib/cache.js";
 import { AppError } from "../lib/errors.js";
 import { toClassMember, toClassSummary } from "../lib/http.js";
+import { rootLogger } from "../lib/logger.js";
+import { sendEmail } from "../lib/mailer.js";
 import { removeObject } from "../lib/storage.js";
 import {
 	getMembershipOrThrow,
 	requireOwner,
 	requireOwnerOrAdmin,
 } from "./policy.service.js";
+import { getConfigValue } from "./system-config.service.js";
 import { hardDeleteTask, softDeleteTask } from "./task-cleanup.service.js";
 
+const DEFAULT_APP_TITLE = "TaskNeo";
 const DEFAULT_CLASS_COLOR = "#6366f1";
 const INVITE_CODE_LENGTH = 10;
 const INVITE_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -85,6 +89,55 @@ function generateInviteCode(length: number): string {
 	}
 
 	return result;
+}
+
+function escapeHtml(value: string): string {
+	return value
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;");
+}
+
+async function sendOwnershipTransferEmail(input: {
+	to: string;
+	className: string;
+}) {
+	const appTitle =
+		(await getConfigValue("app.title"))?.trim() || DEFAULT_APP_TITLE;
+	const baseUrl =
+		(await getConfigValue("app.base_url")) || "http://localhost:3000";
+	const subject = `[${appTitle}] 你已成为班级拥有者`;
+	const text = `你现在是 ${appTitle} 班级「${input.className}」的拥有者。\n\n你可以在班级设置中管理成员、任务、邀请码和班级数据。\n\n打开 ${appTitle}：\n${baseUrl}`;
+	const html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#faf7f2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#faf7f2;">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background-color:#fffdf8;border-radius:8px;overflow:hidden;border:1px solid #e8e2d8;">
+        <tr><td style="height:4px;background-color:#2C6E91;"></td></tr>
+        <tr><td style="padding:24px 32px 16px;">
+          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#8a8078;">${escapeHtml(appTitle)}</p>
+        </td></tr>
+        <tr><td style="padding:0 32px 24px;">
+          <h2 style="margin:0 0 12px;font-size:18px;font-weight:600;color:#2c2825;">你已成为班级拥有者</h2>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#2c2825;">你现在是班级 <strong>${escapeHtml(input.className)}</strong> 的拥有者。</p>
+          <p style="margin:0;font-size:13px;line-height:1.6;color:#6b625c;">你可以在班级设置中管理成员、任务、邀请码和班级数据。</p>
+        </td></tr>
+        <tr><td style="padding:0 32px 24px;">
+          <a href="${escapeHtml(baseUrl)}" style="display:inline-block;background-color:#2C6E91;color:#ffffff;text-decoration:none;border-radius:6px;padding:10px 16px;font-size:14px;">打开 ${escapeHtml(appTitle)}</a>
+        </td></tr>
+        <tr><td style="padding:16px 32px;border-top:1px solid #e8e2d8;">
+          <p style="margin:0;font-size:12px;color:#c0b8ad;text-align:center;">此邮件由 ${escapeHtml(appTitle)} 自动发送。</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+	await sendEmail(input.to, subject, text, html);
 }
 
 async function createUniqueInviteCode(): Promise<string> {
@@ -510,6 +563,18 @@ export async function transferOwnership(
 				userId: newOwnerId,
 			},
 		},
+		include: {
+			class: {
+				select: {
+					name: true,
+				},
+			},
+			user: {
+				select: {
+					email: true,
+				},
+			},
+		},
 	});
 
 	if (!targetMembership) {
@@ -554,6 +619,18 @@ export async function transferOwnership(
 	await cacheDelPattern(cacheKeys.membershipClassPattern(classId));
 	await cacheDel(cacheKeys.classDetail(classId));
 	await invalidateClassMemberClassLists(classId);
+
+	try {
+		await sendOwnershipTransferEmail({
+			to: targetMembership.user.email,
+			className: targetMembership.class.name,
+		});
+	} catch (error) {
+		rootLogger.warn(
+			{ err: error, classId, newOwnerId },
+			"ownership_transfer_email_failed",
+		);
+	}
 
 	const updatedClass = await getClassById(classId);
 

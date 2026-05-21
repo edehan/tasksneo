@@ -66,6 +66,10 @@ const upsertNotificationSchema = z.object({
 	isEnabled: z.boolean().optional(),
 });
 
+const deleteAccountSchema = z.object({
+	captchaToken: z.string().optional(),
+});
+
 export const usersRouter = new Hono<{ Variables: AppVariables }>();
 
 usersRouter.use("*", authMiddleware);
@@ -260,6 +264,8 @@ usersRouter.post("/me/notifications/read-all", async (c) => {
 
 usersRouter.post("/me/delete", async (c) => {
 	const authUser = requireAuthUser(c);
+	const body = deleteAccountSchema.parse(await c.req.json().catch(() => ({})));
+	await verifyCaptcha(body.captchaToken, "account_delete", getClientIp(c));
 	await deleteMyAccount(authUser.userId);
 	clearSessionCookie(c);
 	return c.body(null, 204);

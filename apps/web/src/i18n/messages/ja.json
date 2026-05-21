@@ -256,6 +256,7 @@
     "deleteYourAccountDescription": "アカウントを完全に削除し、すべてのクラスから退会し、提出物を削除します。元に戻せません。",
     "typeToConfirmPrefix": "確認のため",
     "typeToConfirmSuffix": "と入力してください",
+    "humanVerification": "人間確認",
     "cancel": "キャンセル",
     "deleteAccount": "アカウントを削除",
     "dataExport": {

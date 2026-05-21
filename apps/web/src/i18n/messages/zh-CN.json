@@ -256,6 +256,7 @@
     "deleteYourAccountDescription": "这将永久删除你的账号、将你移出所有班级，并删除你的所有提交。此操作不可撤销。",
     "typeToConfirmPrefix": "请输入",
     "typeToConfirmSuffix": "以确认",
+    "humanVerification": "人机验证",
     "cancel": "取消",
     "deleteAccount": "删除账号",
     "dataExport": {
