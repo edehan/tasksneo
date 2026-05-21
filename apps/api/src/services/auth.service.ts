@@ -3,6 +3,7 @@ import { AuthProvider, ClassRole, prisma } from "@taskflow/db";
 import { normalizeEmail } from "../lib/email.js";
 import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
+import { type AppLocale, normalizeLocale } from "../lib/locale.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
 import { checkAndSendNewLocationAlert } from "./security-alert.service.js";
 import {
@@ -36,6 +37,7 @@ export interface RegisterInput {
 	schoolId?: string | null;
 	studentId?: string | null;
 	timezone?: string;
+	locale?: AppLocale | string;
 }
 
 export interface SessionMetadata {
@@ -106,6 +108,7 @@ export async function createUserWithPersonalClass(
 				schoolId: input.schoolId ?? null,
 				studentId: studentId ?? null,
 				...(input.timezone ? { timezone: input.timezone } : {}),
+				locale: normalizeLocale(input.locale),
 			},
 		});
 
@@ -188,6 +191,7 @@ export async function login(input: LoginInput) {
 			schoolId: true,
 			studentId: true,
 			timezone: true,
+			locale: true,
 			school: {
 				select: {
 					name: true,

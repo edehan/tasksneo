@@ -36,6 +36,7 @@ export function toUserProfile(
 		schoolName: user.school?.name ?? null,
 		studentId: user.studentId,
 		timezone: user.timezone,
+		locale: user.locale,
 		isActive: user.isActive,
 		avatarFileKey: avatarFileKey ?? null,
 		createdAt: user.createdAt.toISOString(),

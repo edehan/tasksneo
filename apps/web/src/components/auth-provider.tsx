@@ -9,6 +9,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { persistLocalePreference } from "@/components/locale-provider";
 import type { UserProfile } from "@/lib/api";
 import {
   login as apiLogin,
@@ -57,6 +58,17 @@ export function AuthProvider({
   }, []);
 
   useEffect(() => {
+    if (!user) return;
+    persistLocalePreference(user.locale);
+    if (
+      !isPublicAuthPath(pathname) &&
+      document.documentElement.lang !== user.locale
+    ) {
+      window.location.reload();
+    }
+  }, [pathname, user]);
+
+  useEffect(() => {
     return subscribeToAuthExpired(() => {
       clearAuthState();
       if (!isPublicAuthPath(pathname)) {
@@ -71,6 +83,7 @@ export function AuthProvider({
   const login = useCallback(
     async (email: string, password: string, trustDevice?: boolean) => {
       const res = await apiLogin(email, password, trustDevice);
+      persistLocalePreference(res.user.locale);
       setUser(res.user);
       setHasSessionCookie(true);
       router.refresh();
@@ -79,6 +92,7 @@ export function AuthProvider({
   );
 
   const setAuth = useCallback((newUser: UserProfile) => {
+    persistLocalePreference(newUser.locale);
     setUser(newUser);
     setHasSessionCookie(true);
   }, []);
@@ -97,6 +111,7 @@ export function AuthProvider({
   }, [clearAuthState, router]);
 
   const updateUser = useCallback((u: UserProfile) => {
+    persistLocalePreference(u.locale);
     setUser(u);
   }, []);
 

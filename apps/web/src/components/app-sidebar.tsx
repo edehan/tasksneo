@@ -51,7 +51,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { JoinClassDialog } from "@/features/classes/components/join-class-dialog";
 import { useAvatarUrl } from "@/hooks/use-avatar-url";
 import { type AppLocale, SUPPORTED_LOCALES } from "@/i18n/locale";
-import type { ClassSummary } from "@/lib/api";
+import { type ClassSummary, updateProfile } from "@/lib/api";
 import { useClassesQuery } from "@/lib/web-data";
 import { webDataKeys } from "@/lib/web-data-keys";
 
@@ -60,7 +60,7 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ initialClasses }: AppSidebarProps) {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const t = useTranslations("appSidebar");
   const { theme, resolvedTheme, setTheme } = useTheme();
   const { locale, setLocale } = useAppLocale();
@@ -75,6 +75,19 @@ export function AppSidebar({ initialClasses }: AppSidebarProps) {
   useEffect(() => {
     setThemeMounted(true);
   }, []);
+
+  async function selectLocale(nextLocale: AppLocale) {
+    if (user) {
+      try {
+        const updated = await updateProfile({ locale: nextLocale });
+        updateUser(updated);
+      } catch {
+        // Keep the local switch responsive even if saving the preference fails.
+      }
+    }
+
+    setLocale(nextLocale);
+  }
 
   const personalClass = classes.find((c) => c.isPersonal);
   const managedClasses = classes.filter(
@@ -218,7 +231,7 @@ export function AppSidebar({ initialClasses }: AppSidebarProps) {
                           return (
                             <DropdownMenuItem
                               key={loc}
-                              onClick={() => setLocale(loc as AppLocale)}
+                              onClick={() => void selectLocale(loc)}
                             >
                               {t(labelKey)}
                               {locale === loc && (

@@ -8,6 +8,7 @@ import {
 } from "../lib/cache.js";
 import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
+import { type AppLocale, normalizeLocale } from "../lib/locale.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
 import { removeObject } from "../lib/storage.js";
 import {
@@ -71,6 +72,7 @@ export async function updateMyProfile(
 		schoolId?: string | null;
 		studentId?: string | null;
 		timezone?: string;
+		locale?: AppLocale | string;
 	},
 ) {
 	const studentId = normalizeStudentId(input.studentId);
@@ -108,6 +110,9 @@ export async function updateMyProfile(
 			schoolId: input.schoolId,
 			studentId,
 			...(input.timezone !== undefined ? { timezone: input.timezone } : {}),
+			...(input.locale !== undefined
+				? { locale: normalizeLocale(input.locale) }
+				: {}),
 		},
 		include: {
 			school: {

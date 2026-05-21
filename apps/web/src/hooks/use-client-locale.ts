@@ -37,12 +37,12 @@ function getCookie(name: string): string | null {
 }
 
 function readStoredLocale(): AppLocale | null {
-  const cookieLocale = readCookieLocale();
-  if (cookieLocale) {
-    return cookieLocale;
+  const localStorageLocale = readLocalStorageLocale();
+  if (localStorageLocale) {
+    return localStorageLocale;
   }
 
-  return readLocalStorageLocale();
+  return readCookieLocale();
 }
 
 function readCookieLocale(): AppLocale | null {
@@ -78,15 +78,15 @@ function persistLocale(locale: AppLocale) {
 }
 
 function syncStoredLocale() {
-  const cookieLocale = readCookieLocale();
-  if (cookieLocale) {
-    persistLocale(cookieLocale);
-    return;
-  }
-
   const localStorageLocale = readLocalStorageLocale();
   if (localStorageLocale) {
     persistLocale(localStorageLocale);
+    return;
+  }
+
+  const cookieLocale = readCookieLocale();
+  if (cookieLocale) {
+    persistLocale(cookieLocale);
   }
 }
 

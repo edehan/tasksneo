@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth-provider";
+import { useAppLocale } from "@/components/locale-provider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -48,6 +49,7 @@ const STUDENT_ID_PATTERN = /^\d+$/;
 export function CompleteRegistrationForm() {
   const router = useRouter();
   const { setAuth } = useAuth();
+  const { locale } = useAppLocale();
   const t = useTranslations("authRegisterComplete");
 
   const [token, setToken] = useState<string | null>(null);
@@ -137,6 +139,7 @@ export function CompleteRegistrationForm() {
         schoolId: schoolId || undefined,
         studentId: schoolId ? normalizedStudentId : undefined,
         timezone: detectedTimezone,
+        locale,
       });
       setAuth(res.user);
       router.replace(next ?? "/");

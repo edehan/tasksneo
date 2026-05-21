@@ -1,3 +1,6 @@
+import type { AppLocale } from "@/i18n/locale";
+import { matchLocaleTag, resolvePreferredLocale } from "@/i18n/locale";
+
 // ─── Error Types ─────────────────────────────────────────────────────────────
 
 export interface ApiErrorShape {
@@ -59,6 +62,7 @@ export interface UserProfile {
   schoolName: string | null;
   studentId: string | null;
   timezone: string;
+  locale: AppLocale;
   isActive: boolean;
   avatarFileKey: string | null;
   createdAt: string;
@@ -304,6 +308,40 @@ export function getApiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
 }
 
+const LOCALE_COOKIE = "taskflow_locale";
+const LOCALE_STORAGE_KEY = "taskflow_locale";
+
+function readCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) {
+    return parts.pop()?.split(";").shift() ?? null;
+  }
+  return null;
+}
+
+function readRequestLocale(): AppLocale | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const stored = matchLocaleTag(localStorage.getItem(LOCALE_STORAGE_KEY));
+    if (stored) return stored;
+  } catch {
+    // Ignore storage access failures and fall back to browser languages.
+  }
+
+  const cookieLocale = matchLocaleTag(readCookie(LOCALE_COOKIE));
+  if (cookieLocale) return cookieLocale;
+
+  if (navigator.languages?.length) {
+    return resolvePreferredLocale(navigator.languages);
+  }
+
+  return null;
+}
+
 export async function apiRequest<T>(
   path: string,
   init: RequestInit = {},
@@ -324,6 +362,13 @@ export async function apiRequest<T>(
     const adminToken = readAdminToken();
     if (adminToken) {
       headers.set("Authorization", `Bearer ${adminToken}`);
+    }
+  }
+
+  if (!headers.has("Accept-Language")) {
+    const locale = readRequestLocale();
+    if (locale) {
+      headers.set("Accept-Language", locale);
     }
   }
 
@@ -417,6 +462,7 @@ export async function completeRegistration(input: {
   schoolId?: string | null;
   studentId?: string | null;
   timezone?: string;
+  locale?: AppLocale;
   trustDevice?: boolean;
 }): Promise<AuthResponse> {
   return apiRequest<AuthResponse>("/auth/register/complete", {
@@ -498,6 +544,7 @@ export async function updateProfile(input: {
   schoolId?: string | null;
   studentId?: string | null;
   timezone?: string;
+  locale?: AppLocale;
 }): Promise<UserProfile> {
   return apiRequest<UserProfile>("/users/me", {
     method: "PATCH",

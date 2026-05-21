@@ -7,6 +7,7 @@ import { requireAuthSession, requireAuthUser } from "../lib/context.js";
 import { clearSessionCookie } from "../lib/cookie.js";
 import { normalizeEmail } from "../lib/email.js";
 import { getClientIp } from "../lib/http.js";
+import { SUPPORTED_LOCALES } from "../lib/locale.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { recordAuditLog } from "../services/audit.service.js";
 import {
@@ -49,6 +50,7 @@ const updateProfileSchema = z.object({
 	schoolId: z.string().uuid().optional().nullable(),
 	studentId: studentIdSchema.optional().nullable(),
 	timezone: z.string().max(64).optional(),
+	locale: z.enum(SUPPORTED_LOCALES).optional(),
 });
 
 const updatePasswordSchema = z.object({

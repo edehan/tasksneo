@@ -10,6 +10,11 @@ import { normalizeEmail } from "../lib/email.js";
 import { AppError } from "../lib/errors.js";
 import { getClientIp } from "../lib/http.js";
 import {
+	type AppLocale,
+	resolveLocaleFromAcceptLanguage,
+	SUPPORTED_LOCALES,
+} from "../lib/locale.js";
+import {
 	assertLoginAllowed,
 	recordFailedLoginAttempt,
 } from "../lib/login-rate-limit.js";
@@ -35,6 +40,7 @@ const emailSchema = z.string().trim().email().transform(normalizeEmail);
 const registerStep1Schema = z.object({
 	email: emailSchema,
 	captchaToken: z.string().optional(),
+	locale: z.enum(SUPPORTED_LOCALES).optional(),
 });
 
 const studentIdSchema = z
@@ -49,6 +55,7 @@ const registerCompleteSchema = z.object({
 	schoolId: z.string().uuid().optional().nullable(),
 	studentId: studentIdSchema.optional().nullable(),
 	timezone: z.string().max(64).optional(),
+	locale: z.enum(SUPPORTED_LOCALES).optional(),
 	trustDevice: z.boolean().optional(),
 });
 
@@ -61,6 +68,7 @@ const loginBodySchema = z.object({
 const forgotPasswordSchema = z.object({
 	email: emailSchema,
 	captchaToken: z.string().optional(),
+	locale: z.enum(SUPPORTED_LOCALES).optional(),
 });
 
 const resetPasswordSchema = z.object({
@@ -83,6 +91,10 @@ const verifyTokenSchema = z.object({
 
 export const authRouter = new Hono<{ Variables: AppVariables }>();
 
+function requestLocale(c: Context): AppLocale {
+	return resolveLocaleFromAcceptLanguage(c.req.header("accept-language"));
+}
+
 function readSessionMeta(
 	c: Context,
 	trustDevice: boolean | undefined,
@@ -94,9 +106,13 @@ function readSessionMeta(
 	};
 }
 
-function dispatchPasswordResetEmail(email: string, logger: Logger | undefined) {
+function dispatchPasswordResetEmail(
+	email: string,
+	locale: AppLocale,
+	logger: Logger | undefined,
+) {
 	setImmediate(() => {
-		void sendPasswordResetEmail(email).catch((error: unknown) => {
+		void sendPasswordResetEmail(email, locale).catch((error: unknown) => {
 			logger?.warn({ err: error }, "password_reset_email_failed");
 		});
 	});
@@ -115,7 +131,7 @@ authRouter.post("/register", async (c) => {
 	const body = registerStep1Schema.parse(await c.req.json());
 	await verifyCaptcha(body.captchaToken, "register", getClientIp(c));
 	await assertRegistrationOpen();
-	await sendRegistrationEmail(body.email);
+	await sendRegistrationEmail(body.email, body.locale ?? requestLocale(c));
 	return c.json({ message: "Verification email sent" }, 200);
 });
 
@@ -130,6 +146,7 @@ authRouter.post("/register/complete", async (c) => {
 			schoolId: body.schoolId,
 			studentId: body.studentId,
 			timezone: body.timezone,
+			locale: body.locale ?? requestLocale(c),
 		},
 		readSessionMeta(c, body.trustDevice),
 	);
@@ -193,7 +210,11 @@ authRouter.post("/logout", authMiddleware, async (c) => {
 authRouter.post("/forgot-password", async (c) => {
 	const body = forgotPasswordSchema.parse(await c.req.json());
 	await verifyCaptcha(body.captchaToken, "password_reset", getClientIp(c));
-	dispatchPasswordResetEmail(body.email, c.get("logger"));
+	dispatchPasswordResetEmail(
+		body.email,
+		body.locale ?? requestLocale(c),
+		c.get("logger"),
+	);
 	// Always return success to prevent email enumeration
 	return c.json(
 		{ message: "If the email exists, a reset link has been sent" },

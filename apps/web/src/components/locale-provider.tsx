@@ -7,6 +7,14 @@ import { type AppLocale, SUPPORTED_LOCALES } from "@/i18n/locale";
 export const LOCALE_COOKIE = "taskflow_locale";
 export const LOCALE_STORAGE_KEY = "taskflow_locale";
 
+export function persistLocalePreference(locale: AppLocale) {
+  localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+
+  // Set cookie for server-side reading (1 year expiry)
+  // biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API has insufficient browser support
+  document.cookie = `${LOCALE_COOKIE}=${locale};path=/;max-age=${365 * 24 * 60 * 60};samesite=lax`;
+}
+
 export interface LocaleContextValue {
   locale: AppLocale;
   setLocale: (locale: AppLocale) => void;
@@ -38,12 +46,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       if (newLocale === currentLocale) return;
       if (!SUPPORTED_LOCALES.includes(newLocale)) return;
 
-      // Persist to localStorage
-      localStorage.setItem(LOCALE_STORAGE_KEY, newLocale);
-
-      // Set cookie for server-side reading (1 year expiry)
-      // biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API has insufficient browser support
-      document.cookie = `${LOCALE_COOKIE}=${newLocale};path=/;max-age=${365 * 24 * 60 * 60};samesite=lax`;
+      persistLocalePreference(newLocale);
 
       // Reload to re-render with the new locale on the server
       window.location.reload();

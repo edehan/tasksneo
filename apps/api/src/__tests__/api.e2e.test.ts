@@ -2,6 +2,8 @@ import {
 	AuthProvider,
 	ClassRole,
 	EmailTokenPurpose,
+	NotifChannel,
+	NotifStatus,
 	prisma,
 } from "@taskflow/db";
 import {
@@ -145,6 +147,41 @@ describe("TaskFlow API e2e", () => {
 		});
 
 		expect(response.status).toBe(200);
+	});
+
+	it("stores the browser-matched locale when completing registration", async () => {
+		const email = uniqueEmail("registration-locale");
+		const register = await requestJson(app, "/auth/register", {
+			method: "POST",
+			headers: { "Accept-Language": "fr-FR,fr;q=0.9" },
+			body: JSON.stringify({ email }),
+		});
+		expect(register.response.status).toBe(200);
+
+		const token = await prisma.emailVerificationToken.findFirstOrThrow({
+			where: { email, purpose: EmailTokenPurpose.REGISTRATION },
+			orderBy: { createdAt: "desc" },
+		});
+
+		const complete = await requestJson(app, "/auth/register/complete", {
+			method: "POST",
+			headers: { "Accept-Language": "fr-FR,fr;q=0.9" },
+			body: JSON.stringify({
+				token: token.token,
+				password: "Passw0rd!",
+			}),
+		});
+		expect(complete.response.status).toBe(201);
+		expect((complete.body as { user: { locale: string } }).user.locale).toBe(
+			"fr",
+		);
+
+		const login = await requestJson(app, "/auth/login", {
+			method: "POST",
+			body: JSON.stringify({ email, password: "Passw0rd!" }),
+		});
+		expect(login.response.status).toBe(200);
+		expect((login.body as { user: { locale: string } }).user.locale).toBe("fr");
 	});
 
 	it("returns CORS headers for allowed frontend origins", async () => {
@@ -487,6 +524,68 @@ describe("TaskFlow API e2e", () => {
 
 		expect(jobs.length).toBeGreaterThan(0);
 		expect(jobs[0]?.status).toBe("FAILED");
+	});
+
+	it("renders notification emails with the user's latest locale at send time", async () => {
+		const previousFetch = globalThis.fetch;
+		const user = await createTestUser({
+			emailPrefix: "notif-locale",
+			locale: "en",
+		});
+		const sentEmails: Array<Record<string, unknown>> = [];
+
+		await prisma.systemConfig.createMany({
+			data: [
+				{ key: "email.provider", value: "cyberpanel" },
+				{ key: "cyberpanel.api_key", value: encryptConfigValue("test-key") },
+				{ key: "cyberpanel.from", value: "no-reply@example.com" },
+			],
+		});
+		globalThis.fetch = vi.fn(async (_url, init) => {
+			sentEmails.push(JSON.parse(String(init?.body)));
+			return new Response(JSON.stringify({ success: true }), {
+				status: 202,
+				headers: { "Content-Type": "application/json" },
+			});
+		}) as typeof fetch;
+
+		try {
+			const job = await prisma.notificationJob.create({
+				data: {
+					channel: NotifChannel.EMAIL,
+					status: NotifStatus.PENDING,
+					scheduledAt: new Date(),
+					userId: user.user.id,
+					taskId: null,
+					payload: {
+						userId: user.user.id,
+						taskId: "task-locale-latest",
+						classId: "class-locale-latest",
+						className: "History",
+						classColor: "#2C6E91",
+						taskTitle: "Essay",
+						dueAt: null,
+						type: "TASK_PUBLISHED",
+					},
+				},
+			});
+
+			await prisma.user.update({
+				where: { id: user.user.id },
+				data: { locale: "ja" },
+			});
+
+			const { processNotificationJob } = await import(
+				"../services/notification.service.js"
+			);
+			await processNotificationJob(job.id);
+
+			expect(sentEmails).toHaveLength(1);
+			expect(sentEmails[0]?.subject).toBe("[TaskNeo] 新しいタスク：Essay");
+			expect(String(sentEmails[0]?.html)).toContain('<html lang="ja">');
+		} finally {
+			globalThis.fetch = previousFetch;
+		}
 	});
 
 	it("covers all implemented endpoints success and key failures", async () => {
@@ -2207,7 +2306,7 @@ describe("Session lifecycle", () => {
 			expect(sentEmails).toHaveLength(2);
 			expect(sentEmails[0]?.subject).toBe(sentEmails[1]?.subject);
 			expect(String(sentEmails[0]?.text)).toContain(
-				"正在尝试将一个 TaskNeo 账号的邮箱修改为本邮箱",
+				"trying to change a TaskNeo account email to this address",
 			);
 		} finally {
 			if (previousEnabled === undefined) {
@@ -2347,7 +2446,7 @@ describe("Session lifecycle", () => {
 				(message) => message.to === origin.user.email,
 			);
 			expect(notification).toBeTruthy();
-			expect(notification?.subject).toBe("[TaskNeo] 你的邮箱已修改");
+			expect(notification?.subject).toBe("[TaskNeo] Your email was changed");
 			expect(String(notification?.text)).toContain(maskedNewEmail);
 			expect(String(notification?.text)).not.toContain(newTargetEmail);
 			expect(String(notification?.html)).toContain(maskedNewEmail);

@@ -109,6 +109,24 @@ export async function resetDatabase() {
       IF NOT EXISTS (
         SELECT 1
         FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'locale'
+      ) THEN
+        ALTER TABLE users ADD COLUMN locale VARCHAR(16) NOT NULL DEFAULT 'en';
+      END IF;
+
+      IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'users_locale_check'
+      ) THEN
+        ALTER TABLE users
+          ADD CONSTRAINT users_locale_check
+          CHECK (locale IN ('en', 'zh-CN', 'fr', 'ja'));
+      END IF;
+
+      IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
         WHERE table_name = 'tasks' AND column_name = 'source_text'
       ) THEN
         ALTER TABLE tasks ADD COLUMN source_text TEXT;
@@ -230,6 +248,7 @@ export async function createTestUser(
 			schoolId: input.schoolId ?? null,
 			studentId: input.studentId ?? null,
 			timezone: input.timezone,
+			locale: input.locale,
 		},
 		meta,
 	);

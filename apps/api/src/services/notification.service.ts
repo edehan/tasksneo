@@ -1,4 +1,11 @@
 import { ClassRole, NotifChannel, NotifStatus, prisma } from "@taskflow/db";
+import {
+	formatDueAt,
+	renderAnnouncementEmail,
+	renderCommentEmail,
+	renderTaskNotificationEmail,
+} from "../lib/email-templates.js";
+import { type AppLocale, normalizeLocale } from "../lib/locale.js";
 import { sendEmail } from "../lib/mailer.js";
 import {
 	enqueueNotificationJob,
@@ -53,28 +60,6 @@ function parseBeforeDueHours(value: string | null): number[] {
 		.split(",")
 		.map((part) => Number(part.trim()))
 		.filter((part) => !Number.isNaN(part) && part > 0);
-}
-
-function formatDueAt(isoString: string | null, timezone: string): string {
-	if (!isoString) {
-		return "未设置";
-	}
-
-	try {
-		const date = new Date(isoString);
-
-		return `${new Intl.DateTimeFormat("zh-CN", {
-			timeZone: timezone,
-			year: "numeric",
-			month: "2-digit",
-			day: "2-digit",
-			hour: "2-digit",
-			minute: "2-digit",
-			hour12: false,
-		}).format(date)} (${timezone})`;
-	} catch {
-		return isoString;
-	}
 }
 
 type JobRow = {
@@ -312,206 +297,47 @@ export async function enqueueCommentNotifications(params: {
 	await batchCreateAndEnqueueJobs(rows);
 }
 
-function buildSubject(payload: NotificationPayload, appTitle: string) {
-	if (payload.type === "SITE_ANNOUNCEMENT") {
-		return `[${appTitle}] 系统公告：${payload.title}`;
-	}
-	if (payload.type === "TASK_COMMENT") {
-		return payload.isReply
-			? `[${appTitle}] ${payload.commentAuthorName} replied to you on "${payload.taskTitle}"`
-			: `[${appTitle}] New comment on "${payload.taskTitle}"`;
-	}
-	if (payload.type === "TASK_PUBLISHED") {
-		return `[${appTitle}] 新任务：${payload.taskTitle}`;
-	}
-
-	return `[${appTitle}] 任务截止提醒：${payload.taskTitle}`;
-}
-
-function buildText(payload: NotificationPayload, timezone: string) {
-	if (payload.type === "SITE_ANNOUNCEMENT") {
-		return `系统公告\n\n${payload.title}\n\n${payload.content}`;
-	}
-
-	if (payload.type === "TASK_COMMENT") {
-		const action = payload.isReply
-			? `${payload.commentAuthorName} replied to you`
-			: `${payload.commentAuthorName} commented`;
-		return `${action} on "${payload.taskTitle}" in ${payload.className}:\n\n${payload.commentContent}`;
-	}
-
-	const dueText = formatDueAt(payload.dueAt, timezone);
-
-	if (payload.type === "TASK_PUBLISHED") {
-		return `班级 ${payload.className} 发布了新任务。\n\n任务名称：${payload.taskTitle}\n截止时间：${dueText}`;
-	}
-
-	return `你在班级 ${payload.className} 中有一个任务即将到期。\n\n任务名称：${payload.taskTitle}\n截止时间：${dueText}`;
-}
-
-function buildAnnouncementHtml(
-	payload: AnnouncementNotificationPayload,
-	baseUrl: string,
-	appTitle: string,
-) {
-	const accentColor = "#C4785B";
-	const unsubscribeUrl = `${baseUrl}/settings/notifications`;
-	const contentHtml = escapeHtml(payload.content).replace(/\n/g, "<br>");
-	const safeTitle = escapeHtml(appTitle);
-
-	return `<!DOCTYPE html>
-<html lang="zh-CN">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background-color:#faf7f2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#faf7f2;">
-    <tr><td align="center" style="padding:32px 16px;">
-      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background-color:#fffdf8;border-radius:8px;overflow:hidden;border:1px solid #e8e2d8;">
-        <tr><td style="height:4px;background-color:${accentColor};"></td></tr>
-        <tr><td style="padding:24px 32px 16px;">
-          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#8a8078;">${safeTitle} · 系统公告</p>
-        </td></tr>
-        <tr><td style="padding:0 32px 24px;">
-          <p style="margin:0 0 16px;font-size:18px;font-weight:600;line-height:1.4;color:#2c2825;">${escapeHtml(payload.title)}</p>
-          <p style="margin:0;font-size:15px;line-height:1.6;color:#2c2825;">${contentHtml}</p>
-        </td></tr>
-        <tr><td style="padding:16px 32px;border-top:1px solid #e8e2d8;">
-          <p style="margin:0;font-size:12px;color:#c0b8ad;text-align:center;">
-            此邮件由 ${safeTitle} 自动发送 &middot;
-            <a href="${unsubscribeUrl}" style="color:#8a8078;text-decoration:underline;">退订通知</a>
-          </p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
-}
-
-function buildCommentHtml(
-	payload: CommentNotificationPayload,
-	baseUrl: string,
-	appTitle: string,
-) {
-	const accentColor = payload.classColor || "#7B6CB0";
-	const taskUrl = `${baseUrl}/tasks/${encodeURIComponent(payload.taskId)}`;
-	const unsubscribeUrl = `${baseUrl}/settings/notifications`;
-	const safeTitle = escapeHtml(appTitle);
-	const contentHtml = escapeHtml(payload.commentContent).replace(/\n/g, "<br>");
-
-	const heading = payload.isReply
-		? `<strong>${escapeHtml(payload.commentAuthorName)}</strong> replied to you on a task in <strong>${escapeHtml(payload.className)}</strong>`
-		: `<strong>${escapeHtml(payload.commentAuthorName)}</strong> commented on a task in <strong>${escapeHtml(payload.className)}</strong>`;
-
-	return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background-color:#faf7f2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#faf7f2;">
-    <tr><td align="center" style="padding:32px 16px;">
-      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background-color:#fffdf8;border-radius:8px;overflow:hidden;border:1px solid #e8e2d8;">
-        <tr><td style="height:4px;background-color:${accentColor};"></td></tr>
-        <tr><td style="padding:24px 32px 16px;">
-          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#8a8078;">${safeTitle}</p>
-        </td></tr>
-        <tr><td style="padding:0 32px 24px;">
-          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#2c2825;">${heading}</p>
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9f6f0;border-radius:6px;">
-            <tr><td style="padding:16px 20px;">
-              <p style="margin:0 0 8px;font-size:14px;color:#8a8078;">${escapeHtml(payload.taskTitle)}</p>
-              <p style="margin:0;font-size:15px;line-height:1.6;color:#2c2825;">${contentHtml}</p>
-            </td></tr>
-          </table>
-        </td></tr>
-        <tr><td style="padding:0 32px 32px;" align="center">
-          <a href="${taskUrl}" style="display:inline-block;padding:10px 28px;background-color:${accentColor};color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px;">View Task</a>
-        </td></tr>
-        <tr><td style="padding:16px 32px;border-top:1px solid #e8e2d8;">
-          <p style="margin:0;font-size:12px;color:#c0b8ad;text-align:center;">
-            Sent by ${safeTitle} &middot;
-            <a href="${unsubscribeUrl}" style="color:#8a8078;text-decoration:underline;">Unsubscribe</a>
-          </p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
-}
-
-function buildHtml(
+function renderNotificationEmail(
 	payload: NotificationPayload,
 	timezone: string,
 	baseUrl: string,
 	appTitle: string,
+	locale: AppLocale,
 ) {
 	if (payload.type === "SITE_ANNOUNCEMENT") {
-		return buildAnnouncementHtml(payload, baseUrl, appTitle);
+		return renderAnnouncementEmail(locale, {
+			appTitle,
+			baseUrl,
+			title: payload.title,
+			content: payload.content,
+		});
 	}
 
 	if (payload.type === "TASK_COMMENT") {
-		return buildCommentHtml(payload, baseUrl, appTitle);
+		return renderCommentEmail(locale, {
+			appTitle,
+			baseUrl,
+			taskId: payload.taskId,
+			className: payload.className,
+			classColor: payload.classColor,
+			taskTitle: payload.taskTitle,
+			commentAuthorName: payload.commentAuthorName,
+			commentContent: payload.commentContent,
+			isReply: payload.isReply,
+		});
 	}
 
-	const dueText = formatDueAt(payload.dueAt, timezone);
-	const accentColor = payload.classColor || "#7B6CB0";
-	const taskUrl = `${baseUrl}/tasks/${encodeURIComponent(payload.taskId)}`;
-	const unsubscribeUrl = `${baseUrl}/settings/notifications`;
-	const safeTitle = escapeHtml(appTitle);
-
-	const heading =
-		payload.type === "TASK_PUBLISHED"
-			? `班级 <strong>${escapeHtml(payload.className)}</strong> 发布了新任务`
-			: `你在班级 <strong>${escapeHtml(payload.className)}</strong> 中有一个任务即将到期`;
-
-	return `<!DOCTYPE html>
-<html lang="zh-CN">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background-color:#faf7f2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#faf7f2;">
-    <tr><td align="center" style="padding:32px 16px;">
-      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background-color:#fffdf8;border-radius:8px;overflow:hidden;border:1px solid #e8e2d8;">
-        <!-- Accent bar -->
-        <tr><td style="height:4px;background-color:${accentColor};"></td></tr>
-        <!-- Header -->
-        <tr><td style="padding:24px 32px 16px;">
-          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#8a8078;">${safeTitle}</p>
-        </td></tr>
-        <!-- Body -->
-        <tr><td style="padding:0 32px 24px;">
-          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#2c2825;">${heading}</p>
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9f6f0;border-radius:6px;">
-            <tr><td style="padding:16px 20px;">
-              <p style="margin:0 0 8px;font-size:14px;color:#8a8078;">任务名称</p>
-              <p style="margin:0 0 16px;font-size:16px;font-weight:600;color:#2c2825;">${escapeHtml(payload.taskTitle)}</p>
-              <p style="margin:0 0 8px;font-size:14px;color:#8a8078;">截止时间</p>
-              <p style="margin:0;font-size:15px;color:#2c2825;">${escapeHtml(dueText)}</p>
-            </td></tr>
-          </table>
-        </td></tr>
-        <!-- CTA -->
-        <tr><td style="padding:0 32px 32px;" align="center">
-          <a href="${taskUrl}" style="display:inline-block;padding:10px 28px;background-color:${accentColor};color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px;">查看任务</a>
-        </td></tr>
-        <!-- Footer -->
-        <tr><td style="padding:16px 32px;border-top:1px solid #e8e2d8;">
-          <p style="margin:0;font-size:12px;color:#c0b8ad;text-align:center;">
-            此邮件由 ${safeTitle} 自动发送 &middot;
-            <a href="${unsubscribeUrl}" style="color:#8a8078;text-decoration:underline;">退订通知</a>
-          </p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
-}
-
-function escapeHtml(str: string): string {
-	return str
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;");
+	return renderTaskNotificationEmail(locale, {
+		appTitle,
+		baseUrl,
+		timezone,
+		taskId: payload.taskId,
+		className: payload.className,
+		classColor: payload.classColor,
+		taskTitle: payload.taskTitle,
+		dueAt: payload.dueAt,
+		type: payload.type,
+	});
 }
 
 async function sendWebhook(
@@ -519,6 +345,7 @@ async function sendWebhook(
 	payload: NotificationPayload,
 	timezone: string,
 	baseUrl: string,
+	locale: AppLocale,
 ) {
 	const controller = new AbortController();
 	const timeout = setTimeout(() => controller.abort(), 10_000);
@@ -548,7 +375,7 @@ async function sendWebhook(
 				taskId: payload.taskId,
 				taskTitle: payload.taskTitle,
 				className: payload.className,
-				dueAt: formatDueAt(payload.dueAt, timezone),
+				dueAt: formatDueAt(payload.dueAt, timezone, locale),
 				url: `${baseUrl}/tasks/${encodeURIComponent(payload.taskId)}`,
 			};
 		}
@@ -613,7 +440,7 @@ export async function processNotificationJob(notificationJobId: string) {
 
 		const user = await prisma.user.findUnique({
 			where: { id: payload.userId },
-			select: { email: true, timezone: true },
+			select: { email: true, timezone: true, locale: true },
 		});
 
 		if (!user) {
@@ -621,6 +448,7 @@ export async function processNotificationJob(notificationJobId: string) {
 		}
 
 		const timezone = user.timezone || "UTC";
+		const locale = normalizeLocale(user.locale);
 		const baseUrl =
 			(await getConfigValue("app.base_url")) || "http://localhost:3000";
 		const appTitle =
@@ -628,12 +456,19 @@ export async function processNotificationJob(notificationJobId: string) {
 
 		if (channel === NotifChannel.EMAIL) {
 			const targetEmail = user.email;
+			const rendered = renderNotificationEmail(
+				payload,
+				timezone,
+				baseUrl,
+				appTitle,
+				locale,
+			);
 
 			await sendEmail(
 				targetEmail,
-				buildSubject(payload, appTitle),
-				buildText(payload, timezone),
-				buildHtml(payload, timezone, baseUrl, appTitle),
+				rendered.subject,
+				rendered.text,
+				rendered.html,
 			);
 		} else if (channel === NotifChannel.WEBHOOK) {
 			const webhookUrl = pref?.address;
@@ -642,7 +477,7 @@ export async function processNotificationJob(notificationJobId: string) {
 				throw new Error("Webhook URL not configured");
 			}
 
-			await sendWebhook(webhookUrl, payload, timezone, baseUrl);
+			await sendWebhook(webhookUrl, payload, timezone, baseUrl, locale);
 		}
 
 		await prisma.notificationJob.update({

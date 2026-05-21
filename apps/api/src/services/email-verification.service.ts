@@ -4,8 +4,16 @@ import { AuthProvider, EmailTokenPurpose, prisma } from "@taskflow/db";
 
 import { cacheDel, cacheKeys } from "../lib/cache.js";
 import { normalizeEmail } from "../lib/email.js";
+import {
+	renderEmailChangeSuccessEmail,
+	renderEmailChangeVerificationEmail,
+	renderExistingAccountEmail,
+	renderPasswordResetEmail,
+	renderRegistrationVerificationEmail,
+} from "../lib/email-templates.js";
 import { AppError } from "../lib/errors.js";
 import { toUserProfile } from "../lib/http.js";
+import { type AppLocale, normalizeLocale } from "../lib/locale.js";
 import { rootLogger } from "../lib/logger.js";
 import { sendEmail } from "../lib/mailer.js";
 import { hashPassword } from "../lib/password.js";
@@ -134,89 +142,6 @@ async function consumeToken(
 	// Remove this token plus any same-purpose tokens for the normalized address.
 }
 
-// ── Email templates ─────────────────────────────────────────────────────────
-
-function buildVerificationHtml(
-	appTitle: string,
-	heading: string,
-	bodyText: string,
-	ctaLabel: string,
-	ctaUrl: string,
-) {
-	const accentColor = "#2C6E91";
-	const safeTitle = escapeHtml(appTitle);
-	const safeLabel = escapeHtml(ctaLabel);
-	const safeUrl = escapeHtml(ctaUrl);
-
-	return `<!DOCTYPE html>
-<html lang="zh-CN">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background-color:#faf7f2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#faf7f2;">
-    <tr><td align="center" style="padding:32px 16px;">
-      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background-color:#fffdf8;border-radius:8px;overflow:hidden;border:1px solid #e8e2d8;">
-        <tr><td style="height:4px;background-color:${accentColor};"></td></tr>
-        <tr><td style="padding:24px 32px 16px;">
-          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#8a8078;">${safeTitle}</p>
-        </td></tr>
-        <tr><td style="padding:0 32px 24px;">
-          <h2 style="margin:0 0 12px;font-size:18px;font-weight:600;color:#2c2825;">${escapeHtml(heading)}</h2>
-          <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#2c2825;">${bodyText}</p>
-        </td></tr>
-        <tr><td style="padding:0 32px 32px;" align="center">
-          <a href="${safeUrl}" style="display:inline-block;padding:10px 28px;background-color:${accentColor};color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:6px;">${safeLabel}</a>
-        </td></tr>
-        <tr><td style="padding:0 32px 24px;">
-          <p style="margin:0 0 8px;font-size:12px;line-height:1.6;color:#6b625c;">如果按钮无法点击，请复制下面的链接到浏览器打开：</p>
-          <p style="margin:0;font-size:12px;line-height:1.6;word-break:break-all;"><a href="${safeUrl}" style="color:#2C6E91;text-decoration:underline;">${safeUrl}</a></p>
-        </td></tr>
-        <tr><td style="padding:16px 32px;border-top:1px solid #e8e2d8;">
-          <p style="margin:0;font-size:12px;color:#c0b8ad;text-align:center;">
-            你收到这封邮件是因为 ${safeTitle} 账户触发了安全操作请求。链接将在 1 小时后失效；如果不是你本人操作，可以安全忽略本邮件。
-          </p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
-}
-
-function buildNotificationHtml(
-	appTitle: string,
-	heading: string,
-	bodyText: string,
-) {
-	const accentColor = "#2C6E91";
-	const safeTitle = escapeHtml(appTitle);
-
-	return `<!DOCTYPE html>
-<html lang="zh-CN">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background-color:#faf7f2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#faf7f2;">
-    <tr><td align="center" style="padding:32px 16px;">
-      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background-color:#fffdf8;border-radius:8px;overflow:hidden;border:1px solid #e8e2d8;">
-        <tr><td style="height:4px;background-color:${accentColor};"></td></tr>
-        <tr><td style="padding:24px 32px 16px;">
-          <p style="margin:0;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#8a8078;">${safeTitle}</p>
-        </td></tr>
-        <tr><td style="padding:0 32px 24px;">
-          <h2 style="margin:0 0 12px;font-size:18px;font-weight:600;color:#2c2825;">${escapeHtml(heading)}</h2>
-          <p style="margin:0;font-size:15px;line-height:1.6;color:#2c2825;">${bodyText}</p>
-        </td></tr>
-        <tr><td style="padding:16px 32px;border-top:1px solid #e8e2d8;">
-          <p style="margin:0;font-size:12px;color:#c0b8ad;text-align:center;">
-            你收到这封邮件是因为 ${safeTitle} 账户发生了安全相关变更。
-          </p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
-}
-
 function maskEmailForNotification(email: string) {
 	const normalizedEmail = normalizeEmail(email);
 	const [localPart, domain] = normalizedEmail.split("@");
@@ -234,8 +159,9 @@ function maskEmailForNotification(email: string) {
 
 // ── Registration flow ───────────────────────────────────────────────────────
 
-export async function sendRegistrationEmail(email: string) {
+export async function sendRegistrationEmail(email: string, locale: AppLocale) {
 	const normalizedEmail = normalizeEmail(email);
+	const requestedLocale = normalizeLocale(locale);
 	const registrationAttempts = await countRecentVerificationTokens(
 		normalizedEmail,
 		EmailTokenPurpose.REGISTRATION,
@@ -251,41 +177,52 @@ export async function sendRegistrationEmail(email: string) {
 	);
 	const existing = await prisma.user.findUnique({
 		where: { email: normalizedEmail },
+		select: { id: true, isActive: true, locale: true },
 	});
 	if (existing) {
 		if (existing.isActive) {
-			await sendExistingAccountEmail(normalizedEmail, existing.id);
+			await sendExistingAccountEmail(
+				normalizedEmail,
+				existing.id,
+				normalizeLocale(existing.locale),
+			);
 		}
 		return;
 	}
 
-	await sendNewRegistrationEmail(normalizedEmail, registrationToken);
+	await sendNewRegistrationEmail(
+		normalizedEmail,
+		registrationToken,
+		requestedLocale,
+	);
 }
 
-async function sendNewRegistrationEmail(email: string, token: string) {
+async function sendNewRegistrationEmail(
+	email: string,
+	token: string,
+	locale: AppLocale,
+) {
 	const baseUrl =
 		(await getConfigValue("app.base_url")) || "http://localhost:3000";
 	const appTitle = await getAppTitle();
 	const verifyUrl = `${baseUrl}/register/complete?token=${token}`;
-
-	const subject = `[${appTitle}] 请验证你的邮箱`;
-	const text = `你收到这封邮件，是因为有人使用此邮箱发起了 ${appTitle} 注册。\n\n请打开以下链接完成邮箱验证：\n${verifyUrl}\n\n出于安全考虑，该链接 1 小时内有效。如果不是你本人操作，可以安全忽略本邮件。`;
-	const html = buildVerificationHtml(
+	const rendered = renderRegistrationVerificationEmail(locale, {
 		appTitle,
-		"验证你的邮箱",
-		`我们收到了使用此邮箱注册 ${escapeHtml(appTitle)} 账户的请求。请点击下方按钮继续。`,
-		"立即验证邮箱",
-		verifyUrl,
-	);
+		url: verifyUrl,
+	});
 
 	try {
-		await sendEmail(email, subject, text, html);
+		await sendEmail(email, rendered.subject, rendered.text, rendered.html);
 	} catch (error) {
 		rootLogger.warn({ err: error }, "registration_email_failed");
 	}
 }
 
-async function sendExistingAccountEmail(email: string, userId: string) {
+async function sendExistingAccountEmail(
+	email: string,
+	userId: string,
+	locale: AppLocale,
+) {
 	const token = await createVerificationTokenWithoutRateLimit(
 		email,
 		EmailTokenPurpose.PASSWORD_RESET,
@@ -295,19 +232,13 @@ async function sendExistingAccountEmail(email: string, userId: string) {
 		(await getConfigValue("app.base_url")) || "http://localhost:3000";
 	const appTitle = await getAppTitle();
 	const resetUrl = `${baseUrl}/reset-password?token=${token}`;
-
-	const subject = `您的 ${appTitle} 账号已存在`;
-	const text = `你收到这封邮件，是因为有人尝试使用此邮箱注册 ${appTitle} 账号。\n\n该邮箱已经有一个 ${appTitle} 账号。如果你忘记密码，可以使用下面的链接重置密码，或在页面上选择使用一次性链接直接登录：\n${resetUrl}\n\n出于安全考虑，该链接 1 小时内有效。如果不是你本人操作，可以安全忽略本邮件。`;
-	const html = buildVerificationHtml(
+	const rendered = renderExistingAccountEmail(locale, {
 		appTitle,
-		"账号已存在",
-		`该邮箱已经有一个 ${escapeHtml(appTitle)} 账号。如果你忘记密码，可以使用下方链接重置密码，或在页面上选择使用一次性链接直接登录。`,
-		"前往账号恢复",
-		resetUrl,
-	);
+		url: resetUrl,
+	});
 
 	try {
-		await sendEmail(email, subject, text, html);
+		await sendEmail(email, rendered.subject, rendered.text, rendered.html);
 	} catch (error) {
 		rootLogger.warn(
 			{ err: error },
@@ -369,10 +300,14 @@ export async function completeRegistration(
 
 // ── Password reset flow ─────────────────────────────────────────────────────
 
-export async function sendPasswordResetEmail(email: string) {
+export async function sendPasswordResetEmail(
+	email: string,
+	requestedLocale: AppLocale,
+) {
 	const normalizedEmail = normalizeEmail(email);
 	const user = await prisma.user.findUnique({
 		where: { email: normalizedEmail },
+		select: { id: true, isActive: true, locale: true },
 	});
 
 	// Silent return — do not reveal whether email exists
@@ -389,18 +324,20 @@ export async function sendPasswordResetEmail(email: string) {
 		(await getConfigValue("app.base_url")) || "http://localhost:3000";
 	const appTitle = await getAppTitle();
 	const resetUrl = `${baseUrl}/reset-password?token=${token}`;
-
-	const subject = `[${appTitle}] 重置你的密码`;
-	const text = `你收到这封邮件，是因为有人为你的 ${appTitle} 账户发起了密码重置请求。\n\n请打开以下链接设置新密码：\n${resetUrl}\n\n出于安全考虑，该链接 1 小时内有效。如果不是你本人操作，可以安全忽略本邮件。`;
-	const html = buildVerificationHtml(
-		appTitle,
-		"重置密码",
-		`我们收到了你的 ${escapeHtml(appTitle)} 账户密码重置请求。请点击下方按钮设置新密码。`,
-		"设置新密码",
-		resetUrl,
+	const rendered = renderPasswordResetEmail(
+		normalizeLocale(user.locale ?? requestedLocale),
+		{
+			appTitle,
+			url: resetUrl,
+		},
 	);
 
-	await sendEmail(normalizedEmail, subject, text, html);
+	await sendEmail(
+		normalizedEmail,
+		rendered.subject,
+		rendered.text,
+		rendered.html,
+	);
 }
 
 export async function verifyPasswordResetToken(token: string) {
@@ -530,36 +467,41 @@ export async function sendEmailChangeVerification(
 		(await getConfigValue("app.base_url")) || "http://localhost:3000";
 	const appTitle = await getAppTitle();
 	const confirmUrl = `${baseUrl}/settings/verify-email?token=${token}`;
-
-	const subject = `[${appTitle}] 确认你的新邮箱`;
-	const text = `你收到这封邮件，是因为有人正在尝试将一个 ${appTitle} 账号的邮箱修改为本邮箱（${normalizedEmail}）。\n\n如果这是你本人操作，请打开以下链接确认改绑：\n${confirmUrl}\n\n确认前，该账号仍会继续使用原邮箱。出于安全考虑，该链接 1 小时内有效。如果不是你本人操作，可以安全忽略本邮件。`;
-	const html = buildVerificationHtml(
-		appTitle,
-		"确认新邮箱",
-		`我们收到请求：将一个 ${escapeHtml(appTitle)} 账号的邮箱修改为本邮箱（<strong>${escapeHtml(normalizedEmail)}</strong>）。如果这是你本人操作，请点击下方按钮确认。确认前，该账号仍会继续使用原邮箱。`,
-		"确认邮箱修改",
-		confirmUrl,
+	const user = await prisma.user.findUnique({
+		where: { id: userId },
+		select: { locale: true },
+	});
+	const rendered = renderEmailChangeVerificationEmail(
+		normalizeLocale(user?.locale),
+		{
+			appTitle,
+			url: confirmUrl,
+			email: normalizedEmail,
+		},
 	);
 
-	await sendEmail(normalizedEmail, subject, text, html);
+	await sendEmail(
+		normalizedEmail,
+		rendered.subject,
+		rendered.text,
+		rendered.html,
+	);
 }
 
 async function sendEmailChangeSuccessNotification(
 	oldEmail: string,
 	newEmail: string,
+	locale: AppLocale,
 ) {
 	const appTitle = await getAppTitle();
 	const maskedNewEmail = maskEmailForNotification(newEmail);
-	const subject = `[${appTitle}] 你的邮箱已修改`;
-	const text = `你的 ${appTitle} 账号邮箱已成功修改为 ${maskedNewEmail}。\n\n如果这不是你本人操作，请立即联系支持团队。`;
-	const html = buildNotificationHtml(
+	const rendered = renderEmailChangeSuccessEmail(locale, {
 		appTitle,
-		"邮箱已修改",
-		`你的 ${escapeHtml(appTitle)} 账号邮箱已成功修改为 <strong>${escapeHtml(maskedNewEmail)}</strong>。<br><br>如果这不是你本人操作，请立即联系支持团队。`,
-	);
+		maskedNewEmail,
+	});
 
 	try {
-		await sendEmail(oldEmail, subject, text, html);
+		await sendEmail(oldEmail, rendered.subject, rendered.text, rendered.html);
 	} catch (error) {
 		rootLogger.warn({ err: error }, "email_change_success_notification_failed");
 	}
@@ -602,7 +544,7 @@ export async function confirmEmailChange(
 
 	const previousUser = await prisma.user.findUniqueOrThrow({
 		where: { id: row.userId },
-		select: { email: true },
+		select: { email: true, locale: true },
 	});
 
 	const user = await prisma.user.update({
@@ -613,17 +555,11 @@ export async function confirmEmailChange(
 
 	await consumeToken(row.id, email, EmailTokenPurpose.EMAIL_CHANGE);
 	await cacheDel(cacheKeys.userProfile(row.userId));
-	await sendEmailChangeSuccessNotification(previousUser.email, email);
+	await sendEmailChangeSuccessNotification(
+		previousUser.email,
+		email,
+		normalizeLocale(previousUser.locale),
+	);
 
 	return toUserProfile(user, null);
-}
-
-// ── Helpers ─────────────────────────────────────────────────────────────────
-
-function escapeHtml(str: string): string {
-	return str
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;");
 }
