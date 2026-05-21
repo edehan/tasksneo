@@ -4,6 +4,9 @@ node_modules/
 .env.local
 .env.prod
 infra/.env.perf
+infra/.db-backup.env
+infra/backups/
+infra/logs/
 perf/results/
 dist/
 .next/

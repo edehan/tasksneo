@@ -370,6 +370,70 @@ describe("TaskFlow API e2e", () => {
 		expect(allActions).toContain("CLASS_MEMBER_ROLE_UPDATED");
 	});
 
+	it("emails the new owner after class ownership transfer", async () => {
+		const previousFetch = globalThis.fetch;
+		const owner = await createTestUser({ emailPrefix: "transfer-email-owner" });
+		const member = await createTestUser({
+			emailPrefix: "transfer-email-member",
+		});
+		const sentEmails: Array<Record<string, unknown>> = [];
+
+		await prisma.systemConfig.createMany({
+			data: [
+				{ key: "email.provider", value: "cyberpanel" },
+				{ key: "cyberpanel.api_key", value: encryptConfigValue("test-key") },
+				{ key: "cyberpanel.from", value: "no-reply@example.com" },
+				{ key: "app.title", value: "TaskFlow Test" },
+			],
+		});
+		globalThis.fetch = vi.fn(async (_url, init) => {
+			sentEmails.push(JSON.parse(String(init?.body)));
+			return new Response(JSON.stringify({ success: true }), {
+				status: 202,
+				headers: { "Content-Type": "application/json" },
+			});
+		}) as typeof fetch;
+
+		try {
+			const createClassRes = await requestJson(app, "/classes", {
+				method: "POST",
+				headers: authHeader(owner.token),
+				body: JSON.stringify({ name: "Transfer Email Class" }),
+			});
+			expect(createClassRes.response.status).toBe(201);
+			const classBody = createClassRes.body as {
+				id: string;
+				inviteCode: string;
+			};
+
+			const joinRes = await requestJson(app, "/classes/join", {
+				method: "POST",
+				headers: authHeader(member.token),
+				body: JSON.stringify({ inviteCode: classBody.inviteCode }),
+			});
+			expect(joinRes.response.status).toBe(200);
+
+			const transferRes = await requestJson(
+				app,
+				`/classes/${classBody.id}/transfer`,
+				{
+					method: "POST",
+					headers: authHeader(owner.token),
+					body: JSON.stringify({ newOwnerId: member.user.id }),
+				},
+			);
+			expect(transferRes.response.status).toBe(200);
+
+			expect(sentEmails).toHaveLength(1);
+			expect(sentEmails[0]?.to).toBe(member.user.email);
+			expect(sentEmails[0]?.subject).toBe("[TaskFlow Test] 你已成为班级拥有者");
+			expect(String(sentEmails[0]?.text)).toContain("Transfer Email Class");
+			expect(String(sentEmails[0]?.html)).toContain("Transfer Email Class");
+		} finally {
+			globalThis.fetch = previousFetch;
+		}
+	});
+
 	it("round-trips encrypted system config values", () => {
 		const encrypted = encryptConfigValue("preview-pass-123");
 
@@ -1858,6 +1922,66 @@ describe("Session lifecycle", () => {
 			headers: authHeader(token),
 		});
 		expect(after.status).toBe(401);
+	});
+
+	it("requires CAPTCHA for account deletion when Turnstile is enabled", async () => {
+		const previousEnabled = process.env.TURNSTILE_ENABLED;
+		const previousSecret = process.env.TURNSTILE_SECRET_KEY;
+		const previousFetch = globalThis.fetch;
+		const { token } = await createTestUser({
+			emailPrefix: "delete-captcha",
+		});
+
+		process.env.TURNSTILE_ENABLED = "true";
+		process.env.TURNSTILE_SECRET_KEY = "secret";
+
+		try {
+			const missingCaptcha = await requestJson(app, "/users/me/delete", {
+				method: "POST",
+				headers: authHeader(token),
+				body: JSON.stringify({}),
+			});
+			expect(missingCaptcha.response.status).toBe(400);
+			expect((missingCaptcha.body as { code: string }).code).toBe(
+				"CAPTCHA_REQUIRED",
+			);
+
+			const beforeDelete = await app.request("/users/me", {
+				headers: authHeader(token),
+			});
+			expect(beforeDelete.status).toBe(200);
+
+			globalThis.fetch = vi.fn(async () => {
+				return new Response(
+					JSON.stringify({ success: true, action: "account_delete" }),
+					{ headers: { "Content-Type": "application/json" } },
+				);
+			}) as typeof fetch;
+
+			const deleteRes = await requestJson(app, "/users/me/delete", {
+				method: "POST",
+				headers: authHeader(token),
+				body: JSON.stringify({ captchaToken: "token" }),
+			});
+			expect(deleteRes.response.status).toBe(204);
+
+			const afterDelete = await app.request("/users/me", {
+				headers: authHeader(token),
+			});
+			expect(afterDelete.status).toBe(401);
+		} finally {
+			if (previousEnabled === undefined) {
+				delete process.env.TURNSTILE_ENABLED;
+			} else {
+				process.env.TURNSTILE_ENABLED = previousEnabled;
+			}
+			if (previousSecret === undefined) {
+				delete process.env.TURNSTILE_SECRET_KEY;
+			} else {
+				process.env.TURNSTILE_SECRET_KEY = previousSecret;
+			}
+			globalThis.fetch = previousFetch;
+		}
 	});
 
 	it("returns the same password reset request response for existing and missing emails", async () => {

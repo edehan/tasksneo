@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth-provider";
+import { CaptchaWidget, isCaptchaEnabled } from "@/components/captcha-widget";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -43,8 +44,12 @@ export default function AccountPage() {
 
   // Delete account
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState("");
+  const [deleteCaptchaToken, setDeleteCaptchaToken] = useState<string | null>(
+    null,
+  );
   const [deleting, setDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const resetDeleteCaptcha = useCallback(() => setDeleteCaptchaToken(null), []);
 
   // Data export
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
@@ -107,7 +112,7 @@ export default function AccountPage() {
     if (!user) return;
     setDeleting(true);
     try {
-      await deleteAccount();
+      await deleteAccount(deleteCaptchaToken);
       toast.success(t("accountDeleted"));
       await logout();
       router.push("/login");
@@ -115,6 +120,7 @@ export default function AccountPage() {
       const message =
         err instanceof ApiError ? err.message : t("failedDeleteAccount");
       toast.error(message);
+      setDeleteCaptchaToken(null);
       setDeleting(false);
     }
   }
@@ -273,7 +279,10 @@ export default function AccountPage() {
               open={deleteDialogOpen}
               onOpenChange={(open) => {
                 setDeleteDialogOpen(open);
-                if (!open) setDeleteConfirmEmail("");
+                if (!open) {
+                  setDeleteConfirmEmail("");
+                  setDeleteCaptchaToken(null);
+                }
               }}
             >
               <AlertDialogTrigger asChild>
@@ -303,6 +312,16 @@ export default function AccountPage() {
                     autoComplete="off"
                   />
                 </div>
+                <div className="py-2">
+                  <p className="mb-2 text-sm font-medium">
+                    {t("humanVerification")}
+                  </p>
+                  <CaptchaWidget
+                    action="account_delete"
+                    onSolve={setDeleteCaptchaToken}
+                    onReset={resetDeleteCaptcha}
+                  />
+                </div>
                 <AlertDialogFooter>
                   <AlertDialogCancel disabled={deleting}>
                     {t("cancel")}
@@ -310,7 +329,11 @@ export default function AccountPage() {
                   <Button
                     variant="destructive"
                     onClick={handleDeleteAccount}
-                    disabled={deleting || deleteConfirmEmail !== user.email}
+                    disabled={
+                      deleting ||
+                      deleteConfirmEmail !== user.email ||
+                      (isCaptchaEnabled() && !deleteCaptchaToken)
+                    }
                   >
                     {deleting && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />

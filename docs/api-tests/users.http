@@ -2,6 +2,7 @@
 @token = REPLACE_WITH_SESSION_TOKEN
 @sessionId = REPLACE_WITH_SESSION_ID
 @keyId = REPLACE_WITH_MCP_KEY_ID
+@captchaToken = REPLACE_WITH_TURNSTILE_TOKEN
 
 ### Get my profile
 GET {{baseUrl}}/users/me
@@ -84,8 +85,12 @@ hello avatar
 --boundary--
 
 ### Delete my account
+# Web-only destructive action guard: when Turnstile is enabled, collect this
+# token from the web CAPTCHA widget with action `account_delete`.
 POST {{baseUrl}}/users/me/delete
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{}
+{
+  "captchaToken": "{{captchaToken}}"
+}

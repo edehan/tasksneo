@@ -256,6 +256,7 @@
     "deleteYourAccountDescription": "Cela supprimera definitivement votre compte, vous retirera de toutes les classes et supprimera tous vos rendus.",
     "typeToConfirmPrefix": "Tapez",
     "typeToConfirmSuffix": "pour confirmer",
+    "humanVerification": "Verification humaine",
     "cancel": "Annuler",
     "deleteAccount": "Supprimer le compte",
     "dataExport": {

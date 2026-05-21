@@ -604,8 +604,15 @@ export async function revokeOtherSessions(): Promise<void> {
 
 // ── Account ────────────────────────────────────────────────────────────────
 
-export async function deleteAccount(): Promise<void> {
-  return apiRequest<void>("/users/me/delete", { method: "POST" });
+export async function deleteAccount(
+  captchaToken?: string | null,
+): Promise<void> {
+  return apiRequest<void>("/users/me/delete", {
+    method: "POST",
+    body: JSON.stringify({
+      ...(captchaToken ? { captchaToken } : {}),
+    }),
+  });
 }
 
 // ─── Schools ─────────────────────────────────────────────────────────────────

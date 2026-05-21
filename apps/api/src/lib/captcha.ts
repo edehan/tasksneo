@@ -3,7 +3,11 @@ import { AppError } from "./errors.js";
 const TURNSTILE_SITEVERIFY_URL =
 	"https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
-export type CaptchaAction = "register" | "password_reset" | "email_change";
+export type CaptchaAction =
+	| "register"
+	| "password_reset"
+	| "email_change"
+	| "account_delete";
 
 interface TurnstileSiteVerifyResponse {
 	success: boolean;
