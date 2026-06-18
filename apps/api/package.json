@@ -12,7 +12,7 @@
 	},
 	"dependencies": {
 		"@axiomhq/pino": "^1.6.0",
-		"@hono/node-server": "^1.19.13",
+		"@hono/node-server": "^2.0.5",
 		"@node-rs/bcrypt": "^1.10.7",
 		"@taskflow/db": "workspace:*",
 		"assemblyai": "^4.29.0",
@@ -21,18 +21,18 @@
 		"hono": "^4.12.12",
 		"ioredis": "^5.10.1",
 		"minio": "^8.0.7",
-		"nodemailer": "^8.0.5",
-		"pino": "^9.14.0",
+		"nodemailer": "^9.0.1",
+		"pino": "^10.3.1",
 		"zod": "^4.3.6"
 	},
 	"devDependencies": {
 		"@types/geoip-country": "^5.0.0",
-		"@types/node": "^20.19.37",
-		"@types/nodemailer": "^7.0.11",
+		"@types/node": "^25.9.3",
+		"@types/nodemailer": "^8.0.1",
 		"dotenv": "^17.3.1",
-		"pino-pretty": "^11.3.0",
+		"pino-pretty": "^13.1.3",
 		"tsx": "^4.21.0",
-		"typescript": "^5.9.3",
+		"typescript": "^6.0.3",
 		"vitest": "^4.1.0"
 	}
 }
