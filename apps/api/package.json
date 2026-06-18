@@ -16,7 +16,7 @@
 		"@node-rs/bcrypt": "^1.10.7",
 		"@taskflow/db": "workspace:*",
 		"assemblyai": "^4.29.0",
-		"bullmq": "^5.41.9",
+		"bullmq": "^5.76.2",
 		"geoip-country": "^5.0.202604172354",
 		"hono": "^4.12.12",
 		"ioredis": "^5.10.1",
