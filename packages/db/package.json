@@ -7,12 +7,12 @@
 		"erd": "prisma generate --generator client && node scripts/prisma-erd-generator.mjs --standalone"
 	},
 	"dependencies": {
-		"@prisma/client": "6"
+		"@prisma/client": "7"
 	},
 	"devDependencies": {
 		"@types/node": "^25.5.0",
-		"prisma": "6",
+		"prisma": "7",
 		"prisma-erd-generator": "^2.4.2",
-		"typescript": "^5.9.3"
+		"typescript": "^6.0.3"
 	}
 }
