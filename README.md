@@ -1,7 +1,7 @@
 # TaskNeo
 
 > **💡 提示：**
-> 本项目作为毕业设计提供。本人和本项目代码同为图一乐水平，**将本系统应用于生产环境或商业用途前请自行进行安全评估**。感谢理解与交流！
+> 本项目作为毕业设计提供。本人和本项目代码同为图一乐水平，**将本系统应用于生产环境或商业用途前请您进行安全性评估和维护**。感谢理解与交流！
 >
 > **📄 许可证：**
 > 本项目采用 [MIT License](LICENSE) 协议开源。
@@ -11,7 +11,7 @@
 
 [DEMO](https://app.taskneo.space) 在线体验
 
-同类产品过多，本项目不再继续更新，演示环境和基础维护会在2027年1月31日结束，届时演示环境的用户数据会被删除。
+**同类产品过多，本项目停止维护。** 演示环境DEMO将在2027年1月31日下线。
 
 ---
 
@@ -101,7 +101,7 @@ DEV_SEED_LLM_API_KEY=<your_key>
 - 前端：http://localhost:3000
 - 管理后台：http://localhost:3000/admin
 - 后端 API：http://localhost:3001
-- MinIO 控制台：http://localhost:9001（用户名/密码见 `.env`）
+- MinIO 控制台：http://localhost:9001
 
 更多命令见：[`docs/deployment/local-dev.md`](docs/deployment/local-dev.md)
 
@@ -140,12 +140,6 @@ TASKFLOW_DEV_SEED=true pnpm dev
 ## 生产部署
 
 详见 [`docs/deployment/production.md`](docs/deployment/production.md)。
-
-支持两种部署架构，按需选择：
-
-**单机部署（推荐默认）**：Web + API + PostgreSQL + Redis 全部以 Docker 运行在同一台 VPS 上。Next.js SSR 预取走容器内网，延迟极低，运维简单，适合大多数场景。
-
-**分离部署（高并发场景）**：Web 部署到 Vercel 自动扩容，VPS 只跑 API + Redis + Worker，数据库使用托管 PostgreSQL（如 Neon）。SSR 预取需跨公网访问 API，**须将 Vercel Function 区域固定到与 VPS 同地区**，否则延迟会抵消 SSR 的性能收益。文件储存使用第三方 S3 兼容服务（推荐 Cloudflare R2）。
 
 ---
 
