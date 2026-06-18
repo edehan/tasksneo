@@ -18,7 +18,7 @@
 		"assemblyai": "^4.29.0",
 		"bullmq": "^5.41.9",
 		"geoip-country": "^5.0.202604172354",
-		"hono": "^4.12.12",
+		"hono": "^4.12.25",
 		"ioredis": "^5.10.1",
 		"minio": "^8.0.7",
 		"nodemailer": "^8.0.5",
